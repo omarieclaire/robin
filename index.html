@@ -193,6 +193,7 @@
       <button id="start-btn">PLAY</button>
     </div>
     <script src="omc-kit.js"></script>
+    <script src="game-data.js"></script>
     <script>
       (function () {
         const { GameLoop, Input, State, Timer, Util, Device } = OMC;
@@ -208,7 +209,6 @@
           startBtn = document.getElementById("start-btn");
         const input = new Input();
 
-        let muted = false;
         const muteBtn = document.getElementById("mute-btn");
         muteBtn.addEventListener("click", () => {
           const muted = audio.toggleMute();
@@ -222,7 +222,7 @@
           music: "music.mp3",
           bump: "bump.mp3",
           level: "level.mp3",
-          level: "maybe.mp3",
+          maybe: "maybe.mp3",
 
           paper: "paper.mp3",
           exit: "exit.mp3",
@@ -353,8 +353,8 @@
         let bannerText = "",
           bannerColor = C_PLAYER,
           bannerTimer = 0;
-        function showBanner(t, c, d) {
-          audio.play("trumpet");
+        function showBanner(t, c, d, silent) {
+          if (!silent) audio.play("trumpet");
           bannerText = t;
           bannerColor = c || C_PLAYER;
           bannerTimer = d || 3000;
@@ -418,14 +418,40 @@
           convChoiceBX = 0,
           convChoiceBW = 0,
           convChoiceHover = -1;
-        function convReset() {
+   
+          function convReset() {
           convLog = [];
           convChoices = null;
           convVisible = false;
+          convChoiceY1 = 0;
+          convChoiceY2 = 0;
+          convChoiceHover = -1;
+        }
+
+        function convResetLater(ms) {
+          const p = phase;
+          setTimeout(() => {
+            if (phase !== p) return;
+            dialogStack = [];
+            convReset();
+          }, ms);
+        }
+        function convResetLater(ms) {
+          const p = phase;
+          setTimeout(() => {
+            if (phase !== p) return;
+            dialogStack = [];
+            convReset();
+          }, ms);
         }
         function convAddLine(text, side, color) {
           audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
-          convLog.push({ text, side, color });
+          const last = convLog[convLog.length - 1];
+          if (last && last.side === side) {
+            last.text = last.text + "\n\n" + text;
+          } else {
+            convLog.push({ text, side, color });
+          }
         }
         function convShowChoices(labels) {
           convChoices = labels;
@@ -443,16 +469,20 @@
           const allBoxes = [];
           for (let i = 0; i < convLog.length; i++) {
             const entry = convLog[i];
-            const words = entry.text.split(" "),
-              lines = [];
-            let cur = "";
-            for (const w of words) {
-              if (cur.length + w.length + 1 > innerW) {
-                lines.push(cur);
-                cur = w;
-              } else cur = cur ? cur + " " + w : w;
+            const paragraphs = entry.text.split("\n\n");
+            const lines = [];
+            for (let p = 0; p < paragraphs.length; p++) {
+              if (p > 0) lines.push(""); // blank line between paragraphs
+              const words = paragraphs[p].split(" ");
+              let cur = "";
+              for (const w of words) {
+                if (cur.length + w.length + 1 > innerW) {
+                  lines.push(cur);
+                  cur = w;
+                } else cur = cur ? cur + " " + w : w;
+              }
+              if (cur) lines.push(cur);
             }
-            if (cur) lines.push(cur);
             allBoxes.push({ lines, color: entry.color, side: entry.side, isChoice: false });
           }
           if (convChoices) {
@@ -758,17 +788,7 @@
         const D_COP = ["move along.", "nothing to see here.", "keep it moving."];
 
         /* ── STORE ART (shared by Acts 2, 3) ──────────────────── */
-        const STORE = [
-          ".============================.",
-          "|  M E T R O   G R O C E R Y |",
-          "|============================|",
-          "| [##] [##] [##] [##] [##]  |",
-          "| [##] [##] [##] [##] [##]  |",
-          "|         .--------.         |",
-          "|         | ENTER! |         |",
-          "|         |        |         |",
-          "|========='        '=========|",
-        ];
+        const STORE = window.GAME_DATA.storeArt;
         const STO_W = STORE[0].length,
           STO_H = STORE.length;
 
@@ -893,6 +913,7 @@
         let a1Path, a1PI, a1PA, a1NP;
         let a1IdleTimer; // for auto-advance on inactivity
         let a1DescPath, a1DescPI; // for road-following descent
+        let a1PauseT; // for silent pauses between narrative banners
         const A1_PSX_RATIO = 0.5,
           A1_PSY_RATIO = 0.55;
 
@@ -921,11 +942,7 @@
             ],
           },
         ];
-        const NQ = [
-          { t: "someone had an idea", c: "#bf8c60", d: 3000 },
-          { t: "or maybe we all had the idea?", c: "#db7f30", d: 3000 },
-          { t: "what if we just took took the food we need to live", c: "#f26507", d: 3000 },
-        ];
+        const NQ = window.GAME_DATA.narrativeQuotes;
         function initAct1() {
           audio.play("level");
           phase = "act1";
@@ -979,6 +996,7 @@
           a1IdleTimer = 0;
           a1DescPath = null;
           a1DescPI = 0;
+          a1PauseT = 0;
           dialogStack = [];
           // Ambient NPCs
           a1AmbNPCs = [];
@@ -1041,7 +1059,7 @@
             hudStatus.textContent = "";
           } else {
             a1St = "pause";
-            showBanner("is this a life?", "#9ab0cc", 3000);
+            showBanner("is this a life?", "#9ab0cc", 3000, true);
             hudLabel.textContent = "";
             hudScore.textContent = "";
             hudStatus.textContent = "";
@@ -1132,10 +1150,20 @@
                 a1PY += (dy / d) * s;
               }
             }
+            // Track pause delay separately — not tied to bannerTimer
+            if (a1PauseT > 0) {
+              a1PauseT -= dt;
+              return;
+            }
             if (bannerTimer <= 0) {
               if (a1PI >= a1Path.length - 1) {
                 if (a1NP < NQ.length) {
-                  showBanner(NQ[a1NP].t, NQ[a1NP].c, NQ[a1NP].d);
+                  const q = NQ[a1NP];
+                  if (q.pause) {
+                    a1PauseT = q.d;
+                  } else {
+                    showBanner(q.t, q.c, q.d);
+                  }
                   a1NP++;
                   a1ST2 = 0;
                 } else {
@@ -1156,7 +1184,7 @@
             const e = A1E[a1EI];
             const turns = e.turns;
             if (a1ES < turns.length) {
-              if (a1ES === 0 && a1ST2 === dt) {
+              if (a1ES === 0 && !convVisible) {
                 // First turn — set up conv panel
                 dialogStack = [];
                 convReset();
@@ -1220,7 +1248,7 @@
                   a1NP = 1;
                 } else {
                   // "keep living like this"
-                  showBanner("nothing changes...", "#999", 2000);
+                  showBanner("nothing changes...", "#999", 2000, true);
                   if (!a1StartX) {
                     a1StartX = a1Path[0].x;
                     a1StartY = a1Path[0].y;
@@ -1239,15 +1267,8 @@
             // Keyboard: up = "I've had enough", down = "keep living"
             if (a1ST2 > 800) {
               if (input.justPressed("up")) {
-                convReset();
-                a1St = "outro";
-                a1ST2 = 0;
-                a1NP = 0;
-                showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
-                a1NP = 1;
-              } else if (input.justPressed("down")) {
-                convReset();
-                showBanner("nothing changes...", "#999", 2000);
+               convReset();
+                showBanner("nothing changes...", "#999", 2000, true);
                 if (!a1StartX) {
                   a1StartX = a1Path[0].x;
                   a1StartY = a1Path[0].y;
@@ -1265,9 +1286,18 @@
           } else if (a1St === "outro") {
             a1ST2 += dt;
             a1PX += 0.005 * dt;
+            if (a1PauseT > 0) {
+              a1PauseT -= dt;
+              return;
+            }
             if (bannerTimer <= 0) {
               if (a1NP < NQ.length) {
-                showBanner(NQ[a1NP].t, NQ[a1NP].c, NQ[a1NP].d);
+                const q = NQ[a1NP];
+                if (q.pause) {
+                  a1PauseT = q.d;
+                } else {
+                  showBanner(q.t, q.c, q.d);
+                }
                 a1NP++;
               } else {
                 // a1St = "descend";
@@ -1394,83 +1424,7 @@
 
         const A2_MIN = 3,
           A2_MH = 3;
-        /* ── BUILDING ART POOLS (3 tiers) ──────────────────── */
-        /* ── BUILDING DATA (JSON format — edit art/name here) ─── */
-        const BUILDINGS = [
-          /* ── NARROW (size: 6) ─── */
-          { name: "Dépanneur", size: 6, art: ["  ^   ", "/.  .\\", "|.  .|", "|DEP |"] },
-          { name: "Walkup", size: 6, art: ["\u25E2\u2593\u2593\u2593\u2593\u25E3", "| [] |", "|    |", "| [] |"] },
-          {
-            name: "Duplex",
-            size: 6,
-            art: ["\u25AE\u25A4\u25A4\u25A4\u25A4\u25AE", "\u2507\u250C\u2510\u250C\u2510\u2507", "\u2507\u2514\u2518\u2514\u2518\u2507"],
-          },
-          { name: "Triplex", size: 6, art: ["|++++|", "|    |", "|    |", "|    |"] },
-          { name: "Tabac", size: 6, art: ["\u250C\u2500\u2500\u2500\u2500\u2510", "|TABK|", "|\u2591\u2591\u2591\u2591|"] },
-          { name: "Boulangerie", size: 6, art: ["\u250C\u2500\u2500\u2500\u2500\u2510", "|BOUL|", "|\u2550\u2550\u2550\u2550|"] },
-          { name: "Pharmacie", size: 6, art: ["\u250C\u2500\u2500\u2500\u2500\u2510", "|[+] |", "|PHAR|"] },
-          /* ── REGULAR (size: 9) ─── */
-          { name: "L'Escalier", size: 9, art: ["\u256DL'ESCA\u2500\u256E", "\u2502 LIER  \u2502", "\u2502 \u266A \u2605 \u266B \u2502"] },
-          {
-            name: "Cinéma Beaubien",
-            size: 9,
-            art: ["\u2554CINEMA\u2550\u2557", "\u2551BEAUBIEN", "\u2551 \u25E2\u2593\u2593\u25E3  \u2551", "\u2551 1938  \u2551"],
-          },
-          {
-            name: "Sala Rossa",
-            size: 9,
-            art: ["\u256DSALA\u2500\u2500\u2500\u256E", "\u2502 ROSSA \u2502", "\u2502 R0SSA \u2502", "\u2502       \u2502"],
-          },
-          { name: "Arepera", size: 9, art: ["\u256DAREPERA\u256E", "\u2502 \u25E2\u25A0\u25E3   \u2502", "\u2502 \u2605 \u2726 \u2605 \u2502"] },
-          {
-            name: "Dei Campi",
-            size: 9,
-            art: ["\u256DDEI\u2500\u2500\u2500\u2500\u256E", "\u2502 CAMPI \u2502", "\u2502 CAFFE \u2502", "\u2502 \u2615  \u25C9  \u2502"],
-          },
-          {
-            name: "La Vitrola",
-            size: 9,
-            art: ["\u256DLA\u2500\u2500\u2500\u2500\u2500\u256E", "\u2502VITROLA\u2502", "\u2502 \u266B  \u266A  \u2502"],
-          },
-          { name: "Segal's", size: 9, art: ["\u256DSEGALS\u2500\u256E", "\u2502 FRESH \u2502", "\u2502 \u2605\u2605\u2605\u2605\u2605 \u2502"] },
-          /* ── WIDE (size: 13) ─── */
-          {
-            name: "Notre-Dame",
-            size: 13,
-            art: ["     /\\      ", "    /  \\     ", "   /NOTRE\\   ", "  | DAME  |  ", "  | \u2605 \u2726 \u2605 |  "],
-          },
-          {
-            name: "Cinéma L'Amour",
-            size: 13,
-            art: [
-              "\u25AE\u25A4\u25A4\u25A4\u25A4\u25A4\u25A4\u25A4\u25A4\u25A4\u25A4\u25AE ",
-              "\u2507\u250C\u2510 \u250C\u2510 \u250C\u2510\u250C\u2510\u2507 ",
-              "\u2507\u2514\u2518\u2551\u2514\u2518 \u2514\u2518\u2514\u2518\u2507 ",
-              "\u2507  CINEMA  \u2507 ",
-              "\u2507 L'AMOUR  \u2507 ",
-            ],
-          },
-          {
-            name: "Parquette",
-            size: 13,
-            art: [
-              "\u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
-              "\u2502 PARQUETTE \u2502",
-              "\u2502 \u2605 \u2615 \u2605 \u2615 \u2605 \u2502",
-              "\u2502\u2591.  \u2591.  \u2591\u2591 \u2502",
-            ],
-          },
-          {
-            name: "Drawn & Quarterly",
-            size: 13,
-            art: [" /\\/\\/\\/\\/\\  ", "\u2502DRAWN &    \u2502", "\u2502QUARTERLY  \u2502", "\u2502 COMICS    \u2502"],
-          },
-          {
-            name: "Caserne 26",
-            size: 13,
-            art: ["    /\\       ", "  /    \\     ", " / FIRE  \\   ", "\u2502 CASERNE  \u2502 ", "\u2502  \u2727\u272726\u272F\u2727  \u2502 "],
-          },
-        ];
+        const BUILDINGS = window.GAME_DATA.buildings;
         function tileBuildings(blockW) {
           const pieces = [];
           let remain = blockW;
@@ -1491,26 +1445,12 @@
         }
         /* Washed-out building colors — muted pastels so avatars pop */
         const A2_BCOL = ["#b9a89a", "#9ab89a", "#9a9ab8", "#b8a09a", "#9aa8b0", "#a89ab0", "#b0a898", "#98a8b0"];
-        const A2_PA = [
-          ["@", "\u0126"],
-          ["@", "\u0126"],
-        ];
-        const A2_NPC_ARTS = [
-          ["\u2699", "\u235E"],
-          ["\u03B8", "\u256B"],
-          ["\u2742", "\u014B"],
-          ["\u2609", "\u03C6"],
-          ["\u03BF", "\u2659"],
-          ["\u03C3", "\u03B6"],
-          ["\u235D", "\u03BE"],
-          ["\u03A9", "\u03A0"],
-          ["\u22CA", "\u222C"],
-        ];
-        /* Vivid colors for NPC avatars — contrast against muted buildings */
-        const A2_NPC_COLORS = ["#0ff", "#f0f", "#ff0", "#0f8", "#f80", "#8f0", "#80f", "#f08", "#08f"];
-        const A2_NPC = ["\u03BF", "\u235E"];
-        const A2_NARC = ["\u03BF", "\u235E"];
-        const A2_ROB = ["@", "\u0126"];
+        const A2_PA = window.GAME_DATA.playerArt;
+        const A2_NPC_ARTS = window.GAME_DATA.npcArts;
+        const A2_NPC_COLORS = window.GAME_DATA.npcColors;
+        const A2_NPC = window.GAME_DATA.npcArts[0];
+        const A2_NARC = window.GAME_DATA.narcArt;
+        const A2_ROB = window.GAME_DATA.robinArt;
 
         /* 6 lanes */
         const A2_NUM_LANES = 3;
@@ -1523,7 +1463,7 @@
         let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
         let a2HopIntent, a2HopTimer;
         let a2TN, a2TP, a2TT, a2TalkCD, a2Choice, a2ChoiceLabels;
-        let a2SV, a2SW, a2SD, a2SDT, a2StoreAutoGuide, a2StorePromptT;
+        let a2SV, a2SW, a2SD, a2SDT;
         let a2Gen;
         let a2HudFlashT, a2HudFlashMsg; // HUD flash
 
@@ -1676,8 +1616,6 @@
           a2SW = 500;
           a2SD = false;
           a2SDT = null;
-          a2StoreAutoGuide = false;
-          a2StorePromptT = 0;
           dialogStack = [];
           a2GenChunk(0, W * 3);
           hudLabel.textContent = "CREW";
@@ -1781,10 +1719,7 @@
               a2TN.cd = 9999;
               a2TN = null;
               a2TalkCD = 500;
-              setTimeout(() => {
-                dialogStack = [];
-                convReset();
-              }, 1000);
+              convResetLater(1000);
             } else if (a2TP === 8 && a2TT > 2500) {
               const n = a2TN;
               n.st = "rec";
@@ -1799,10 +1734,7 @@
               a2TN.cd = 1000;
               a2TN = null;
               a2TalkCD = 500;
-              setTimeout(() => {
-                dialogStack = [];
-                convReset();
-              }, 1000);
+              convResetLater(1000);
             } else if (a2TP === 9 && a2TT > 2500) {
               const n = a2TN;
               n.st = "angry";
@@ -1814,10 +1746,7 @@
               a2TN.cd = 1000;
               a2TN = null;
               a2TalkCD = 500;
-              setTimeout(() => {
-                dialogStack = [];
-                convReset();
-              }, 1500);
+              convResetLater(1500);
             } else if (a2TP === 11 && a2TT > 800 && !convChoices) {
               convShowChoices(["oh well, what can you do", "what if it actually worked though?"]);
               a2Choice = -1;
@@ -1848,10 +1777,7 @@
                   "#a80",
                 );
                 // showBanner(Util.pick(["Played it safe.", "Dodged that one.", "Better safe than sorry."]), "#a80", 1200);
-                setTimeout(() => {
-                  dialogStack = [];
-                  convReset();
-                }, 800);
+                convResetLater(800);
               } else if (a2Choice === 1) {
                 audio.play("click");
                 /* Commit — outcome depends on NPC type */
@@ -1936,12 +1862,10 @@
               //   "#a80",
               //   2000,
               // );
-              setTimeout(() => {
-                dialogStack = [];
-                convReset();
-              }, 1000);
+              convResetLater(1000);
               setTimeout(
                 () => {
+                  if (phase !== "act2") return;
                   if (n.st === "maybe") {
                     n.st = "rec";
                     a2CrewCount++;
@@ -1975,12 +1899,15 @@
           }
 
           if (a2SD) {
-            if (!a2SDT) {
+            if (a2SDT === null) {
               a2SDT = 0;
-              /* No jarring banner — just a quiet beat before the scene shifts */
+              showBanner("You have a crew.", C_PLAYER, 1800);
             }
             a2SDT += dt;
-            if (a2SDT > 1200) {
+            if (a2SDT > 1800 && a2SDT - dt <= 1800) {
+              showBanner("Time to rally the whole neighbourhood.", "#e8944a", 1800);
+            }
+            if (a2SDT > 3400) {
               initAct2b();
             }
             return;
@@ -2195,110 +2122,7 @@
    ACT 2b: THE RALLY — mob building
    ══════════════════════════════════════════════════════════ */
 
-        /* Building art pool for Act 2b . */
-        const A2B_BUILDINGS = [
-          {
-            name: "Van Horne Underpass",
-            size: 13,
-            art: [
-              "  \u2580\u2580\u2580\u2580\u2580      ",
-              " \u2502VAN   \u2502   ",
-              "\u256F\u2502HORNE \u2502\u2570  ",
-              "\u2502\u2502 -------  \u2502\u2502",
-              "\u2502\u2502\u2591UNDERPASS\u2591\u2502\u2502",
-              "\u256E\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u256D",
-            ],
-          },
-          {
-            name: "Caserne 26",
-            size: 13,
-            art: [
-              "    /\\       ",
-              "  /    \\     ",
-              " / FIRE  \\   ",
-              "\u2502 CASERNE  \u2502 ",
-              "\u2502  \u2727\u272726\u272F\u2727  \u2502 ",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "Drawn & Quarterly",
-            size: 13,
-            art: [
-              " /\\/\\/\\/\\/\\  ",
-              "\u2502DRAWN &    \u2502",
-              "\u2502QUARTERLY  \u2502",
-              "\u2502 COMICS    \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "Parquette",
-            size: 13,
-            art: [
-              "\u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
-              "\u2502 PARQUETTE \u2502",
-              "\u2502 \u2605 \u2615 \u2605 \u2605 \u2605 \u2502",
-              "\u2502\u2591.  \u2591.  \u2591\u2591 \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "Cin\u00e9ma Beaubien",
-            size: 9,
-            art: [
-              "\u2554CINEMA\u2550\u2557",
-              "\u2551BEAUBIEN",
-              "\u2551 \u25E2\u2593\u2593\u25E3  \u2551",
-              "\u2551 1938  \u2551",
-              "\u2559\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u255C",
-            ],
-          },
-          {
-            name: "Sala Rossa",
-            size: 9,
-            art: [
-              "\u256DSALA\u2500\u2500\u2500\u256E",
-              "\u2502 ROSSA \u2502",
-              "\u2502 R0SSA \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "Arepera",
-            size: 9,
-            art: [
-              "\u256DAREPERA\u256E",
-              "\u2502 \u25E2\u25A0\u25E3   \u2502",
-              "\u2502 \u2605 \u2726 \u2605 \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "La Vitrola",
-            size: 9,
-            art: [
-              "\u256DLA\u2500\u2500\u2500\u2500\u2500\u256E",
-              "\u2502VITROLA\u2502",
-              "\u2502 \u266B  \u266A  \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          {
-            name: "Segal's",
-            size: 9,
-            art: [
-              "\u256DSEGALS\u2500\u256E",
-              "\u2502 FRESH \u2502",
-              "\u2502 \u2605\u2605\u2605\u2605\u2605 \u2502",
-              "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
-            ],
-          },
-          { name: "D\u00e9panneur", size: 6, art: ["  ^   ", "/.  .\\", "|.  .|", "|DEP |"] },
-          { name: "Walkup", size: 6, art: ["\u25E2\u2593\u2593\u2593\u2593\u25E3", "| [] |", "|    |", "| [] |"] },
-          { name: "Boulangerie", size: 6, art: ["\u250C\u2500\u2500\u2500\u2500\u2510", "|BOUL|", "|\u2550\u2550\u2550\u2550|"] },
-          { name: "Pharmacie", size: 6, art: ["\u250C\u2500\u2500\u2500\u2500\u2510", "|[+] |", "|PHAR|"] },
-        ];
+        const A2B_BUILDINGS = window.GAME_DATA.buildings2b;
 
         /* Washed-out building colours for 2b */
         const A2B_BCOL = ["#b9a89a", "#9ab89a", "#9a9ab8", "#b8a09a", "#9aa8b0", "#a89ab0", "#b0a898", "#98a8b0"];
@@ -2712,20 +2536,7 @@
         /* ══════════════════════════════════════════════════════════
    ACT 4: THE HEIST — side-scrolling grocery grab
    ══════════════════════════════════════════════════════════ */
-        /* Realistic 2026 Montreal grocery prices. Eggs and tofu are the splurges. */
-        const FOODS = [
-          { n: "Bread", p: 4, a: [" .----.", "/~~~~\\", "|~~~~|", "\\___ /"] },
-          { n: "Cereal", p: 7, a: ["| OATZ |", "|  OO  |", "|_____|"] },
-          { n: "Oats", p: 5, a: ["  _||_ ", "| OATZ|", "| 3.5%|", "|_____|"] },
-          { n: "Soup", p: 3, a: ["| SOUPE|", "| MAISO|", "'-----'"] },
-          { n: "Pasta", p: 3, a: ["| PENNE|", "| //// |", "|_____|"] },
-          { n: "Eggs", p: 9, a: ["| oO Oo|", "| Oo oO|", "'-----'"] },
-          { n: "Marg", p: 6, a: ["|MARG|", "| ==== |", "'-----'"] },
-          { n: "Tofu", p: 5, a: ["|TOFU|", "| /\\_ |", "'-----'"] },
-          { n: "Nuts", p: 8, a: [" /\\ /\\", "|NUTS|", " \\___/"] },
-          { n: "Juice", p: 5, a: ["| JUS  |", "|D'ORAN|", "'-----'"] },
-          { n: "Tofu2", p: 5, a: ["| TOFU |", "| [==] |", "'-----'"] },
-        ];
+        const FOODS = window.GAME_DATA.foods;
         const FC = ["#b90", "#a86", "#8a6", "#ca8", "#a97", "#c66", "#c44", "#c70", "#48a"];
         const S4_BC_W = 20,
           S4_SLOT_W = 9,
@@ -2875,13 +2686,12 @@
           });
 
           /* ── Remaining state ── */
-          s4Ex = [];
+         s4Ex = [];
           s4ExitPinned = false;
           s4ExitScreenX = W - 8; /* pinned to right side of screen */
-          s4Combo = 0;
-          s4ComboT = 0;
-          s4ComboWindow = 1500;
           s4ExitAisle = -1;
+          
+
           s4As = [{ y: S4_AISLE_TOP, items: [], isExit: false, aisleH: S4_AISLE_BOT - S4_AISLE_TOP }];
           s4GE = 0;
 
@@ -2933,7 +2743,7 @@
           s4IT += dt;
           if (s4IT > 20000 && s4Ug > 0.1) {
             s4IT = 0;
-            showBanner(Util.pick(D_INTERCOM), "#c44", 2000);
+            showBanner(Util.pick(D_INTERCOM), "#c44", 2000, true);
           }
 
           /* Robin floats */
@@ -3019,7 +2829,7 @@
               audio.play("security");
               state.set("score", Math.max(0, state.get("score") - 20));
               s4St2 = 800;
-              showBanner("SECURITY GRABBED SOME FOOD! -$20", "#c44", 1000);
+              showBanner("SECURITY GRABBED SOME FOOD! -$20", "#c44", 1000, true);
             }
           }
           /* Spawn new guards periodically */
@@ -3151,27 +2961,7 @@
         /* ══════════════════════════════════════════════════════════
    ACT 5: THE DROP-OFF — community fridge
    ══════════════════════════════════════════════════════════ */
-        const FRIDGE = [
-          " .====================.",
-          " |                    |",
-          " |    C O M M U N I T Y",
-          " |      F R I D G E   |",
-          " |                    |",
-          " |  .------. .------. |",
-          " |  |      | |      | |",
-          " |  |      | |      | |",
-          " |  |  *   | |  *   | |",
-          " |  |      | |      | |",
-          " |  '------' '------' |",
-          " |                    |",
-          " |  .------. .------. |",
-          " |  |      | |      | |",
-          " |  |  *   | |  *   | |",
-          " |  |      | |      | |",
-          " |  '------' '------' |",
-          " |                    |",
-          " '===================='",
-        ];
+        const FRIDGE = window.GAME_DATA.fridgeArt;
         let a5T, a5P, a5Crew, a5Neighbours, a5NI;
         function initAct5() {
           audio.play("level");
