@@ -485,7 +485,7 @@
           const nsx = convAnchorNX;
           const centerX = Math.floor((psx + nsx) / 2);
           const bx = Util.clamp(Math.floor(centerX - boxW / 2), 0, W - boxW);
-      
+
           // Draw boxes top to bottom, offset by speaker
           const offset = Math.min(6, Math.floor(boxW / 4));
           const bxL = Util.clamp(bx - offset, 0, W - boxW);
@@ -2097,7 +2097,7 @@
             hudScore.style.color = "#c33";
           }
           if (a2SV) hudStatus.textContent = "Store: " + Math.max(0, Math.floor((a2SW - a2WX) / 3)) + "m";
-          else if (a2CrewCount < A2_MIN) hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " more";
+          else if (a2CrewCount < A2_MIN) hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " more robins";
           else hudStatus.textContent = "Keep going!";
           if (a2Ht > 0) hudStatus.textContent += " | HEAT:" + a2Ht + "/" + A2_MH;
           hudStatus.style.color = a2Ht >= 2 ? "#c33" : "#2a7a2a";
@@ -2238,7 +2238,7 @@
             art: [
               "\u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E",
               "\u2502 PARQUETTE \u2502",
-              "\u2502 \u2605 \u2615 \u2605 \u2615 \u2605 \u2502",
+              "\u2502 \u2605 \u2615 \u2605 \u2605 \u2605 \u2502",
               "\u2502\u2591.  \u2591.  \u2591\u2591 \u2502",
               "\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F",
             ],
@@ -2383,7 +2383,7 @@
           a2bMob = [];
           for (let i = 0; i < a2Crew.length; i++) {
             const c = a2Crew[i];
-      
+
             a2bMob.push({
               ox: -Util.randInt(2, 4 + Math.floor(i / 3)),
               oy: Util.randInt(-2, 2),
@@ -2444,26 +2444,19 @@
             if (n.shoutT > 0) n.shoutT -= dt;
           }
 
-          //* Collision — 3s grace period. Generous, katamari-style trigger. */
+          //* Collision — 1s grace period. */
           const pwx = a2bWX + a2bPX;
-          if (a2bT > 3000) {
+          if (a2bT > 1000) {
             for (const n of a2bNPCs) {
               if (n.st !== "idle") continue;
-              /* Wider trigger: 6 in X, 4 in Y. Feels more forgiving + additive. */
+              /* Wider trigger: 6 in X, 4 in Y. */
               if (Math.abs(n.wx - pwx) < 6 && Math.abs(n.wy - a2bPY) < 4) {
                 if (n.narc) {
                   n.st = "narc";
                   audio.play("bump");
                   audio.play("narc");
-                  n.col = "#c33";
-                  n.shoutMsg = Util.pick(["SECURITY!", "NO WAY!", "COPS!", "NOT ON MY WATCH!"]);
-                  n.shoutT = 2000;
                   a2bHt++;
-                  audio.play("narc");
-                  /* Impact burst: radiating chars around the narc */
-                  const burstX = Math.round(n.wx - a2bWX),
-                    burstY = n.wy;
-                  a2bFloats.push({ text: "\u2715 NARC \u2715", x: burstX - 4, y: burstY - 1, col: "#c33", life: 1500 });
+                  addFloat(Util.pick(["NARC!", "NARC", "OOPS!"]), 0, 0, "#c33");
                   if (a2bHt >= A2B_MH) {
                     setTimeout(() => endGame("busted"), 1500);
                     return;
@@ -2471,11 +2464,8 @@
                 } else {
                   n.st = "joined";
                   audio.play("bump");
-                  n.shoutMsg = Util.pick(["OUI!", "LET'S GO!", "ALLONS-Y!", "COUNT ME IN!", "YEAH!", "FOR REAL!"]);
-                  n.shoutT = 1500;
                   a2CrewCount++;
                   audio.play("recruit");
-
                   const newBob = Math.random() * 6;
                   a2bMob.push({
                     ox: -Util.randInt(2, 4 + Math.floor(a2bMob.length / 3)),
@@ -2484,18 +2474,9 @@
                     art: n.art,
                     col: n.col,
                     b: newBob,
-                    /* Join animation: start at NPC's position, ease into mob slot */
-                    joinAnimT: 600,
-                    joinFromWX: n.wx,
-                    joinFromWY: n.wy,
                   });
-                  /* Sync into a2Crew so Acts 3/4/5 preserve identity */
                   a2Crew.push({ b: newBob, ru: 0, art: n.art, col: n.col });
-                  /* Impact burst */
-                  const burstX = Math.round(n.wx - a2bWX),
-                    burstY = n.wy;
-                  a2bFloats.push({ text: "\u273B +1 \u273B", x: burstX - 4, y: burstY - 1, col: "#5cbdbd", life: 1200 });
-                  addFloat(Util.pick(["LET'S GO!", "ALLONS-Y!", "يلا!", "IN!", "YEAH!", "YES!"]), 0, 0, "#5cbdbd");
+                  addFloat(Util.pick(["OUI!", "LET'S GO!", "ALLONS-Y!", "COUNT ME IN!", "YEAH!", "FOR REAL!"]), 0, 0, n.col);
                 }
               }
             }
@@ -3523,27 +3504,46 @@
           else if (phase === "act4") renderAct4();
           else if (phase === "act5") renderAct5();
           else if (phase === "end") renderEnd();
-          /* Floats: centered horizontally, positioned by FLOAT_STYLE.yRatio */
+          /* Floats: centered horizontally, word-wrapped, positioned by FLOAT_STYLE.yRatio */
           const floatBaseY = Math.floor(H * FLOAT_STYLE.yRatio);
+          const floatMaxW = W - 6;
           for (let fi = 0; fi < floats.length; fi++) {
             const f = floats[fi];
             if (f.life / f.max < FLOAT_STYLE.fadeStart) continue;
-            const txt = f.text;
             const boxed = f.boxed;
-            const bw = txt.length + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
+            const innerMax = floatMaxW - FLOAT_STYLE.padX * 2 - (boxed ? 2 : 0);
+            /* Word wrap */
+            const words = f.text.split(" "), lines = [];
+            let cur = "";
+            for (const w of words) {
+              if (cur.length + w.length + 1 > innerMax) { lines.push(cur); cur = w; }
+              else cur = cur ? cur + " " + w : w;
+            }
+            if (cur) lines.push(cur);
+            const lineW = Math.max(...lines.map(l => l.length));
+            const bw = lineW + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
+            const bh = boxed ? lines.length + 2 : lines.length;
             const bx = Math.floor((W - bw) / 2);
-            /* Stack multiple floats vertically */
-            const stackOff = fi * (boxed ? 4 : 2);
+            const stackOff = fi * (bh + 1);
             const by = Math.max(1, floatBaseY - stackOff);
             if (boxed) {
-              /* FLOAT style: heavy block borders — stands apart from all other boxes */
-              for (let y = by; y <= by + 2 && y < H; y++) for (let x = bx; x < bx + bw && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
+                            /* FLOAT style: heavy block borders — stands apart from all other boxes */
+
+              for (let y = by; y < by + bh && y < H; y++)
+                for (let x = bx; x < bx + bw && x < W; x++)
+                  if (x >= 0) grid.set(x, y, " ", null);
               grid.text("\u2588".repeat(bw), bx, by, f.color);
-              grid.text("\u2588" + " ".repeat(bw - 2) + "\u2588", bx, by + 1, f.color);
-              grid.text(txt, bx + 1 + FLOAT_STYLE.padX - 1, by + 1, f.color);
-              grid.text("\u2588".repeat(bw), bx, by + 2, f.color);
+              for (let li = 0; li < lines.length; li++) {
+                grid.text("\u2588" + " ".repeat(bw - 2) + "\u2588", bx, by + 1 + li, f.color);
+                const pad = Math.floor((lineW - lines[li].length) / 2);
+                grid.text(lines[li], bx + 1 + FLOAT_STYLE.padX + pad, by + 1 + li, f.color);
+              }
+              grid.text("\u2588".repeat(bw), bx, by + 1 + lines.length, f.color);
             } else {
-              grid.text(txt, bx + FLOAT_STYLE.padX, by, f.color);
+              for (let li = 0; li < lines.length; li++) {
+                const pad = Math.floor((lineW - lines[li].length) / 2);
+                grid.text(lines[li], bx + FLOAT_STYLE.padX + pad, by + li, f.color);
+              }
             }
           }
           gs.innerHTML = grid.html();
