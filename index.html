@@ -1795,7 +1795,7 @@
               a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art || A2_NPC, col: n.col });
               a2HudFlashT = 1500;
               a2HudFlashMsg = "+" + a2CrewCount + "!";
-              addFloat(Util.pick(["+1", "+1"]), Math.round(a2PX), Math.round(a2PY) - 4, "#0ff507");
+              addFloat(Util.pick(["success!", "+1, a win!", "they joined you!"]), Math.round(a2PX), Math.round(a2PY) - 4, "#0ff507");
               a2TN.cd = 1000;
               a2TN = null;
               a2TalkCD = 500;
@@ -2383,10 +2383,7 @@
           a2bMob = [];
           for (let i = 0; i < a2Crew.length; i++) {
             const c = a2Crew[i];
-            if (n.narc) {
-              console.log("BUG: narc pushed to mob!");
-              debugger;
-            }
+      
             a2bMob.push({
               ox: -Util.randInt(2, 4 + Math.floor(i / 3)),
               oy: Util.randInt(-2, 2),
@@ -3566,7 +3563,7 @@
           // hasPlayed is set to true when the player reaches Act 2
         }
         ovTitle.textContent = "ROBIN  DES RUELLES";
-        ovSub.textContent = "The people are hungry.\nWhy are the people hungry?";
+        ovSub.innerHTML = "Walk the streets. Bump into people. Who knows what might happen?<br><br>";
         ovHint.innerHTML =
           '\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br><span style="color:#aaa">A game about feeding our neighbours</span>';
         startBtn.textContent = "PLAY";
