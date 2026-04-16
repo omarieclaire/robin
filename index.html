@@ -143,8 +143,13 @@
         animation: titlepulse 3s ease-in-out infinite;
       }
       @keyframes titlepulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.82; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.82;
+        }
       }
       #overlay .sub {
         font-size: 1.5rem;
@@ -166,8 +171,15 @@
         animation: artblink 1.2s ease-in-out infinite;
       }
       @keyframes artblink {
-        0%, 100% { opacity: 1; transform: translateY(0); }
-        50% { opacity: 0.7; transform: translateY(-2px); }
+        0%,
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        50% {
+          opacity: 0.7;
+          transform: translateY(-2px);
+        }
       }
       #overlay .final {
         font-size: 36px;
@@ -361,7 +373,7 @@
            BANNER (biggest moment) > CONV (conversation) > DIALOG (incidental speech).
            FLOAT uses its own bold style defined in FLOAT_STYLE. */
         // const BANNER_BOX = { tl: "╓", tr: "╖", bl: "╙", br: "╜", h: "═", v: "║" };
-                const BANNER_BOX = { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" };
+        const BANNER_BOX = { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" };
         // const BANNER_BOX = { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│" };
         /* CONV: clean double-lines — structured conversation */
         const CONV_BOX = { tl: "\u2554", tr: "\u2557", bl: "\u255A", br: "\u255D", h: "\u2550", v: "\u2551" };
@@ -409,8 +421,7 @@
             bx = Math.floor((W - boxW) / 2);
           // Clear behind banner area
           for (let y = startY - 1; y < startY + tH + 1 && y < H; y++)
-            for (let x = bx - 1; x < bx + boxW + 1 && x < W; x++)
-              if (x >= 0 && y >= 0) grid.set(x, y, " ", null);
+            for (let x = bx - 1; x < bx + boxW + 1 && x < W; x++) if (x >= 0 && y >= 0) grid.set(x, y, " ", null);
           // Top border
           grid.text(BANNER_BOX.tl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.tr, bx, startY, bannerColor);
           // Text lines with side borders
@@ -449,8 +460,8 @@
           convChoiceBX = 0,
           convChoiceBW = 0,
           convChoiceHover = -1;
-   
-          function convReset() {
+
+        function convReset() {
           convLog = [];
           convChoices = null;
           convVisible = false;
@@ -666,7 +677,41 @@
         }
 
         /* ── DIALOGUE POOLS ────────────────────────────────────── */
-
+        // ambient player chatter
+        const D_AMB_HUNGRY = [
+          "my kids are hungry",
+          "I skip meals now",
+          "my fridge is empty",
+          "can't afford bread",
+          "rice and beans again",
+          "my kids think cereal is dinner",
+          "I pretend I already ate",
+          "nothing in the fridge",
+          "even ramen is expensive now",
+        ];
+        const D_AMB_ANGRY = [
+          "profits are criminal",
+          "CEOs get millions in bonuses",
+          "the system is rigged",
+          "billionaires don't care",
+          "they throw out good food",
+          "record profits, record prices",
+          "Galen eats well tonight",
+          "when did groceries become luxury",
+          "we're getting robbed legally",
+        ];
+        const D_AMB_NARC = [
+          "everything's fine",
+          "I love this store",
+          "prices seem fair",
+          "nothing wrong here",
+          "great deals today",
+          "I love the market economy!",
+          "I like shopping here!",
+          "this is just life!",
+          "the economy is strong",
+        ];
+        //  player greeting to npc
         const P_GREET = [
           "hey. you okay?",
           "rough out here, huh?",
@@ -683,64 +728,183 @@
           "you eating okay?",
           "hey. I know that look.",
         ];
+        // NPC 1st replies (narc, angry, hungry/sad)
+        const D_NARC_HELLO = ["prices seem pretty fair to me", "I love this store actually", "the economy is doing great", "I have no complaints"];
 
-        const P_REC = [
+        const D_ANGRY_HELLO = [
+          "corporations are making record profits while we starve",
+          "Galen Weston pocketed $2 billion last year",
+          "they lock the dumpsters so we can't even take the waste",
+          "record profits, record food bank lines",
+        ];
+        const D_HUNGRY_HELLO = [
+          "I've been skipping lunch to afford dinner",
+          "my kids think cereal is a full meal",
+          "I have three jobs and still can't afford groceries",
+          "nothing in the fridge again tonight. nobody should go hungry.",
+          "I feel ashamed of being poor, like I should hide it",
           "you seen the price of bread lately?",
           "$6 for tofu. Can you believe it?",
           "I can't afford to live. Can you?",
-          "did you know that grocery profits are up 40%",
-          "the Westons pocketed $2 billion",
-          "bread is SIX dollars",
-          "they throw food in the dumpsters every night.",
-          "we're not keeping it together",
-          "I used to eat three meals a day.",
-          "my landlord raised rent again.",
-          "they locked the dumpsters now.",
-          "food bank ran out by Tuesday.",
+          "I'm not keeping it together, I'm too hungry to think",
+        ];
+
+                const D_ACK_HUNGRY_ANGRY = ["!"];
+
+        // const D_ACK_HUNGRY_ANGRY = ["exactly, ", "I know, ", "that's not right!", "same!", "it's true,", "right? "];
+        const D_ACK_NARC = ["well, ", "you know, ", "thing is, ", "honestly, ", "I mean, "];
+
+        // player makes 1st pitch
+        // speak to INJUSTICE (the NPC is mad).
+        const D_ANGRY_PITCH = [
+          "it's not right.",
+          "they profit while we starve.",
+          "they're getting richer while we starve.",
+          "record profits means there's plenty to go around.",
+          "did you know that grocery profits are up 40%?",
+          "the Westons pocketed $2 billion.",
+          "record corporate profits, record food bank lines.",
+          "they're getting richer while we starve.",
+        ];
+        // player makes 1st pitch
+        //  speak to NEED (the NPC is hurting).
+        const D_HUNGRY_PITCH = [
+          "nobody should have to live like this.",
+          "what if you didn't have to worry about food anymore?",
+          "we're fixing everything tonight.",
+          "no one should go hungry.",
           "the shelves are full but our fridges are empty.",
+          "food bank ran out by Tuesday.",
+          "they locked the dumpsters now.",
+          "I used to eat three meals a day.",
+          "they throw food in the dumpsters every night.",
+          "when did feeding your family become a luxury?",
+          "bread is SIX dollars. we're making change.",
         ];
-        const D_JOIN = [
-          "I'm in",
-          "let's do this",
-          "I'm IN",
-          "allons-y!",
-          "I've nothing left to lose",
-          "for the neighbourhood!",
-          "say less. I'm in",
-          "about damn time",
-          "finally someone is doing something",
-          "when do we start?",
-          "you had me at robin hood",
-          "I'll bring my tote bag",
-          "let's eat!",
-          "count me in, tabarnak",
-          "I knew someone would snap eventually",
-          "okay. okay! let's go.",
+
+        const D_INVITE = [
+          "want to do something about it?",
+          "we're fixing that tonight.",
+          "join us?",
+          "we need to rise up",
+          "we can do something about it, tonight",
+          "let's stop asking and start taking",
+
+          "want in?",
+          "come with us?",
+          "let's take it back",
+          "come with us?",
+          "Isn't it time to push back?",
+          "let's change it?",
+          "we're not taking it anymore.",
+          "tonight we rise up.",
         ];
-        const D_MULTI = [
+
+        // const PITCH_ANGRY = [
+        //   "you're right. and we can do something about it.",
+        //   "that's why we're taking it back. tonight.",
+        //   "so let's stop asking and start taking.",
+        //   "we're done waiting. are you?",
+        // ];
+
+        // player pitches harder
+        const D_STRONGER_PITCH = [
+          "the store is full. our fridges are empty. tonight we fix that",
+          "they throw food in dumpsters while people starve. we're taking it back",
+          "bread is $6. we're done asking nicely",
+          "one night, one store, enough food for the whole block",
+          "we shouldn't have to live like this.",
+          "what if you didn't have to worry anymore?",
+          "we're doing something about that. want in?",
+          "come with us. we're fixing this tonight.",
+          "we're paying 27.1% more for groceries than in in 2020",
+        ];
+
+        // npc feels misunderstood
+        const D_MISMATCH = [
+          "that's not really where I'm at right now.",
+          "that's not really my thing.",
+          "hmmm.",
+          "no, yeah, no.",
+          "you seem really passionate, but that's just not for me.",
+          "I don't think that's quite right.",
+          "I hear you but that's not my thing.",
+        ];
+        // npc feels says no and bye
+        const D_NO_BYE = ["so no thanks", "not for me", "I'm good", "I'll pass"];
+
+        //npc or narc asks for more info
+        const D_SAY_MORE = [
+          "tell me more",
+          "go on",
+          "interesting. what exactly are you proposing",
+          "I'm listening",
+          "wait, what do you mean?",
           "hmm...tell me more?",
-          "that's intense...",
-          "I don't know",
-          "keep talking...",
+          "that's intense",
+          "keep talking",
           "you serious?",
           "wait, really?",
-          "go on...",
-          "I'm listening...",
-          "that's a lot to take in...",
-          "hmmm...",
+          "that's a lot to take in",
+          "hmmm",
         ];
-        const D_NARC = [
+
+        // player backs off
+        const D_BACK_OFF = ["forget I said anything", "never mind, just thinking out loud", "you're right, bad idea"];
+
+        // narc reveal
+        const D_NARC_REVEAL = [
+          "my husband is a COP",
+          "I'm calling this in RIGHT NOW",
+          "I OWN Loblaws stock",
           "I'm calling 911!",
           "just get another job!!",
           "that's THEFT!",
-          "I OWN stocks in Loblaws!",
           "just tighten your belt",
           "NOT on my watch!",
-          "my brother is a COP!",
-          "have you tried budgeting??",
           "this is why we need more police",
           "you're RUINING the neighbourhood!",
+          "markets are UP today!",
+          "you should just try budgeting",
         ];
+
+        // npc says their two cents
+        const D_JOIN_PHRASE = [
+          "you know what, we do need change",
+          "I've been waiting for someone to say this",
+          "the system isn't going to fix itself",
+          "tabarnak, you're right",
+          "I've nothing left to lose",
+          "say less",
+          "about damn time",
+          "finally someone is doing something",
+          "tabarnak",
+          "I knew someone would snap eventually",
+        ];
+
+        // npc says yes
+        const D_CONSENT_PHRASE = [
+          "I'm in",
+          "let's go.",
+          "I'm IN",
+          "when do we start?",
+          "you had me at robin hood",
+          "count me in",
+          "let's do this",
+          "allons-y",
+        ];
+
+        // npc isn't ready
+        const D_NOT_NOW = ["maybe another time", "I want to but I can't right now", "I'm scared", "not tonight"];
+
+        // npc return of the mac
+        const D_RETURN = [
+          "hey — I changed my mind. I'm in",
+          "I've been thinking about what you said. let's do it",
+          "okay okay, you convinced me. I'm back",
+          "I couldn't stop thinking about it. count me in",
+        ];
+
         const D_INTERCOM = ["cleanup on ALL aisles", "security to... everywhere", "attention: CODE RED", "this is NOT a drill"];
         const D_AMB = [
           "prices keep going up...",
@@ -751,72 +915,6 @@
           "I have three jobs",
           "I skip meals now.",
         ];
-        const D_AMB_HUNGRY = [
-          "my kids are hungry...",
-          "I skip meals now...",
-          "my fridge is empty...",
-          "can't afford bread...",
-          "rice and beans again...",
-          "my kids think cereal is dinner...",
-          "I pretend I already ate...",
-          "nothing in the fridge...",
-          "even ramen is expensive now...",
-        ];
-        const D_AMB_ANGRY = [
-          "profits are criminal...",
-          "CEOs get millions in bonuses...",
-          "the system is rigged...",
-          "billionaires don't care...",
-          "they throw out good food...",
-          "record profits, record prices...",
-          "Galen eats well tonight...",
-          "when did groceries become luxury...",
-          "we're getting robbed legally...",
-        ];
-        const D_AMB_NARC = [
-          "everything's fine...",
-          "I love this store",
-          "prices seem fair",
-          "nothing wrong here",
-          "great deals today",
-          "I love the market economy!",
-          "I like shopping here!",
-          "this is just life!",
-          "the economy is strong...",
-        ];
-        // const PITCH_HUNGRY = [
-        //   "bread is $6. We need to rise up",
-        //   "noone should have to skip meals. come with us?",
-        //   "kids shouldn't go hungry. no one should.",
-        //   "when did feeding your family become a luxury? We're making change. Join us?",
-        //   "our fridges are empty but the stores are full of food. Join us?",
-        // ];
-        // const PITCH_ANGRY = [
-        //   "grocery profits are up 40%, so are the prices",
-        //   "the Westons pocketed $2 billion",
-        //   "they profit while we starve. Isn't it time to push back?",
-        //   "record corporate profits. record food bank lines. let's change it?",
-        //   "they throw in dumpsters while people starve. come with us?",
-        // ];
-        /* Hungry pitches → speak to NEED (the NPC is hurting).
-           Angry pitches  → speak to INJUSTICE (the NPC is mad).
-           Both end with an invitation to join. */
-        const PITCH_HUNGRY = [
-          "that's not right. nobody should go hungry.",
-          "you shouldn't have to live like that.",
-          "what if you didn't have to worry anymore?",
-          "we're doing something about that. want in?",
-          "come with us. we're fixing this tonight.",
-        ];
-        const PITCH_ANGRY = [
-          "exactly. they're getting richer while we starve.",
-          "you're right. and we can do something about it.",
-          "that's why we're taking it back. tonight.",
-          "so let's stop asking and start taking.",
-          "we're done waiting. are you?",
-        ];
-        const D_CAP = ["markets are UP today!", "my portfolio is great.", "people should just try budgeting"];
-        const D_COP = ["move along.", "nothing to see here.", "keep it moving."];
 
         /* ── STORE ART (shared by Acts 2, 3) ──────────────────── */
         const STORE = window.GAME_DATA.storeArt;
@@ -1298,7 +1396,7 @@
             // Keyboard: up = "I've had enough", down = "keep living"
             if (a1ST2 > 800) {
               if (input.justPressed("up")) {
-               convReset();
+                convReset();
                 showBanner("nothing changes...", "#999", 2000, true);
                 if (!a1StartX) {
                   a1StartX = a1Path[0].x;
@@ -1674,114 +1772,388 @@
           }
 
           // Conversation (scroll pauses)
+          // if (a2TN) {
+          //   a2TT += dt;
+          //   const psx = Math.round(a2PX),
+          //     nsx = Math.round(a2TN.wx - a2WX);
+          //   const psy = Math.round(a2PY),
+          //     nsy = a2NpcY(a2TN);
+          //   if (a2TP === 0 && a2TT > 400) {
+          //     dialogStack = [];
+          //     convReset();
+          //     convAnchorPX = Math.round(a2PX);
+          //     convAnchorNX = Math.round(a2TN.wx - a2WX);
+          //     convAnchorY = Math.round(a2PY);
+          //     convPlayerColor = C_PLAYER;
+          //     convNPCColor = a2TN.col || "#7a8aaa";
+          //     convVisible = true;
+          //     // Player speaks first with a greeting
+          //     convAddLine(Util.pick(P_GREET), "you", convPlayerColor);
+          //     a2TP = 12;
+          //     a2TT = 0;
+          //     a2Choice = -1;
+          //   } else if (a2TP === 12 && a2TT > 1200) {
+          //     // NPC responds with their mood line
+          //     const opener = a2TN.tp === "narc" ? Util.pick(D_AMB_NARC) : a2TN.amb;
+          //     convAddLine(opener, "them", convNPCColor);
+          //     // Prepare choices after a pause
+          //     if (a2TN.kind === "hungry") {
+          //       a2ChoiceLabels = [Util.pick(PITCH_HUNGRY), Util.pick(PITCH_ANGRY)];
+          //     } else {
+          //       a2ChoiceLabels = [Util.pick(PITCH_ANGRY), Util.pick(PITCH_HUNGRY)];
+          //     }
+          //     a2TP = 13;
+          //     a2TT = 0;
+          //   } else if (a2TP === 13 && a2TT > 1000) {
+          //     // Show choices
+          //     convShowChoices(a2ChoiceLabels);
+          //     a2TP = 1;
+          //     a2TT = 0;
+          //   } else if (a2TP === 1 && a2TT > 800) {
+          //     if (clickPending) {
+          //       clickPending = false;
+          //       const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+          //       if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+          //         if (clickSY < splitY) a2Choice = 0;
+          //         else a2Choice = 1;
+          //       }
+          //     }
+          //     if (input.isDown("up")) a2Choice = 0;
+          //     if (input.isDown("down")) a2Choice = 1;
+          //     if (a2Choice >= 0) {
+          //       audio.play("click");
+          //       const chosenLine = a2ChoiceLabels[a2Choice];
+          //       convHideChoices();
+          //       convAddLine(chosenLine, "you", convPlayerColor);
+          //       a2TP = 2;
+          //       a2TT = 0;
+          //     }
+          //   } else if (a2TP === 2 && a2TT > 1200) {
+          //     const n = a2TN;
+          //     const matched = (a2Choice === 0 && n.kind === "hungry") || (a2Choice === 1 && n.kind === "angry");
+          //     if (n.tp !== "narc" && matched) {
+          //       /* Easy yes — they respond enthusiastically */
+          //       convAddLine(Util.pick(D_JOIN), "them", convNPCColor);
+          //       a2TP = 14; /* new state: wait for confirming line */
+          //     } else {
+          //       /* Narc, resist, or wrong pitch — suspicious pause */
+          //       convAddLine(Util.pick(["hmm...", "interesting...", "oh really...", "go on...", "I dunno about that..."]), "them", convNPCColor);
+          //       a2TP = 11;
+          //     }
+          //     a2TT = 0;
+          //   } else if (a2TP === 7 && a2TT > 2500) {
+          //     a2TN.st = "done";
+          //     // a2TN.col = "#666";
+          //     /* NPC keeps color — just dim via render state */
+          //     a2TN.cd = 9999;
+          //     a2TN = null;
+          //     a2TalkCD = 500;
+          //     convResetLater(1000);
+          //   } else if (a2TP === 8 && a2TT > 2500) {
+          //     const n = a2TN;
+          //     n.st = "rec";
+          //     /* NPC keeps their original color */
+          //     a2CrewCount++;
+          //     audio.play("recruit");
+
+          //     a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art || A2_NPC, col: n.col });
+          //     a2HudFlashT = 1500;
+          //     a2HudFlashMsg = "+" + a2CrewCount + "!";
+          //     addFloat(Util.pick(["success!", "+1, a win!", "they joined you!"]), Math.round(a2PX), Math.round(a2PY) - 4, "#0ff507");
+          //     a2TN.cd = 1000;
+          //     a2TN = null;
+          //     a2TalkCD = 500;
+          //     convResetLater(1000);
+          //   } else if (a2TP === 9 && a2TT > 2500) {
+          //     const n = a2TN;
+          //     n.st = "angry";
+          //     n.col = "#c33";
+          //     a2Ht++;
+          //     audio.play("narc");
+          //     addFloat("That was a NARC!", Math.round(a2PX), Math.round(a2PY) - 4, "#c44");
+          //     if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
+          //     a2TN.cd = 1000;
+          //     a2TN = null;
+          //     a2TalkCD = 500;
+          //     convResetLater(1500);
+          //   } else if (a2TP === 11 && a2TT > 800 && !convChoices) {
+          //     convShowChoices(["oh well, what can you do", "what if it actually worked though?"]);
+          //     a2Choice = -1;
+          //   } else if (a2TP === 11 && convChoices) {
+          //     if (clickPending) {
+          //       clickPending = false;
+          //       const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+          //       if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+          //         a2Choice = clickSY < splitY ? 0 : 1;
+          //       }
+          //     }
+          //     if (input.justPressed("up")) a2Choice = 0;
+          //     if (input.justPressed("down")) a2Choice = 1;
+          //     if (a2Choice === 0) {
+          //       audio.play("click");
+          //       /* Back away safely */
+          //       convHideChoices();
+          //       convAddLine("oh well, what can you do", "you", convPlayerColor);
+          //       a2TN.st = "done";
+          //       a2TN.col = "#555";
+          //       a2TN.cd = 9999;
+          //       a2TN = null;
+          //       a2TalkCD = 500;
+          //       addFloat(
+          //         Util.pick(["Played it safe.", "Dodged that one.", "Better safe than sorry."]),
+          //         Math.round(a2PX),
+          //         Math.round(a2PY) - 4,
+          //         "#a80",
+          //       );
+          //       // showBanner(Util.pick(["Played it safe.", "Dodged that one.", "Better safe than sorry."]), "#a80", 1200);
+          //       convResetLater(800);
+          //     } else if (a2Choice === 1) {
+          //       audio.play("click");
+          //       /* Commit — outcome depends on NPC type */
+          //       convHideChoices();
+          //       convAddLine("what if it actually worked though?", "you", convPlayerColor);
+          //       a2TP = 15;
+          //       a2TT = 0;
+          //     } else if (a2TT > 6000) {
+          //       /* Timeout — auto-reveal */
+          //       convHideChoices();
+          //       if (a2TN.tp === "narc") {
+          //         convAddLine(Util.pick(D_NARC), "them", "#c44");
+          //         a2TP = 9;
+          //       } else {
+          //         convAddLine(Util.pick(["not for me.", "nah.", "sorry."]), "them", convNPCColor);
+          //         a2TP = 7;
+          //       }
+          //       a2TT = 0;
+          //     }
+          //   } else if (a2TP === 15 && a2TT > 1200) {
+          //     /* Committed to risky NPC — resolve based on type */
+          //     const n = a2TN;
+          //     if (n.tp === "narc") {
+          //       convAddLine(Util.pick(D_NARC), "them", "#c44");
+          //       a2TP = 9;
+          //     } else if (n.tp === "resist") {
+          //       /* Pressing sometimes works! ~50% chance they join */
+          //       if (Math.random() < 0.5) {
+          //         convAddLine(
+          //           Util.pick(["...you know what, fine. I'm in.", "okay okay, you convinced me.", "ugh, alright. let's do it."]),
+          //           "them",
+          //           convNPCColor,
+          //         );
+          //         a2TP = 8;
+          //       } else {
+          //         convAddLine(
+          //           Util.pick([
+          //             "maybe another time...",
+          //             "I hear you but... not now",
+          //             "it's a good idea but I can't right now",
+          //             "I want to but I'm scared",
+          //           ]),
+          //           "them",
+          //           convNPCColor,
+          //         );
+          //         a2TP = 10;
+          //       }
+          //     } else {
+          //       convAddLine(
+          //         Util.pick(["hmm... not convinced", "hmm... no", "not sure that's for me", "I have too much in my life right now"]),
+          //         "them",
+          //         convNPCColor,
+          //       );
+          //       a2TP = 7;
+          //     }
+          //     a2TT = 0;
+          //   } else if (a2TP === 10 && a2TT > 2500) {
+          //     const n = a2TN;
+          //     n.st = "maybe";
+          //     audio.play("maybe");
+          //     n.col = n.col;
+          //     n.cd = 9999;
+          //     a2TN = null;
+          //     a2TalkCD = 500;
+          //     addFloat(
+          //       Util.pick([
+          //         "Didn't win that one... but maybe they'll come around.",
+          //         "Not yet. But they're thinking about it.",
+          //         "They need time. Maybe they'll show up later.",
+          //       ]),
+          //       Math.round(a2PX),
+          //       Math.round(a2PY) - 4,
+          //       "#a80",
+          //     );
+
+          //     // showBanner(
+          //     //   Util.pick([
+          //     //     "Didn't win that one... but maybe they'll come around.",
+          //     //     "Not yet. But they're thinking about it.",
+          //     //     "They need time. Maybe they'll show up later.",
+          //     //   ]),
+          //     //   "#a80",
+          //     //   2000,
+          //     // );
+          //     convResetLater(1000);
+          //     setTimeout(
+          //       () => {
+          //         if (phase !== "act2") return;
+          //         if (n.st === "maybe") {
+          //           n.st = "rec";
+          //           a2CrewCount++;
+          //           audio.play("recruit");
+
+          //           a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art || A2_NPC, col: n.col });
+          //           a2HudFlashT = 1500;
+          //           a2HudFlashMsg = "+" + a2CrewCount + "!";
+          //           hudScore.textContent = a2CrewCount;
+
+          //           addFloat(
+          //             Util.pick(["A straggler changed their mind!", "Someone came back!", "Late recruit!"]),
+          //             Math.round(a2PX),
+          //             Math.round(a2PY) - 4,
+          //             "#5cbdbd",
+          //           );
+
+          //           // showBanner(Util.pick(["A straggler changed their mind!", "Someone came back!", "Late recruit!"]), "#5cbdbd", 1500);
+          //         }
+          //       },
+          //       3000 + Math.random() * 2000,
+          //     );
+          //   } else if (a2TP === 14 && a2TT > 1200) {
+          //     /* Confirming line after easy-yes */
+          //     convAddLine(Util.pick(["count me in.", "I'm in.", "let's do this.", "say less."]), "them", convNPCColor);
+          //     a2TP = 8;
+          //     a2TT = 0;
+          //   }
+          //   hudScore.textContent = a2CrewCount;
+          //   return;
+          // }
+
           if (a2TN) {
             a2TT += dt;
             const psx = Math.round(a2PX),
               nsx = Math.round(a2TN.wx - a2WX);
-            const psy = Math.round(a2PY),
-              nsy = a2NpcY(a2TN);
+            const psy = Math.round(a2PY);
+
+            // Update conv anchors
+            convAnchorPX = psx;
+            convAnchorNX = nsx;
+            convAnchorY = psy;
+
+            // ── TP 0: open conv panel, player greets ──
             if (a2TP === 0 && a2TT > 400) {
               dialogStack = [];
               convReset();
-              convAnchorPX = Math.round(a2PX);
-              convAnchorNX = Math.round(a2TN.wx - a2WX);
-              convAnchorY = Math.round(a2PY);
+              convAnchorPX = psx;
+              convAnchorNX = nsx;
+              convAnchorY = psy;
               convPlayerColor = C_PLAYER;
               convNPCColor = a2TN.col || "#7a8aaa";
               convVisible = true;
-              // Player speaks first with a greeting
               convAddLine(Util.pick(P_GREET), "you", convPlayerColor);
               a2TP = 12;
               a2TT = 0;
-              a2Choice = -1;
-            } else if (a2TP === 12 && a2TT > 1200) {
-              // NPC responds with their mood line
-              const opener = a2TN.tp === "narc" ? Util.pick(D_AMB_NARC) : a2TN.amb;
-              convAddLine(opener, "them", convNPCColor);
-              // Prepare choices after a pause
-              if (a2TN.kind === "hungry") {
-                a2ChoiceLabels = [Util.pick(PITCH_HUNGRY), Util.pick(PITCH_ANGRY)];
-              } else {
-                a2ChoiceLabels = [Util.pick(PITCH_ANGRY), Util.pick(PITCH_HUNGRY)];
-              }
+            }
+
+            // ── TP 12: NPC replies based on type ──
+            else if (a2TP === 12 && a2TT > 1200) {
+              const line =
+                a2TN.tp === "narc" ? Util.pick(D_NARC_HELLO) : a2TN.kind === "angry" ? Util.pick(D_ANGRY_HELLO) : Util.pick(D_HUNGRY_HELLO);
+              convAddLine(line, "them", convNPCColor);
               a2TP = 13;
               a2TT = 0;
-            } else if (a2TP === 13 && a2TT > 1000) {
-              // Show choices
+            }
+
+            // ── TP 13: show first pitch choices ──
+            else if (a2TP === 13 && a2TT > 1000) {
+              const ack = a2TN.tp === "narc" ? Util.pick(D_ACK_NARC) : Util.pick(D_ACK_HUNGRY_ANGRY);
+              const invite = Util.pick(D_INVITE);
+
+              a2ChoiceLabels = [ack + " " + Util.pick(D_ANGRY_PITCH) + " " + invite, ack + " " + Util.pick(D_HUNGRY_PITCH) + " " + invite];
               convShowChoices(a2ChoiceLabels);
+              a2Choice = -1;
               a2TP = 1;
               a2TT = 0;
-            } else if (a2TP === 1 && a2TT > 800) {
+            }
+
+            // ── TP 1: wait for first pitch choice ──
+            else if (a2TP === 1 && a2TT > 800) {
               if (clickPending) {
                 clickPending = false;
                 const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
                 if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
-                  if (clickSY < splitY) a2Choice = 0;
-                  else a2Choice = 1;
+                  a2Choice = clickSY < splitY ? 0 : 1;
                 }
               }
               if (input.isDown("up")) a2Choice = 0;
               if (input.isDown("down")) a2Choice = 1;
               if (a2Choice >= 0) {
                 audio.play("click");
-                const chosenLine = a2ChoiceLabels[a2Choice];
                 convHideChoices();
-                convAddLine(chosenLine, "you", convPlayerColor);
+                convAddLine(a2ChoiceLabels[a2Choice], "you", convPlayerColor);
                 a2TP = 2;
                 a2TT = 0;
               }
-            } else if (a2TP === 2 && a2TT > 1200) {
-              const n = a2TN;
-              const matched = (a2Choice === 0 && n.kind === "hungry") || (a2Choice === 1 && n.kind === "angry");
-              if (n.tp !== "narc" && matched) {
-                /* Easy yes — they respond enthusiastically */
-                convAddLine(Util.pick(D_JOIN), "them", convNPCColor);
-                a2TP = 14; /* new state: wait for confirming line */
-              } else {
-                /* Narc, resist, or wrong pitch — suspicious pause */
-                convAddLine(Util.pick(["hmm...", "interesting...", "oh really...", "go on...", "I dunno about that..."]), "them", convNPCColor);
-                a2TP = 11;
-              }
-              a2TT = 0;
-            } else if (a2TP === 7 && a2TT > 2500) {
-              a2TN.st = "done";
-              // a2TN.col = "#666";
-              /* NPC keeps color — just dim via render state */
-              a2TN.cd = 9999;
-              a2TN = null;
-              a2TalkCD = 500;
-              convResetLater(1000);
-            } else if (a2TP === 8 && a2TT > 2500) {
-              const n = a2TN;
-              n.st = "rec";
-              /* NPC keeps their original color */
-              a2CrewCount++;
-              audio.play("recruit");
+            }
 
-              a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art || A2_NPC, col: n.col });
-              a2HudFlashT = 1500;
-              a2HudFlashMsg = "+" + a2CrewCount + "!";
-              addFloat(Util.pick(["success!", "+1, a win!", "they joined you!"]), Math.round(a2PX), Math.round(a2PY) - 4, "#0ff507");
-              a2TN.cd = 1000;
-              a2TN = null;
-              a2TalkCD = 500;
-              convResetLater(1000);
-            } else if (a2TP === 9 && a2TT > 2500) {
-              const n = a2TN;
-              n.st = "angry";
-              n.col = "#c33";
-              a2Ht++;
-              audio.play("narc");
-              addFloat("That was a NARC!", Math.round(a2PX), Math.round(a2PY) - 4, "#c44");
-              if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
-              a2TN.cd = 1000;
-              a2TN = null;
-              a2TalkCD = 500;
-              convResetLater(1500);
-            } else if (a2TP === 11 && a2TT > 800 && !convChoices) {
-              convShowChoices(["oh well, what can you do", "what if it actually worked though?"]);
+            // ── TP 2: resolve first pitch ──
+            else if (a2TP === 2 && a2TT > 1200) {
+              const matched = (a2Choice === 0 && a2TN.kind === "angry") || (a2Choice === 1 && a2TN.kind === "hungry");
+
+              if (a2TN.tp === "narc") {
+                // Narc always asks for more
+                convAddLine(Util.pick(D_SAY_MORE), "them", convNPCColor);
+                a2TP = 20;
+                a2TT = 0;
+              } else if (matched) {
+                // Matched energy — 50% join now, 50% ask for more
+                if (Math.random() < 0.5) {
+                  // Immediate join — joinPhrase first or consentPhrase first
+                  const jp = Util.pick(D_JOIN_PHRASE),
+                    cp = Util.pick(D_CONSENT_PHRASE);
+                  if (Math.random() < 0.5) {
+                    convAddLine(jp, "them", convNPCColor);
+                    a2TP = 21; // will add consent line then recruit
+                  } else {
+                    convAddLine(cp, "them", convNPCColor);
+                    a2TP = 22; // will add join phrase then recruit
+                  }
+                } else {
+                  convAddLine(Util.pick(D_SAY_MORE), "them", convNPCColor);
+                  a2TP = 20;
+                }
+                a2TT = 0;
+              } else {
+                // Mismatch — NPC exits quietly
+                convAddLine(Util.pick(D_MISMATCH), "them", convNPCColor);
+                a2TP = 30;
+                a2TT = 0;
+              }
+            }
+
+            // ── TP 21: immediate join — jp first, now add cp ──
+            else if (a2TP === 21 && a2TT > 1000) {
+              convAddLine(Util.pick(D_CONSENT_PHRASE), "them", convNPCColor);
+              a2TP = 8;
+              a2TT = 0;
+            }
+
+            // ── TP 22: immediate join — cp first, now add jp ──
+            else if (a2TP === 22 && a2TT > 1000) {
+              convAddLine(Util.pick(D_JOIN_PHRASE), "them", convNPCColor);
+              a2TP = 8;
+              a2TT = 0;
+            }
+
+            // ── TP 20: NPC asked for more — show second choices ──
+            else if (a2TP === 20 && a2TT > 1000) {
+              a2ChoiceLabels = [Util.pick(D_STRONGER_PITCH), Util.pick(D_BACK_OFF)];
+              convShowChoices(a2ChoiceLabels);
               a2Choice = -1;
-            } else if (a2TP === 11 && convChoices) {
+              a2TP = 23;
+              a2TT = 0;
+            }
+
+            // ── TP 23: wait for second choice ──
+            else if (a2TP === 23 && a2TT > 800) {
               if (clickPending) {
                 clickPending = false;
                 const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
@@ -1791,140 +2163,146 @@
               }
               if (input.justPressed("up")) a2Choice = 0;
               if (input.justPressed("down")) a2Choice = 1;
-              if (a2Choice === 0) {
+              if (a2Choice >= 0) {
                 audio.play("click");
-                /* Back away safely */
                 convHideChoices();
-                convAddLine("oh well, what can you do", "you", convPlayerColor);
+                convAddLine(a2ChoiceLabels[a2Choice], "you", convPlayerColor);
+                a2TP = 24;
+                a2TT = 0;
+              }
+            }
+
+            // ── TP 24: resolve second choice ──
+            else if (a2TP === 24 && a2TT > 1200) {
+              if (a2Choice === 1) {
+                // Backed off — silent exit
+                addFloat(Util.pick(["Played it safe.", "Better safe than sorry.", "Dodged that one."]), 0, 0, "#a80");
                 a2TN.st = "done";
-                a2TN.col = "#555";
                 a2TN.cd = 9999;
                 a2TN = null;
                 a2TalkCD = 500;
-                addFloat(
-                  Util.pick(["Played it safe.", "Dodged that one.", "Better safe than sorry."]),
-                  Math.round(a2PX),
-                  Math.round(a2PY) - 4,
-                  "#a80",
-                );
-                // showBanner(Util.pick(["Played it safe.", "Dodged that one.", "Better safe than sorry."]), "#a80", 1200);
-                convResetLater(800);
-              } else if (a2Choice === 1) {
-                audio.play("click");
-                /* Commit — outcome depends on NPC type */
-                convHideChoices();
-                convAddLine("what if it actually worked though?", "you", convPlayerColor);
-                a2TP = 15;
-                a2TT = 0;
-              } else if (a2TT > 6000) {
-                /* Timeout — auto-reveal */
-                convHideChoices();
-                if (a2TN.tp === "narc") {
-                  convAddLine(Util.pick(D_NARC), "them", "#c44");
-                  a2TP = 9;
-                } else {
-                  convAddLine(Util.pick(["not for me.", "nah.", "sorry."]), "them", convNPCColor);
-                  a2TP = 7;
-                }
-                a2TT = 0;
-              }
-            } else if (a2TP === 15 && a2TT > 1200) {
-              /* Committed to risky NPC — resolve based on type */
-              const n = a2TN;
-              if (n.tp === "narc") {
-                convAddLine(Util.pick(D_NARC), "them", "#c44");
+                setTimeout(() => {
+                  dialogStack = [];
+                  convReset();
+                }, 800);
+              } else if (a2TN.tp === "narc") {
+                // Stronger pitch to narc — reveal
+                convAddLine(Util.pick(D_NARC_REVEAL), "them", "#c44");
                 a2TP = 9;
-              } else if (n.tp === "resist") {
-                /* Pressing sometimes works! ~50% chance they join */
-                if (Math.random() < 0.5) {
-                  convAddLine(
-                    Util.pick(["...you know what, fine. I'm in.", "okay okay, you convinced me.", "ugh, alright. let's do it."]),
-                    "them",
-                    convNPCColor,
-                  );
-                  a2TP = 8;
+                a2TT = 0;
+              } else {
+                // Stronger pitch to normal NPC — join or defer
+                if (Math.random() < 0.6) {
+                  const jp = Util.pick(D_JOIN_PHRASE),
+                    cp = Util.pick(D_CONSENT_PHRASE);
+                  if (Math.random() < 0.5) {
+                    convAddLine(jp, "them", convNPCColor);
+                    a2TP = 21;
+                  } else {
+                    convAddLine(cp, "them", convNPCColor);
+                    a2TP = 22;
+                  }
                 } else {
-                  convAddLine(
-                    Util.pick([
-                      "maybe another time...",
-                      "I hear you but... not now",
-                      "it's a good idea but I can't right now",
-                      "I want to but I'm scared",
-                    ]),
-                    "them",
-                    convNPCColor,
-                  );
+                  convAddLine(Util.pick(D_NOT_NOW), "them", convNPCColor);
                   a2TP = 10;
                 }
-              } else {
-                convAddLine(
-                  Util.pick(["hmm... not convinced", "hmm... no", "not sure that's for me", "I have too much in my life right now"]),
-                  "them",
-                  convNPCColor,
-                );
-                a2TP = 7;
+                a2TT = 0;
               }
+            }
+
+            // ── TP 30: mismatch — NPC adds noBye then leaves ──
+            else if (a2TP === 30 && a2TT > 1000) {
+              convAddLine(Util.pick(D_NO_BYE), "them", convNPCColor);
+              a2TP = 7;
               a2TT = 0;
-            } else if (a2TP === 10 && a2TT > 2500) {
-              const n = a2TN;
-              n.st = "maybe";
-              audio.play("maybe");
-              n.col = n.col;
-              n.cd = 9999;
+            }
+
+            // ── TP 7: NPC declined, close conv ──
+            else if (a2TP === 7 && a2TT > 2000) {
+              a2TN.st = "done";
+              a2TN.cd = 9999;
               a2TN = null;
               a2TalkCD = 500;
-              addFloat(
-                Util.pick([
-                  "Didn't win that one... but maybe they'll come around.",
-                  "Not yet. But they're thinking about it.",
-                  "They need time. Maybe they'll show up later.",
-                ]),
-                Math.round(a2PX),
-                Math.round(a2PY) - 4,
-                "#a80",
-              );
+              setTimeout(() => {
+                dialogStack = [];
+                convReset();
+              }, 1000);
+            }
 
-              // showBanner(
-              //   Util.pick([
-              //     "Didn't win that one... but maybe they'll come around.",
-              //     "Not yet. But they're thinking about it.",
-              //     "They need time. Maybe they'll show up later.",
-              //   ]),
-              //   "#a80",
-              //   2000,
-              // );
-              convResetLater(1000);
+            // ── TP 8: recruit ──
+            else if (a2TP === 8 && a2TT > 1500) {
+              const n = a2TN;
+              n.st = "rec";
+              a2CrewCount++;
+              audio.play("recruit");
+              a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
+              addFloat(Util.pick(["New Robin!", "They're in!", "Crew grows!"]), 0, 0, "#5cbdbd");
+              a2TN.cd = 1000;
+              a2TN = null;
+              a2TalkCD = 500;
+              setTimeout(() => {
+                dialogStack = [];
+                convReset();
+              }, 1000);
+            }
+
+            // ── TP 9: narc reveal consequence ──
+            else if (a2TP === 9 && a2TT > 2000) {
+              const n = a2TN;
+              n.st = "angry";
+              n.col = "#c33";
+              a2Ht++;
+              audio.play("narc");
+              addFloat("That was a NARC!", 0, 0, "#c44");
+              if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
+              a2TN.cd = 1000;
+              a2TN = null;
+              a2TalkCD = 500;
+              setTimeout(() => {
+                dialogStack = [];
+                convReset();
+              }, 1500);
+            }
+
+            // ── TP 10: NPC defers — maybe returns later ──
+            else if (a2TP === 10 && a2TT > 2000) {
+              const n = a2TN;
+              n.st = "maybe";
+              n.cd = 9999;
+              addFloat(Util.pick(["Not yet. But they're thinking.", "They need time."]), 0, 0, "#a80");
+              a2TN = null;
+              a2TalkCD = 500;
+              setTimeout(() => {
+                dialogStack = [];
+                convReset();
+              }, 1000);
+              // Return of the mack — only fires if player isn't in conversation
               setTimeout(
                 () => {
-                  if (phase !== "act2") return;
-                  if (n.st === "maybe") {
+                  if (n.st === "maybe" && !a2TN) {
                     n.st = "rec";
                     a2CrewCount++;
                     audio.play("recruit");
-
-                    a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art || A2_NPC, col: n.col });
-                    a2HudFlashT = 1500;
-                    a2HudFlashMsg = "+" + a2CrewCount + "!";
+                    a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
+                    convReset();
+                    convAnchorPX = Math.round(a2PX);
+                    convAnchorNX = Math.round(n.wx - a2WX);
+                    convAnchorY = Math.round(a2PY);
+                    convPlayerColor = C_PLAYER;
+                    convNPCColor = n.col;
+                    convVisible = true;
+                    convAddLine(Util.pick(D_RETURN), "them", n.col);
+                    setTimeout(() => {
+                      dialogStack = [];
+                      convReset();
+                    }, 3000);
                     hudScore.textContent = a2CrewCount;
-
-                    addFloat(
-                      Util.pick(["A straggler changed their mind!", "Someone came back!", "Late recruit!"]),
-                      Math.round(a2PX),
-                      Math.round(a2PY) - 4,
-                      "#5cbdbd",
-                    );
-
-                    // showBanner(Util.pick(["A straggler changed their mind!", "Someone came back!", "Late recruit!"]), "#5cbdbd", 1500);
                   }
                 },
-                3000 + Math.random() * 2000,
+                4000 + Math.random() * 3000,
               );
-            } else if (a2TP === 14 && a2TT > 1200) {
-              /* Confirming line after easy-yes */
-              convAddLine(Util.pick(["count me in.", "I'm in.", "let's do this.", "say less."]), "them", convNPCColor);
-              a2TP = 8;
-              a2TT = 0;
             }
+
             hudScore.textContent = a2CrewCount;
             return;
           }
@@ -2723,11 +3101,10 @@
           });
 
           /* ── Remaining state ── */
-         s4Ex = [];
+          s4Ex = [];
           s4ExitPinned = false;
           s4ExitScreenX = W - 8; /* pinned to right side of screen */
           s4ExitAisle = -1;
-          
 
           s4As = [{ y: S4_AISLE_TOP, items: [], isExit: false, aisleH: S4_AISLE_BOT - S4_AISLE_TOP }];
           s4GE = 0;
@@ -3289,14 +3666,14 @@
         function renderCTA() {
           /* Timed reveal — each line appears in sequence */
           const lines = [
-            { t: 0,    text: "In December 2025,",                              col: "#aaa" },
-            { t: 900,  text: "40 people dressed as Santa",                     col: "#c33" },
-            { t: 1700, text: "robbed a Metro grocery store in Montreal.",      col: "#aaa" },
-            { t: 3000, text: "They gave the food to the hungry.",              col: "#2a7a2a" },
-            { t: 4500, text: "They called themselves",                         col: "#aaa" },
-            { t: 5200, text: "ROBINS DES RUELLES.",                            col: C_PLAYER },
-            { t: 6800, text: "",                                               col: "#aaa" },
-            { t: 7200, text: "The story isn't over.",                          col: "#e8944a" },
+            { t: 0, text: "In December 2025,", col: "#aaa" },
+            { t: 900, text: "40 people dressed as Santa", col: "#c33" },
+            { t: 1700, text: "robbed a Metro grocery store in Montreal.", col: "#aaa" },
+            { t: 3000, text: "They gave the food to the hungry.", col: "#2a7a2a" },
+            { t: 4500, text: "They called themselves", col: "#aaa" },
+            { t: 5200, text: "ROBINS DES RUELLES.", col: C_PLAYER },
+            { t: 6800, text: "", col: "#aaa" },
+            { t: 7200, text: "The story isn't over.", col: "#e8944a" },
           ];
           const startY = Math.max(2, Math.floor(H / 2) - Math.floor(lines.length / 2) - 1);
           for (let i = 0; i < lines.length; i++) {
@@ -3420,14 +3797,17 @@
             const boxed = f.boxed;
             const innerMax = floatMaxW - FLOAT_STYLE.padX * 2 - (boxed ? 2 : 0);
             /* Word wrap */
-            const words = f.text.split(" "), lines = [];
+            const words = f.text.split(" "),
+              lines = [];
             let cur = "";
             for (const w of words) {
-              if (cur.length + w.length + 1 > innerMax) { lines.push(cur); cur = w; }
-              else cur = cur ? cur + " " + w : w;
+              if (cur.length + w.length + 1 > innerMax) {
+                lines.push(cur);
+                cur = w;
+              } else cur = cur ? cur + " " + w : w;
             }
             if (cur) lines.push(cur);
-            const lineW = Math.max(...lines.map(l => l.length));
+            const lineW = Math.max(...lines.map((l) => l.length));
             const bw = lineW + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
             const bh = boxed ? lines.length + 2 : lines.length;
             let bx, by;
@@ -3446,9 +3826,7 @@
             }
             if (boxed) {
               if (!playful) {
-                for (let y = by; y < by + bh && y < H; y++)
-                  for (let x = bx; x < bx + bw && x < W; x++)
-                    if (x >= 0) grid.set(x, y, " ", null);
+                for (let y = by; y < by + bh && y < H; y++) for (let x = bx; x < bx + bw && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
               }
               grid.text(fBox.tl + fBox.h.repeat(bw - 2) + fBox.tr, bx, by, f.color);
               for (let li = 0; li < lines.length; li++) {
