@@ -47,17 +47,19 @@
       #hud {
         width: 100%;
         max-width: 900px;
-        padding: 8px 14px 4px;
-        font-size: 26px;
-        letter-spacing: 1px;
+        padding: 6px 16px;
+        font-size: 22px;
+        letter-spacing: 2px;
         color: var(--c-text-mid);
         z-index: 10;
         flex-shrink: 0;
-        background: var(--c-bg-hud);
-        border-bottom: 2px solid #333;
+        background: transparent;
+        border-bottom: 1px solid #2a2a2a;
+        box-shadow: 0 1px 0 rgba(137, 87, 255, 0.15);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        text-transform: lowercase;
       }
 
       #mute-btn {
@@ -79,12 +81,14 @@
       #hud .val {
         color: var(--c-accent);
         font-weight: bold;
-        font-size: 30px;
+        font-size: 26px;
+        letter-spacing: 1px;
       }
       #hud .status {
         color: #2a7a2a;
         text-align: right;
-        font-size: 22px;
+        font-size: 18px;
+        opacity: 0.85;
       }
       #game-wrap {
         width: 100%;
@@ -120,61 +124,84 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: rgba(17, 17, 17, 0.97);
+        background: radial-gradient(ellipse at center, #0d0a11 0%, #0a0a0f 100%);
         z-index: 20;
         text-align: center;
-        gap: 10px;
+        gap: 14px;
         font-family: "VT323", monospace;
+        padding: 20px;
       }
       #overlay.hidden {
         display: none;
       }
       #overlay h1 {
-        font-size: 40px;
+        font-size: 52px;
         color: var(--c-accent);
-        letter-spacing: 3px;
+        letter-spacing: 6px;
+        /* text-shadow: 0 0 20px rgba(137, 87, 255, 0.4), 0 0 40px rgba(137, 87, 255, 0.2); */
+        margin: 0;
+        animation: titlepulse 3s ease-in-out infinite;
+      }
+      @keyframes titlepulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.82; }
       }
       #overlay .sub {
-        font-size: 20px;
-        color: var(--c-text-mid);
-        max-width: 360px;
-        line-height: 1.4;
+        font-size: 1.5rem;
+        color: #c8b8e8;
+        max-width: 440px;
+        line-height: 1.5;
         white-space: pre-line;
+        /* font-style: italic; */
+        opacity: 0.9;
       }
       #overlay .endart {
-        font-size: 15px;
+        font-size: 28px;
         line-height: 1.1;
         font-family: "Courier New", monospace;
         white-space: pre;
-        margin: 6px 0;
+        margin: 10px 0;
         color: var(--c-accent);
+        /* text-shadow: 0 0 12px rgba(137, 87, 255, 0.6); */
+        animation: artblink 1.2s ease-in-out infinite;
+      }
+      @keyframes artblink {
+        0%, 100% { opacity: 1; transform: translateY(0); }
+        50% { opacity: 0.7; transform: translateY(-2px); }
       }
       #overlay .final {
-        font-size: 28px;
+        font-size: 36px;
         color: var(--c-accent);
         margin: 4px 0;
         font-weight: bold;
+        /* text-shadow: 0 0 12px rgba(137, 87, 255, 0.4); */
       }
       #overlay button {
-        margin-top: 8px;
-        padding: 12px 36px;
-        color: var(--c-accent);
-        border: none;
-        /* color: #fff; */
+        margin-top: 16px;
+        padding: 14px 52px;
+        color: #fff;
+        background: transparent;
+        border: 2px solid var(--c-accent);
         font-family: "VT323", monospace;
-        font-size: 24px;
+        font-size: 28px;
         cursor: pointer;
-        letter-spacing: 2px;
-        border-radius: 3px;
+        letter-spacing: 4px;
+        border-radius: 2px;
+        transition: all 0.2s ease;
+        /* text-shadow: 0 0 8px rgba(137, 87, 255, 0.5); */
       }
       #overlay button:hover {
-        background: var(--c-accent-dim);
+        background: var(--c-accent);
+        color: #fff;
+        box-shadow: 0 0 24px rgba(137, 87, 255, 0.5);
+        transform: scale(1.03);
       }
       #overlay .hint {
-        font-size: 16px;
-        color: #888;
-        max-width: 340px;
-        line-height: 1.3;
+        font-size: 17px;
+        color: #7a7a8a;
+        max-width: 380px;
+        line-height: 1.5;
+        opacity: 0.8;
       }
     </style>
   </head>
@@ -333,8 +360,9 @@
         /* Three visually distinct box styles, ranked by visual weight:
            BANNER (biggest moment) > CONV (conversation) > DIALOG (incidental speech).
            FLOAT uses its own bold style defined in FLOAT_STYLE. */
-        /* BANNER: thick double-lines with corner markers — the most striking */
-        const BANNER_BOX = { tl: "\u2593", tr: "\u2593", bl: "\u2593", br: "\u2593", h: "\u2580", v: "\u2588" };
+        // const BANNER_BOX = { tl: "╓", tr: "╖", bl: "╙", br: "╜", h: "═", v: "║" };
+                const BANNER_BOX = { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" };
+        // const BANNER_BOX = { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│" };
         /* CONV: clean double-lines — structured conversation */
         const CONV_BOX = { tl: "\u2554", tr: "\u2557", bl: "\u255A", br: "\u255D", h: "\u2550", v: "\u2551" };
         /* DIALOG: light single-lines — quiet, ambient */
@@ -364,7 +392,7 @@
         }
         function renderBanner() {
           if (bannerTimer <= 0) return;
-          const mxW = W - 4,
+          const mxW = W - 6,
             words = bannerText.split(" "),
             lines = [];
           let cur = "";
@@ -375,22 +403,25 @@
             } else cur = cur ? cur + " " + w : w;
           }
           if (cur) lines.push(cur);
-          const tH = lines.length + 4,
-            // startY = phase === "act2" ? Math.max(H - tH - 2, Math.floor(H * 0.75)) : Math.max(1, Math.floor(H / 6 - tH / 2));
-            // startY = phase === "act2" ? Math.max(1, H - tH - 4) : Math.max(1, Math.floor(H / 6 - tH / 2));
+          const tH = lines.length + 2,
             startY = Math.max(1, Math.floor(H / 6 - tH / 2));
-          const boxW = Math.min(W, Math.max(...lines.map((l) => l.length)) + 6),
+          const boxW = Math.min(W, Math.max(...lines.map((l) => l.length)) + 8),
             bx = Math.floor((W - boxW) / 2);
-          for (let y = startY; y < startY + tH && y < H; y++) for (let x = bx; x < bx + boxW && x < W; x++) grid.set(x, y, " ", null);
+          // Clear behind banner area
+          for (let y = startY - 1; y < startY + tH + 1 && y < H; y++)
+            for (let x = bx - 1; x < bx + boxW + 1 && x < W; x++)
+              if (x >= 0 && y >= 0) grid.set(x, y, " ", null);
+          // Top border
           grid.text(BANNER_BOX.tl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.tr, bx, startY, bannerColor);
-          grid.text(BANNER_BOX.v + " ".repeat(boxW - 2) + BANNER_BOX.v, bx, startY + 1, bannerColor);
+          // Text lines with side borders
           for (let i = 0; i < lines.length; i++) {
-            const ly = startY + 2 + i;
+            const ly = startY + 1 + i;
             grid.text(BANNER_BOX.v + " ".repeat(boxW - 2) + BANNER_BOX.v, bx, ly, bannerColor);
-            grid.text(lines[i], bx + 1 + Math.floor((boxW - 2 - lines[i].length) / 2), ly, bannerColor);
+            grid.text(lines[i], bx + Math.floor((boxW - lines[i].length) / 2), ly, bannerColor);
           }
-          grid.text(BANNER_BOX.v + " ".repeat(boxW - 2) + BANNER_BOX.v, bx, startY + 2 + lines.length, bannerColor);
-          grid.text(BANNER_BOX.bl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.br, bx, startY + 3 + lines.length, bannerColor);
+          // Bottom border
+          const by = startY + 1 + lines.length;
+          grid.text(BANNER_BOX.bl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.br, bx, by, bannerColor);
         }
 
         let dialogStack = [];
@@ -2086,15 +2117,22 @@
             const art = n.art || A2_NPC;
             grid.art(art, sx + fidget, sy, col);
           }
-          // Crew trailing
+          // Crew trailing — slightly organic: per-robin phase + small y-offset
           const ppx = Math.round(a2PX),
             ppy = Math.round(a2PY);
           for (let i = 0; i < a2Crew.length; i++) {
-            const cx2 = ppx - 3 - i * 3,
-              cy2 = ppy;
-            const bob = Math.sin(Date.now() / 300 + a2Crew[i].b) * 0.3;
-            const crewCol = a2Crew[i].col || "#3a9a3a";
-            if (cx2 >= 0 && cx2 + 3 < W) grid.art(a2Crew[i].art || A2_ROB, cx2, Math.round(cy2 + bob), crewCol);
+            const r = a2Crew[i];
+            /* Per-robin phase so they bob independently */
+            const phase = r.b;
+            /* Small y-offset alternates robins above/below the line (±1) */
+            const yOff = (i % 2 === 0 ? -1 : 1) * 0.6;
+            /* Gentle x-jitter so spacing isn't perfectly uniform */
+            const xJit = Math.sin(Date.now() / 700 + phase * 1.7) * 0.5;
+            const bob = Math.sin(Date.now() / 350 + phase) * 0.6;
+            const cx2 = Math.round(ppx - 3 - i * 3 + xJit);
+            const cy2 = Math.round(ppy + yOff + bob);
+            const crewCol = r.col || "#3a9a3a";
+            if (cx2 >= 0 && cx2 + 3 < W) grid.art(r.art || A2_ROB, cx2, cy2, crewCol);
           }
           // Player — glow effect at start
           const playerCol = a2T < 3000 ? (Math.floor(a2T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
@@ -2406,11 +2444,10 @@
           /* ── Player — same 2-row art as Act 2 ── */
           grid.art(A2_PA[Math.floor(a2bT / 250) % 2], ppx, ppy, C_PLAYER);
 
-          /* ── NPC ambient text boxes only — collision shouts go to addFloat ── */
+          /* ── NPC ambient text boxes ── */
           for (const n of a2bNPCs) {
             const sx = Math.round(n.wx - a2bWX);
             if (sx < -2 || sx > W + 2) continue;
-            /* Skip joined/narc entirely — they're announced via float */
             if (n.st !== "idle") continue;
             if (a2bT <= 3000) continue;
             const dist = Math.abs(n.wx - (a2bWX + a2bPX));
@@ -2644,8 +2681,8 @@
           const ac = Math.min(a2CrewCount - 1, 6);
           for (let i = 0; i < ac; i++) {
             s4Alys.push({
-              behindDist: 4 + i * 3,
-              oy: Util.randInt(-1, 1),
+              behindDist: 5 + i * 4,
+              oy: Util.randInt(-2, 2),
               bobPhase: Math.random() * 6,
               grabCD: 0,
             });
@@ -2895,13 +2932,20 @@
             grid.art(["[S]", "/!\\"], sx, sy, "#c44");
           }
 
-          /* ── Robins trailing behind player — preserve identity ── */
+          /* ── Robins trailing behind player — spread out, organic ── */
           for (let i = 0; i < s4Alys.length; i++) {
             const al = s4Alys[i];
-            const rx = Math.round(s4PX2 - al.behindDist);
-            const ry = Math.round(s4PY2 + al.oy + Math.sin(s4GT * 3 + al.bobPhase) * 0.5);
+            /* Wider spacing so individual robins read clearly */
+            const baseDist = 5 + i * 4;
+            /* Independent x-drift per robin */
+            const xDrift = Math.sin(s4GT * 1.5 + al.bobPhase * 1.3) * 1.2;
+            const rx = Math.round(s4PX2 - baseDist + xDrift);
+            /* More varied y-offset — each robin finds its own lane */
+            const yBase = al.oy * 1.5;
+            const yBob = Math.sin(s4GT * 2.5 + al.bobPhase) * 0.8;
+            const ry = Math.round(s4PY2 + yBase + yBob);
             if (rx >= 0 && rx < W && ry >= S4_AISLE_TOP && ry <= S4_AISLE_BOT) {
-              const src = a2Crew[i + 1]; /* i+1 because player occupies index 0 conceptually */
+              const src = a2Crew[i + 1];
               const rArt = (src && src.art) || A2_ROB;
               const rCol = (src && src.col) || "#5cbdbd";
               grid.art(rArt, rx, ry, rCol);
@@ -2962,13 +3006,14 @@
    ACT 5: THE DROP-OFF — community fridge
    ══════════════════════════════════════════════════════════ */
         const FRIDGE = window.GAME_DATA.fridgeArt;
-        let a5T, a5P, a5Crew, a5Neighbours, a5NI;
+        let a5T, a5P, a5Crew, a5Neighbours, a5NI, a5FoodPlacements;
         function initAct5() {
           audio.play("level");
           phase = "act5";
           a5T = 0;
           a5P = 0;
           a5NI = 0;
+          a5FoodPlacements = null;
           bannerTimer = 0;
           dialogStack = [];
           hudLabel.textContent = "";
@@ -3000,15 +3045,22 @@
           // Store player X for render
           a5Crew._playerX = Util.clamp(lineStartX + playerSlot * 3, 2, W - 5);
           a5Crew._playerY = lineY;
-          // Neighbours arrive after food is placed
+          // Neighbours arrive after food is placed — centred around the fridge
           const shuffled = Util.shuffle(END_NAMES.slice());
           a5Neighbours = [];
-          for (let i = 0; i < Math.min(4, shuffled.length); i++) {
+          const fridgeWidth = window.GAME_DATA.fridgeArt[0].length;
+          const fridgeCX = Math.floor(W / 2);
+          const numNeighbours = Math.min(4, shuffled.length);
+          for (let i = 0; i < numNeighbours; i++) {
             const nm = shuffled[i];
             const fromRight = i % 2 === 0;
             const nx = fromRight ? W + 3 + i * 6 : -3 - i * 6;
-            const ty = lineY + 4 + i;
-            const tx = fromRight ? fx + 16 + i * 2 : fx - 10 - i * 2;
+            const ty = lineY + 4 + Math.floor(i / 2);
+            /* Symmetrically distribute around fridge center */
+            const pairIdx = Math.floor(i / 2); /* 0,0,1,1 */
+            const side = fromRight ? 1 : -1;
+            const offset = Math.floor(fridgeWidth / 2) + 2 + pairIdx * 4;
+            const tx = fridgeCX + side * offset;
             a5Neighbours.push({
               x: nx,
               y: ty,
@@ -3088,40 +3140,60 @@
               const crewArt = (src && src.art) || RA2;
               const crewCol = (src && src.col) || "#5cbdbd";
               grid.art(crewArt, cx, c.ty + (a5P >= 3 ? -1 : 0), crewCol);
-              /* Crew-carried item labels removed — they overlap chaotically when
-                 many crew are close. Items appear inside the fridge after drop. */
             }
             crewDrawIdx++;
           }
           const plX = a5Crew._playerX || Math.floor(W / 2);
           const plY = a5Crew._playerY || fy + FRIDGE.length + 1;
-          grid.art([" @ ", "/|\\", "/ \\"], plX, plY + (a5P >= 3 ? -1 : 0), "#c33");
+          grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), C_PLAYER);
           // Tap prompt
           if (a5P === 2) grid.textCenter("[ TAP TO PLACE FOOD ]", plY + 4, Math.sin(Date.now() / 300) > 0 ? "#5cbdbd" : "#888");
-          // Food appearing in fridge
+          // Food appearing in fridge — real food art reused from Act 4
           if (a5P >= 3) {
-            const items = [];
-            for (const c of a5Crew) {
-              if (typeof c === "object" && c.item) items.push(c.item);
+            /* New fridge layout (width 37, height 18):
+               Rows 0-3 = header + divider
+               Rows 4-8 = top shelf (interior rows 4,5,6,7,8)
+               Row 9 = divider
+               Rows 10-14 = bottom shelf
+               Row 15-17 = divider + footer + border
+               4 slots per shelf. */
+            if (!a5FoodPlacements) {
+              a5FoodPlacements = [];
+              const numToPlace = Math.min(a2CrewCount, 8);
+              for (let i = 0; i < numToPlace; i++) {
+                a5FoodPlacements.push(Util.pick(FOODS));
+              }
             }
-            const showCount = a5P === 3 ? Math.min(items.length, Math.floor(a5T / 400)) : items.length;
-            const fridgeInnerW = 20; /* width inside fridge walls */
-            const cols = Math.min(showCount, 2);
-            const colW = Math.floor(fridgeInnerW / Math.max(cols, 1));
+            const showCount = a5P === 3 ? Math.min(a5FoodPlacements.length, Math.floor(a5T / 400)) : a5FoodPlacements.length;
+            const slotsPerShelf = 4;
+            const shelfInnerW = fridgeW - 2; /* inside the ║ walls */
+            const slotW = Math.floor(shelfInnerW / slotsPerShelf);
             for (let i = 0; i < showCount; i++) {
-              const col = i % 2;
-              const row = Math.floor(i / 2);
-              const ix = fx + 2 + col * colW;
-              const iy = fy + 5 + row * 2; /* start below "FRIDGE" text, 2 rows apart */
-              if (iy < fy + FRIDGE.length - 1) grid.text(items[i].substring(0, colW - 1), ix, iy, "#ca8");
+              const food = a5FoodPlacements[i];
+              const shelf = Math.floor(i / slotsPerShelf);
+              const col = i % slotsPerShelf;
+              if (shelf > 1) break;
+              const ix = fx + 1 + col * slotW + Math.floor((slotW - 7) / 2); /* center food in slot */
+              const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
+              const artH = food.a.length;
+              const iy = shelfBot - artH + 1;
+              for (let r = 0; r < artH; r++) {
+                const line = food.a[r].substring(0, slotW - 1);
+                grid.text(line, ix, iy + r, "#ca8");
+              }
             }
           }
-          // Neighbours
+          // Neighbours — use NPC art pool for visual variety, preserve color
           if (a5P >= 4) {
-            for (const nb of a5Neighbours) {
+            for (let i = 0; i < a5Neighbours.length; i++) {
+              const nb = a5Neighbours[i];
               const nx = Math.round(nb.x);
               if (nx >= -2 && nx < W + 2) {
-                grid.art([" o ", "/|\\", "/ \\"], nx, nb.ty, "#888");
+                if (!nb.art) {
+                  nb.art = window.GAME_DATA.npcArts[i % window.GAME_DATA.npcArts.length];
+                  nb.col = window.GAME_DATA.npcColors[(i + 3) % window.GAME_DATA.npcColors.length];
+                }
+                grid.art(nb.art, nx, nb.ty, nb.col);
                 if (nb.arrived) {
                   grid.text(nb.name, Util.clamp(nx - 1, 0, W - nb.name.length), nb.ty - 1, "#5cbdbd");
                 }
@@ -3168,27 +3240,7 @@
           updateBanner(dt);
           if (clickPending && endT > 3000) {
             clickPending = false;
-            phase = "done";
-            audio.play("bust");
-            loop.stop();
-            overlay.classList.remove("hidden");
-            ovTitle.textContent = "ROB AGAIN?";
-            ovTitle.style.color = "#c33";
-            ovSub.textContent = "The neighbourhood remembers.";
-            ovHint.textContent = "";
-            startBtn.textContent = "KEEP TRYING";
-            overlay.querySelectorAll(".final").forEach((e) => e.remove());
-            overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
-            const gu = document.createElement("button");
-            gu.className = "give-up-btn";
-            gu.textContent = "START OVER";
-            gu.style.background = "#888";
-            gu.style.marginTop = "4px";
-            gu.addEventListener("click", () => {
-              hasPlayed = false;
-              startGame();
-            });
-            startBtn.after(gu);
+            initCTA();
           }
         }
         function renderEnd() {
@@ -3198,6 +3250,64 @@
           if (endT > 2000 + endD.vig.length * 800) grid.textCenter("you carried $" + endD.my + " of it", 6 + endD.vig.length * 2 + 4, "#bbb");
           if (endT > 3000) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
           renderBanner();
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           CTA: This really happened. Post-game epilogue.
+           ══════════════════════════════════════════════════════════ */
+        let ctaT;
+        function initCTA() {
+          phase = "cta";
+          ctaT = 0;
+          bannerTimer = 0;
+          dialogStack = [];
+          hudLabel.textContent = "";
+          hudScore.textContent = "";
+          hudStatus.textContent = "";
+        }
+        function updateCTA(dt) {
+          ctaT += dt;
+          if (clickPending && ctaT > 8000) {
+            clickPending = false;
+            phase = "done";
+            loop.stop();
+            overlay.classList.remove("hidden");
+            ovTitle.textContent = "ROBINS DES RUELLES";
+            ovTitle.style.color = C_PLAYER;
+            ovSub.innerHTML = "The neighbourhood remembers.<br><br>Play again?";
+            ovHint.textContent = "";
+            startBtn.textContent = "PLAY AGAIN";
+            overlay.querySelectorAll(".final").forEach((e) => e.remove());
+            overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
+            startBtn.onclick = () => {
+              hasPlayed = false;
+              startGame();
+              startBtn.onclick = null;
+            };
+          }
+        }
+        function renderCTA() {
+          /* Timed reveal — each line appears in sequence */
+          const lines = [
+            { t: 0,    text: "In December 2025,",                              col: "#aaa" },
+            { t: 900,  text: "40 people dressed as Santa",                     col: "#c33" },
+            { t: 1700, text: "robbed a Metro grocery store in Montreal.",      col: "#aaa" },
+            { t: 3000, text: "They gave the food to the hungry.",              col: "#2a7a2a" },
+            { t: 4500, text: "They called themselves",                         col: "#aaa" },
+            { t: 5200, text: "ROBINS DES RUELLES.",                            col: C_PLAYER },
+            { t: 6800, text: "",                                               col: "#aaa" },
+            { t: 7200, text: "The story isn't over.",                          col: "#e8944a" },
+          ];
+          const startY = Math.max(2, Math.floor(H / 2) - Math.floor(lines.length / 2) - 1);
+          for (let i = 0; i < lines.length; i++) {
+            if (ctaT >= lines[i].t) {
+              const y = startY + i;
+              if (y < H - 2) grid.textCenter(lines[i].text, y, lines[i].col);
+            }
+          }
+          if (ctaT > 8000) {
+            grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
+          }
         }
 
         /* ── END GAME (failure) ────────────────────────────────── */
@@ -3261,13 +3371,14 @@
           padX: 2 /* horizontal padding inside box */,
         };
         function addFloat(t, x, y, co) {
-          /* x, y args are ignored — floats now auto-center near bottom.
-             Kept for backwards compat with existing call sites. */
+          /* x, y args are ignored — floats auto-position by phase. */
+          /* Act 4 grocery grabs fire rapidly → shorter life so they don't pile */
+          const life = phase === "act4" ? 1200 : FLOAT_STYLE.life;
           floats.push({
             text: t,
             color: co,
-            life: FLOAT_STYLE.life,
-            max: FLOAT_STYLE.life,
+            life,
+            max: life,
             boxed: FLOAT_STYLE.boxed,
           });
         }
@@ -3283,6 +3394,7 @@
           else if (phase === "act4") updateAct4(dt);
           else if (phase === "act5") updateAct5(dt);
           else if (phase === "end") updateEnd(dt);
+          else if (phase === "cta") updateCTA(dt);
           input.endFrame();
         }
         function render() {
@@ -3294,9 +3406,14 @@
           else if (phase === "act4") renderAct4();
           else if (phase === "act5") renderAct5();
           else if (phase === "end") renderEnd();
-          /* Floats: centered horizontally, word-wrapped, positioned by FLOAT_STYLE.yRatio */
+          else if (phase === "cta") renderCTA();
+          /* Floats: Act 2b + Act 4 = playful overlap with per-float position jitter.
+             Other phases = tidy vertical stack.
+             Uses thin double-line borders instead of heavy block chars. */
           const floatBaseY = Math.floor(H * FLOAT_STYLE.yRatio);
           const floatMaxW = W - 6;
+          const playful = phase === "act4" || phase === "act2b";
+          const fBox = { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" };
           for (let fi = 0; fi < floats.length; fi++) {
             const f = floats[fi];
             if (f.life / f.max < FLOAT_STYLE.fadeStart) continue;
@@ -3313,22 +3430,33 @@
             const lineW = Math.max(...lines.map(l => l.length));
             const bw = lineW + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
             const bh = boxed ? lines.length + 2 : lines.length;
-            const bx = Math.floor((W - bw) / 2);
-            const stackOff = fi * (bh + 1);
-            const by = Math.max(1, floatBaseY - stackOff);
+            let bx, by;
+            if (playful) {
+              /* Stable per-float position jitter — set once on first render */
+              if (f.jx === undefined) {
+                f.jx = Math.floor((Math.random() - 0.5) * (W - bw - 4));
+                f.jy = Math.floor((Math.random() - 0.5) * 6);
+              }
+              bx = Util.clamp(Math.floor((W - bw) / 2) + f.jx, 1, W - bw - 1);
+              by = Util.clamp(floatBaseY + f.jy, 1, H - bh - 1);
+            } else {
+              bx = Math.floor((W - bw) / 2);
+              const stackOff = fi * (bh + 1);
+              by = Math.max(1, floatBaseY - stackOff);
+            }
             if (boxed) {
-                            /* FLOAT style: heavy block borders — stands apart from all other boxes */
-
-              for (let y = by; y < by + bh && y < H; y++)
-                for (let x = bx; x < bx + bw && x < W; x++)
-                  if (x >= 0) grid.set(x, y, " ", null);
-              grid.text("\u2588".repeat(bw), bx, by, f.color);
+              if (!playful) {
+                for (let y = by; y < by + bh && y < H; y++)
+                  for (let x = bx; x < bx + bw && x < W; x++)
+                    if (x >= 0) grid.set(x, y, " ", null);
+              }
+              grid.text(fBox.tl + fBox.h.repeat(bw - 2) + fBox.tr, bx, by, f.color);
               for (let li = 0; li < lines.length; li++) {
-                grid.text("\u2588" + " ".repeat(bw - 2) + "\u2588", bx, by + 1 + li, f.color);
+                grid.text(fBox.v + " ".repeat(bw - 2) + fBox.v, bx, by + 1 + li, f.color);
                 const pad = Math.floor((lineW - lines[li].length) / 2);
                 grid.text(lines[li], bx + 1 + FLOAT_STYLE.padX + pad, by + 1 + li, f.color);
               }
-              grid.text("\u2588".repeat(bw), bx, by + 1 + lines.length, f.color);
+              grid.text(fBox.bl + fBox.h.repeat(bw - 2) + fBox.br, bx, by + 1 + lines.length, f.color);
             } else {
               for (let li = 0; li < lines.length; li++) {
                 const pad = Math.floor((lineW - lines[li].length) / 2);
@@ -3396,6 +3524,9 @@
               s4AlyScore = s4AlyScore || 0;
               state.reset({ score: 80 });
               initEnd();
+            },
+            8: function () {
+              initCTA();
             },
           };
           if (!jumps[e.key]) return;

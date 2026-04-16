@@ -332,26 +332,29 @@ window.GAME_DATA = {
        if I change interior layout, check the item-drawing code in
        renderAct5 (the `fx + 2 + col * colW` / `fy + 5 + row * 2` lines).
      ───────────────────────────────────────────────────────── */
+  /* Structure drawn dynamically in renderAct5 — this is just the frame.
+     Food from GAME_DATA.foods is drawn into slots.
+     Width = 37 chars. If I resize, also update the slot-layout math in renderAct5
+     (fridgeW, slotsPerShelf, shelfTop/shelfBot row numbers). */
   fridgeArt: [
-    " .====================.",
-    " |                    |",
-    " |    C O M M U N I T Y",
-    " |      F R I D G E   |",
-    " |                    |",
-    " |  .------. .------. |",
-    " |  |      | |      | |",
-    " |  |      | |      | |",
-    " |  |  *   | |  *   | |",
-    " |  |      | |      | |",
-    " |  '------' '------' |",
-    " |                    |",
-    " |  .------. .------. |",
-    " |  |      | |      | |",
-    " |  |  *   | |  *   | |",
-    " |  |      | |      | |",
-    " |  '------' '------' |",
-    " |                    |",
-    " '===================='",
+    "╔═══════════════════════════════════╗",
+    "║  ❄  COMMUNITY  FRIDGE  ❄          ║",
+    "║   feed your neighbour             ║",
+    "╠═══════════════════════════════════╣",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "╠═══════════════════════════════════╣",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "║                                   ║",
+    "╠═══════════════════════════════════╣",
+    "║    ♥  take what you need  ♥       ║",
+    "╚═══════════════════════════════════╝",
   ],
 
   /* ─────────────────────────────────────────────────────────
