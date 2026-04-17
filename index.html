@@ -478,14 +478,7 @@
             convReset();
           }, ms);
         }
-        function convResetLater(ms) {
-          const p = phase;
-          setTimeout(() => {
-            if (phase !== p) return;
-            dialogStack = [];
-            convReset();
-          }, ms);
-        }
+ 
         function convAddLine(text, side, color) {
           audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
           const last = convLog[convLog.length - 1];
