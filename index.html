@@ -262,23 +262,15 @@
           bump: "bump.mp3",
           level: "level.mp3",
           maybe: "maybe.mp3",
-                    drop: "drop.mp3",
-
-
+          drop: "drop.mp3",
           paper: "paper.mp3",
-                    urgent: "urgent.mp3",
-
+          urgent: "urgent.mp3",
           exit: "exit.mp3",
-
           playertxtbox: "playertxtbox.mp3",
-
           npctxtbox: "npctxtbox.mp3",
-
           trumpet: "trumpet.mp3",
-
           recruit: "recruit.mp3", // crew +1
           security: "narc.mp3", // narc reveal
-
           narc: "narc.mp3", // narc reveal
           grab: "grab.mp3", // Act 4 food grab
           bust: "bust.mp3", // game over
@@ -1503,7 +1495,7 @@
           hudStatus.textContent = "Tap \u25B2\u25BC to move!";
           hudStatus.style.color = "#2a7a2a";
           bannerTimer = 0;
-          showBanner("Recruit your crew.", "#e8944a", 2500);
+          showBanner("recruit your crew", "#e8944a", 2500);
         }
 
         function updateAct2(dt) {
@@ -1521,7 +1513,6 @@
             a2PAnimT = 0;
             a2PAnim = 1 - a2PAnim;
           }
-
 
           if (a2TN) {
             a2TT += dt;

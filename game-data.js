@@ -5,18 +5,18 @@
 
 window.GAME_DATA = {
   /* ─────────────────────────────────────────────────────────
-     BUILDINGS (Act 2 — scrolling cityscape)
-     Used by: tileBuildings() in main script.
-     Constraints:
-     - `size` = vissual width in characters. MUST match longest line in `art`.
-     - Sizes come in 3 tiers: 6 (narrow), 9 (regular), 13 (wide).
-       tileBuildings() picks from these to fill a block. If I add a new
-       size tier, update the remainder logic in tileBuildings() .
-     - Art height is flexible (3–6 rows typical). Taller = fills more of
-       the building band. Bands are ~A2_BH_PER rows tall (see a2Layout).
-     - Colors come from A2_BCOL palette in main script, not per-building.
-     - Blank spaces in art are transparent (see-through to sky).
-     ───────────────────────────────────────────────────────── */
+       BUILDINGS (Act 2 — scrolling cityscape)
+       Used by: tileBuildings() in main script.
+       Constraints:
+       - `size` = vissual width in characters. MUST match longest line in `art`.
+       - Sizes come in 3 tiers: 6 (narrow), 9 (regular), 13 (wide).
+         tileBuildings() picks from these to fill a block. If I add a new
+         size tier, update the remainder logic in tileBuildings() .
+       - Art height is flexible (3–6 rows typical). Taller = fills more of
+         the building band. Bands are ~A2_BH_PER rows tall (see a2Layout).
+       - Colors come from A2_BCOL palette in main script, not per-building.
+       - Blank spaces in art are transparent (see-through to sky).
+       ───────────────────────────────────────────────────────── */
   buildings: [
     /* ── NARROW (size 6) ─── */
     { name: "Dépanneur", size: 6, art: ["  ^   ", "/.  .\\", "|.  .|", "|DEP |"] },
@@ -45,14 +45,14 @@ window.GAME_DATA = {
   ],
 
   /* ─────────────────────────────────────────────────────────
-     BUILDINGS_2B (Act 2b — rally, taller buildings with bottom border)
-     Used by: a2bGenRow().
-     Constraints:
-     - Same `size` tiers as buildings above (6, 9, 13).
-     - Art CAN (hehe) include a bottom border row (like ╰─────╯) since these
-       are top-aligned under a sidewalk and bottom-aligned above one.
-     - Also top/bottom-aligned. Order of rows matters visually.
-     ───────────────────────────────────────────────────────── */
+       BUILDINGS_2B (Act 2b — rally, taller buildings with bottom border)
+       Used by: a2bGenRow().
+       Constraints:
+       - Same `size` tiers as buildings above (6, 9, 13).
+       - Art CAN (hehe) include a bottom border row (like ╰─────╯) since these
+         are top-aligned under a sidewalk and bottom-aligned above one.
+       - Also top/bottom-aligned. Order of rows matters visually.
+       ───────────────────────────────────────────────────────── */
   buildings2b: [
     {
       name: "Van Horne Underpass",
@@ -74,39 +74,47 @@ window.GAME_DATA = {
   ],
 
   /* ─────────────────────────────────────────────────────────
-     FOODS (Act 4 grocery items + Act 5 fridge)
-     Used by: s4GenBookcases() item generation, Act 5 fridge display.
-     Constraints:
-     - `n` = name shown in +$ popup. Keep short (<8 chars) for HUD fit.
-     - `p` = price in dollars. Tuned for Montreal 2026 prices.
-     - `a` = art, MUST fit in S4_SLOT_W (currently 9) minus 2 padding = 7 chars wide.
-       If I widen art, check S4_SLOT_W and S4_BC_W in main script.
-     - Art height is typically 3–4 rows. Rows stack up from shelf baseline.
-     - items picked randomly for each shelf slot.
-     ───────────────────────────────────────────────────────── */
+       FOODS (Act 4 grocery items + Act 5 fridge)
+       Used by: s4GenBookcases() item generation, Act 5 fridge display.
+       Constraints:
+       - `n` = name shown in +$ popup. Keep short (<8 chars) for HUD fit.
+       - `p` = price in Montreal 2026 piaces
+       - `a` = art, MUST fit in S4_SLOT_W (currently 9) minus 2 padding = 7 chars wide.
+         If I widen art, check S4_SLOT_W and S4_BC_W in main script.
+       - Art height is typically 3–4 rows. Rows stack up from shelf baseline.
+       - items picked randomly for each shelf slot.
+       ───────────────────────────────────────────────────────── */
   foods: [
-    { n: "Bread", p: 4, a: [" .----.", "/~~~~\\", "|~~~~|", "\\___ /"] },
-    { n: "Cereal", p: 7, a: ["| OATZ |", "|  OO  |", "|_____|"] },
-    { n: "Oats", p: 5, a: ["  _||_ ", "| OATZ|", "| 3.5%|", "|_____|"] },
-    { n: "Soup", p: 3, a: ["| SOUPE|", "| MAISO|", "'-----'"] },
-    { n: "Pasta", p: 3, a: ["| PENNE|", "| //// |", "|_____|"] },
-    { n: "Beans", p: 9, a: ["| BEANS|", "| Oo oO|", "'-----'"] },
-    { n: "Marg", p: 6, a: ["|MARG|", "| ==== |", "'-----'"] },
+    { n: "bread", p: 4, a: [" .----.", "/~~~~\\", "|~~~~|", "\\___ /"] },
+    { n: "cereal", p: 7, a: ["| OATZ |", "|  OO  |", "|_____|"] },
+    { n: "oats", p: 5, a: ["  _||_ ", "| OATZ|", "| 3.5%|", "|_____|"],},
+    { n: "soup", p: 3, a: ["| SOUPE|", "| MAISO|", "'-----'"] },
+    { n: "pasta", p: 3, a: ["| PENNE|", "| //// |", "|_____|"] },
+    { n: "beans", p: 2, a: ["| BEANS|", "| Oo oO|", "'-----'"] },
+    { n: "chocolate", p: 6, a: ["|CHOC|", "| ==== |", "'-----'"] },
     { n: "Tofu", p: 5, a: ["|TOFU|", "| /\\_ |", "'-----'"] },
-    { n: "Nutz", p: 8, a: [" /\\ /\\", "|NUTz|", " \\___/"] },
-    { n: "Juice", p: 5, a: ["| JUS  |", "|D'ORAN|", "'-----'"] },
-    { n: "Tofu2", p: 5, a: ["| TOFU |", "| [==] |", "'-----'"] },
+    { n: "nutz", p: 8, a: [" /\\ /\\", "|NUTz|", " \\___/"] },
+    { n: "juice", p: 5, a: ["| JUS  |", "|D'ORAN|", "'-----'"] },
+    { n: "tofu2", p: 5, a: ["| TOFU |", "| [==] |", "'-----'"] },
+    { n: "tangerines", p: 5, a: ["╭◤☉☉◎◥╮", "│☉◎☉☉☉│", "│◎☉◎◎☉│", "╰─────╯"] },
+    { n: "flour", p: 5, a: ["  ⤹ ⤵", " ❱❱✘❰❰", " ❰❱▫❰❱", " ❰❰❰❱❱"] },
+    { n: "cereal", p: 6, a: [" ╭───╮", " │‡‡‡│", " │╮‡╭┤", " ╰┴─┴╯"] },
+    { n: "seitan", p: 5, a: ["∏∏∏∏∏∏∏", "∏∏∇∇∇∏∏", "∏∏∆∆∆∏∏", "∏∏∏∏∏∏∏"] },
+    { n: "vinegar", p: 3, a: [")∏( )∏(", ")□( )□(", ")□( )□(", ")_( )_("] },
+    { n: "cherries", p: 7, a: ["   ⊛", "  ⊙⊙⊙", " ⊙⊛⊙⊛⊙", "⊛⊙⊛⊙⊛⊙⊛"] },
+    { n: "salt", p: 3, a: ["", " ∑∑∑∏∏", " ∑∑∑∏∏", ">>><<<<"] },
+    { n: "chickpeas", p: 2, a: ["[]]]]]=", "[] []]=", "[] []]=", "[]]]]]="] },
   ],
 
   /* ─────────────────────────────────────────────────────────
-     STORE (Act 2b + Act 3 — the Metro grocery store)
-     Used by: renderAct2b, renderAct3.
-     Constraints:
-     - Width MUST be consistent across all rows (currently 30).
-     - Height 9 rows. If I change height, check STO_H references in main.
-     - If width changes, STO_W constant in main script auto-updates
-       (it reads STORE[0].length), so safe to resize horizontally.
-     ───────────────────────────────────────────────────────── */
+       STORE (Act 2b + Act 3 — the Metro grocery store)
+       Used by: renderAct2b, renderAct3.
+       Constraints:
+       - Width MUST be consistent across all rows (currently 30).
+       - Height 9 rows. If I change height, check STO_H references in main.
+       - If width changes, STO_W constant in main script auto-updates
+         (it reads STORE[0].length), so safe to resize horizontally.
+       ───────────────────────────────────────────────────────── */
   storeArt: [
     ".============================.",
     "|  M E T R O   G R O C E R Y |",
@@ -120,19 +128,19 @@ window.GAME_DATA = {
   ],
 
   /* ─────────────────────────────────────────────────────────
-     FRIDGE (Act 5 — community fridge)
-     Used by: renderAct5.
-     Constraints:
-     - Width must be consistent (currently 23).
-     - Current layout has 4 "slots" in 2x2 grid for food.
-     - Act 5 logic draws crew item names inside at specific offsets —
-       if I change interior layout, check the item-drawing code in
-       renderAct5 (the `fx + 2 + col * colW` / `fy + 5 + row * 2` lines).
-     ───────────────────────────────────────────────────────── */
+       FRIDGE (Act 5 — community fridge)
+       Used by: renderAct5.
+       Constraints:
+       - Width must be consistent (currently 23).
+       - Current layout has 4 "slots" in 2x2 grid for food.
+       - Act 5 logic draws crew item names inside at specific offsets —
+         if I change interior layout, check the item-drawing code in
+         renderAct5 (the `fx + 2 + col * colW` / `fy + 5 + row * 2` lines).
+       ───────────────────────────────────────────────────────── */
   /* Structure drawn dynamically in renderAct5 — this is just the frame.
-     Food from GAME_DATA.foods is drawn into slots.
-     Width = 37 chars. If I resize, also update the slot-layout math in renderAct5
-     (fridgeW, slotsPerShelf, shelfTop/shelfBot row numbers). */
+       Food from GAME_DATA.foods is drawn into slots.
+       Width = 37 chars. If I resize, also update the slot-layout math in renderAct5
+       (fridgeW, slotsPerShelf, shelfTop/shelfBot row numbers). */
   fridgeArt: [
     "╔═══════════════════════════════════╗",
     "║  ❄  COMMUNITY  FRIDGE  ❄          ║",
@@ -155,15 +163,15 @@ window.GAME_DATA = {
   ],
 
   /* ─────────────────────────────────────────────────────────
-     CHARACTER ART (player + NPCs)
-     Used throughout all acts.
-     Constraints:
-     - All sprites are EXACTLY 2 rows tall, 1 char wide.
-     - If I change height, check collision math (abs y-diff checks).
-     - Order matters: A2_PA has [idle, step] animation frames.
-     - npcArts: pool for ambient NPCs. Randomly picked.
-     - npcColors: pool for NPC colors. Randomly picked (except narcs).
-     ───────────────────────────────────────────────────────── */
+       CHARACTER ART (player + NPCs)
+       Used throughout all acts.
+       Constraints:
+       - All sprites are EXACTLY 2 rows tall, 1 char wide.
+       - If I change height, check collision math (abs y-diff checks).
+       - Order matters: A2_PA has [idle, step] animation frames.
+       - npcArts: pool for ambient NPCs. Randomly picked.
+       - npcColors: pool for NPC colors. Randomly picked (except narcs).
+       ───────────────────────────────────────────────────────── */
   playerArt: [
     ["@", "Ħ"] /* frame 0: idle */,
     ["@", "Ħ"] /* frame 1: step (currently same — add variation here) */,
@@ -184,22 +192,22 @@ window.GAME_DATA = {
   npcColors: ["#0ff", "#f0f", "#ff0", "#0f8", "#f80", "#8f0", "#80f", "#f08", "#08f"],
 
   /* ─────────────────────────────────────────────────────────
-     NARRATIVE QUOTES (Act 1 transition banners)
-     Used by: Act 1 end sequence (NQ array).
-     Constraints:
-     - `t` = banner text, `c` = color, `d` = duration ms.
-     - Ordering matters — shown in sequence.
-     ───────────────────────────────────────────────────────── */
+       NARRATIVE QUOTES (Act 1 transition banners)
+       Used by: Act 1 end sequence (NQ array).
+       Constraints:
+       - `t` = banner text, `c` = color, `d` = duration ms.
+       - Ordering matters — shown in sequence.
+       ───────────────────────────────────────────────────────── */
   /* Act 1 → Act 2 narrative. Ordering matters.
-     Entries with pause:true are silent beats (no banner, just delay). */
+       Entries with pause:true are silent beats (no banner, just delay). */
   narrativeQuotes: [
     { t: "someone had an idea...", c: "#bf8c60", d: 2500 },
     { pause: true, d: 800 },
-    { t: "or maybe we all had the idea?", c: "#db7f30", d: 2500 },
+    { t: "or maybe we all had the idea", c: "#db7f30", d: 2500 },
     { pause: true, d: 1000 },
     { t: "what if we went to the store and took what we need?", c: "#f26507", d: 3000 },
     { pause: true, d: 600 },
-    { t: "TIME TO BUILD A CREW.", c: "#8957ff", d: 2500 },
+    { t: "TIME TO BUILD A CREW", c: "#8957ff", d: 2500 },
   ],
 }; /* ── DIALOGUE POOLS ────────────────────────────────────── */
 // ambient player chatter
@@ -269,7 +277,7 @@ const D_HUNGRY_HELLO = [
   "nothing in the fridge again tonight. nobody should go hungry.",
   "I feel ashamed of being poor, like I should hide it",
   "you seen the price of bread lately?",
-    "I used to eat three meals a day.",
+  "I used to eat three meals a day.",
   "$6 for tofu. Can you believe it?",
   "I can't afford to live. Can you?",
   "I'm not keeping it together, I'm too hungry to think",
@@ -288,7 +296,7 @@ const D_ANGRY_PITCH = [
   "they're getting richer while we starve.",
   "record profits should mean there's plenty to go around.",
   "did you know that grocery profits are up 40%?",
-      "record corporate profits, record food bank lines.",
+  "record corporate profits, record food bank lines.",
   "they're getting richer while we starve.",
 ];
 // player makes 1st pitch
@@ -320,7 +328,7 @@ const D_INVITE = [
   "come with us?",
   "Isn't it time to push back?",
   "let's change it?",
-//   "we're not taking it anymore.",
+  //   "we're not taking it anymore.",
   "tonight we rise up.",
 ];
 
