@@ -505,8 +505,8 @@
 
         function convRender() {
           if (!convVisible || (convLog.length === 0 && !convChoices)) return;
-          const boxW = Math.min(W - 4, 32);
-          const innerW = boxW - 4;
+          //dialogue box narrower
+const boxW = Math.min(W - 8, 28);          const innerW = boxW - 4;
           // Measure total height first so we can anchor from the bottom
           const allBoxes = [];
           for (let i = 0; i < convLog.length; i++) {
@@ -622,7 +622,7 @@
                   }
                   linesCount += cLines.length + 1;
                 }
-                lineCol = choiceIdx === 0 ? "#c8a070" : "#8a9ab0";
+                lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convPlayerColor;
                 if (convChoiceHover === choiceIdx) lineCol = "#fff";
               }
               grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, lineCol);
@@ -646,8 +646,8 @@
         }
 
         function dialogRender() {
-          const maxBoxW = Math.min(Math.floor(W / 2) + 4, 34);
-          let nextY = H;
+          // Dialogue boxes narrower 
+const maxBoxW = Math.min(Math.floor(W / 2) + 2, 30);          let nextY = H;
           for (let i = dialogStack.length - 1; i >= 0; i--) {
             const d = dialogStack[i];
             const mxW = maxBoxW - 4;
@@ -831,7 +831,7 @@
               { who: "p", text: "someone should do something" },
               { who: "n", text: "stealing from a thief isn't stealing" },
               { who: "p", text: "what?" },
-              { who: "n", text: ";)" },
+              // { who: "n", text: ";)" },
             ],
           },
         ];
@@ -1580,22 +1580,13 @@
 
             // ── TP 13: show first pitch choices ──
             else if (a2TP === 13 && a2TT > 1000) {
-              const ack = a2TN.tp === "narc" ? Util.pick(D_ACK_NARC) : Util.pick(D_ACK_HUNGRY_ANGRY);
-              const invite = Util.pick(D_INVITE);
-
-              a2ChoiceLabels = [ack + " " + Util.pick(D_ANGRY_PITCH) + " " + invite, ack + " " + Util.pick(D_HUNGRY_PITCH) + " " + invite];
+              const prefix = a2TN.tp === "narc" ? Util.pick(D_ACK_NARC) + " " : "";
+              a2ChoiceLabels = [prefix + Util.pick(D_ANGRY_PITCH), prefix + Util.pick(D_HUNGRY_PITCH)];
               convShowChoices(a2ChoiceLabels);
               a2Choice = -1;
               a2TP = 1;
               a2TT = 0;
             }
-            // findme
-            // } else if (a2TP === 13 && a2TT > 1000) {
-            //     // Show choices
-            //     convShowChoices(a2ChoiceLabels);
-            //     a2TP = 1;
-            //     a2TT = 0;
-            //   }
 
             // ── TP 1: wait for first pitch choice ──
             else if (a2TP === 1 && a2TT > 800) {
@@ -1612,9 +1603,16 @@
                 audio.play("click");
                 convHideChoices();
                 convAddLine(a2ChoiceLabels[a2Choice], "you", convPlayerColor);
-                a2TP = 2;
+                a2TP = 15;
                 a2TT = 0;
               }
+            }
+
+            // ── TP 15: invite line after pitch, before NPC resolves ──
+            else if (a2TP === 15 && a2TT > 900) {
+              convAddLine(Util.pick(D_INVITE), "you", convPlayerColor);
+              a2TP = 2;
+              a2TT = 0;
             }
 
             // ── TP 2: resolve first pitch ──
@@ -1838,9 +1836,10 @@
             }
             a2SDT += dt;
             if (a2SDT > 1800 && a2SDT - dt <= 1800) {
-              showBanner("Time to rally the whole neighbourhood.", "#e8944a", 1800);
+              showBanner("Time to rally the whole neighbourhood. [ TAP ]", "#e8944a", 999999);
             }
-            if (a2SDT > 3400) {
+            if (a2SDT > 3400 && clickPending) {
+              clickPending = false;
               initAct2b();
             }
             return;
@@ -2475,10 +2474,12 @@
           const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
           grid.art(A2_PA[Math.floor(a3T / 250) % 2], dc, ly, plGlow);
           /* Robins on either side — use their preserved art + color */
+          const maxSlots = Math.max(1, Math.ceil(rc / 2));
+          const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
           for (let i = 0; i < rc; i++) {
             const side = i % 2 === 0 ? -1 : 1;
             const slot = Math.floor((i + 2) / 2);
-            const rx = dc + side * slot * 3;
+            const rx = dc + side * slot * spacing;
             const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
             const crewCol = (a2Crew[i] && a2Crew[i].col) || "#5cbdbd";
             if (rx >= 0 && rx + 3 < W && ly + 3 < H) grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
@@ -2703,7 +2704,7 @@
           }
 
           /* Exit appears after 8 seconds */
-          if (!s4ExitPinned && s4GT > 8) {
+          if (!s4ExitPinned && s4GT > 6) {
             s4ExitPinned = true;
             audio.play("exit");
             showBanner("EXIT OPEN \u2014 BOTTOM RIGHT!", "#5cbdbd", 3000);

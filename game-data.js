@@ -860,6 +860,7 @@ const D_AMB_ANGRY = [
     "when did groceries become luxury",
     "we're getting robbed legally",
     "I used to budget. now I triage",
+    "we pay more so they can profit more",
 ];
 
 // ambient chatter from npc narcs while they wander
@@ -888,6 +889,12 @@ const D_AMB = [
     "I went for groceries, left with trauma",
     "the beep at checkout hurts more each time",
     "I don't check prices, they check me",
+
+    "metro and provigo, same story different sign",
+    "maxi's cheaper until it isn't",
+    "iga if you're feeling rich",
+    "super c if you're lucky",
+    "segals is the only break I get",
 ];
 
 //  player is greeting the npc
@@ -926,6 +933,26 @@ const D_ANGRY_HELLO = [
     "they lock the dumpsters so we can't even take the waste",
     "record profits, record food bank lines",
     "food banks have waiting lists. waiting lists",
+    "three companies run the whole aisle",
+    "loblaws alone controls almost a third of this",
+    "47% markup at grocery stores. forty-seven!!",
+    "they're making billions while we cut meals",
+    "$100 billion in sales and we're still hungry",
+    "they cleared $3.6 billion in profit in one year",
+    "competition bureau says it's concentrated. no kidding",
+    "we would've saved $18 billion if they didn't jack it",
+    "loblaws made $61 billion and you're telling me bread is $6?",
+    "47% markup and we're supposed to smile?",
+    "they made billions during a crisis",
+    "three companies control most of the food in this country",
+
+    "oligopoly, but make it groceries",
+    "three CEOs, millions of empty fridges",
+    "they optimized profit, not hunger",
+    "free market, captive customers",
+    "competition died in aisle 5",
+    "price fixing without the meeting",
+    "same cartel, different flyer",
 ];
 
 // NPC is saying their first line of dialgue to the player.
@@ -944,6 +971,9 @@ const D_HUNGRY_HELLO = [
     "I can't afford to live. Can you?",
     "I'm not keeping it together, I'm too hungry to think",
     "I eat before I grocery shop so I don't cry in aisle 3",
+
+    "I make do with food flavored experiences",
+    "Well, I'm functionally fasting",
 ];
 
 // player makes 1st pitch to an angry npc, trying to get them onside.
@@ -972,12 +1002,12 @@ const D_HUNGRY_PITCH = [
     "what if we didn't need to worry about food anymore?",
     "no one should go hungry.",
     "the shelves are full, our fridges are empty.",
-    "they locked the dumpsters now",
+    "they lock the dumpsters now.",
     "they throw good food in the dumpsters",
     "when did feeding your family become a luxury?",
-    "bread is SIX dollars",
-    "somebody's eating good and it's not us",
-    "they waste it, we need it. simple",
+    "bread is SIX dollars.",
+    "somebody's eating good and it's not us.",
+    "they waste it, we need it. simple.",
 ];
 
 // comes after one the pitckes above, needs to be short and an invitation
@@ -1006,8 +1036,13 @@ const D_STRONGER_PITCH = [
     "what if we didn't have to worry about food anymore?",
     "we're doing something about that. want in?",
     "come with us. we're fixing this tonight.",
-    "we're paying 27.1% more for groceries than in in 2020",
+    "we're paying 27.1% more for groceries than in 2020",
     "we're not stealing. we're correcting a theft",
+
+    "three companies control the food. tonight we take some back",
+    "they made $3.6 billion in profit. we're taking some groceries",
+    "47% markup. that's what we're up against",
+    "they turned a crisis into profit. we're just turning it back",
 ];
 
 // npc feels misunderstood and starts to back away
