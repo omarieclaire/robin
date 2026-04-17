@@ -205,7 +205,7 @@
       #overlay button:hover {
         background: var(--c-accent);
         color: #fff;
-        box-shadow: 0 0 24px rgba(137, 87, 255, 0.5);
+        /* box-shadow: 0 0 24px rgba(137, 87, 255, 0.5); */
         transform: scale(1.03);
       }
       #overlay .hint {
@@ -335,6 +335,7 @@
             this.text(s, Math.floor((this.w - s.length) / 2), y, co);
           }
           art(a, px, py, co) {
+            if (!Array.isArray(a)) { console.warn("Grid.art: undefined art passed from", new Error().stack.split("\n")[2]); return; }
             px = Math.round(px);
             py = Math.round(py);
             a.forEach((l, r) => {
@@ -401,17 +402,19 @@
         }
         function renderBanner() {
           if (bannerTimer <= 0) return;
-          const mxW = W - 6,
-            words = bannerText.split(" "),
-            lines = [];
-          let cur = "";
-          for (const w of words) {
-            if (cur.length + w.length + 1 > mxW) {
-              lines.push(cur);
-              cur = w;
-            } else cur = cur ? cur + " " + w : w;
+          const mxW = W - 6;
+          const lines = [];
+          for (const segment of bannerText.split("\n")) {
+            const words = segment.split(" ");
+            let cur = "";
+            for (const w of words) {
+              if (cur.length + w.length + 1 > mxW) {
+                lines.push(cur);
+                cur = w;
+              } else cur = cur ? cur + " " + w : w;
+            }
+            if (cur) lines.push(cur);
           }
-          if (cur) lines.push(cur);
           const tH = lines.length + 2,
             startY = Math.max(1, Math.floor(H / 6 - tH / 2));
           const boxW = Math.min(W, Math.max(...lines.map((l) => l.length)) + 8),
@@ -542,9 +545,11 @@
             }
             allBoxes.push({ lines: choiceLines, color: convPlayerColor, side: "you", isChoice: true });
           }
-          // Total height: each box = lines.length + 2 (top/bottom border)
-          let totalH = 2; // tails row + gap
-          for (const box of allBoxes) totalH += box.lines.length + 2;
+          // Total height: each box = top border + lines + bottom border + 1-row gap after.
+          // Subtract the trailing gap from the last box so we don't over-pad.
+          let totalH = 0;
+          for (const box of allBoxes) totalH += box.lines.length + 2 + 1;
+          totalH -= 1; // no gap after last box
           // Anchor: bottom of stack is just above the characters
           const charY = convAnchorY;
           const bottomY = charY - 1;
@@ -559,13 +564,27 @@
           const offset = Math.min(6, Math.floor(boxW / 4));
           const bxL = Util.clamp(bx - offset, 0, W - boxW);
           const bxR = Util.clamp(bx + offset, 0, W - boxW);
+        /* Clear each box's rectangle + 1 cell of padding on all sides.
+             Gaps between stacked boxes can still show background art where
+             adjacent paddings don't overlap. */
+          {
+            const padX = 1;
+            let cyClear = Math.max(0, topY);
+            for (const box of allBoxes) {
+              const xPos = box.side === "them" ? bxR : bxL;
+              const boxH = box.lines.length + 2;
+              const x0 = Math.max(0, xPos - padX);
+              const x1 = Math.min(W, xPos + boxW + padX);
+              for (let y = cyClear; y < cyClear + boxH && y < H; y++)
+                for (let x = x0; x < x1; x++)
+                  grid.set(x, y, " ", null);
+              cyClear += boxH + 1;
+            }
+          }
           let cy = Math.max(0, topY);
           for (const box of allBoxes) {
             if (cy + box.lines.length + 2 > H) break;
             const xPos = box.side === "them" ? bxR : bxL;
-            // Clear behind this box
-            for (let y = cy; y < cy + box.lines.length + 2 && y < H; y++)
-              for (let x = xPos; x < xPos + boxW && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
             if (box.isChoice) {
               convChoiceY1 = cy;
               convChoiceBX = xPos;
@@ -665,6 +684,8 @@
             // Clear background behind box
             for (let y = by; y < by + boxH && y < H; y++) for (let x = bx; x < bx + boxW && x < W; x++) grid.set(x, y, " ", null);
             grid.text(DIALOG_BOX.tl + DIALOG_BOX.h.repeat(boxW - 2) + DIALOG_BOX.tr, bx, by, d.color);
+
+            
             for (let j = 0; j < lines.length; j++) {
               grid.text(DIALOG_BOX.v + " ".repeat(boxW - 2) + DIALOG_BOX.v, bx, by + 1 + j, d.color);
               grid.text(lines[j], bx + 2, by + 1 + j, d.color);
@@ -1047,11 +1068,11 @@
           } else if (a1St === "enc") {
             /* Array-of-turns encounter engine using conv panel */
             a1ST2 += dt;
-            // Update conv anchors as camera moves
+            // Update conv anchors X as camera moves, but freeze Y once set
             if (convVisible && a1EncNPC) {
               convAnchorPX = psx;
               convAnchorNX = a1EncNPC.x - ox;
-              convAnchorY = psy;
+              if (!convVisible || convLog.length === 0) convAnchorY = psy;
             }
             const e = A1E[a1EI];
             const turns = e.turns;
@@ -1296,6 +1317,12 @@
 
         const A2_MIN = 3,
           A2_MH = 3;
+        /* Time-based lose condition for Act 2.
+           If the player takes too long to recruit A2_MIN robins, they lose.
+           A2_TIME_LIMIT_MS = total ms allowed in Act 2 before failure.
+           A2_TIME_WARN_MS = ms at which the warning banner appears. */
+        const A2_TIME_LIMIT_MS = 50000; /* 50 seconds  */
+        const A2_TIME_WARN_MS = 30000;  /* 30 seconds  */
         const BUILDINGS = window.GAME_DATA.buildings;
         function tileBuildings(blockW) {
           const pieces = [];
@@ -1338,6 +1365,7 @@
         let a2SV, a2SW, a2SD, a2SDT;
         let a2Gen;
         let a2HudFlashT, a2HudFlashMsg; // HUD flash
+        let a2TimeWarned; // has the "too slow" warning fired yet?
 
         function a2Layout() {
           /* City grid: alternating building-row / street-row.
@@ -1471,6 +1499,7 @@
           a2Gen = 0;
           a2HudFlashT = 0;
           a2HudFlashMsg = "";
+          a2TimeWarned = false;
           a2PRu = Math.max(0, A2_NUM_LANES - 2);
           a2PX = Math.floor(W / 2);
           a2PY = a2RuY(a2PRu) + Math.floor(A2_RU_H / 2);
@@ -1616,9 +1645,11 @@
                 }
                 a2TT = 0;
               } else {
-                // Mismatch — NPC exits quietly
-                convAddLine(Util.pick(D_MISMATCH), "them", convNPCColor);
-                a2TP = 30;
+                // Mismatch — both lines merge into one box
+                console.log("connect");
+                
+                convAddLine(Util.pick(D_MISMATCH) + " " + Util.pick(D_NO_BYE), "them", convNPCColor);
+                a2TP = 7;
                 a2TT = 0;
               }
             }
@@ -1703,13 +1734,12 @@
                 a2TT = 0;
               }
             }
-
-            // ── TP 30: mismatch — NPC adds noBye then leaves ──
-            else if (a2TP === 30 && a2TT > 1000) {
-              convAddLine(Util.pick(D_NO_BYE), "them", convNPCColor);
-              a2TP = 7;
-              a2TT = 0;
-            }
+// ── TP 30: mismatch — NPC adds noBye then leaves ──
+            // else if (a2TP === 30 && a2TT > 800) {
+            //   convAddLine(Util.pick(D_NO_BYE), "them", convNPCColor);
+            //   a2TP = 7;
+            //   a2TT = 0;
+            // }
 
             // ── TP 7: NPC declined, close conv ──
             else if (a2TP === 7 && a2TT > 2000) {
@@ -1899,7 +1929,7 @@
             }
           }
           // Collision with NPCs — 1s grace period at start
-          if (a2TalkCD <= 0 && a2T > 1000) {
+          if (a2TalkCD <= 0 && a2T > 1000 && !convVisible) {
             const pwx = a2WX + a2PX;
             for (const n of a2NPCs) {
               if (n.st !== "idle") continue;
@@ -1917,6 +1947,18 @@
             }
           }
 
+          /* Time-based lose: only applies if you haven't yet reached the store transition */
+          if (!a2SV) {
+            if (!a2TimeWarned && a2T > A2_TIME_WARN_MS) {
+              a2TimeWarned = true;
+              showBanner("Cops are circling. Wrap it up.", "#da0", 3000);
+            }
+            if (a2T > A2_TIME_LIMIT_MS) {
+              endGame("busted");
+              return;
+            }
+          }
+
           hudLabel.textContent = "CREW";
           /* Flash HUD on recruit */
           if (a2HudFlashT > 0) {
@@ -1927,10 +1969,13 @@
             hudScore.style.color = "#c33";
           }
           if (a2SV) hudStatus.textContent = "Store: " + Math.max(0, Math.floor((a2SW - a2WX) / 3)) + "m";
-          else if (a2CrewCount < A2_MIN) hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " more robins";
+          else if (a2CrewCount < A2_MIN) {
+            const timeLeft = Math.max(0, Math.floor((A2_TIME_LIMIT_MS - a2T) / 1000));
+            hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " | " + timeLeft + "s";
+          }
           else hudStatus.textContent = "Keep going!";
           if (a2Ht > 0) hudStatus.textContent += " | HEAT:" + a2Ht + "/" + A2_MH;
-          hudStatus.style.color = a2Ht >= 2 ? "#c33" : "#2a7a2a";
+          hudStatus.style.color = (a2Ht >= 2 || (a2TimeWarned && !a2SV)) ? "#c33" : "#2a7a2a";
         }
 
         function renderAct2() {
@@ -2362,10 +2407,10 @@
           }
 
           /* ── Heat indicator ── */
-          if (a2bHt > 0) {
-            grid.text("HEAT", W - 6, A2B_ROAD_Y1 + 1, "#c33");
-            for (let i = 0; i < a2bHt; i++) grid.set(W - 1 - i, A2B_ROAD_Y1 + 1, "!", "#c33");
-          }
+          // if (a2bHt > 0) {
+          //   grid.text("HEAT", W - 6, A2B_ROAD_Y1 + 1, "#c33");
+          //   for (let i = 0; i < a2bHt; i++) grid.set(W - 1 - i, A2B_ROAD_Y1 + 1, "!", "#c33");
+          // }
 
           /* ── Store at far right — in the middle of the road ── */
           if (a2bWX > a2bStoreX - W - 20) {
@@ -2560,11 +2605,27 @@
             });
           }
 
-          /* Robin grab timer */
-          tmr.every(1800 + Math.random() * 1500, () => {
+          /* Robin grab timer — fires frequently, grabs real or imaginary items */
+          tmr.every(500 + Math.random() * 600, () => {
             if (s4Alys.length === 0) return;
-            /* Find an ungrabbed item near the robins (behind the player) */
+            /* Only grab if enough robins */
+            if (Math.random() > 0.3 + s4Alys.length * 0.1) return;
             const robinWX = s4WX + s4PX2 - 8;
+            /* 40% chance: invent an offscreen item */
+            if (Math.random() < 0.4) {
+              const food = Util.pick(FOODS);
+              s4AlyScore += food.p;
+              s4RobinFloats.push({
+                text: "+$" + food.p,
+                x: Math.round(s4PX2 - Util.randInt(4, 10)),
+                y: S4_AISLE_TOP - 1,
+                life: 1200,
+                max: 1200,
+                col: "#5cbdbd",
+              });
+              return;
+            }
+            /* Otherwise find a real ungrabbed item in a wide radius */
             let best = null,
               bestD = 999,
               bestWX = 0;
@@ -2573,7 +2634,7 @@
                 if (it.grabbed) continue;
                 const itWX = bc.wx + 1 + it.col * S4_SLOT_W;
                 const d = Math.abs(itWX - robinWX);
-                if (d < 15 && d < bestD) {
+                if (d < 60 && d < bestD) {
                   bestD = d;
                   best = it;
                   bestWX = itWX;
@@ -2624,7 +2685,8 @@
         function updateAct4(dt) {
           tmr.update(dt);
           s4GT += dt / 1000;
-          s4Ug = Math.min(1, s4Ug + (s4UR * dt) / 1000);
+          //shorter levell
+          s4Ug = Math.min(1, s4Ug + (s4UR * 1.6 * dt) / 1000);
           s4Sp = 0.006 + s4Ug * 0.008;
           updateBanner(dt);
 
@@ -2850,14 +2912,12 @@
             const exSX = s4ExitScreenX;
             const fl = Math.sin(Date.now() / 300) > 0 ? "#5cbdbd" : "#3a9a8a";
             /* Door gap in floor line */
-            for (let x = exSX - 5; x <= exSX + 5; x++) {
+            for (let x = exSX - 7; x <= exSX + 7; x++) {
               if (x >= 0 && x < W) grid.set(x, S4_FLOOR_Y, " ", null);
             }
-            if (exSX - 6 >= 0) grid.set(exSX - 6, S4_FLOOR_Y, "\u2551", fl);
-            if (exSX + 6 < W) grid.set(exSX + 6, S4_FLOOR_Y, "\u2551", fl);
-            grid.text("[ EXIT ]", Util.clamp(exSX - 4, 0, W - 8), S4_FLOOR_Y, fl);
-            /* Arrow above exit in the aisle */
-            grid.text("\u25BC EXIT \u25BC", Util.clamp(exSX - 5, 0, W - 10), S4_AISLE_BOT, fl);
+            if (exSX - 8 >= 0) grid.set(exSX - 8, S4_FLOOR_Y, "\u2551", "#c44");
+            if (exSX + 8 < W) grid.set(exSX + 8, S4_FLOOR_Y, "\u2551", "#c44");
+            grid.text("[ >> EXIT >> ]", Util.clamp(exSX - 7, 0, W - 14), S4_FLOOR_Y, "#c44");
           }
 
           /* ── Urgency border flash ── */
@@ -3197,7 +3257,7 @@
           if (result === "busted") {
             color = "#c33";
             title = "BUSTED!";
-            sub = "Too many narcs. The cops came.";
+            sub = "you just got too tired of talking to people";
           } else {
             color = "#c33";
             title = tot > 0 ? "CAUGHT!" : "CAUGHT EMPTY";
@@ -3307,11 +3367,11 @@
             if (playful) {
               /* Stable per-float position jitter — set once on first render */
               if (f.jx === undefined) {
-                f.jx = Math.floor((Math.random() - 0.5) * (W - bw - 4));
-                f.jy = Math.floor((Math.random() - 0.5) * 6);
+               f.jx = Math.floor((Math.random() - 0.5) * 8);
+              f.jy = Math.floor((Math.random() - 0.5) * 3);
               }
-              bx = Util.clamp(Math.floor((W - bw) / 2) + f.jx, 1, W - bw - 1);
-              by = Util.clamp(floatBaseY + f.jy, 1, H - bh - 1);
+              bx = Util.clamp(Math.floor((W - bw) / 2) + f.jx, Math.floor(W/4), Math.floor(W*3/4) - bw);
+              by = Util.clamp(floatBaseY + f.jy, floatBaseY - 3, floatBaseY + 3);
             } else {
               bx = Math.floor((W - bw) / 2);
               const stackOff = fi * (bh + 1);
@@ -3352,7 +3412,7 @@
           // hasPlayed is set to true when the player reaches Act 2
         }
         ovTitle.textContent = "ROBIN  DES RUELLES";
-        ovSub.innerHTML = "Walk around. Bump into people. Talk to neighbours. Who knows what might happen?<br><br>";
+        ovSub.innerHTML = "walk around. Bump into people. Talk to neighbours. Who knows what might happen?<br><br>";
         ovHint.innerHTML =
           '\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br><span style="color:#aaa">A game about feeding our neighbours</span>';
         startBtn.textContent = "PLAY";
