@@ -335,7 +335,7 @@
         muteBtn.addEventListener("click", () => {
           const muted = audio.toggleMute();
           muteBtn.textContent = muted ? "muted" : "mute";
-          muteBtn.style.color = muted ? "#444" : "#888";
+          muteBtn.style.color = muted ? "#444" : C_DIM;
         });
 
         const audio = new Audio_({ basePath: "sounds/", poolSize: 8, volume: 0.7 });
@@ -463,8 +463,16 @@
         const CONV_BOX = { tl: "\u2554", tr: "\u2557", bl: "\u255A", br: "\u255D", h: "\u2550", v: "\u2551" };
         /* DIALOG: light single-lines — quiet, ambient */
         const DIALOG_BOX = { tl: "\u256D", tr: "\u256E", bl: "\u2570", br: "\u256F", h: "\u2500", v: "\u2502" };
-        /* Main character color  */
-        const C_PLAYER = "#b291ff";
+        /* Main character color COLOURS */
+        const C_PLAYER = "#f5a032";
+        const C_DANGER = "#c44"; // narcs, heat, bust, security
+        const C_TEAL = "#5cbdbd"; // crew, fridge, info, success moments
+        const C_ORANGE = "e8944a"; // rally banners, CTA accent
+        const C_WARN = "#da0"; // urgency warnings
+        const C_SUCCESS = "#2a7a2a"; // HUD status green
+        const C_DIM = "#888"; // muted text, tap prompts
+        const C_MID = "#aaa"; // medium text
+
         const state = new State({ score: 0 });
         const tmr = new Timer();
         input.mapActions({ left: ["ArrowLeft", "a"], right: ["ArrowRight", "d"], up: ["ArrowUp", "w"], down: ["ArrowDown", "s"] });
@@ -582,7 +590,7 @@
         let convLog = [];
         let convChoices = null;
         let convPlayerColor = C_PLAYER;
-        let convNPCColor = "#888";
+        let convNPCColor = C_DIM;
         let convVisible = false;
         let convAnchorPX = 0;
         let convAnchorNX = 10;
@@ -702,7 +710,8 @@
               const x0 = Math.max(0, xPos - padX);
               const x1 = Math.min(W, xPos + boxW + padX);
               for (let y = cyClear; y < cyClear + boxH && y < H; y++) for (let x = x0; x < x1; x++) grid.set(x, y, " ", null);
-              cyClear += boxH + 1;
+              // cyClear += boxH + 1;
+              cyClear += boxH;
             }
           }
           let cy = Math.max(0, topY);
@@ -928,37 +937,66 @@
         let a1PX, a1PY, a1CX, a1CY, a1T, a1St, a1NPCs, a1Amb, a1AmbNPCs, a1StartX, a1StartY;
         let a1EncNPC, a1EI, a1ES, a1ST2;
         let a1Path, a1PI, a1PA, a1NP;
-        let a1IdleTimer; // for auto-advance on inactivity
+        let a1IdleTimer, a1LoopCount; // for auto-advance on inactivity
         let a1DescPath, a1DescPI; // for road-following descent
         let a1PauseT; // for silent pauses between narrative banners
         const A1_PSX_RATIO = 0.5,
           A1_PSY_RATIO = 0.55;
 
         /* Array-of-turns encounter format */
-        const A1E = [
-          {
-            turns: [
-              { who: "p", text: "when did bread get so expensive?" },
-              { who: "n", text: "I use a coupon app" },
-              { who: "n", text: "I can send you the link" },
-            ],
-          },
-          {
-            turns: [
-              { who: "p", text: "$12 for flour?" },
-              { who: "n", text: "yeah, and??" },
-              { who: "p", text: "we can't survive like this" },
-            ],
-          },
-          {
-            turns: [
-              { who: "p", text: "someone should do something" },
-              { who: "n", text: "stealing from a thief isn't stealing" },
-              { who: "p", text: "what?" },
-              // { who: "n", text: ";)" },
-            ],
-          },
-        ];
+       const A1E = [
+  {
+    turns: [
+      { who: "p", texts: [
+        "when did bread get so expensive?",
+        "câline, when did bread get so expensive?",
+        "ostie, when did bread get so darn expensive?",
+        "crisse, when did BREAD get so expensive??",
+        "CÂLICE. when did BREAD get this expensive??",
+      ]},
+      { who: "n", text: "I use a coupon app" },
+      { who: "n", text: "I'll send you the link" },
+    ],
+  },
+  {
+    turns: [
+      { who: "p", texts: [
+        "$12 for flour?",
+        "$12 for freaking flour??",
+        "ostie de... $12 for FLOUR?",
+        "crisse, TWELVE DOLLARS for flour??",
+        "CÂLICE. $12 for flour??!",
+      ]},
+      { who: "n", text: "yeah, and??" },
+      { who: "p", texts: [
+        "we can't survive like this",
+        "viarge, we can't keep living like this",
+        "ostie, we just CAN'T survive like this",
+        "CRISSE. nobody can survive like this",
+        "TABARNAK. nobody should have to survive like this",
+      ]},
+    ],
+  },
+  {
+    turns: [
+      { who: "p", texts: [
+        "someone should do something",
+        "câline, someone HAS to do something",
+        "ostie, somebody has to do something about this",
+        "CRISSE. somebody needs to do something",
+        "CÂLICE DE TABARNAK. someone has to do something",
+      ]},
+      { who: "n", text: "stealing from a thief isn't stealing" },
+      { who: "p", texts: [
+        "what?",
+        "...what?",
+        "ostie... what does that mean",
+        "câlice. what are you saying",
+        "TABARNAK. say that again",
+      ]},
+    ],
+  },
+]; 
         const NQ = window.GAME_DATA.narrativeQuotes;
         function initAct1() {
           audio.play("level");
@@ -1011,6 +1049,7 @@
           a1EncNPC = null;
           a1NP = 0;
           a1IdleTimer = 0;
+          a1LoopCount = 1;
           a1DescPath = null;
           a1DescPI = 0;
           a1PauseT = 0;
@@ -1106,6 +1145,7 @@
             if (a1ST2 > 3200) {
               a1St = "walk";
               a1ST2 = 0;
+              a1IdleTimer = 0;
             }
             return;
           }
@@ -1214,14 +1254,16 @@
                 const t = turns[0];
                 const side = t.who === "p" ? "you" : "them";
                 const col = t.who === "p" ? C_PLAYER : convNPCColor;
-                convAddLine(t.text, side, col);
+                const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
+                convAddLine(txt, side, col);
                 a1ES = 1;
                 a1ST2 = 0;
               } else if (a1ST2 > 1200) {
                 const t = turns[a1ES];
                 const side = t.who === "p" ? "you" : "them";
                 const col = t.who === "p" ? C_PLAYER : convNPCColor;
-                convAddLine(t.text, side, col);
+                const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
+                convAddLine(txt, side, col);
                 a1ES++;
                 a1ST2 = 0;
               }
@@ -1265,7 +1307,10 @@
                   a1NP = 1;
                 } else {
                   // "keep living like this"
-                  showBanner("nothing changes...", "#999", 2000, true);
+                  const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
+              console.log("loop #" + a1LoopCount, lm);
+              showBanner(lm.t, lm.c, 2000, true);
+              a1LoopCount++;
                   if (!a1StartX) {
                     a1StartX = a1Path[0].x;
                     a1StartY = a1Path[0].y;
@@ -1285,7 +1330,9 @@
             if (a1ST2 > 800) {
               if (input.justPressed("up")) {
                 convReset();
-                showBanner("nothing changes...", "#999", 2000, true);
+                const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
+                showBanner(lm.t, lm.c, 2000, true);
+                a1LoopCount++;
                 if (!a1StartX) {
                   a1StartX = a1Path[0].x;
                   a1StartY = a1Path[0].y;
@@ -1364,7 +1411,6 @@
               a1EncNPC = null;
               a1NP = 0;
               dialogStack = [];
-              bannerTimer = 0;
               a1Path = [
                 { x: a1PX, y: a1PY },
                 { x: a1NPCs[0].x - 2, y: a1NPCs[0].y },
@@ -1646,9 +1692,9 @@
           hudLabel.textContent = "CREW";
           hudScore.textContent = "0";
           hudStatus.textContent = "Tap \u25B2\u25BC to move!";
-          hudStatus.style.color = "#2a7a2a";
+          hudStatus.style.color = C_SUCCESS;
           bannerTimer = 0;
-          showBanner("recruit your crew", "#e8944a", 2500);
+          showBanner("recruit your crew", C_ORANGE, 2500);
         }
 
         function updateAct2(dt) {
@@ -1834,7 +1880,7 @@
                 }, 800);
               } else if (a2TN.tp === "narc") {
                 // Stronger pitch to narc — reveal
-                convAddLine(Util.pick(D_NARC_REVEAL), "them", "#c44");
+                convAddLine(Util.pick(D_NARC_REVEAL), "them", C_DANGER);
                 a2TP = 9;
                 a2TT = 0;
               } else {
@@ -1881,9 +1927,9 @@
               n.st = "rec";
               a2CrewCount++;
               audio.play("recruit");
-              spark(Math.round(a2PX), Math.round(a2PY), "#5cbdbd", 10);
+              spark(Math.round(a2PX), Math.round(a2PY), C_TEAL, 10);
               a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-              addFloat(Util.pick(["New Robin!", "They're in!", "Crew grows!"]), 0, 0, "#5cbdbd");
+              addFloat(Util.pick(["New Robin!", "They're in!", "Crew grows!"]), 0, 0, C_TEAL);
               a2TN.cd = 1000;
               a2TN = null;
               a2TalkCD = 500;
@@ -1897,12 +1943,12 @@
             else if (a2TP === 9 && a2TT > 2000) {
               const n = a2TN;
               n.st = "angry";
-              n.col = "#c33";
+              n.col = C_DANGER;
               a2Ht++;
               audio.play("narc");
-              spark(Math.round(a2PX), Math.round(a2PY), "#c44", 14);
+              spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
               triggerChromatic(500);
-              addFloat("That was a NARC!", 0, 0, "#c44");
+              addFloat("That was a NARC!", 0, 0, C_DANGER);
               if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
               a2TN.cd = 1000;
               a2TN = null;
@@ -1964,7 +2010,7 @@
             }
             a2SDT += dt;
             if (a2SDT > 3600 && a2SDT - dt <= 3600) {
-              showBanner("time to rally the whole neighbourhood", "#e8944a", 999999);
+              showBanner("time to rally the whole neighbourhood", C_ORANGE, 999999);
             }
             if (a2SDT > 5000 && clickPending) {
               clickPending = false;
@@ -2080,7 +2126,7 @@
           if (!a2SV) {
             if (!a2TimeWarned && a2T > A2_TIME_WARN_MS) {
               a2TimeWarned = true;
-              showBanner("Cops are circling. Wrap it up.", "#da0", 3000);
+              showBanner("Cops are circling. Wrap it up.", C_WARN, 3000);
             }
             if (a2T > A2_TIME_LIMIT_MS) {
               endGame("busted");
@@ -2092,10 +2138,10 @@
           /* Flash HUD on recruit */
           if (a2HudFlashT > 0) {
             hudScore.textContent = a2HudFlashMsg;
-            hudScore.style.color = "#2a2";
+            hudScore.style.color = C_SUCCESS;
           } else {
             hudScore.textContent = a2CrewCount;
-            hudScore.style.color = "#c33";
+            hudScore.style.color = C_DANGER;
           }
           if (a2SV) hudStatus.textContent = "Store: " + Math.max(0, Math.floor((a2SW - a2WX) / 3)) + "m";
           else if (a2CrewCount < A2_MIN) {
@@ -2103,7 +2149,7 @@
             hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " | " + timeLeft + "s";
           } else hudStatus.textContent = "Keep going!";
           if (a2Ht > 0) hudStatus.textContent += " | HEAT:" + a2Ht + "/" + A2_MH;
-          hudStatus.style.color = a2Ht >= 2 || (a2TimeWarned && !a2SV) ? "#c33" : "#2a7a2a";
+          hudStatus.style.color = a2Ht >= 2 || (a2TimeWarned && !a2SV) ? C_DANGER : C_SUCCESS;
         }
 
         function renderAct2() {
@@ -2151,7 +2197,7 @@
             const sx = Math.round(n.wx - a2WX),
               sy = a2NpcY(n);
             if (sx < -3 || sx > W + 3) continue;
-            let col = n.st === "angry" ? "#c44" : n.st === "done" ? "#333" : n.col;
+            let col = n.st === "angry" ? C_DANGER : n.st === "done" ? "#333" : n.col;
             /* Narcs don't fidget (stand still / stiff) */
             let fidget = 0;
             if (n.tp !== "narc" && n.st === "idle") fidget = Math.round(Math.sin(a2T / 400 + n.wx * 3) * 0.6);
@@ -2197,7 +2243,7 @@
           dialogRender();
           // Conversation panel (replaces old choice UI)
           convRender();
-          if (a2SD && a2SDT !== null && a2SDT > 4500) grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#666");
+          if (a2SD && a2SDT !== null && a2SDT > 4500) grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
           /* Heat is shown in the HUD — no in-game overlay needed */
           renderBanner();
         }
@@ -2313,11 +2359,11 @@
           a2bGenNPCs();
           dialogStack = [];
           bannerTimer = 0;
-          showBanner("rally the neighbourhood!\navoid narcs", "#e8944a", 3000);
+          showBanner("rally the neighbourhood!\navoid narcs", C_ORANGE, 3000);
           hudLabel.textContent = "CREW";
           hudScore.textContent = String(a2CrewCount);
           hudStatus.textContent = "";
-          hudStatus.style.color = "#2a7a2a";
+          hudStatus.style.color = C_SUCCESS;
         }
 
         function updateAct2b(dt) {
@@ -2363,10 +2409,10 @@
                   n.st = "narc";
                   audio.play("bump");
                   audio.play("narc");
-                  spark(Math.round(a2bPX), Math.round(a2bPY), "#c44", 12);
+                  spark(Math.round(a2bPX), Math.round(a2bPY), C_DANGER, 12);
                   triggerChromatic(450);
                   a2bHt++;
-                  addFloat(Util.pick(["NARC!", "NARC", "OOPS!"]), 0, 0, "#c33");
+                  addFloat(Util.pick(["NARC!", "NARC", "OOPS!"]), 0, 0, C_DANGER);
                   if (a2bHt >= A2B_MH) {
                     setTimeout(() => endGame("busted"), 1500);
                     return;
@@ -2403,14 +2449,14 @@
           if (a2bStoreX - a2bWX <= W - 4 && !a2bDone) {
             a2bDone = true;
             a2bSpd = 0;
-            showBanner(a2CrewCount + " robins. one store. let's eat.", "#5cbdbd", 999999);
+            showBanner(a2CrewCount + " robins. one store. let's eat.", C_TEAL, 999999);
             setTimeout(() => initAct3(), 1500);
           }
           /* HUD */
           hudScore.textContent = String(a2CrewCount);
           if (a2bHt > 0) {
             hudStatus.textContent = "HEAT: " + a2bHt + "/" + A2B_MH;
-            hudStatus.style.color = a2bHt >= 2 ? "#c33" : "#a80";
+            hudStatus.style.color = a2bHt >= 2 ? C_DANGER : "#a80";
           } else {
             hudStatus.textContent = "";
           }
@@ -2541,8 +2587,8 @@
 
           /* ── Heat indicator ── */
           // if (a2bHt > 0) {
-          //   grid.text("HEAT", W - 6, A2B_ROAD_Y1 + 1, "#c33");
-          //   for (let i = 0; i < a2bHt; i++) grid.set(W - 1 - i, A2B_ROAD_Y1 + 1, "!", "#c33");
+          //   grid.text("HEAT", W - 6, A2B_ROAD_Y1 + 1, C_DANGER);
+          //   for (let i = 0; i < a2bHt; i++) grid.set(W - 1 - i, A2B_ROAD_Y1 + 1, "!", C_DANGER);
           // }
 
           /* ── Store at far right — in the middle of the road ── */
@@ -2582,7 +2628,7 @@
           a3T = 0;
           bannerTimer = 0;
           dialogStack = [];
-          showBanner(a2CrewCount + " Robins. One store. Let's eat.", "#c33", 999999);
+          showBanner(a2CrewCount + " Robins. One store. Let's eat.", C_DANGER, 999999);
           hudLabel.textContent = "CREW";
           hudScore.textContent = a2CrewCount;
           hudStatus.textContent = "";
@@ -2628,10 +2674,10 @@
             const slot = Math.floor((i + 2) / 2);
             const rx = dc + side * slot * spacing;
             const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
-            const crewCol = (a2Crew[i] && a2Crew[i].col) || "#5cbdbd";
+            const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
             if (rx >= 0 && rx + 3 < W && ly + 3 < H) grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
           }
-          if (a3T > 1500) grid.textCenter("[ TAP TO ENTER ]", Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : "#888");
+          if (a3T > 1500) grid.textCenter("[ TAP TO ENTER ]", Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
           renderBanner();
         }
 
@@ -2639,7 +2685,7 @@
                ACT 4: THE HEIST — side-scrolling grocery grab
                ══════════════════════════════════════════════════════════ */
         const FOODS = window.GAME_DATA.foods;
-        const FC = ["#b90", "#a86", "#8a6", "#ca8", "#a97", "#c66", "#c44", "#c70", "#48a"];
+        const FC = ["#b90", "#a86", "#8a6", "#ca8", "#a97", "#c66", C_DANGER, "#c70", "#48a"];
         const S4_BC_W = 20,
           S4_SLOT_W = 9,
           S4_BC_GAP = -1;
@@ -2770,7 +2816,7 @@
                 y: S4_AISLE_TOP - 1,
                 life: 1200,
                 max: 1200,
-                col: "#5cbdbd",
+                col: C_TEAL,
               });
               return;
             }
@@ -2799,7 +2845,7 @@
                 y: S4_AISLE_TOP - 1,
                 life: 1200,
                 max: 1200,
-                col: "#5cbdbd",
+                col: C_TEAL,
               });
             }
           });
@@ -2817,16 +2863,16 @@
           hudScore.textContent = "$0";
           hudScore.style.color = C_PLAYER;
           hudStatus.textContent = "TAP FOOD TO GRAB!";
-          hudStatus.style.color = "#5cbdbd";
+          hudStatus.style.color = C_TEAL;
           showBanner("grab everything you can!", C_PLAYER, 2500);
         }
 
         const SU = [
-          { a: 0, h: "GRAB!", c: "#5cbdbd" },
+          { a: 0, h: "GRAB!", c: C_TEAL },
           { a: 0.15, h: "COPS CALLED", c: "#a80" },
-          { a: 0.35, h: "HURRY", c: "#da0" },
+          { a: 0.35, h: "HURRY", c: C_WARN },
           { a: 0.55, h: "CLOSE!", c: "#c60" },
-          { a: 0.75, h: "GET OUT!", c: "#c44" },
+          { a: 0.75, h: "GET OUT!", c: C_DANGER },
           { a: 0.9, h: "LAST CHANCE", c: "#a00" },
           { a: 1, h: "TOO LATE", c: "#800" },
         ];
@@ -2855,14 +2901,14 @@
           if (!s4ExitPinned && s4GT > 6) {
             s4ExitPinned = true;
             audio.play("exit");
-            showBanner("EXIT OPEN \u2014 BOTTOM RIGHT!", "#5cbdbd", 3000);
+            showBanner("EXIT OPEN \u2014 BOTTOM RIGHT!", C_TEAL, 3000);
           }
 
           /* Intercom */
           s4IT += dt;
           if (s4IT > 20000 && s4Ug > 0.1) {
             s4IT = 0;
-            showBanner(Util.pick(D_INTERCOM), "#c44", 2000, true);
+            showBanner(Util.pick(D_INTERCOM), C_DANGER, 2000, true);
           }
 
           /* Robin floats */
@@ -2947,11 +2993,11 @@
             if (s4St2 <= 0 && Math.abs(g.wx - worldPX) < 2 && Math.abs(g.wy - s4PY2) < 2) {
               audio.play("bump");
               audio.play("security");
-              spark(Math.round(s4PX2), Math.round(s4PY2), "#c44", 10);
+              spark(Math.round(s4PX2), Math.round(s4PY2), C_DANGER, 10);
               triggerChromatic(380);
               state.set("score", Math.max(0, state.get("score") - 20));
               s4St2 = 800;
-              showBanner("SECURITY GRABBED SOME FOOD! -$20", "#c44", 1000, true);
+              showBanner("SECURITY GRABBED SOME FOOD! -$20", C_DANGER, 1000, true);
             }
           }
           /* Spawn new guards periodically */
@@ -2968,7 +3014,7 @@
           hudLabel.textContent = "HAUL";
           hudScore.textContent = "$" + (my + s4AlyScore);
           hudStatus.textContent = "You $" + my + " + Crew $" + s4AlyScore;
-          hudStatus.style.color = s4Ug < 0.35 ? "#5cbdbd" : s4Ug < 0.7 ? "#da0" : "#c44";
+          hudStatus.style.color = s4Ug < 0.35 ? C_TEAL : s4Ug < 0.7 ? C_WARN : C_DANGER;
         }
         function renderAct4() {
           const ox = Math.floor(s4WX);
@@ -2977,7 +3023,7 @@
             const sx = Math.round(bc.wx - s4WX);
             if (sx + S4_BC_W < -1 || sx > W + 1) continue;
             const iW = S4_BC_W - 2;
-            grid.text("\u2554" + "\u2550".repeat(iW) + "\u2557", sx, S4_SHELF_TOP, "#888");
+            grid.text("\u2554" + "\u2550".repeat(iW) + "\u2557", sx, S4_SHELF_TOP, C_DIM);
             for (let row = 0; row < S4_SHELF_ROWS; row++) {
               const rY = S4_SHELF_TOP + 1 + row * S4_SHELF_ROW_H;
               const sY = rY + S4_SHELF_ROW_H - 1;
@@ -3014,7 +3060,7 @@
             const sx = Math.round(g.wx - s4WX),
               sy = Math.round(g.wy);
             if (sx < -3 || sx > W + 3) continue;
-            grid.art(["[S]", "/!\\"], sx, sy, "#c44");
+            grid.art(["[S]", "/!\\"], sx, sy, C_DANGER);
           }
 
           /* ── Robins trailing behind player — spread out, organic ── */
@@ -3032,7 +3078,7 @@
             if (rx >= 0 && rx < W && ry >= S4_AISLE_TOP && ry <= S4_AISLE_BOT) {
               const src = a2Crew[i];
               const rArt = (src && src.art) || A2_ROB;
-              const rCol = (src && src.col) || "#5cbdbd";
+              const rCol = (src && src.col) || C_TEAL;
               grid.art(rArt, rx, ry, rCol);
             }
           }
@@ -3050,7 +3096,7 @@
           /* ── Player ── */
           if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
             let pc = C_PLAYER;
-            if (s4Ug > 0.7) pc = Math.floor(Date.now() / 200) % 2 ? "#da0" : C_PLAYER;
+            if (s4Ug > 0.7) pc = Math.floor(Date.now() / 200) % 2 ? C_WARN : C_PLAYER;
             grid.art(A2_PA[Math.floor(s4GT * 4) % 2], Math.round(s4PX2), Math.round(s4PY2), pc);
           }
 
@@ -3062,27 +3108,27 @@
           /* ── EXIT — pinned to bottom-right of screen ── */
           if (s4ExitPinned) {
             const exSX = s4ExitScreenX;
-            const fl = Math.sin(Date.now() / 300) > 0 ? "#5cbdbd" : "#3a9a8a";
+            const fl = Math.sin(Date.now() / 300) > 0 ? C_TEAL : "#3a9a8a";
             /* Door gap in floor line */
             for (let x = exSX - 7; x <= exSX + 7; x++) {
               if (x >= 0 && x < W) grid.set(x, S4_FLOOR_Y, " ", null);
             }
-            // if (exSX - 8 >= 0) grid.set(exSX - 8, S4_FLOOR_Y, "\u2551", "#c44");
-            if (exSX + 8 < W) grid.set(exSX + 8, S4_FLOOR_Y, "\u2551", "#c44");
+            // if (exSX - 8 >= 0) grid.set(exSX - 8, S4_FLOOR_Y, "\u2551", C_DANGER);
+            if (exSX + 8 < W) grid.set(exSX + 8, S4_FLOOR_Y, "\u2551", C_DANGER);
             const _ef = Math.sin(Date.now() / 220) > 0;
             grid.text("[ >> EXIT >> ]", Util.clamp(exSX - 7, 0, W - 14), S4_FLOOR_Y, _ef ? "#fff" : "#e60008");
-            // if (S4_FLOOR_Y - 1 >= 0) grid.text("EXIT ↓", Util.clamp(exSX - 2, 0, W - 6), S4_FLOOR_Y - 1, "#5cbdbd");
+            // if (S4_FLOOR_Y - 1 >= 0) grid.text("EXIT ↓", Util.clamp(exSX - 2, 0, W - 6), S4_FLOOR_Y - 1, C_TEAL);
           }
 
           /* ── Urgency border flash ── */
           if (s4Ug > 0.5) {
-            const bc = Math.floor(Date.now() / 300) % 2 ? "#c44" : "#a00";
+            const bc = Math.floor(Date.now() / 300) % 2 ? C_DANGER : "#a00";
             for (let x = 0; x < W; x++) grid.set(x, 0, "\u2550", bc);
             for (let y = 0; y < H; y++) {
               grid.set(0, y, "\u2551", bc);
               grid.set(W - 1, y, "\u2551", bc);
             }
-            grid.textCenter([">> COPS EN ROUTE <<", "!! FIND AN EXIT !!"][Math.floor(Date.now() / 800) % 2], 0, "#c44");
+            grid.textCenter([">> COPS EN ROUTE <<", "!! FIND AN EXIT !!"][Math.floor(Date.now() / 800) % 2], 0, C_DANGER);
           }
 
           renderBanner();
@@ -3212,10 +3258,10 @@
               _fx = Math.floor((W - _fw) / 2),
               _fy = Math.floor(H / 2) - 7;
             for (let _i = 0; _i < 6; _i++)
-              burstGood(_fx + Math.floor(Math.random() * _fw), _fy + Math.floor(Math.random() * FRIDGE.length), "#5cbdbd", 7);
+              burstGood(_fx + Math.floor(Math.random() * _fw), _fy + Math.floor(Math.random() * FRIDGE.length), C_TEAL, 7);
             triggerFlashGood();
             a5T = 0;
-            showBanner("food glorious food.", "#2a2", 2000);
+            showBanner("food glorious food.", C_SUCCESS, 2000);
           }
           if (a5P === 3 && a5T > 2500) {
             a5P = 4;
@@ -3230,7 +3276,7 @@
                   nb.x = nb.tx;
                   nb.arrived = true;
                   nb.msgShow = true;
-                  dialogPush(nb.msg, nb.col || "#5cbdbd", "center", Math.round(nb.tx), nb.ty - 2, 6000);
+                  dialogPush(nb.msg, nb.col || C_TEAL, "center", Math.round(nb.tx), nb.ty - 2, 6000);
                 } else allArrived = false;
               }
             }
@@ -3247,7 +3293,7 @@
           const fridgeW = FRIDGE[0].length;
           const fx = Math.floor((W - fridgeW) / 2),
             fy = Math.floor(H / 2) - 10;
-          grid.art(FRIDGE, fx, fy, "#5cbdbd");
+          grid.art(FRIDGE, fx, fy, C_TEAL);
           let crewDrawIdx = 0;
           for (const c of a5Crew) {
             if (typeof c !== "object" || c._playerX !== undefined) continue;
@@ -3263,7 +3309,7 @@
           const plY = a5Crew._playerY || fy + FRIDGE.length + 1;
           grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), C_PLAYER);
           // Tap prompt
-          if (a5P === 2) grid.textCenter("[ TAP TO PLACE FOOD ]", plY + 4, Math.sin(Date.now() / 300) > 0 ? "#5cbdbd" : "#888");
+          if (a5P === 2) grid.textCenter("[ TAP TO PLACE FOOD ]", plY + 4, Math.sin(Date.now() / 300) > 0 ? C_TEAL : C_DIM);
           // Food appearing in fridge — real food art reused from Act 4
           if (a5P >= 3) {
             /* New fridge layout (width 37, height 18):
@@ -3305,15 +3351,15 @@
               const nx = Math.round(nb.x);
               if (nx >= -2 && nx < W + 2) {
                 if (!nb.art) nb.art = window.GAME_DATA.npcArts[i % window.GAME_DATA.npcArts.length];
-                grid.art(nb.art, nx, nb.ty, nb.col || "#5cbdbd");
+                grid.art(nb.art, nx, nb.ty, nb.col || C_TEAL);
                 if (nb.arrived) {
-                  grid.text(nb.name, Util.clamp(nx - 1, 0, W - nb.name.length), nb.ty - 1, nb.col || "#5cbdbd");
+                  grid.text(nb.name, Util.clamp(nx - 1, 0, W - nb.name.length), nb.ty - 1, nb.col || C_TEAL);
                 }
               }
             }
           }
           if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
-            grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#666");
+            grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
           dialogRender();
           renderBanner();
         }
@@ -3360,16 +3406,16 @@
           let t = 0;
           const GAP = 950;
           endD.lines = [];
-          endD.lines.push({ t, text: "your crew brought home $" + tot + " of groceries", col: "#c33" });
+          endD.lines.push({ t, text: "your crew brought home $" + tot + " of groceries", col: C_DANGER });
           t += GAP;
           endD.lines.push({ t, text: "you carried $" + (my || 0) + " of it", col: "#bbb" });
           t += GAP + 400;
           for (let i = 0; i < vig.length; i++) {
-            endD.lines.push({ t, text: vig[i], col: "#888" });
+            endD.lines.push({ t, text: vig[i], col: C_DIM });
             t += GAP;
           }
           t += 400;
-          endD.lines.push({ t, text: (fed || 68) + " people ate tonight", col: "#2a2" });
+          endD.lines.push({ t, text: (fed || 68) + " people ate tonight", col: C_SUCCESS });
           t += 1100;
           endD.lines.push({ t, text: "(and you ate too)", col: "#bbb", extraGap: 1 });
           endD.doneT = t + 1600;
@@ -3408,7 +3454,7 @@
             if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
             y += wrapped[i].length + 1 + (l.extraGap || 0);
           }
-          if (endT >= (endD.doneT || 9999)) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
+          if (endT >= (endD.doneT || 9999)) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
           renderBanner();
         }
 
@@ -3455,16 +3501,16 @@
         function renderCTA() {
           const CTA_STORY = [
             { t: 0, text: "in december 2025,", col: "#8957ff" },
-            { t: 1100, text: "40 people dressed as santa", col: "#5cbdbd" },
-            { t: 2200, text: "robbed a metro grocery store in montreal", col: "#c44" },
-            { t: 3300, text: "they gave the food to the hungry", col: "#5cbdbd" },
-            { t: 4600, text: "", col: "#aaa", extraGap: 1 },
-            { t: 5400, text: "in february 2026, they hit again", col: "#c33" },
-            { t: 6700, text: "", col: "#aaa", extraGap: 1 },
-            { t: 7500, text: "they called themselves", col: "#5cbdbd" },
+            { t: 1100, text: "40 people dressed as santa", col: C_TEAL },
+            { t: 2200, text: "robbed a metro grocery store in montreal", col: C_DANGER },
+            { t: 3300, text: "they gave the food to the hungry", col: C_TEAL },
+            { t: 4600, text: "", col: C_MID, extraGap: 1 },
+            { t: 5400, text: "in february 2026, they hit again", col: C_DANGER },
+            { t: 6700, text: "", col: C_MID, extraGap: 1 },
+            { t: 7500, text: "they called themselves", col: C_TEAL },
             { t: 8600, text: "ROBINS DES RUELLES", col: C_PLAYER },
-            { t: 9900, text: "", col: "#aaa", extraGap: 1 },
-            { t: 10700, text: "maybe your neighbourhood is next?", col: "#e8944a" },
+            { t: 9900, text: "", col: C_MID, extraGap: 1 },
+            { t: 10700, text: "maybe your neighbourhood is next?", col: C_ORANGE },
           ];
 
           function wrap(text) {
@@ -3496,7 +3542,7 @@
             y += wrapped[i].length + 1 + (seg.extraGap || 0);
           }
 
-          if (ctaT > 12500) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
+          if (ctaT > 12500) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
         }
 
         /* ── END GAME (failure) ────────────────────────────────── */
@@ -3513,11 +3559,11 @@
             tot = my + s4AlyScore;
           let title, sub, color;
           if (result === "busted") {
-            color = "#c33";
+            color = C_DANGER;
             title = "BUSTED!";
             sub = "too many narcs";
           } else {
-            color = "#c33";
+            color = C_DANGER;
             title = tot > 0 ? "CAUGHT!" : "CAUGHT EMPTY";
             sub = tot > 0 ? "Cops got you.\nRobins escaped with $" + s4AlyScore + "." : "Next time.";
           }
@@ -3532,7 +3578,7 @@
           const gu = document.createElement("button");
           gu.className = "give-up-btn";
           gu.textContent = "GIVE UP FOREVER";
-          gu.style.background = "#888";
+          gu.style.background = C_DIM;
           gu.style.marginTop = "4px";
           gu.addEventListener("click", () => {
             hasPlayed = false;

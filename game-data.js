@@ -29,6 +29,8 @@ window.GAME_DATA = {
                 "|DEP |",
             ],
         },
+
+        
         {
             name: "Walkup",
             size: 6,
@@ -1176,6 +1178,19 @@ const D_ACK_NARC = [
     "you know, ",
     "honestly, ",
     "I mean, ",
+];
+
+const A1_LOOP_MSGS = [
+  { t: "nothing changes...",               c: "#999" },
+  { t: "...câline, encore ça",             c: "#aaa" },
+  { t: "ostie. encore.",                   c: "#b09abf" },
+  { t: "crisse, pis quoi encore",          c: "#b080c0" },
+  { t: "câlice. ENCORE LA MÊME CHOSE",    c: "#c060a0" },
+  { t: "OSTIE DE CÂLICE. vraiment??",      c: "#c84080" },
+  { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
+  { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
+  { t: "OSTIE CÂLICE CRISSE TABARNAK",    c: "#dd0020" },
+  { t: "TABARNAK CÂLICE CRISSE VIARGE OSTIE DE...", c: "#ff0000" },
 ];
 
 /* ── STORE ART (shared by Acts 2, 3) ──────────────────── */
