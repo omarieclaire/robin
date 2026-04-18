@@ -132,7 +132,7 @@ window.GAME_DATA = {
                 "╭DEI────╮",
                 "│ CAMPI │",
                 "│ CAFFE │",
-                "│ ☕  ◉  │",
+                "│ ✧  ◉  │",
             ],
         },
         {
@@ -183,7 +183,7 @@ window.GAME_DATA = {
             art: [
                 "╭───────────╮",
                 "│ PARQUETTE │",
-                "│ ★ ☕ ★ ☕ ★ │",
+                "│ ★ ✧ ★ ✧ ★ │",
                 "│░.  ░.  ░░ │",
             ],
         },
@@ -261,7 +261,7 @@ window.GAME_DATA = {
             art: [
                 "╭───────────╮",
                 "│ PARQUETTE │",
-                "│ ★ ☕ ★ ★ ★ │",
+                "│ ★ ✧ ★ ★ ★ │",
                 "│░.  ░.  ░░ │",
                 "╰───────────╯",
             ],
@@ -490,7 +490,7 @@ window.GAME_DATA = {
             n: "flour",
             p: 5,
             a: [
-                " ⤹ ⤵   ",
+                " { }   ",
                 "❱❱  ❰❰ ",
                 "FLOUR  ",
                 "❰❰  ❱❱ ",
@@ -704,8 +704,8 @@ window.GAME_DATA = {
         ".============================.",
         "|  M E T R O   G R O C E R Y |",
         "|============================|",
-        "| [##] [##] [##] [##] [##]  |",
-        "| [##] [##] [##] [##] [##]  |",
+        "|  [##] [##] [##] [##] [##]  |",
+        "|  [##] [##] [##] [##] [##]  |",
         "|         .--------.         |",
         "|         | ENTER! |         |",
         "|         |        |         |",
@@ -728,8 +728,8 @@ window.GAME_DATA = {
        (fridgeW, slotsPerShelf, shelfTop/shelfBot row numbers). */
     fridgeArt: [
         "╔═══════════════════════════════════╗",
-        "║  ❄❄❄  COMMUNITY  FRIDGE           ║",
-        "║      ~ ~ ~  feed your neighbour   ║",
+        "║  ~ COMMUNITY  FRIDGE ~ ~ ~ ~ ~ ~  ║",
+        "║  ~ ~ ~ ~ ~  feed your neighbours  ║",
         "╠═══════════════════════════════════╣",
         "║                                   ║",
         "║                                   ║",
@@ -743,7 +743,7 @@ window.GAME_DATA = {
         "║                                   ║",
         "║                                   ║",
         "╠═══════════════════════════════════╣",
-        "║    ♥  take what you need  ♥       ║",
+        "║    ♥  ♥  ♥  ♥  ♥  ♥  ♥  ♥  ♥      ║",
         "╚═══════════════════════════════════╝",
     ],
 
@@ -861,6 +861,9 @@ const D_AMB_ANGRY = [
     "we're getting robbed legally",
     "I used to budget. now I triage",
     "we pay more so they can profit more",
+    "Watch out for-a Luigi!",
+    "the sword of damocles",
+    "surveillance pricing",
 ];
 
 // ambient chatter from npc narcs while they wander
@@ -945,7 +948,7 @@ const D_ANGRY_HELLO = [
     "47% markup and we're supposed to smile?",
     "they made billions during a crisis",
     "three companies control most of the food in this country",
-
+    "they're using 'dynamic pricing', they adjust the price based on who's looking?",
     "oligopoly, but make it groceries",
     "three CEOs, millions of empty fridges",
     "they optimized profit, not hunger",
