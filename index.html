@@ -2313,7 +2313,7 @@
           a2bGenNPCs();
           dialogStack = [];
           bannerTimer = 0;
-          showBanner("RALLY THE NEIGHBOURHOOD!\navoid narcs", "#e8944a", 3000);
+          showBanner("rally the neighbourhood!\navoid narcs", "#e8944a", 3000);
           hudLabel.textContent = "CREW";
           hudScore.textContent = String(a2CrewCount);
           hudStatus.textContent = "";
@@ -2818,7 +2818,7 @@
           hudScore.style.color = C_PLAYER;
           hudStatus.textContent = "TAP FOOD TO GRAB!";
           hudStatus.style.color = "#5cbdbd";
-          showBanner("Grab everything you can!", C_PLAYER, 2500);
+          showBanner("grab everything you can!", C_PLAYER, 2500);
         }
 
         const SU = [
@@ -3002,12 +3002,12 @@
           }
 
           /* ── AISLE — floor tiles scroll with world ── */
-          for (let y = S4_AISLE_TOP; y <= S4_AISLE_BOT; y++) {
-            for (let x = 0; x < W; x++) {
-              const wx = x + ox;
-              if (wx % 4 === 0) grid.set(x, y, "\u2502", "#1a1a1a");
-            }
-          }
+          // for (let y = S4_AISLE_TOP; y <= S4_AISLE_BOT; y++) {
+          //   for (let x = 0; x < W; x++) {
+          //     const wx = x + ox;
+          //     if (wx % 4 === 0) grid.set(x, y, "\u2502", "#1a1a1a");
+          //   }
+          // }
 
           /* ── Security guards ── */
           for (const g of s4Gs) {
@@ -3198,7 +3198,7 @@
               }
             }
             if (allArrived && a5T > 1500) {
-              showBanner("Let's share the bounty.", "#d4a030  ", 3000);
+              showBanner("let's share the bounty", "#d4a030  ", 3000);
               a5P = 1;
               a5T = 0;
             }
@@ -3293,7 +3293,7 @@
               const iy = shelfBot - artH + 1;
               // console.log("I get an error here that food is not defined");
               for (let r = 0; r < artH; r++) {
-                const line = food.a[r].substring(0, slotW - 1);
+                const line = fp.food.a[r].substring(0, slotW - 1);
                 grid.text(line, ix, iy + r, FC[i % FC.length]);
               }
             }
@@ -3333,6 +3333,7 @@
           { n: "Sophie", p: "her" },
           { n: "Youssef", p: "his" },
         ];
+
         function initEnd() {
           phase = "end";
           endT = 0;
@@ -3341,12 +3342,12 @@
           const my = state.get("score") || 0,
             tot = my + s4AlyScore;
           const VIG_TEMPLATES = [
-            (nm) => nm.n + " ate for the first time today.",
-            (nm) => nm.n + " is making " + nm.p + " mother's potato casserole tonight.",
-            (nm) => nm.n + " brought a pot of soup for " + nm.p + " friends.",
-            (nm) => nm.n + " has bread for " + nm.p + " children.",
-            (nm) => nm.n + " shared half with a stranger on the way home.",
-            (nm) => nm.n + " is cooking a real dinner for  " + nm.p + " grandma",
+            (nm) => nm.n + " ate for the first time today",
+            (nm) => nm.n + " is making " + nm.p + " mother's potato casserole tonight",
+            (nm) => nm.n + " brought a pot of soup for " + nm.p + " friends",
+            (nm) => nm.n + " has bread for " + nm.p + " children",
+            (nm) => nm.n + " shared half with a stranger on the way home",
+            (nm) => nm.n + " is cooking a real dinner for " + nm.p + " grandma",
           ];
           const vig = [];
           const shuffled = Util.shuffle(END_NAMES);
@@ -3354,84 +3355,91 @@
           for (let i = 0; i < Math.min(4, a2CrewCount); i++) vig.push(templates[i % templates.length](shuffled[i % shuffled.length]));
           const fed = Math.max(20, a2CrewCount * 12 + Math.floor(tot / 6));
           endD = { tot, my, as: s4AlyScore, crew: a2CrewCount, vig, fed };
+
+          // Build flat timed line list — positions computed at render time for stability
+          let t = 0;
+          const GAP = 950;
+          endD.lines = [];
+          endD.lines.push({ t, text: "your crew brought home $" + tot + " of groceries", col: "#c33" });
+          t += GAP;
+          endD.lines.push({ t, text: "you carried $" + (my || 0) + " of it", col: "#bbb" });
+          t += GAP + 400;
+          for (let i = 0; i < vig.length; i++) {
+            endD.lines.push({ t, text: vig[i], col: "#888" });
+            t += GAP;
+          }
+          t += 400;
+          endD.lines.push({ t, text: (fed || 68) + " people ate tonight", col: "#2a2" });
+          t += 1100;
+          endD.lines.push({ t, text: "(and you ate too)", col: "#bbb", extraGap: 1 });
+          endD.doneT = t + 1600;
         }
-        // gate click until all text shown
+
         function updateEnd(dt) {
           endT += dt;
           updateBanner(dt);
-          const allDoneT = 1000 + ((endD.vig && endD.vig.length) || 4) * 900 + 2500;
-          if (clickPending && endT > allDoneT) {
+          if (clickPending && endT > (endD.doneT || 9999)) {
             clickPending = false;
             initCTA();
           }
         }
-function renderEnd() {
-          function wc(text, y, col) {
-            const words = text.split(" "), lines = [];
+
+        function renderEnd() {
+          const lines = endD.lines || [];
+          function wrap(text) {
+            const words = text.split(" "),
+              ls = [];
             let cur = "";
             for (const w of words) {
-              if (cur.length + w.length + 1 > W - 4) { lines.push(cur); cur = w; }
-              else cur = cur ? cur + " " + w : w;
+              if (cur.length + w.length + 1 > W - 4) {
+                ls.push(cur);
+                cur = w;
+              } else cur = cur ? cur + " " + w : w;
             }
-            if (cur) lines.push(cur);
-            lines.forEach((l, i) => grid.textCenter(l, y + i, col));
-            return lines.length;
+            if (cur) ls.push(cur);
+            return ls;
           }
-          let y = 2;
-          y += wc("Your crew brought home $" + endD.tot + " of groceries.", y, "#c33");
-          y += wc("you carried $" + (endD.my || 0) + " of it.", y, "#bbb") + 1;
-          const vigs = endD.vig || [];
-          let vigY = y;
-          for (let i = 0; i < vigs.length; i++)
-            if (endT > 1000 + i * 900) vigY += wc(vigs[i], vigY, "#888");
-          const vigDoneT = 1000 + vigs.length * 900;
-          if (endT > vigDoneT) {
-            vigY++;
-            wc((endD.fed || 68) + " people eat tonight.", vigY, "#2a2");
-            wc("and you ate too.", vigY + 1, "#bbb");
+          // Pre-compute all wrapped heights for stable centering
+          const wrapped = lines.map((l) => wrap(l.text));
+          const totalH = wrapped.reduce((sum, ls, i) => sum + ls.length + (lines[i].extraGap || 0), 0) + lines.length - 1;
+          let y = Math.max(2, Math.floor((H - totalH) / 2));
+          for (let i = 0; i < lines.length; i++) {
+            const l = lines[i];
+            if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
+            y += wrapped[i].length + 1 + (l.extraGap || 0);
           }
-          if (endT > vigDoneT + 2500)
-            grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
+          if (endT >= (endD.doneT || 9999)) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
           renderBanner();
         }
-        //   y += wc("Your crew brought home $" + endD.tot + " of groceries.", y, "#c33") + 1;
-        //   let vigShown = 0;
-        //   for (let i = 0; i < endD.vig.length; i++) {
-        //     if (endT > 1000 + i * 800) { y += wc(endD.vig[i], y, "#888"); vigShown++; }
-        //   }
-        //   if (vigShown === endD.vig.length && endT > 1000 + endD.vig.length * 800) {
-        //     y++;
-        //     wc((endD.fed || 68) + " people eat tonight.", y, "#2a2");
-        //     wc("(you ate too)", y + 1, "#bbb");
-        //   }
-        //   if (endT > 2000 + endD.vig.length * 800) grid.textCenter("you carried $" + endD.my + " of it.", H - 6, "#bbb");
-        //   if (endT > 3000) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
-        //   renderBanner();
-        // }
 
         /* ══════════════════════════════════════════════════════════
                        CTA: This really happened. Post-game epilogue.
                        ══════════════════════════════════════════════════════════ */
-        let ctaT;
+        let ctaT, ctaDone;
         function initCTA() {
           phase = "cta";
           ctaT = 0;
+          ctaDone = false;
           bannerTimer = 0;
           dialogStack = [];
           hudLabel.textContent = "";
           hudScore.textContent = "";
           hudStatus.textContent = "";
         }
+
         function updateCTA(dt) {
           ctaT += dt;
-          if (clickPending && ctaT > 12500) {
+          const endAt = 12800;
+          const canTap = ctaT > 11800;
+          if (!ctaDone && (ctaT > endAt || (clickPending && canTap))) {
             clickPending = false;
+            ctaDone = true;
             phase = "done";
             loop.stop();
             overlay.classList.remove("hidden");
             ovTitle.textContent = "ROBINS DES RUELLES";
             ovTitle.style.color = C_PLAYER;
-            ovSub.innerHTML = "The neighbourhood remembers.<br><br>Play again?";
+            ovSub.innerHTML = "The neighbourhood remembers.<br><br>Will you join them?";
             ovHint.textContent = "";
             startBtn.textContent = "PLAY AGAIN";
             overlay.querySelectorAll(".final").forEach((e) => e.remove());
@@ -3445,84 +3453,51 @@ function renderEnd() {
         }
 
         function renderCTA() {
-          /* ── Edit CTA_STORY to change the epilogue. Long lines auto-wrap. ── */
           const CTA_STORY = [
             { t: 0, text: "in december 2025,", col: "#8957ff" },
-            { t: 900, text: "40 people dressed as santa", col: "#5cbdbd" },
-            { t: 1700, text: "robbed a metro grocery store in montreal", col: "#c44" },
-            // { t: 4800, text: "", col: "#aaa" }, want a space here but need to calc spacing
-            { t: 3000, text: "they gave the food to the hungry", col: "#5cbdbd" },
-            { t: 4800, text: "", col: "#aaa" },
-            { t: 5600, text: "in february 2026, they hit again", col: "#c33" },
-            { t: 7200, text: "", col: "#aaa" },
-            { t: 8100, text: "they called themselves", col: "#5cbdbd" },
-            { t: 9000, text: "ROBINS DES RUELLES", col: C_PLAYER },
-            { t: 10600, text: "", col: "#aaa" },
-            { t: 11200, text: "the story isn't over", col: "#e8944a" },
+            { t: 1100, text: "40 people dressed as santa", col: "#5cbdbd" },
+            { t: 2200, text: "robbed a metro grocery store in montreal", col: "#c44" },
+            { t: 3300, text: "they gave the food to the hungry", col: "#5cbdbd" },
+            { t: 4600, text: "", col: "#aaa", extraGap: 1 },
+            { t: 5400, text: "in february 2026, they hit again", col: "#c33" },
+            { t: 6700, text: "", col: "#aaa", extraGap: 1 },
+            { t: 7500, text: "they called themselves", col: "#5cbdbd" },
+            { t: 8600, text: "ROBINS DES RUELLES", col: C_PLAYER },
+            { t: 9900, text: "", col: "#aaa", extraGap: 1 },
+            { t: 10700, text: "maybe your neighbourhood is next?", col: "#e8944a" },
           ];
-          /* Expand entries into wrapped lines, preserving timing + colour */
-          const rendered = [];
-          for (const seg of CTA_STORY) {
-            if (!seg.text) {
-              rendered.push({ t: seg.t, text: "", col: seg.col });
-              continue;
-            }
-            const words = seg.text.split(" "),
-              lines = [];
+
+          function wrap(text) {
+            if (!text) return [""];
+            const words = text.split(" "),
+              ls = [];
             let cur = "";
             for (const w of words) {
               if (cur.length + w.length + 1 > W - 6) {
-                lines.push(cur);
+                ls.push(cur);
                 cur = w;
               } else cur = cur ? cur + " " + w : w;
             }
-            if (cur) lines.push(cur);
-            lines.forEach((l) => rendered.push({ t: seg.t, text: l, col: seg.col }));
+            if (cur) ls.push(cur);
+            return ls;
           }
-          const startY = Math.max(2, Math.floor(H / 2) - Math.floor(rendered.length / 2) - 1);
-          rendered.forEach((line, i) => {
-            if (ctaT >= line.t && startY + i < H - 2) grid.textCenter(line.text, startY + i, line.col);
-          });
-          const lastT = CTA_STORY[CTA_STORY.length - 1].t + 1500;
-          if (ctaT > lastT)
-            // if (ctaT > 12500) {
 
-            grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
+          const wrapped = CTA_STORY.map((l) => wrap(l.text));
+          const totalH = wrapped.reduce((sum, ls, i) => sum + ls.length + (CTA_STORY[i].extraGap || 0), 0) + CTA_STORY.length - 1;
+          let y = Math.max(2, Math.floor((H - totalH) / 2));
+
+          for (let i = 0; i < CTA_STORY.length; i++) {
+            const seg = CTA_STORY[i];
+            if (ctaT >= seg.t) {
+              wrapped[i].forEach((ln, j) => {
+                if (y + j < H - 2) grid.textCenter(ln, y + j, seg.col);
+              });
+            }
+            y += wrapped[i].length + 1 + (seg.extraGap || 0);
+          }
+
+          if (ctaT > 12500) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
         }
-        // function renderCTA() {
-        //   /* ── Edit this array to change the CTA story ─────────
-        //      t = delay in ms. Long lines auto-wrap.             */
-        //   const CTA_STORY = [
-        //     { t:    0, text: "In December 2025,",                              col: "#aaa" },
-        //     { t:  900, text: "40 people dressed as Santa",                     col: "#c33" },
-        //     { t: 1700, text: "robbed a Metro grocery store in Montreal.",       col: "#aaa" },
-        //     { t: 3000, text: "They gave the food to the hungry.",               col: "#2a7a2a" },
-        //     { t: 4500, text: "They called themselves",                          col: "#aaa" },
-        //     { t: 5200, text: "ROBINS DES RUELLES.",                            col: C_PLAYER },
-        //     { t: 6800, text: "",                                                col: "#aaa" },
-        //     { t: 7200, text: "The story isn't over.",                          col: "#e8944a" },
-        //   ];
-        //   function wrapSeg(text) {
-        //     if (!text) return [""];
-        //     const words = text.split(" "), lines = [];
-        //     let cur = "";
-        //     for (const w of words) {
-        //       if (cur.length + w.length + 1 > W - 6) { lines.push(cur); cur = w; }
-        //       else cur = cur ? cur + " " + w : w;
-        //     }
-        //     if (cur) lines.push(cur);
-        //     return lines;
-        //   }
-        //   const rendered = [];
-        //   for (const seg of CTA_STORY)
-        //     for (const l of wrapSeg(seg.text)) rendered.push({ t: seg.t, text: l, col: seg.col });
-        //   const startY = Math.max(2, Math.floor(H / 2) - Math.floor(rendered.length / 2) - 1);
-        //   rendered.forEach((line, i) => {
-        //     if (ctaT >= line.t) grid.textCenter(line.text, startY + i, line.col);
-        //   });
-        //   if (ctaT > 8000)
-        //     grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? "#888" : "#bbb");
-        // }
 
         /* ── END GAME (failure) ────────────────────────────────── */
         function endGame(result) {
@@ -3721,7 +3696,7 @@ function renderEnd() {
           // hasPlayed is set to true when the player reaches Act 2
         }
         ovTitle.textContent = "ROBIN  DES RUELLES";
-        ovSub.innerHTML = "walk around. talk to your neighbours. Who knows what might happen?<br><br>";
+        ovSub.innerHTML = "walk around? talk to your neighbours? anything could happen<br><br>";
         ovHint.innerHTML =
           '\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br><span style="color:#aaa">A game about feeding our neighbours</span>';
         startBtn.textContent = "PLAY";
