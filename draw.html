@@ -1,0 +1,2498 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>draw!</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap");
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #12121a;
+        --border: #2a2a3a;
+        --accent: #63f8a0;
+        --accent2: #f8c363;
+        --danger: #f86363;
+        --dim: #555577;
+        --text: #dde0f5;
+        --cell-bg: #16161f;
+        --cell-hl: #1e1e2e;
+        --mono: "Share Tech Mono", monospace;
+        --display: "VT323", monospace;
+        --cell-w: 18px;
+        --cell-h: 28px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 13px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 12px 60px;
+        gap: 18px;
+      }
+
+      /* ─── HEADER ─── */
+      header {
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+        width: 100%;
+        max-width: 900px;
+      }
+      header h1 {
+        font-family: var(--display);
+        font-size: 2.4rem;
+        color: var(--accent);
+        letter-spacing: 3px;
+        line-height: 1;
+      }
+      header p {
+        color: var(--dim);
+        font-size: 11px;
+        margin-top: 4px;
+        letter-spacing: 1px;
+      }
+
+      /* ─── MODE STRIP ─── */
+      .mode-strip {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .mode-btn {
+        font-family: var(--display);
+        font-size: 1.15rem;
+        letter-spacing: 1px;
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--dim);
+        cursor: pointer;
+        transition: all 0.15s;
+        border-radius: 2px;
+      }
+      .mode-btn:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .mode-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #0d1f16;
+        box-shadow: 0 0 12px #63f8a020;
+      }
+      .mode-badge {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--dim);
+        margin-left: 4px;
+      }
+
+      /* ─── MAIN LAYOUT ─── */
+      .workspace {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      /* ─── GRID AREA ─── */
+      .grid-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        border: 1px dotted rgba(255, 255, 255, 0.261);
+        padding-top: 1rem;
+      }
+
+      #grid {
+        display: grid;
+        gap: 0px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        user-select: none;
+        cursor: crosshair;
+      }
+
+      .cell {
+        /* width: var(--cell-size);
+        height: var(--cell-size); */
+        width: var(--cell-w);
+        height: var(--cell-h);
+        background: var(--cell-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--accent);
+        transition: background 0.05s;
+        position: relative;
+      }
+      .cell:hover {
+        background: var(--cell-hl);
+      }
+      .cell.guide-col {
+        background: #13131d;
+      }
+      .cell.guide-col:hover {
+        background: var(--cell-hl);
+      }
+
+      /* size guides on right side */
+      .grid-ruler {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        color: var(--dim);
+        font-size: 10px;
+        align-self: flex-start;
+        padding-top: 0;
+      }
+      .ruler-cell {
+        /* height: var(--cell-size); */
+        height: var(--cell-h); /* was --cell-size */
+
+        width: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+      }
+
+      /* ─── TOOLBAR ─── */
+      .toolbar {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .btn {
+        font-family: var(--display);
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        border-radius: 2px;
+        transition: all 0.12s;
+      }
+      .btn:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn.danger:hover {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .btn.active {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: #1f1010;
+      }
+
+      /* ─── PALETTE ─── */
+      .palette-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 220px;
+        max-width: 260px;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+      .palette-section-title {
+        font-family: var(--display);
+        font-size: 1rem;
+        color: var(--dim);
+        letter-spacing: 1px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid var(--border);
+      }
+      .palette-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+      }
+      .char-btn {
+        width: 28px;
+        height: 28px;
+        font-family: var(--mono);
+        font-size: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 2px;
+        transition: all 0.1s;
+      }
+      .char-btn:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .char-btn.selected {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #0d1f16;
+      }
+      .current-char-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--dim);
+        font-size: 11px;
+      }
+      .current-char-display span {
+        font-family: var(--mono);
+        font-size: 20px;
+        color: var(--accent);
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* ─── METADATA ─── */
+      .meta-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        /* width: 70%; */
+        max-width: 500px;
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px dotted rgba(255, 255, 255, 0.261);
+      }
+      .field-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .field-row label {
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 1px;
+        min-width: 60px;
+        text-transform: uppercase;
+      }
+      .field-row input {
+        font-family: var(--mono);
+        font-size: 13px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 5px 10px;
+        border-radius: 2px;
+        outline: none;
+        flex: 1;
+        min-width: 140px;
+        max-width: 280px;
+      }
+      .field-row input:focus {
+        border-color: var(--accent);
+      }
+
+      input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+      input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 1px;
+      }
+
+      /* ─── EXPORT PANEL ─── */
+      .export-panel {
+        width: 100%;
+        max-width: 900px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .export-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--surface);
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .export-header-title {
+        font-family: var(--display);
+        font-size: 1.1rem;
+        color: var(--accent);
+        letter-spacing: 2px;
+      }
+      .export-header-actions {
+        display: flex;
+        gap: 6px;
+      }
+      .export-body {
+        background: #0c0c12;
+        padding: 14px 16px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--accent2);
+        white-space: pre;
+        overflow-x: auto;
+        min-height: 80px;
+        line-height: 1.6;
+      }
+      .copy-flash {
+        animation: flash 0.4s ease;
+      }
+      @keyframes flash {
+        0%,
+        100% {
+          background: #0c0c12;
+        }
+        50% {
+          background: #1a2a10;
+        }
+      }
+
+      /* ─── PREVIEW ─── */
+      .preview-panel {
+        width: 100%;
+        max-width: 900px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .preview-header {
+        font-family: var(--display);
+        font-size: 1.1rem;
+        color: var(--dim);
+        letter-spacing: 2px;
+        background: var(--surface);
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .preview-body {
+        padding: 14px 16px;
+        font-family: var(--mono);
+        font-size: 18px;
+        color: var(--accent);
+        line-height: 1.2;
+        white-space: pre;
+        background: var(--bg);
+        min-height: 60px;
+      }
+
+      /* ─── TOAST ─── */
+      #toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--accent);
+        color: #0a0a0f;
+        font-family: var(--display);
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+        padding: 8px 20px;
+        border-radius: 2px;
+        opacity: 0;
+        transition: all 0.25s;
+        pointer-events: none;
+        z-index: 999;
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* ─── SCROLLBAR ─── */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--dim);
+      }
+
+      /* ─── DIVIDER ─── */
+      .divider {
+        width: 100%;
+        max-width: 900px;
+        border: none;
+        border-top: 1px solid var(--border);
+      }
+    </style>
+
+    <script src="game-data.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>draw!</h1>
+      <p>draw buildings &amp; food + export json</p>
+    </header>
+
+    <!-- MODE SELECT -->
+    <div class="mode-strip" id="modeStrip">
+      <button class="mode-btn active" data-mode="narrow" onclick="setMode('narrow')">narrow <span class="mode-badge">6w</span></button>
+      <button class="mode-btn" data-mode="regular" onclick="setMode('regular')">reg <span class="mode-badge">9w</span></button>
+      <button class="mode-btn" data-mode="wide" onclick="setMode('wide')">wide <span class="mode-badge">13w</span></button>
+      <button class="mode-btn" data-mode="food" onclick="setMode('food')">food <span class="mode-badge">7w</span></button>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div class="workspace">
+      <!-- GRID + RULER -->
+      <div class="grid-wrap">
+        <div style="display: flex; gap: 4px; align-items: flex-start">
+          <div id="grid"></div>
+          <div class="grid-ruler" id="ruler"></div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="undoBtn" onclick="undo()">↩ undo</button>
+          <button class="btn" id="eraserBtn" onclick="toggleEraser()">✕ erase</button>
+          <!-- <button class="btn" id="fillBtn"   onclick="fillRow()">— FILL ROW</button> -->
+          <button class="btn danger" onclick="clearGrid()">⌫ CLEAR</button>
+          <button class="btn" onclick="loadExample()">⚂ EX</button>
+        </div>
+
+        <!-- Metadata moved here, under the grid -->
+        <div class="meta-panel" id="metaPanel">
+          <h2>metadata</h2>
+
+          <div class="field-row" id="nameRow">
+            <label>NAME</label>
+            <input type="text" id="inputName" placeholder="eg CAFE DEI CAMPI" oninput="updateExport()" />
+          </div>
+          <div class="field-row" id="sizeRow">
+            <!-- shows for buildings -->
+            <label>SIZE</label>
+            <input type="text" id="inputSize" readonly style="max-width: 50px; color: var(--dim)" value="6" />
+            <span style="color: var(--dim); font-size: 11px">(auto)</span>
+          </div>
+          <div class="field-row" id="priceRow" style="display: none">
+            <label>PRICE</label>
+            <input type="number" id="inputPrice" placeholder="3" min="0" max="99" value="3" oninput="updateExport()" style="max-width: 80px" />
+            <span style="color: var(--dim); font-size: 11px">piaces</span>
+          </div>
+
+          <div class="field-row">
+            <label>COLOUR</label>
+            <input type="text" id="inputColour" placeholder="optional, eg #f8c363" oninput="updateExport()" style="max-width: 180px" />
+            <input
+              type="color"
+              id="inputColourPicker"
+              value="#63f8a0"
+              style="
+                width: 28px;
+                min-width: 28px;
+                height: 28px;
+                border: 1px solid var(--border);
+                background: none;
+                cursor: pointer;
+                padding: 0;
+                overflow: hidden;
+                -webkit-appearance: none;
+                appearance: none;
+                border-radius: 2px;
+              "
+              oninput="
+                document.getElementById('inputColour').value = this.value;
+                updateExport();
+              " />
+          </div>
+        </div>
+      </div>
+
+      <!-- PALETTE -->
+      <div class="palette-panel">
+        <div class="current-char-display">
+          <span id="currentChar">█</span>
+          <input
+            id="typeChar"
+            maxlength="1"
+            placeholder="A"
+            style="
+              width: 36px;
+              height: 28px;
+              font-family: var(--mono);
+              font-size: 16px;
+              background: var(--surface);
+              border: 1px solid var(--border);
+              color: var(--accent2);
+              text-align: center;
+              border-radius: 2px;
+            "
+            oninput="if (this.value) selectChar(this.value);" />
+          <div style="color: var(--dim); font-size: 11px">ACTIVE / TYPE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- METADATA -->
+    <!-- <div class="meta-panel" id="metaPanel">
+      
+    </div> -->
+
+    <hr class="divider" />
+
+    <!-- PREVIEW -->
+    <!-- <div class="preview-panel">
+      <div class="preview-header">◌ PREVIEW</div>
+      <div class="preview-body" id="previewBody">&nbsp;</div>
+    </div> -->
+
+    <!-- EXPORT -->
+    <div class="export-panel">
+      <div class="export-header">
+        <div class="export-header-title">{ JSON OUTPUT }</div>
+        <div class="export-header-actions">
+          <button class="btn" onclick="copyJSON()">⎘ COPY JSON</button>
+          <button class="btn" onclick="appendToSession()">+ ADD TO BATCH</button>
+          <button class="btn danger" onclick="clearBatch()">✕ CLEAR BATCH</button>
+          <button class="btn" onclick="emailToMarie()">✉ EMAIL TO MARIE</button>
+        </div>
+      </div>
+      <div class="export-body" id="exportBody">// draw something and fill in a name above</div>
+    </div>
+
+    <!-- BATCH -->
+    <div class="export-panel" id="batchPanel" style="display: none">
+      <div class="export-header">
+        <div class="export-header-title">[ BATCH SESSION ]</div>
+        <div class="export-header-actions">
+          <button class="btn" onclick="copyBatch()">⎘ COPY ALL</button>
+        </div>
+      </div>
+      <div class="export-body" id="batchBody"></div>
+    </div>
+
+    <div id="toast">COPIED!</div>
+
+    <script>
+      // ─────────────────────────────────────────────
+      // CONFIG
+      // ─────────────────────────────────────────────
+      const MODES = {
+        narrow: { cols: 6, rows: 7, size: 6, key: "size" },
+        regular: { cols: 9, rows: 7, size: 9, key: "size" },
+        wide: { cols: 13, rows: 7, size: 13, key: "size" },
+        food: { cols: 7, rows: 6, size: null, key: null },
+      };
+
+      const PALETTE_CATEGORIES = [
+        {
+          name: "Horizontal",
+          chars: [
+            "─",
+            "┄",
+            "┉",
+            "┈",
+            "┅",
+            "╌",
+            "╍",
+            "━",
+            "═",
+            "-",
+            "_",
+            "‐",
+            "‑",
+            "‒",
+            "–",
+            "—",
+            "―",
+            "▬",
+            "▭",
+            "‗",
+            "=",
+            "╴",
+            "╶",
+            "╸",
+            "╺",
+            "╼",
+            "╾",
+            "▔",
+            "▁",
+            "▂",
+            "▃",
+            "▄",
+            "▅",
+            "▆",
+            "▇",
+            "▀",
+            "-",
+            "_",
+            "=",
+          ],
+        },
+        {
+          name: "Vertical",
+          chars: [
+            "│",
+            "┆",
+            "┇",
+            "╎",
+            "╏",
+            "┊",
+            "┋",
+            "┃",
+            "║",
+            "|",
+            "╵",
+            "╷",
+            "╹",
+            "╻",
+            "╽",
+            "╿",
+            "▏",
+            "▎",
+            "▍",
+            "▌",
+            "▋",
+            "▊",
+            "▉",
+            "▐",
+            "I",
+            "|",
+            "∥",
+            "‖",
+            "▕",
+            "▕",
+          ],
+        },
+        {
+          name: "Diagonal Lines",
+          chars: ["⋰", "⋱", "╱", "╲", "╳", "/", "\\"],
+        },
+
+        {
+          name: "Corners - Top Left",
+          chars: ["┌", "┍", "┎", "┏", "╔", "╒", "╓", "╭", "⌜", "⌈", "▛", "▞"],
+        },
+        {
+          name: "Corners - Top Right",
+          chars: ["┐", "┑", "┒", "┓", "╗", "╕", "╖", "╮", "⌝", "⌉", "▜", "▚"],
+        },
+        {
+          name: "Corners - Bottom Left",
+          chars: ["└", "┕", "┖", "┗", "╚", "╘", "╙", "╰", "⌞", "⌊", "▙"],
+        },
+        {
+          name: "Corners - Bottom Right",
+          chars: ["┘", "┙", "┚", "┛", "╝", "╛", "╜", "╯", "⌟", "⌋", "▟"],
+        },
+        {
+          name: "Odd Brackets",
+          chars: ["「", "」", "『", "』"],
+        },
+        {
+          name: "Angles",
+          chars: ["∠", "∡", "∢", "⋇", "⋈", "⋉", "⋊", "⋋", "⋌"],
+        },
+        {
+          name: "T-Junctions - Left",
+          chars: ["├", "┝", "┞", "┟", "┠", "┡", "┢", "┣", "╠", "╞", "╟", "⊢"],
+        },
+        {
+          name: "T-Junctions - Right",
+          chars: ["┤", "┥", "┦", "┧", "┨", "┩", "┪", "┫", "╣", "╡", "╢", "⊣"],
+        },
+        {
+          name: "T-Junctions - Top",
+          chars: ["┬", "┭", "┮", "┯", "┰", "┱", "┲", "┳", "╦", "╤", "╥", "⊤", "T"],
+        },
+        {
+          name: "T-Junctions - Bottom",
+          chars: ["┴", "┵", "┶", "┷", "┸", "┹", "┺", "┻", "╩", "╧", "╨", "⊥"],
+        },
+        {
+          name: "Crosses",
+          chars: ["┼", "┽", "┾", "┿", "╀", "╁", "╂", "╃", "╄", "╅", "╆", "╇", "╈", "╉", "╊", "╋", "╬", "╪", "╫", "+", "±", "∓", "≑", "†", "‡", ,],
+        },
+        {
+          name: "Xs",
+          chars: ["×", "X", "x"],
+        },
+        {
+          name: "Up Curves",
+          chars: ["∪", "⌣", "◡", "⋃", "U", "u", "◛", "℧", "☋"],
+        },
+        {
+          name: "Down Curves",
+          chars: ["∩", "⌢", "◠", "⌒", "⌓", "⋂", , "◚", "Ω", "☊", "⍝"],
+        },
+        {
+          name: "Side curves",
+          chars: ["C", "c", "⊂", "⊃", "⊆", "⊇", "∈", "∉", "∋", "∌", "☾", "☽"],
+        },
+        {
+          name: "Quarter curves",
+          chars: ["◜", "◝", "◞", "◟"],
+        },
+        {
+          name: "S curves",
+          chars: ["∫", "⌠", "⌡", "∬", "∭", "∮", "§", "S", "s"],
+        },
+        {
+          name: "Wavy/Squiggly Lines",
+          chars: ["~", "≈", "≋", "∿", "〜", "⌇"],
+        },
+
+        {
+          name: "Brackets - Round",
+          chars: ["(", ")", "❨", "❩", "❪", "❫", "⦅", "⦆"],
+        },
+        {
+          name: "Brackets - Square",
+          chars: ["[", "]", "⟦", "⟧", "〚", "〛"],
+        },
+        {
+          name: "Brackets - Angle",
+          chars: ["〈", "〉", "❬", "❭", "❮", "❯", "❰", "❱", "⟨", "⟩", "《", "》", "«", "»", "‹", "›", "<", ">"],
+        },
+        {
+          name: "Brackets - Other",
+          chars: ["{", "}", "⟬", "⟭", "⟮", "⟯", "〔", "〕", "〖", "〗", "〘", "〙"],
+        },
+
+        {
+          name: "Circles",
+          chars: [
+            "●",
+            "⦁",
+            "•",
+            "○",
+            "◯",
+            "⚬",
+            "⚭",
+            "⍟",
+            "◌",
+            "◍",
+            "∘",
+            "⌯",
+            "⊕",
+            "⊖",
+            "⊗",
+            "⊘",
+            "⊙",
+            "⊚",
+            "⊛",
+            "◐",
+            "◑",
+            "◔",
+            "◕",
+            "◖",
+            "◗",
+            "◘",
+            "◙",
+            "⦾",
+            "⦿",
+            "⧂",
+            "⧃",
+            "☉",
+            "O",
+            "o",
+            "Ο",
+            "ο",
+            "0",
+          ],
+        },
+
+        {
+          name: "Squares",
+          chars: ["■", "▪", "◼", "◾", "□", "▫", "◻", "◽", "▢", "⬚", "▣", "▤", "▥", "▦", "▧", "▨", "▩", "⬒", "⬓", "⬔", "⬕", "⊞", "⊟", "⊠", "⊡"],
+        },
+
+        {
+          name: "Rectangles",
+          chars: ["█", "▬", "▭", "▮", "⍞", "▯", "▖", "▗", "▘", "▝", "▰", "▱"],
+        },
+
+        {
+          name: "Fill Patterns",
+          chars: ["░", "▒", "▓"],
+        },
+        {
+          name: "Triangles - Up",
+          chars: ["△", "▲", "▴", "▵", "^", "⋀", "⊿", "≜"],
+        },
+        {
+          name: "Triangles - Down",
+          chars: ["▽", "▼", "▾", "▿", "v", "⋁"],
+        },
+        {
+          name: "Triangles - Left",
+          chars: ["◄", "◅", "◂", "◃", "◁"],
+        },
+        {
+          name: "Triangles - Right",
+          chars: ["►", "▻", "▸", "▹", "▷"],
+        },
+        {
+          name: "Triangle Corners",
+          chars: ["◢", "◣", "◤", "◥"],
+        },
+        {
+          name: "Diamonds",
+          chars: ["◊", "◇", "⋄"],
+        },
+        {
+          name: "Stars",
+          chars: ["☆", "✦", "✧", "★", "✩", "✪", "✫", "✬", "✭", "✮", "✯", "⁂", "*", "⋆"],
+        },
+        {
+          name: "Dots",
+          chars: ["·", "‧", "∙", "⋅", ".", ",", ":", ";", "°", "⛬"],
+        },
+        {
+          name: "Arrows - Vertical",
+          chars: ["↑", "↓", "↕", "⇑", "⇓", "⇕", "↟", "↡", "⇈", "⇊", "↨", "↥", "↧", "⇡", "⇣", "⇧", "⇩", "⇪", "⬆", "⬇", "↾", "↿", "⇂", "⇃", "⇅"],
+        },
+        {
+          name: "Arrows - Horizontal",
+          chars: [
+            "←",
+            "→",
+            "↔",
+            "⇐",
+            "⇒",
+            "⇔",
+            "⟵",
+            "⟶",
+            "⟷",
+            "⟸",
+            "⟹",
+            "⟺",
+            "↚",
+            "↛",
+            "↮",
+            "⇍",
+            "⇏",
+            "⇎",
+            "↞",
+            "↠",
+            "⇇",
+            "⇉",
+            "↢",
+            "↣",
+            "↤",
+            "↦",
+            "⇤",
+            "⇥",
+            "↹",
+            "⇠",
+            "⇢",
+            "⇦",
+            "⇨",
+            "↜",
+            "↝",
+            "↭",
+            "⇜",
+            "⇝",
+            "↫",
+            "↬",
+            "⬅",
+            "➡",
+            "➔",
+            "➙",
+            "➛",
+            "➜",
+            "➝",
+            "➞",
+            "➟",
+            "➠",
+            "➢",
+            "➣",
+            "➤",
+            "➧",
+            "➨",
+            "➩",
+            "➪",
+            "➫",
+            "➬",
+            "➭",
+            "➮",
+            "➯",
+            "➱",
+            "➲",
+            "➳",
+            "➵",
+            "➸",
+            "➺",
+            "➻",
+            "➼",
+            "➽",
+            "➾",
+            "↼",
+            "↽",
+            "⇀",
+            "⇁",
+            "⇋",
+            "⇌",
+            "⇄",
+            "⇆",
+          ],
+        },
+        {
+          name: "Arrows - Diagonal",
+          chars: ["↖", "↗", "↘", "↙", "⇖", "⇗", "⇘", "⇙", "↸", "➘", "➚", "➴", "➶", "➷", "➹", "➥", "➦"],
+        },
+        {
+          name: "Arrows - Curved",
+          chars: ["↩", "↪", "↰", "↱", "↲", "↳", "↴", "↵", "↶", "↷", "↺", "↻", "⤴", "⤵"],
+        },
+        {
+          name: "Special",
+          chars: [
+            "♰",
+            "♱",
+            "♲",
+            "♳",
+            "♴",
+            "♵",
+            "♶",
+            "♷",
+            "☥",
+            "☦",
+            "☧",
+            "☨",
+            "☩",
+            "☪",
+            "☫",
+            "☬",
+            "☭",
+            "☮",
+            "☯",
+            "☸",
+            "⛀",
+            "⛁",
+            "⛂",
+            "⛃",
+            "÷",
+            "∝",
+            "∞",
+            "⳺",
+            "⳻",
+            "√",
+            "∛",
+            "∜",
+            "∀",
+            "∃",
+            "∄",
+            "∅",
+            "⚙",
+            "⚛",
+            "⚜",
+            "⛨",
+            "⛩",
+            "⛫",
+            "⚐",
+            "⚑",
+            "¶",
+            "‰",
+            "′",
+            "″",
+            "‴",
+            "※",
+            "℃",
+            "℉",
+            "№",
+            "℗",
+            "℠",
+            "™",
+            "Ω",
+            "℧",
+            "℮",
+            "⅍",
+            "♰",
+            "♱",
+            "♲",
+            "♳",
+            "♴",
+            "♵",
+            "♶",
+            "♷",
+            "☥",
+            "☦",
+            "☧",
+            "☨",
+            "☩",
+            "☪",
+            "☫",
+            "☬",
+            "☭",
+            "☮",
+            "☯",
+            "☸",
+            "⚒",
+            "⚓",
+            "⚔",
+            "⚖",
+            "⚗",
+            "⚘",
+            "⚙",
+            "⚛",
+            "⚜",
+            "⚰",
+            "⚱",
+            "✀",
+            "✁",
+            "✂",
+            "✃",
+            "✄",
+            "⚑",
+            "☚",
+            "☛",
+            "☜",
+            "☝",
+            "☞",
+            "☟",
+            "♨",
+            "♻",
+            "♼",
+            "♽",
+            "♾",
+            "⚚",
+            "⚝",
+            "⚞",
+            "⚟",
+            "⚬",
+            "⚲",
+            "⚳",
+            "⚴",
+            "⚵",
+            "⚶",
+            "⚷",
+            "⚸",
+            "⚹",
+            "⚺",
+            "⚻",
+            "⚼",
+            "⚿",
+            "⛐",
+            "⛑",
+            "⛒",
+            "⛓",
+            "⛠",
+            "⛡",
+            "⛢",
+            "⛣",
+            "⛤",
+            "❀",
+            "❁",
+            "❂",
+            "❃",
+            "⚘",
+            "♩",
+            "♪",
+            "♫",
+            "♬",
+            "♭",
+            "♮",
+            "♯",
+            "𝄞",
+            "𝄢",
+            "𝄪",
+            "𝄫",
+            "⚀",
+            "⚁",
+            "⚂",
+            "⚃",
+            "⚄",
+            "⚅",
+            "♠",
+            "♡",
+            "♢",
+            "♣",
+            "♤",
+            "♥",
+            "♦",
+            "♧",
+            "♔",
+            "♕",
+            "♖",
+            "♗",
+            "♘",
+            "♙",
+            "♚",
+            "♛",
+            "♜",
+            "♝",
+            "♞",
+            "♟",
+            "☀",
+            "☁",
+            "☂",
+            "☃",
+            "☄",
+            "☼",
+            "☌",
+            "☍",
+            "☾",
+            "☽",
+            "☿",
+            "♀",
+            "♁",
+            "♂",
+            "♃",
+            "♄",
+            "♅",
+            "♆",
+            "♇",
+            "¢",
+            "£",
+            "¤",
+            "¥",
+            "€",
+            "$",
+            "⚠",
+            "⚡",
+            "☢",
+            "☣",
+            "⚕",
+            "⌀",
+            "⌂",
+            "⌬",
+            "⌘",
+            "⌥",
+            "⎋",
+            "⌫",
+            "⌦",
+            "␣",
+            "⏎",
+            "⏏",
+            "⎈",
+            "⎆",
+            "⎇",
+            "⌤",
+            "⌧",
+          ],
+        },
+        {
+          name: "Quotation Marks",
+          chars: ["'", "'", "‚", "‛", '"', '"', "„", "‟", "'", "`"],
+        },
+        {
+          name: "Other Punctuation",
+          chars: ["#", "@", "&", "%", "!", "?"],
+        },
+
+        {
+          name: "Letters - Uppercase",
+          chars: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"],
+        },
+        {
+          name: "Letters - Lowercase",
+          chars: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+        },
+        {
+          name: "Letters - Accented",
+          chars: [
+            "À",
+            "Á",
+            "Â",
+            "Ã",
+            "Ä",
+            "Å",
+            "Æ",
+            "Ç",
+            "È",
+            "É",
+            "Ê",
+            "Ë",
+            "Ì",
+            "Í",
+            "Î",
+            "Ï",
+            "Ð",
+            "Ñ",
+            "Ò",
+            "Ó",
+            "Ô",
+            "Õ",
+            "Ö",
+            "Ø",
+            "Ù",
+            "Ú",
+            "Û",
+            "Ü",
+            "Ý",
+            "Þ",
+            "ß",
+            "à",
+            "á",
+            "â",
+            "ã",
+            "ä",
+            "å",
+            "æ",
+            "ç",
+            "è",
+            "é",
+            "ê",
+            "ë",
+            "ì",
+            "í",
+            "î",
+            "ï",
+            "ð",
+            "ñ",
+            "ò",
+            "ó",
+            "ô",
+            "õ",
+            "ö",
+            "ø",
+            "ù",
+            "ú",
+            "û",
+            "ü",
+            "ý",
+            "þ",
+            "ÿ",
+            "Ā",
+            "ā",
+            "Ă",
+            "ă",
+            "Ą",
+            "ą",
+            "Ć",
+            "ć",
+            "Ĉ",
+            "ĉ",
+            "Ċ",
+            "ċ",
+            "Č",
+            "č",
+            "Ď",
+            "ď",
+            "Đ",
+            "đ",
+            "Ē",
+            "ē",
+            "Ĕ",
+            "ĕ",
+            "Ė",
+            "ė",
+            "Ę",
+            "ę",
+            "Ě",
+            "ě",
+            "Ĝ",
+            "ĝ",
+            "Ğ",
+            "ğ",
+            "Ġ",
+            "ġ",
+            "Ģ",
+            "ģ",
+            "Ĥ",
+            "ĥ",
+            "Ħ",
+            "ħ",
+            "Ĩ",
+            "ĩ",
+            "Ī",
+            "ī",
+            "Ĭ",
+            "ĭ",
+            "Į",
+            "į",
+            "İ",
+            "ı",
+            "Ĳ",
+            "ĳ",
+            "Ĵ",
+            "ĵ",
+            "Ķ",
+            "ķ",
+            "ĸ",
+            "Ĺ",
+            "ĺ",
+            "Ļ",
+            "ļ",
+            "Ľ",
+            "ľ",
+            "Ŀ",
+            "ŀ",
+            "Ł",
+            "ł",
+            "Ń",
+            "ń",
+            "Ņ",
+            "ņ",
+            "Ň",
+            "ň",
+            "ŉ",
+            "Ŋ",
+            "ŋ",
+            "Ō",
+            "ō",
+            "Ŏ",
+            "ŏ",
+            "Ő",
+            "ő",
+            "Œ",
+            "œ",
+            "Ŕ",
+            "ŕ",
+            "Ŗ",
+            "ŗ",
+            "Ř",
+            "ř",
+            "Ś",
+            "ś",
+            "Ŝ",
+            "ŝ",
+            "Ş",
+            "ş",
+            "Š",
+            "š",
+            "Ţ",
+            "ţ",
+            "Ť",
+            "ť",
+            "Ŧ",
+            "ŧ",
+            "Ũ",
+            "ũ",
+            "Ū",
+            "ū",
+            "Ŭ",
+            "ŭ",
+            "Ů",
+            "ů",
+            "Ű",
+            "ű",
+            "Ų",
+            "ų",
+            "Ŵ",
+            "ŵ",
+            "Ŷ",
+            "ŷ",
+            "Ÿ",
+            "Ź",
+            "ź",
+            "Ż",
+            "ż",
+            "Ž",
+            "ž",
+          ],
+        },
+        {
+          name: "Greek",
+          chars: [
+            "α",
+            "β",
+            "γ",
+            "δ",
+            "ε",
+            "ζ",
+            "η",
+            "θ",
+            "ι",
+            "κ",
+            "λ",
+            "μ",
+            "ν",
+            "ξ",
+            "ο",
+            "π",
+            "ρ",
+            "ς",
+            "σ",
+            "τ",
+            "υ",
+            "φ",
+            "χ",
+            "ψ",
+            "ω",
+            "Γ",
+            "Δ",
+            "Ξ",
+            "Π",
+            "Σ",
+            "Φ",
+            "Ψ",
+            "Ω",
+          ],
+        },
+        {
+          name: "Numbers",
+          chars: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        },
+        {
+          name: "Fractions",
+          chars: ["¼", "½", "¾", "⅐", "⅑", "⅒", "⅓", "⅔", "⅕", "⅖", "⅗", "⅘", "⅙", "⅚", "⅛", "⅜", "⅝", "⅞"],
+        },
+        {
+          name: "Superscript/Subscript",
+          chars: [
+            "⁰",
+            "¹",
+            "²",
+            "³",
+            "⁴",
+            "⁵",
+            "⁶",
+            "⁷",
+            "⁸",
+            "⁹",
+            "⁺",
+            "⁻",
+            "⁼",
+            "⁽",
+            "⁾",
+            "ⁿ",
+            "₀",
+            "₁",
+            "₂",
+            "₃",
+            "₄",
+            "₅",
+            "₆",
+            "₇",
+            "₈",
+            "₉",
+            "₊",
+            "₋",
+            "₌",
+            "₍",
+            "₎",
+          ],
+        },
+        {
+          name: "Roman Numerals",
+          chars: [
+            "ⅰ",
+            "ⅱ",
+            "ⅲ",
+            "ⅳ",
+            "ⅴ",
+            "ⅵ",
+            "ⅶ",
+            "ⅷ",
+            "ⅸ",
+            "ⅹ",
+            "ⅺ",
+            "ⅻ",
+            "ⅼ",
+            "ⅽ",
+            "ⅾ",
+            "ⅿ",
+            "Ⅰ",
+            "Ⅱ",
+            "Ⅲ",
+            "Ⅳ",
+            "Ⅴ",
+            "Ⅵ",
+            "Ⅶ",
+            "Ⅷ",
+            "Ⅸ",
+            "Ⅹ",
+            "Ⅺ",
+            "Ⅻ",
+            "Ⅼ",
+            "Ⅽ",
+            "Ⅾ",
+            "Ⅿ",
+          ],
+        },
+
+        {
+          name: "Circled Numbers",
+          chars: [
+            "⓪",
+            "①",
+            "②",
+            "③",
+            "④",
+            "⑤",
+            "⑥",
+            "⑦",
+            "⑧",
+            "⑨",
+            "⑩",
+            "⑪",
+            "⑫",
+            "⑬",
+            "⑭",
+            "⑮",
+            "⑯",
+            "⑰",
+            "⑱",
+            "⑲",
+            "⑳",
+            "⓵",
+            "⓶",
+            "⓷",
+            "⓸",
+            "⓹",
+            "⓺",
+            "⓻",
+            "⓼",
+            "⓽",
+            "⓾",
+          ],
+        },
+        {
+          name: "Parenthesized Numbers",
+          chars: ["⒈", "⒉", "⒊", "⒋", "⒌", "⒍", "⒎", "⒏", "⒐", "⒑", "⒒", "⒓", "⒔", "⒕", "⒖", "⒗", "⒘", "⒙", "⒚", "⒛"],
+        },
+        {
+          name: "Circled Letters - Upper",
+          chars: ["Ⓐ", "Ⓑ", "Ⓒ", "Ⓓ", "Ⓔ", "Ⓕ", "Ⓖ", "Ⓗ", "Ⓘ", "Ⓙ", "Ⓚ", "Ⓛ", "Ⓜ", "Ⓝ", "Ⓞ", "Ⓟ", "Ⓠ", "Ⓡ", "Ⓢ", "Ⓣ", "Ⓤ", "Ⓥ", "Ⓦ", "Ⓧ", "Ⓨ", "Ⓩ"],
+        },
+        {
+          name: "Parenthesized Letters",
+          chars: ["⒜", "⒝", "⒞", "⒟", "⒠", "⒡", "⒢", "⒣", "⒤", "⒥", "⒦", "⒧", "⒨", "⒩", "⒪", "⒫", "⒬", "⒭", "⒮", "⒯", "⒰", "⒱", "⒲", "⒳", "⒴", "⒵"],
+        },
+
+        {
+          name: "Dots/Braille",
+          chars: [
+            "⠀",
+            "⠁",
+            "⠂",
+            "⠃",
+            "⠄",
+            "⠅",
+            "⠆",
+            "⠇",
+            "⠈",
+            "⠉",
+            "⠊",
+            "⠋",
+            "⠌",
+            "⠍",
+            "⠎",
+            "⠏",
+            "⠐",
+            "⠑",
+            "⠒",
+            "⠓",
+            "⠔",
+            "⠕",
+            "⠖",
+            "⠗",
+            "⠘",
+            "⠙",
+            "⠚",
+            "⠛",
+            "⠜",
+            "⠝",
+            "⠞",
+            "⠟",
+            "⠠",
+            "⠡",
+            "⠢",
+            "⠣",
+            "⠤",
+            "⠥",
+            "⠦",
+            "⠧",
+            "⠨",
+            "⠩",
+            "⠪",
+            "⠫",
+            "⠬",
+            "⠭",
+            "⠮",
+            "⠯",
+            "⠰",
+            "⠱",
+            "⠲",
+            "⠳",
+            "⠴",
+            "⠵",
+            "⠶",
+            "⠷",
+            "⠸",
+            "⠹",
+            "⠺",
+            "⠻",
+            "⠼",
+            "⠽",
+            "⠾",
+            "⠿",
+            "⡀",
+            "⡁",
+            "⡂",
+            "⡃",
+            "⡄",
+            "⡅",
+            "⡆",
+            "⡇",
+            "⡈",
+            "⡉",
+            "⡊",
+            "⡋",
+            "⡌",
+            "⡍",
+            "⡎",
+            "⡏",
+            "⡐",
+            "⡑",
+            "⡒",
+            "⡓",
+            "⡔",
+            "⡕",
+            "⡖",
+            "⡗",
+            "⡘",
+            "⡙",
+            "⡚",
+            "⡛",
+            "⡜",
+            "⡝",
+            "⡞",
+            "⡟",
+            "⡠",
+            "⡡",
+            "⡢",
+            "⡣",
+            "⡤",
+            "⡥",
+            "⡦",
+            "⡧",
+            "⡨",
+            "⡩",
+            "⡪",
+            "⡫",
+            "⡬",
+            "⡭",
+            "⡮",
+            "⡯",
+            "⡰",
+            "⡱",
+            "⡲",
+            "⡳",
+            "⡴",
+            "⡵",
+            "⡶",
+            "⡷",
+            "⡸",
+            "⡹",
+            "⡺",
+            "⡻",
+            "⡼",
+            "⡽",
+            "⡾",
+            "⡿",
+            "⢀",
+            "⢁",
+            "⢂",
+            "⢃",
+            "⢄",
+            "⢅",
+            "⢆",
+            "⢇",
+            "⢈",
+            "⢉",
+            "⢊",
+            "⢋",
+            "⢌",
+            "⢍",
+            "⢎",
+            "⢏",
+            "⢐",
+            "⢑",
+            "⢒",
+            "⢓",
+            "⢔",
+            "⢕",
+            "⢖",
+            "⢗",
+            "⢘",
+            "⢙",
+            "⢚",
+            "⢛",
+            "⢜",
+            "⢝",
+            "⢞",
+            "⢟",
+            "⢠",
+            "⢡",
+            "⢢",
+            "⢣",
+            "⢤",
+            "⢥",
+            "⢦",
+            "⢧",
+            "⢨",
+            "⢩",
+            "⢪",
+            "⢫",
+            "⢬",
+            "⢭",
+            "⢮",
+            "⢯",
+            "⢰",
+            "⢱",
+            "⢲",
+            "⢳",
+            "⢴",
+            "⢵",
+            "⢶",
+            "⢷",
+            "⢸",
+            "⢹",
+            "⢺",
+            "⢻",
+            "⢼",
+            "⢽",
+            "⢾",
+            "⢿",
+            "⣀",
+            "⣁",
+            "⣂",
+            "⣃",
+            "⣄",
+            "⣅",
+            "⣆",
+            "⣇",
+            "⣈",
+            "⣉",
+            "⣊",
+            "⣋",
+            "⣌",
+            "⣍",
+            "⣎",
+            "⣏",
+            "⣐",
+            "⣑",
+            "⣒",
+            "⣓",
+            "⣔",
+            "⣕",
+            "⣖",
+            "⣗",
+            "⣘",
+            "⣙",
+            "⣚",
+            "⣛",
+            "⣜",
+            "⣝",
+            "⣞",
+            "⣟",
+            "⣠",
+            "⣡",
+            "⣢",
+            "⣣",
+            "⣤",
+            "⣥",
+            "⣦",
+            "⣧",
+            "⣨",
+            "⣩",
+            "⣪",
+            "⣫",
+            "⣬",
+            "⣭",
+            "⣮",
+            "⣯",
+            "⣰",
+            "⣱",
+            "⣲",
+            "⣳",
+            "⣴",
+            "⣵",
+            "⣶",
+            "⣷",
+            "⣸",
+            "⣹",
+            "⣺",
+            "⣻",
+            "⣼",
+            "⣽",
+            "⣾",
+            "⣿",
+          ],
+        },
+      ];
+
+      // ─────────────────────────────────────────────
+      // STATE
+      // ─────────────────────────────────────────────
+      let mode = "narrow";
+      let cols = 6;
+      let rows = 7;
+      let grid = [];
+      let history = [];
+      let drawing = false;
+      let erasing = false;
+      let curChar = "█";
+      let batch = [];
+      let selectedCell = null; // {r, c}
+      let hoveredCell = null; // {r, c}
+      let copiedChar = null;
+      let shiftPressed = false;
+      let dragSrc = null; // {r, c} for shift-drag-to-move
+
+      function makeGrid() {
+        grid = Array.from({ length: rows }, () => Array(cols).fill(""));
+      }
+
+      // ─────────────────────────────────────────────
+      // MODE
+      // ─────────────────────────────────────────────
+      function setMode(m) {
+        mode = m;
+        cols = MODES[m].cols;
+        rows = MODES[m].rows;
+        document.querySelectorAll(".mode-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+        // show/hide price row
+        const isFood = m === "food";
+        document.getElementById("priceRow").style.display = isFood ? "flex" : "none";
+        document.getElementById("sizeRow").style.display = isFood ? "none" : "flex";
+        document.getElementById("inputSize").value = MODES[m].size || "";
+        makeGrid();
+        buildGridDOM();
+        updateExport();
+      }
+
+      function selectCell(r, c) {
+        selectedCell = { r, c };
+        document.querySelectorAll("#grid .cell").forEach((el) => el.classList.remove("selected"));
+        const el = document.querySelector(`#grid .cell[data-r="${r}"][data-c="${c}"]`);
+        if (el) el.classList.add("selected");
+      }
+
+      function makeCell(r, c) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.draggable = true;
+
+        // drawing
+        cell.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          if (shiftPressed) {
+            dragSrc = { r, c };
+            return;
+          }
+          drawing = true;
+          paintCell(r, c);
+        });
+        cell.addEventListener("mouseenter", () => {
+          hoveredCell = { r, c };
+          if (shiftPressed) {
+            cell.classList.add("drag-over");
+            return;
+          }
+          if (drawing) paintCell(r, c);
+        });
+        cell.addEventListener("mouseleave", () => {
+          hoveredCell = null;
+          cell.classList.remove("drag-over");
+        });
+
+        // shift-drag-to-move
+        cell.addEventListener("dragstart", (e) => {
+          if (!shiftPressed) {
+            e.preventDefault();
+            return;
+          }
+          dragSrc = { r, c };
+          e.dataTransfer.effectAllowed = "move";
+          cell.style.opacity = ".4";
+        });
+        cell.addEventListener("dragend", () => {
+          cell.style.opacity = "";
+          dragSrc = null;
+        });
+        cell.addEventListener("dragover", (e) => {
+          if (dragSrc) {
+            e.preventDefault();
+            cell.classList.add("drag-over");
+          }
+        });
+        cell.addEventListener("dragleave", () => cell.classList.remove("drag-over"));
+        cell.addEventListener("drop", (e) => {
+          e.preventDefault();
+          cell.classList.remove("drag-over");
+          if (!dragSrc) return;
+          saveHistory();
+          grid[r][c] = grid[dragSrc.r][dragSrc.c];
+          grid[dragSrc.r][dragSrc.c] = "";
+          dragSrc = null;
+          syncGridDOM();
+          showToast("MOVED");
+        });
+
+        // click → select cell
+        cell.addEventListener("click", () => {
+          if (drawing) return;
+          selectCell(r, c);
+        });
+
+        // right-click context menu
+        cell.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          showContextMenu(e.clientX, e.clientY, r, c);
+        });
+
+        // touch
+        cell.addEventListener(
+          "touchstart",
+          (e) => {
+            e.preventDefault();
+            drawing = true;
+            paintCell(r, c);
+          },
+          { passive: false },
+        );
+        cell.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+            const t = e.touches[0];
+            const target = document.elementFromPoint(t.clientX, t.clientY);
+            if (target && target.classList.contains("cell")) paintCell(+target.dataset.r, +target.dataset.c);
+          },
+          { passive: false },
+        );
+
+        return cell;
+      }
+
+      // ─────────────────────────────────────────────
+      // GRID DOM
+      // ─────────────────────────────────────────────
+      function buildGridDOM() {
+        const el = document.getElementById("grid");
+        el.innerHTML = "";
+        el.style.gridTemplateColumns = `repeat(${cols}, var(--cell-w))`;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            el.appendChild(makeCell(r, c)); // just this line — nothing else in the loop
+          }
+        }
+
+        document.addEventListener(
+          "mouseup",
+          () => {
+            drawing = false;
+          },
+          { once: false },
+        );
+        document.addEventListener(
+          "touchend",
+          () => {
+            drawing = false;
+          },
+          { once: false },
+        );
+
+        buildRuler();
+        syncGridDOM();
+      }
+
+      function buildRuler() {
+        const ruler = document.getElementById("ruler");
+        ruler.innerHTML = "";
+        for (let r = 0; r < rows; r++) {
+          const rc = document.createElement("div");
+          rc.className = "ruler-cell";
+          rc.textContent = r + 1;
+          ruler.appendChild(rc);
+        }
+      }
+
+      function syncGridDOM() {
+        const cells = document.querySelectorAll("#grid .cell");
+        cells.forEach((cell) => {
+          const r = +cell.dataset.r,
+            c = +cell.dataset.c;
+          cell.textContent = grid[r][c];
+        });
+        updateExport();
+        // updatePreview();
+      }
+
+      function paintCell(r, c) {
+        saveHistory();
+        grid[r][c] = erasing ? "" : curChar;
+        const cell = document.querySelector(`#grid .cell[data-r="${r}"][data-c="${c}"]`);
+        if (cell) cell.textContent = grid[r][c];
+        updateExport();
+        // updatePreview();
+      }
+
+      // ─────────────────────────────────────────────
+      // PALETTE
+      // ─────────────────────────────────────────────
+      function buildPalette() {
+        const container = document.querySelector(".palette-panel");
+        PALETTE_CATEGORIES.forEach((category) => {
+          const title = document.createElement("div");
+          title.className = "palette-section-title";
+          title.textContent = category.name;
+          container.appendChild(title);
+
+          const row = document.createElement("div");
+          row.className = "palette-row";
+          category.chars.forEach((ch) => {
+            const btn = document.createElement("button");
+            btn.className = "char-btn";
+            btn.textContent = ch;
+            btn.addEventListener("click", () => selectChar(ch));
+            row.appendChild(btn);
+          });
+          container.appendChild(row);
+        });
+      }
+      function selectChar(ch) {
+        curChar = ch;
+        document.getElementById("currentChar").textContent = ch;
+        erasing = false;
+        document.getElementById("eraserBtn").classList.remove("active");
+        document.querySelectorAll(".char-btn").forEach((b) => b.classList.toggle("selected", b.textContent === ch));
+      }
+
+      // ─────────────────────────────────────────────
+      // TOOLBAR ACTIONS
+      // ─────────────────────────────────────────────
+      function toggleEraser() {
+        erasing = !erasing;
+        document.getElementById("eraserBtn").classList.toggle("active", erasing);
+        document.querySelectorAll(".char-btn").forEach((b) => b.classList.remove("selected"));
+      }
+
+      function fillRow() {
+        // fill selected row with spaces (useful for padding)
+        // fills the row that has the first non-empty cell in the last drawn row
+        saveHistory();
+        // find the last touched row (or row 0 fallback)
+        for (let c = 0; c < cols; c++) {
+          if (grid[0][c] === "") grid[0][c] = curChar;
+        }
+        syncGridDOM();
+      }
+
+      function clearGrid() {
+        saveHistory();
+        makeGrid();
+        syncGridDOM();
+        showToast("GRID CLEARED");
+      }
+
+      function undo() {
+        if (history.length === 0) return;
+        grid = history.pop();
+        syncGridDOM();
+        showToast("UNDO ↩");
+      }
+
+      function saveHistory() {
+        history.push(grid.map((r) => [...r]));
+        if (history.length > 40) history.shift();
+      }
+
+      function loadExample() {
+        const map = {
+          narrow: GAME_DATA.buildings.filter((b) => b.size === 6),
+          regular: GAME_DATA.buildings.filter((b) => b.size === 9),
+          wide: GAME_DATA.buildings.filter((b) => b.size === 13),
+          food: GAME_DATA.foods,
+        };
+        const pool = map[mode];
+        const ex = pool[Math.floor(Math.random() * pool.length)];
+        saveHistory();
+        makeGrid();
+        const art = ex.art || ex.a;
+        const startRow = rows - art.length;
+        art.forEach((line, ri) => {
+          [...line].forEach((ch, c) => {
+            if (c < cols) grid[startRow + ri][c] = ch === " " ? "" : ch;
+          });
+        });
+        document.getElementById("inputName").value = ex.name || ex.n || "";
+        if (mode === "food") document.getElementById("inputPrice").value = ex.p ?? "";
+        syncGridDOM();
+        showToast(`LOADED: ${ex.name || ex.n}`);
+      }
+
+      function emailToMarie() {
+        const json = buildJSON();
+        if (json.startsWith("//")) {
+          showToast("NOTHING TO SEND");
+          return;
+        }
+        const name = document.getElementById("inputName").value.trim() || "untitled";
+        const subject = encodeURIComponent(`Loser Lane submission: ${name}`);
+        const body = encodeURIComponent(json);
+        window.open(`mailto:marieflanagan@gmail.com?subject=${subject}&body=${body}`);
+      }
+      // ─────────────────────────────────────────────
+      // ART EXTRACTION
+      // ─────────────────────────────────────────────
+      function getArtLines(trim = true) {
+        let artRows = grid.map((row) => row.map((c) => (c === "" ? " " : c)).join(""));
+        if (trim) {
+          // trim leading/trailing empty rows
+          while (artRows.length && artRows[0].trim() === "") artRows.shift();
+          while (artRows.length && artRows[artRows.length - 1].trim() === "") artRows.pop();
+        }
+        return artRows;
+      }
+
+      // ─────────────────────────────────────────────
+      // PREVIEW
+      // ─────────────────────────────────────────────
+      // function updatePreview() {
+      //   const lines = getArtLines(true);
+      //   const preview = document.getElementById("previewBody");
+      //   if (lines.length === 0) {
+      //     preview.textContent = " ";
+      //     return;
+      //   }
+      //   preview.textContent = lines.join("\n");
+      // }
+
+      // ─────────────────────────────────────────────
+      // EXPORT
+      // ─────────────────────────────────────────────
+      function buildJSON() {
+        const lines = getArtLines(true);
+        if (lines.length === 0) return "// draw something and fill in a name above";
+
+        if (mode === "food") {
+          const n = document.getElementById("inputName").value.trim() || "item";
+          const p = parseInt(document.getElementById("inputPrice").value) || 0;
+          const artStr = lines.map((l) => `        "${l}"`).join(",\n");
+          const colour = document.getElementById("inputColour").value.trim();
+          const colourLine = colour ? `\n        c: "${colour}",` : "";
+          return `    {\n        n: "${n}",\n        p: ${p},${colourLine}\n        a: [\n${artStr},\n        ],\n    },`;
+        } else {
+          const name = document.getElementById("inputName").value.trim() || "Building";
+          const size = MODES[mode].size;
+          const colour = document.getElementById("inputColour").value.trim();
+          const colourLine = colour ? `\n        colour: "${colour}",` : "";
+          const artStr = lines.map((l) => `            "${l}"`).join(",\n");
+          return `    {\n        name: "${name}",\n        size: ${size},${colourLine}\n        art: [\n${artStr},\n        ],\n    },`;
+        }
+      }
+
+      function updateExport() {
+        document.getElementById("exportBody").textContent = buildJSON();
+        // updatePreview();
+      }
+
+      function copyJSON() {
+        const text = buildJSON();
+        copyToClipboard(text);
+        const body = document.getElementById("exportBody");
+        body.classList.add("copy-flash");
+        setTimeout(() => body.classList.remove("copy-flash"), 400);
+      }
+
+      // ─────────────────────────────────────────────
+      // BATCH
+      // ─────────────────────────────────────────────
+      function appendToSession() {
+        const json = buildJSON();
+        if (json.startsWith("//")) {
+          showToast("NOTHING TO ADD");
+          return;
+        }
+        batch.push({ mode, json });
+        renderBatch();
+        showToast(`ADDED! (${batch.length} items)`);
+      }
+
+      function clearBatch() {
+        batch = [];
+        renderBatch();
+        showToast("BATCH CLEARED");
+      }
+
+      function renderBatch() {
+        const panel = document.getElementById("batchPanel");
+        const body = document.getElementById("batchBody");
+        if (batch.length === 0) {
+          panel.style.display = "none";
+          return;
+        }
+        panel.style.display = "block";
+
+        // group by mode
+        const groups = {};
+        batch.forEach((item) => {
+          if (!groups[item.mode]) groups[item.mode] = [];
+          groups[item.mode].push(item.json);
+        });
+
+        let out = "";
+        for (const [m, items] of Object.entries(groups)) {
+          const label = m === "food" ? "foods" : `buildings (size ${MODES[m].size})`;
+          out += `// ── ${label.toUpperCase()} ──\n`;
+          out += items.join("\n") + "\n\n";
+        }
+        body.textContent = out.trim();
+      }
+
+      function copyBatch() {
+        const body = document.getElementById("batchBody");
+        copyToClipboard(body.textContent);
+      }
+
+      // ─────────────────────────────────────────────
+      // UTILS
+      // ─────────────────────────────────────────────
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showToast("COPIED!"))
+          .catch(() => {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            showToast("COPIED!");
+          });
+      }
+
+      let toastTimer;
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+      }
+
+      // ─────────────────────────────────────────────
+      // KEYBOARD
+      // ─────────────────────────────────────────────
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Shift") {
+          shiftPressed = true;
+          document.querySelectorAll("#grid .cell").forEach((el) => {
+            el.style.borderColor = "rgba(160,160,248,0.3)";
+          });
+          return;
+        }
+
+        // undo
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+          return;
+        }
+
+        // don't steal keypresses when typing in inputs
+        if (document.activeElement.matches("input")) return;
+
+        // copy JSON export (Ctrl/Cmd+C with no selected cell)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && !selectedCell) {
+          e.preventDefault();
+          copyJSON();
+          return;
+        }
+
+        // cell copy: C (with or without Ctrl)
+        if (e.key.toLowerCase() === "c" && selectedCell) {
+          e.preventDefault();
+          copiedChar = grid[selectedCell.r][selectedCell.c];
+          selectChar(copiedChar || "");
+          showToast(copiedChar ? `COPIED: ${copiedChar}` : "COPIED EMPTY");
+          return;
+        }
+
+        // cell paste: V
+        if (e.key.toLowerCase() === "v" && selectedCell) {
+          e.preventDefault();
+          if (copiedChar === null) {
+            showToast("NOTHING TO PASTE");
+            return;
+          }
+          saveHistory();
+          grid[selectedCell.r][selectedCell.c] = copiedChar;
+          syncGridDOM();
+          showToast(copiedChar ? `PASTED: ${copiedChar}` : "PASTED EMPTY");
+          return;
+        }
+
+        if (e.key === "Escape") {
+          erasing = false;
+          document.getElementById("eraserBtn").classList.remove("active");
+          return;
+        }
+
+        // everything below needs a selected cell
+        if (!selectedCell) {
+          // select top-left on first arrow press
+          if (e.key.startsWith("Arrow")) {
+            e.preventDefault();
+            selectCell(0, 0);
+          }
+          return;
+        }
+
+        const { r, c } = selectedCell;
+
+        // arrow navigation
+        const moves = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+        if (moves[e.key]) {
+          e.preventDefault();
+          const [dr, dc] = moves[e.key];
+          const nr = Math.max(0, Math.min(rows - 1, r + dr));
+          const nc = Math.max(0, Math.min(cols - 1, c + dc));
+          selectCell(nr, nc);
+          return;
+        }
+
+        // delete / backspace
+        if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          saveHistory();
+          grid[r][c] = "";
+          syncGridDOM();
+          return;
+        }
+
+        // space → place current char
+        if (e.key === " ") {
+          e.preventDefault();
+          saveHistory();
+          grid[r][c] = erasing ? "" : curChar;
+          syncGridDOM();
+          return;
+        }
+
+        // any printable char → select it AND stamp it
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          selectChar(e.key);
+          saveHistory();
+          grid[r][c] = e.key;
+          syncGridDOM();
+          return;
+        }
+      });
+
+      document.addEventListener("keyup", (e) => {
+        if (e.key === "Shift") {
+          shiftPressed = false;
+          dragSrc = null;
+          document.querySelectorAll("#grid .cell").forEach((el) => {
+            el.style.borderColor = "";
+          });
+        }
+      });
+
+      let _ctxMenu = null;
+      function showContextMenu(x, y, r, c) {
+        closeContextMenu();
+        const menu = document.createElement("div");
+        menu.style.cssText = `position:fixed;top:${y}px;left:${x}px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;z-index:1000;min-width:130px;overflow:hidden;`;
+
+        const items = [
+          [
+            "⎘ Copy char",
+            () => {
+              copiedChar = grid[r][c];
+              selectChar(copiedChar || "");
+              showToast(copiedChar ? `COPIED: ${copiedChar}` : "COPIED EMPTY");
+            },
+          ],
+          [
+            "⎗ Paste here",
+            () => {
+              if (copiedChar === null) {
+                showToast("NOTHING TO PASTE");
+                return;
+              }
+              saveHistory();
+              grid[r][c] = copiedChar;
+              syncGridDOM();
+            },
+            copiedChar === null,
+          ],
+          [
+            "✕ Clear cell",
+            () => {
+              saveHistory();
+              grid[r][c] = "";
+              syncGridDOM();
+            },
+          ],
+        ];
+
+        items.forEach(([label, fn, disabled]) => {
+          const btn = document.createElement("button");
+          btn.textContent = label;
+          btn.disabled = !!disabled;
+          btn.style.cssText = `display:block;width:100%;padding:7px 12px;text-align:left;
+      font-family:var(--mono);font-size:12px;background:none;border:none;
+      color:${disabled ? "var(--dim)" : "var(--text)"};cursor:${disabled ? "default" : "pointer"};`;
+          btn.onmouseenter = () => {
+            if (!disabled) btn.style.background = "var(--cell-hl)";
+          };
+          btn.onmouseleave = () => {
+            btn.style.background = "none";
+          };
+          btn.onclick = () => {
+            if (!disabled) fn();
+            closeContextMenu();
+          };
+          menu.appendChild(btn);
+        });
+
+        document.body.appendChild(menu);
+        _ctxMenu = menu;
+        selectCell(r, c);
+        setTimeout(() => document.addEventListener("click", closeContextMenu, { once: true }), 0);
+      }
+      function closeContextMenu() {
+        if (_ctxMenu) {
+          _ctxMenu.remove();
+          _ctxMenu = null;
+        }
+      }
+
+      // ─────────────────────────────────────────────
+      // INIT
+      // ─────────────────────────────────────────────
+      buildPalette();
+      selectChar("█");
+      makeGrid();
+      buildGridDOM();
+      updateExport();
+    </script>
+  </body>
+</html>
