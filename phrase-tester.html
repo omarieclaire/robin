@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>phrase tester</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #161616;
+        color: #bbb;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        padding: 24px;
+        max-width: 860px;
+        font-size: 1rem;
+      }
+      h1 {
+        color: #eee;
+        font-size: 15px;
+        font-weight: normal;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      .ctrl {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .ctrl label {
+        color: #555;
+        font-size: 1rem;
+        letter-spacing: 1px;
+      }
+      select,
+      input[type="number"] {
+        background: #222;
+        border: 1px solid #383838;
+        color: #ccc;
+        padding: 7px 1rem;
+        font-family: inherit;
+        font-size: 12px;
+        border-radius: 3px;
+        outline: none;
+      }
+      input[type="number"] {
+        width: 64px;
+      }
+      button {
+        background: #2a3a2a;
+        border: 1px solid #3a5a3a;
+        color: #7aba7a;
+        padding: 8px 22px;
+        font-family: inherit;
+        font-size: 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      button:hover {
+        background: #344a34;
+      }
+
+      .conversations {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .conv-block {
+        background: #1e1e1e;
+        border: 1px solid #2a2a2a;
+        border-radius: 4px;
+        padding: 18px;
+      }
+      .conv-header {
+        font-size: 1rem;
+        color: #c9c9c984;
+        letter-spacing: 1px;
+        margin-bottom: 14px;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #252525;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .badge {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 2px;
+        letter-spacing: 1px;
+      }
+      .badge.narc {
+        background: #3a1a1a;
+        color: #c77;
+      }
+      .badge.angry {
+        background: #2a2a1a;
+        color: #ba8;
+      }
+      .badge.hungry {
+        background: #1a2a2a;
+        color: #7ab;
+      }
+
+      .ambient {
+        color: #8a9aba;
+        font-style: italic;
+        font-size: 1rem;
+        margin-bottom: 14px;
+        padding: 6px 1rem;
+        border-left: 2px solid #2a2a2a;
+        justify-content: flex-end;
+        display: flex;
+      }
+      .ambient::before {
+        content: '"';
+      }
+      .ambient::after {
+        content: '"';
+      }
+
+      .line {
+        margin: 5px 0;
+        display: flex;
+      }
+      .line.player {
+        justify-content: flex-start;
+      }
+      .line.npc {
+        justify-content: flex-end;
+      }
+
+      .line.choice .bubble {
+        background: #1a1a1a;
+        color: #555;
+        border: 1px dashed #349134;
+        font-size: 1rem;
+        max-width: 90%;
+      }
+
+      .bubble {
+        max-width: 72%;
+        padding: 7px 12px;
+        border-radius: 3px;
+        line-height: 1.5;
+      }
+      .line.player .bubble {
+        background: #1e2e1e;
+        color: #8aba8a;
+        border: 1px solid #2a3a2a;
+      }
+      .line.npc .bubble {
+        background: #1e1e2e;
+        color: #8a9aba;
+        border: 1px solid #2a2a3a;
+      }
+      .line.npc.narc-reveal .bubble {
+        background: #2a1616;
+        color: #c07070;
+        border: 1px solid #4a2020;
+      }
+
+      .outcome {
+        margin-top: 12px;
+        padding-top: 1rem;
+        border-top: 1px solid #252525;
+        font-size: 1rem;
+        letter-spacing: 1px;
+      }
+      .outcome.joined {
+        color: #5a9a5a;
+      }
+      .outcome.declined {
+        color: #8a8a50;
+      }
+      .outcome.narc {
+        color: #9a4a4a;
+      }
+      .outcome.backed {
+        color: #555;
+      }
+      .outcome.deferred {
+        color: #4a7a8a;
+      }
+
+      #error-box {
+        background: #2a1616;
+        border: 1px solid #5a2020;
+        color: #c07070;
+        padding: 12px;
+        border-radius: 3px;
+        margin-bottom: 20px;
+        font-size: 11px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>// phrase tester</h1>
+    <div id="error-box"></div>
+
+    <div class="controls">
+      <div class="ctrl">
+        <label>NPC TYPE</label>
+        <select id="npcType">
+          <option value="mixed">mixed</option>
+          <option value="narc">narc only</option>
+          <option value="angry">angry only</option>
+          <option value="hungry">hungry only</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>COUNT</label>
+        <input type="number" id="count" value="3" min="1" max="20" />
+      </div>
+      <div class="ctrl">
+        <label>&nbsp;</label>
+        <button onclick="runSim()">run simulation</button>
+      </div>
+    </div>
+
+    <div class="conversations" id="output"></div>
+
+    <script src="game-data.js"></script>
+    <script>
+      // Stubs so game.js doesn't crash on missing DOM / audio / game infrastructure
+      window.GAME_DATA = window.GAME_DATA || {
+        buildings: [],
+        playerArt: [[" @ "], [" @ "]],
+        npcArts: [["&"]],
+        npcColors: ["#aaa"],
+        narcArt: ["%"],
+        robinArt: ["R"],
+        narrativeQuotes: [],
+      };
+      const _noop = () => {};
+      const _noopO = () => ({});
+      window.audio = { play: _noop };
+      window.grid = { set: _noop, text: _noop, textCenter: _noop, art: _noop };
+      window.Util = window.Util || {
+        pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
+        clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+        randInt: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
+        lerp: (a, b, t) => a + (b - a) * t,
+      };
+      window.phase = "tester";
+      window.W = 80;
+      window.H = 30;
+      window.dialogStack = [];
+      window.C_PLAYER = "#7aba7a";
+      window.C_DIM = "#555";
+      window.C_DANGER = "#c44";
+      window.C_SUCCESS = "#7aba7a";
+      window.C_TEAL = "#7ababa";
+      window.C_ORANGE = "#ba8a4a";
+      window.C_WARN = "#ba8a4a";
+      window.bannerTimer = 0;
+      window.hasPlayed = false;
+      window.showBanner = _noop;
+      window.updateBanner = _noop;
+      window.renderBanner = _noop;
+      window.dialogUpdate = _noop;
+      window.dialogRender = _noop;
+      window.addFloat = _noop;
+      window.spark = _noop;
+      window.triggerChromatic = _noop;
+      window.endGame = _noop;
+      window.initAct2b = _noop;
+      window.hudLabel = { textContent: "" };
+      window.hudScore = { textContent: "", style: {} };
+      window.hudStatus = { textContent: "", style: {} };
+      // Stub canvas element game.js might query
+      if (!document.getElementById("gamescreen")) {
+        const gs = document.createElement("canvas");
+        gs.id = "gamescreen";
+        gs.style.display = "none";
+        document.body.appendChild(gs);
+      }
+      window.gs = document.getElementById("gamescreen");
+      window.input = { isDown: _noop, justPressed: _noop };
+      window.clickPending = false;
+      window.CONV_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+      window.DIALOG_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+      // Stub A1 stuff game.js references at the top level
+      window.A1_LOOP_MSGS = [];
+      window.HA = [[""]];
+      window.HC = ["#fff"];
+    </script>
+    <script>
+      function simulateConversation(npcType, npcKind) {
+        const lines = [];
+        const add = (speaker, text, meta = "") => lines.push({ speaker, text, meta });
+
+        DM.startConv();
+
+        const ambLine = npcType === "narc" ? DM.draw(DECK_AMB_NARC) : npcKind === "hungry" ? DM.draw(DECK_AMB_HUNGRY) : DM.draw(DECK_AMB_ANGRY);
+        add("ambient", ambLine);
+
+        add("player", DM.draw(DECK_GREET));
+
+        const npcHello = npcType === "narc" ? DM.draw(DECK_NARC_HELLO) : npcKind === "angry" ? DM.draw(DECK_ANGRY_HELLO) : DM.draw(DECK_HUNGRY_HELLO);
+        add("npc", npcHello);
+
+        const prefix = npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+        const angryPitch = DM.draw(DECK_ANGRY_PITCH, { boost: true });
+        const hungryPitch = DM.draw(DECK_HUNGRY_PITCH, { boost: true });
+
+        let playerPitch, matched;
+        if (npcType === "narc") {
+          playerPitch = Math.random() < 0.5 ? angryPitch : hungryPitch;
+          matched = false;
+        } else {
+          const shouldMatch = Math.random() < 0.75;
+          matched = shouldMatch;
+          playerPitch = npcKind === "angry" ? (shouldMatch ? angryPitch : hungryPitch) : shouldMatch ? hungryPitch : angryPitch;
+        }
+
+        add("choice", "a→ " + prefix + angryPitch);
+        add("choice", "h→ " + prefix + hungryPitch);
+
+        add("npc", DM.draw(DECK_SAY_MORE));
+        add("player", DM.draw(DECK_INVITE));
+
+        let outcome;
+
+        if (npcType === "narc") {
+          add("npc", DM.draw(DECK_SAY_MORE));
+          if (Math.random() < 0.7) {
+            add("player", DM.draw(DECK_STRONGER_PITCH, { boost: true }));
+            add("npc", DM.draw(DECK_NARC_REV), "narc-reveal");
+            outcome = "narc";
+          } else {
+            add("player", DM.draw(DECK_BACK_OFF));
+            outcome = "backed";
+          }
+        } else if (!matched) {
+          add("npc", DM.draw(DECK_MISMATCH) + " " + DM.draw(DECK_NO_BYE));
+          outcome = "declined";
+        } else if (Math.random() < 0.5) {
+          const jp = DM.draw(DECK_JOIN),
+            cp = DM.draw(DECK_CONSENT);
+          if (Math.random() < 0.5) {
+            add("npc", jp);
+            add("npc", cp);
+          } else {
+            add("npc", cp);
+            add("npc", jp);
+          }
+          outcome = "joined";
+        } else {
+          add("npc", DM.draw(DECK_SAY_MORE));
+          add("player", DM.draw(DECK_STRONGER_PITCH, { boost: true }));
+          if (Math.random() < 0.6) {
+            const jp = DM.draw(DECK_JOIN),
+              cp = DM.draw(DECK_CONSENT);
+            if (Math.random() < 0.5) {
+              add("npc", jp);
+              add("npc", cp);
+            } else {
+              add("npc", cp);
+              add("npc", jp);
+            }
+            outcome = "joined";
+          } else {
+            add("npc", DM.draw(DECK_NOT_NOW));
+            outcome = "deferred";
+          }
+        }
+
+        DM.endConv();
+        return { lines, outcome, npcType, npcKind };
+      }
+
+      function renderConv(conv, idx) {
+        const outcomeText = {
+          joined: "✓ joined",
+          declined: "✗ declined",
+          narc: "⚠ narc revealed",
+          backed: "→ backed off",
+          deferred: "~ deferred, maybe later",
+        };
+        const typeLabel = conv.npcType === "narc" ? "narc" : conv.npcKind === "angry" ? "angry" : "hungry";
+        let h = `<div class="conv-block">`;
+        h += `<div class="conv-header"><span>conversation ${idx + 1}</span>`;
+        h += `<span class="badge ${typeLabel}">${typeLabel}</span></div>`;
+        for (const line of conv.lines) {
+          if (line.speaker === "ambient") {
+            h += `<div class="ambient">${esc(line.text)}</div>`;
+            continue;
+          }
+          // const cls = `line ${line.speaker === "choice" ? "choice npc" : line.speaker}${line.meta ? " " + line.meta : ""}`;          h += `<div class="${cls}"><div class="bubble">${esc(line.text)}</div></div>`;
+
+          const cls = `line ${line.speaker === "choice" ? "choice player" : line.speaker}${line.meta ? " " + line.meta : ""}`;
+          h += `<div class="${cls}"><div class="bubble">${esc(line.text)}</div></div>`;
+        }
+        h += `<div class="outcome ${conv.outcome}">${outcomeText[conv.outcome] || conv.outcome}</div>`;
+        h += `</div>`;
+        return h;
+      }
+
+      function esc(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      function runSim() {
+        const sel = document.getElementById("npcType").value;
+        const count = Math.min(20, Math.max(1, parseInt(document.getElementById("count").value) || 3));
+        let html = "";
+        for (let i = 0; i < count; i++) {
+          let npcType, npcKind;
+          if (sel === "narc") {
+            npcType = "narc";
+            npcKind = "angry";
+          } else if (sel === "angry") {
+            npcType = "norm";
+            npcKind = "angry";
+          } else if (sel === "hungry") {
+            npcType = "norm";
+            npcKind = "hungry";
+          } else {
+            npcType = Math.random() < 0.13 ? "narc" : "norm";
+            npcKind = Math.random() < 0.5 ? "angry" : "hungry";
+          }
+          html += renderConv(simulateConversation(npcType, npcKind), i);
+        }
+        document.getElementById("output").innerHTML = html;
+      }
+
+      // catch any leftover errors from game.js stubs and surface them
+      window.addEventListener("error", (e) => {
+        const box = document.getElementById("error-box");
+        box.style.display = "block";
+        box.textContent = "game.js error (add a stub): " + e.message + " — " + e.filename + ":" + e.lineno;
+      });
+
+      runSim();
+    </script>
+  </body>
+</html>

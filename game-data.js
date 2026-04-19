@@ -93,7 +93,7 @@ window.GAME_DATA = {
             "╔═══⬚═══╗",
             "‖⟦⟦⟦□⟧⟧⟧‖",
             "‖≋umami≋‖",
-            "‖▤⚝□✀□⚝▤‖",
+            "‖▤▤□✀□⚝▤‖",
         ],
     },
     {
@@ -882,7 +882,7 @@ window.GAME_DATA = {
   ],
 
   /* ─────────────────────────────────────────────────────────
-       STORE (Act 2b + Act 3 — the Metro grocery store)
+       STORE (Act 2b + Act 3 — the grocery store)
        Used by: renderAct2b, renderAct3.
        Constraints:
        - Width MUST be consistent across all rows (currently 30).
@@ -890,15 +890,16 @@ window.GAME_DATA = {
        - If width changes, STO_W constant in main script auto-updates
          (it reads STORE[0].length), so safe to resize horizontally.
        ───────────────────────────────────────────────────────── */
+        // MANGER C'EST LA VIE 
   storeArt: [
     ".============================.",
-    "|  M E T R O   G R O C E R Y |",
+    "|  G R O C E R Y  C H A I N  |",
     "|============================|",
-    "|  [##] [##] [##] [##] [##]  |",
-    "|  [##] [##] [##] [##] [##]  |",
+    "|  [$$]-[$$]-[$$]-[$$]-[$$]  |",
+    "|       EATING IS LIFE       |",
+    "|  [$$]-[$$]-[$$]-[$$]-[$$]  |",
     "|         .--------.         |",
     "|         | ENTER! |         |",
-    "|         |        |         |",
     "|========='        '=========|",
   ],
 
@@ -995,7 +996,7 @@ window.GAME_DATA = {
     },
     { pause: true, d: 600 },
     {
-      t: "TIME TO BUILD A CREW",
+      t: "-",
       c: "#8957ff",
       d: 2500,
     },
@@ -1203,7 +1204,7 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "they throw food in dumpsters while people starve. we're taking it back",     tags: ["dumpsters"] },
   { t: "we go in tonight. we take what we need. bread is six dollars — we're done asking nicely", tags: ["bread"] },
   { t: "one night, one store, enough food for the whole block",                      tags: [] },
-  { t: "we shouldn't have to live like this. so tonight we're going to metro to take what is rightfully ours",                  tags: [] },
+  { t: "we shouldn't have to live like this. so tonight we're going to the grocery store to take what is ours",                  tags: [] },
   { t: "one store, one night, no one goes hungry",                                   tags: [] },
   { t: "this isn't a crime. it's a correction",                                      tags: [] },
   { t: "tonight, nobody on this block worries about food",                           tags: [] },
@@ -1489,20 +1490,18 @@ const D_HUNGRY_PITCH = [
 // comes after one the pitckes above, needs to be short and an invitation
 const D_INVITE = [
   "want to do something about it?",
-  "we're changing things tonight",
+  "we're changing things tonight, want to come?",
   "join us?",
-  "we're also going to metro tonight, we're going to take what we need",
+  "we're also going to the grocery store tonight, we're going to take what we need",
   "let's stop asking and start taking",
-  "want in?",
+  "want in? we're going to change things",
   "come with us?",
   "we're done waiting. are you?",
-  "you in?",
-  "tonight's the night",
-  "what do you have to lose?",
-  "come with us tonight?",
-  "tonight, we eat",
-  "what do you say?",
-  "you look like a robin to me",
+  "tonight's the night for change. join us?",
+  "come with us? what do you have to lose?",
+  "tonight, we eat. want to join us?",
+  "what do you say? ready to change everything?",
+  "you look like a robin to me. want to join us?",
   "hypothetically speaking — want to wear matching costumes, storm a grocery store, and take what we need?",
   "you look like a person of action",
   "I have a proposal: what if we just got take the food we need?",
@@ -1510,7 +1509,7 @@ const D_INVITE = [
   // "you look like you've done worse for less",
   "hey. you got a Robin Hood thing at all?",
   "quick question and it's a weird one — you free to rob a grocery store tonight?",
-  "if someone were to, hypothetically, do something about this — you interested?",
+  "you interested in getting some food with us?",
   "so — how do you feel about food redistribution?",
   "you look like someone who reads history and has thoughts about it",
 ];
@@ -1660,7 +1659,7 @@ const D_NARC_REVEAL = [
   "I'm calling this in RIGHT NOW",
   "I OWN Loblaws stock",
   "I'm calling 911!",
-  "just get another job!!",
+  "yo get a job!",
   "this is a Metro, not a manifesto",
 
   "that's THEFT!",
