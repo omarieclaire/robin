@@ -10,8 +10,8 @@ window.GAME_DATA = {
        Constraints:
        - `size` = vissual width in characters. MUST match longest line in `art`.
        - Sizes come in 3 tiers: 6 (narrow), 9 (regular), 13 (wide).
-         tileBuildings() picks from these to fill a block. If I add a new
-         size tier, update the remainder logic in tileBuildings() .
+         tileBuildings() picks from these to fill a block. wanna add a new
+         size tier? update the remainder logic in tileBuildings() .
        - Art height is flexible (3–6 rows typical). Taller = fills more of
          the building band. Bands are ~A2_BH_PER rows tall (see a2Layout).
        - Colors come from A2_BCOL palette in main script, not per-building.
@@ -710,10 +710,8 @@ window.GAME_DATA = {
        FOODS (Act 4 grocery items + Act 5 fridge)
        Used by: s4GenBookcases() item generation, Act 5 fridge display.
        Constraints:
-       - `n` = name shown in +$ popup. Keep short (<8 chars) for HUD fit.
-       - `p` = price in Montreal 2026 piaces
        - `a` = art, MUST fit in S4_SLOT_W (currently 9) minus 2 padding = 7 chars wide.
-         If I widen art, check S4_SLOT_W and S4_BC_W in main script.
+         wanna widen art? check S4_SLOT_W and S4_BC_W in main script.
        - Art height is typically 3–4 rows. Rows stack up from shelf baseline.
        - items picked randomly for each shelf slot.
        ───────────────────────────────────────────────────────── */
@@ -888,7 +886,7 @@ window.GAME_DATA = {
        Used by: renderAct2b, renderAct3.
        Constraints:
        - Width MUST be consistent across all rows (currently 30).
-       - Height 9 rows. If I change height, check STO_H references in main.
+       - Height 9 rows. wanna change height? check STO_H references in main.
        - If width changes, STO_W constant in main script auto-updates
          (it reads STORE[0].length), so safe to resize horizontally.
        ───────────────────────────────────────────────────────── */
@@ -911,12 +909,12 @@ window.GAME_DATA = {
        - Width must be consistent (currently 23).
        - Current layout has 4 "slots" in 2x2 grid for food.
        - Act 5 logic draws crew item names inside at specific offsets —
-         if I change interior layout, check the item-drawing code in
+         wanna change interior layout? check the item-drawing code in
          renderAct5 (the `fx + 2 + col * colW` / `fy + 5 + row * 2` lines).
        ───────────────────────────────────────────────────────── */
   /* Structure drawn dynamically in renderAct5 — this is just the frame.
        Food from GAME_DATA.foods is drawn into slots.
-       Width = 37 chars. If I resize, also update the slot-layout math in renderAct5
+       Width = 37 chars. wanna resize? also update the slot-layout math in renderAct5
        (fridgeW, slotsPerShelf, shelfTop/shelfBot row numbers). */
   fridgeArt: [
     "╔═══════════════════════════════════╗",
@@ -944,7 +942,7 @@ window.GAME_DATA = {
        Used throughout all acts.
        Constraints:
        - All sprites are EXACTLY 2 rows tall, 1 char wide.
-       - If I change height, check collision math (abs y-diff checks).
+       - wanna change height? check collision math (abs y-diff checks).
        - Order matters: A2_PA has [idle, step] animation frames.
        - npcArts: pool for ambient NPCs. Randomly picked.
        - npcColors: pool for NPC colors. Randomly picked (except narcs).
@@ -1105,7 +1103,6 @@ const DECK_ANGRY_HELLO = new DM.Deck([
   { t: "three companies control most of the food in this country",                   tags: ["three-co"] },
   { t: "they're using 'predatory pricing', they adjust the price based on who's looking?", tags: ["dynamic-pricing"] },
   { t: "oligopoly, but make it groceries",                                            tags: ["three-co"] },
-  { t: "three CEOs, millions of empty fridges",                                      tags: ["three-co"] },
   { t: "they optimized profit, not hunger",                                           tags: [] },
   { t: "free market, captive customers",                                              tags: ["cartel"] },
   { t: "price fixing without the meeting",                                            tags: ["price-fixing"] },
@@ -1388,7 +1385,6 @@ const D_ANGRY_HELLO = [
   "three companies control most of the food in this country",
   "they're using 'predatory pricing', they adjust the price based on who's looking?",
   "oligopoly, but make it groceries",
-  "three CEOs, millions of empty fridges",
   "they optimized profit, not hunger",
   "free market, captive customers",
   "price fixing without the meeting",
@@ -1789,7 +1785,7 @@ const A1_LOOP_MSGS = [
   { t: "...câline, encore ça", c: "#aaa" },
   { t: "ostie. encore.", c: "#b09abf" },
   { t: "crisse, pis quoi encore", c: "#b080c0" },
-  { t: "câlice. ENCORE LA MÊME CHOSE", c: "#c060a0" },
+  { t: "ostie. ENCORE LA MÊME CHOSE", c: "#c060a0" },
   { t: "OSTIE DE CÂLICE. vraiment??", c: "#c84080" },
   { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
   { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
