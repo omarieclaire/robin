@@ -1040,6 +1040,7 @@
             showBanner(lm.t, lm.c, 2000, true);
             a1LoopCount++;
             if (a1LoopCount > 5) {
+              Music.stop();
               phase = "done";
               loop.stop();
               overlay.classList.remove("hidden");
@@ -1075,6 +1076,7 @@
           showBanner(lm.t, lm.c, 2000, true);
           a1LoopCount++;
           if (a1LoopCount > 5) {
+            Music.stop();
             phase = "done";
             loop.stop();
             overlay.classList.remove("hidden");
@@ -3289,6 +3291,7 @@ audio.preload(["music_act8"]);
     if (!ctaDone && (ctaT > endAt || (clickPending && canTap))) {
       clickPending = false;
       ctaDone = true;
+      Music.stop();
       phase = "done";
       loop.stop();
       overlay.classList.remove("hidden");
@@ -3361,6 +3364,7 @@ audio.preload(["music_act8"]);
       initAct5();
       return;
     }
+     Music.stop();
     phase = "done";
     audio.play("bust");
     loop.stop();
@@ -3537,6 +3541,7 @@ audio.preload(["music_act8"]);
     } else gs.classList.remove("flash-gold");
   }
   function startGame() {
+    Music.stop(); // ← any edge case
     floats.length = 0;
     s4AlyScore = 0;
     a2CrewCount = 0;
