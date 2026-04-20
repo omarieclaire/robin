@@ -1289,7 +1289,9 @@
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
-  let a2TN, a2TP, a2TT, a2TalkCD, a2Choice, a2ChoiceLabels, a2TalkLine2;
+  // let a2TN, a2TP, a2TT, a2TalkCD, a2Choice, a2ChoiceLabels, a2TalkLine2;
+    let a2TN, a2TP, a2TT, a2TalkCD, a2Choice, a2ChoiceLabels;
+
   let a2SV, a2SW, a2SD, a2SDT;
   let a2Gen;
   let a2HudFlashT, a2HudFlashMsg; // HUD flash
@@ -1572,13 +1574,13 @@ audio.preload(["music_act3"]);  // preload for act2b
               cp = DM.draw(DECK_CONSENT);
 
             if (Math.random() < 0.5) {
-              convAddLine(jp, "them", convNPCColor);
-              a2TalkLine2 = cp;
+             convAddLine(jp, "them", convNPCColor);
+              a2TN._line2 = cp;
 
               a2TP = 21; // will add consent line then recruit
             } else {
               convAddLine(cp, "them", convNPCColor);
-              a2TalkLine2 = jp;
+              a2TN._line2 = jp;
 
               a2TP = 22; // will add join phrase then recruit
             }
@@ -1602,19 +1604,13 @@ audio.preload(["music_act3"]);  // preload for act2b
 
       // ── TP 21: immediate join — jp first, now add cp ──
       else if (a2TP === 21 && a2TT > 1000) {
-        audio.play("npctxtbox");
-        const last = convLog[convLog.length - 1];
-        if (last && last.side === "them") last.text += " " + a2TalkLine2;
-        else convAddLine(a2TalkLine2, "them", convNPCColor);
+        convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
       }
       // ── TP 22: immediate join — cp first, now append jp ──
       else if (a2TP === 22 && a2TT > 1000) {
-        audio.play("npctxtbox");
-        const last = convLog[convLog.length - 1];
-        if (last && last.side === "them") last.text += " " + a2TalkLine2;
-        else convAddLine(a2TalkLine2, "them", convNPCColor);
+        convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
       }
@@ -1675,12 +1671,12 @@ audio.preload(["music_act3"]);  // preload for act2b
               cp = DM.draw(DECK_CONSENT);
             if (Math.random() < 0.5) {
               convAddLine(jp, "them", convNPCColor);
-              a2TalkLine2 = cp;
+              a2TN._line2 = cp;
 
               a2TP = 21;
             } else {
               convAddLine(cp, "them", convNPCColor);
-              a2TalkLine2 = jp;
+              a2TN._line2 = jp;
 
               a2TP = 22;
             }
@@ -2094,8 +2090,7 @@ audio.preload(["music_act3"]);  // preload for act2b
   }
 
   function a2bGenNPCs() {
-    a2bNPCs = [];
-    /* NPCs only in the road zone */
+    a2bNPCs = [];    /* NPCs only in the road zone */
     const midY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     const roadH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
     const spacing = Math.max(7, Math.floor((a2bStoreX - 50) / 45));
@@ -2409,6 +2404,7 @@ audio.preload(["music_act4"]);
   const RA2 = ["@", "\u0126"];
   let a3T;
   function ensureCrew() {
+    /* Dev scaffolding: pads a2Crew to a2CrewCount when jumping to act via keyboard shortcuts */
     if (!a2Crew) a2Crew = [];
     while (a2Crew.length < a2CrewCount) {
       const ai = a2Crew.length;
@@ -2653,11 +2649,12 @@ audio.preload(["music_act6"]);
       }
     });
 
+    // findme 
     /* ── Remaining state ── */
-    s4Ex = [];
-    s4ExitPinned = false;
-    s4ExitScreenX = W - 8; /* pinned to right side of screen */
-    s4ExitAisle = -1;
+    // s4Ex = [];
+    // s4ExitPinned = false;
+    // s4ExitScreenX = W - 8; /* pinned to right side of screen */
+    // s4ExitAisle = -1;
 
     s4As = [{ y: S4_AISLE_TOP, items: [], isExit: false, aisleH: S4_AISLE_BOT - S4_AISLE_TOP }];
     s4GE = 0;
@@ -3190,7 +3187,6 @@ audio.preload(["music_act7"]);
         Music.transition("music_act7"); // drop-off, warmth
 audio.preload(["music_act8"]);  
     phase = "end";
-    Music.transition("music_act7"); // epilogue tone
 
     endT = 0;
     bannerTimer = 0;

@@ -56,45 +56,38 @@ window.GAME_DATA = {
       art: ["┌────┐", "|[+] |", "|PHAR|"],
     },
 
-
-    // added narrow 
+    // added narrow
     {
-  name: "SWIRL",
-  size: 6,
-  art: ["┌~~~~┐", "|SWRL|", "|YUM |"],
-},
-{
-  name: "SAQ",
-  size: 6,
-  art: ["╱────╲", "│ SAQ│", "│VINS│"],
-},
-{
-  name: "BIXI",
-  size: 6,
-  art: [" **** ", "|BIXI|", "/====\\"],
-},
-{
-  name: "Samosa King",
-  size: 6,
-  art: ["┌────┐", "|SMOS|", "| $1 |"],
-},
-{
-  name: "Gnocchi",
-  size: 6,
-  art: ["┌────┐", "|GNOC|", "| $5 |"],
-},
+      name: "SWIRL",
+      size: 6,
+      art: ["┌~~~~┐", "|SWRL|", "|YUM |"],
+    },
+    {
+      name: "SAQ",
+      size: 6,
+      art: ["╱────╲", "│ SAQ│", "│VINS│"],
+    },
+    {
+      name: "BIXI",
+      size: 6,
+      art: [" **** ", "|BIXI|", "/====\\"],
+    },
+    {
+      name: "Samosa King",
+      size: 6,
+      art: ["┌────┐", "|SMOS|", "| $1 |"],
+    },
+    {
+      name: "Gnocchi",
+      size: 6,
+      art: ["┌────┐", "|GNOC|", "| $5 |"],
+    },
 
     /* ── REGULAR (size 9) ─── */
-        {
-        name: "Umami",
-        size: 9,
-        art: [
-            "   ⚻⛬⚻   ",
-            "╔═══⬚═══╗",
-            "‖⟦⟦⟦□⟧⟧⟧‖",
-            "‖≋umami≋‖",
-            "‖▤▤□✀□⚝▤‖",
-        ],
+    {
+      name: "Umami",
+      size: 9,
+      art: ["   ⚻⛬⚻   ", "╔═══⬚═══╗", "‖⟦⟦⟦□⟧⟧⟧‖", "‖≋umami≋‖", "‖▤▤□✀□⚝▤‖"],
     },
     {
       name: "L'Escalier",
@@ -132,137 +125,137 @@ window.GAME_DATA = {
       art: ["╭SEGALS─╮", "│ FRESH │", "│ ★★★★★ │"],
     },
 
-    // added regular 
+    // added regular
     {
-  name: "Foufounes",
-  size: 9,
-  art: ["╔FOUFOU═╗", "║NES    ║", "║ ϟϟϟϟ  ║", "║ELECTR ║"],
-},
-{
-  name: "Quai des Brumes",
-  size: 9,
-  art: ["╭QUAI───╮", "│ DES   │", "│BRUMES │"],
-},
-{
-  name: "Club Soda",
-  size: 9,
-  art: ["╭CLUB───╮", "│ SODA  │", "│ MUSIC │"],
-},
-{
-  name: "Pikolo",
-  size: 9,
-  art: ["╭PIKOLO─╮", "│ CAFE  │", "│       │"],
-},
-{
-  name: "Wilensky's",
-  size: 9,
-  art: ["╭───────╮", "│WILENSK│", "│ Y'S   │", "│ DELI  │"],
-},
-{
-  name: "Fairmount Bagel",
-  size: 9,
-  art: ["╭───────╮", "│FAIRMNT│", "│BAGELS │", "│ ◯ ◯ ◯ │"],
-},
-{
-  name: "St-Viateur Bagel",
-  size: 9,
-  art: ["╭───────╮", "│ST-VIAT│", "│ BAGEL │", "│ ◯  ◯  │"],
-},
-{
-  name: "Boustan",
-  size: 9,
-  art: ["╱╲╱╲╱╲╱╲╱", "│BOUSTAN│", "│SHAWRMA│", "│ GOOD! │"],
-},
-{
-  name: "Café Olimpico",
-  size: 9,
-  art: ["╭OLIMPIC╮", "│ESPRESO│", "│ CAFFE │", "│ 1970  │"],
-},
-{
-  name: "Phonopolis",
-  size: 9,
-  art: ["╭───────╮", "│{PHONO}│", "│ POLIS │", "│ ♪  ♫  │"],
-},
-{
-  name: "Benelux",
-  size: 9,
-  art: ["╭───────╮", "│BENELUX│", "│ BIERE │", "│ ♨ ♨ ♨ │"],
-},
-{
-  name: "Phi Centre",
-  size: 9,
-  art: ["╔══PHI══╗", "║◉ ART ◉║", "║▓▓▓▓▓▓▓║"],
-},
-{
-  name: "Chatime",
-  size: 9,
-  art: ["╭───────╮", "│CHATIME│", "│BUBBLE │", "│  TEA  │"],
-},
-{
-  name: "Beauty's",
-  size: 9,
-  art: ["╭───────╮", "│BEAUTY'│", "│S LUNCH│", "│ *<>*  │"],
-},
-{
-  name: "Cabaret Mile End",
-  size: 9,
-  art: ["▁CABARET▁", "│ MILE  │", "│  END  │", "│ STAGE │"],
-},
-{
-  name: "Santropol",
-  size: 9,
-  art: ["╭───────╮", "│SANTROP│", "│  OL   │", "│ (___) │"],
-},
-{
-  name: "Marché PA",
-  size: 9,
-  art: ["╔MARCHE═╗", "║  PA   ║", "║GROCERY║"],
-},
-{
-  name: "Cheval Blanc",
-  size: 9,
-  art: ["╭───────╮", "│CHEVAL │", "│ BLANC │", "│ BIERE │"],
-},
-{
-  name: "Les Petits Frères",
-  size: 9,
-  art: ["╭───────╮", "│PETITS │", "│FRERES │", "│ ★ ♥ ★ │"],
-},
-{
-  name: "Renaissance",
-  size: 9,
-  art: ["╭───────╮", "│RENAIS │", "│ SANCE │", "│THRIFT │"],
-},
-{
-  name: "Myriade",
-  size: 9,
-  art: ["┌✺─✺─✺─✺┐", "│       │", "│MYRIADE│"],
-},
-{
-  name: "Palais Royale",
-  size: 9,
-  art: ["▀PALAIS▀▀", "█ROYALE  █", "█ RESTO █"],
-},
-{
-  name: "Casa d'Italia",
-  size: 9,
-  art: ["╔═CASA══╗", "║D'ITALI║", "║ ★ ★ ★ ║", "║CULTURA║"],
-},
-{
-  name: "Cinéma du Parc",
-  size: 9,
-  art: ["▀CINEMA▀▀", "█ DU    █", "█ PARC  █", "█ ◢▓▓◣  █"],
-},
-{
-  name: "Maynard's",
-  size: 9,
-  art: ["╭───────╮", "│MAYNARD│", "│POUTINE│", "│  ✷✷   │"],
-},
-{
-  name: "McCord",
-  size: 9,
-  art: ["▀McCORD▀▀", "█       █", "█ ◢■◣◢■◣█"],
-},
+      name: "Foufounes",
+      size: 9,
+      art: ["╔FOUFOU═╗", "║NES    ║", "║ ϟϟϟϟ  ║", "║ELECTR ║"],
+    },
+    {
+      name: "Quai des Brumes",
+      size: 9,
+      art: ["╭QUAI───╮", "│ DES   │", "│BRUMES │"],
+    },
+    {
+      name: "Club Soda",
+      size: 9,
+      art: ["╭CLUB───╮", "│ SODA  │", "│ MUSIC │"],
+    },
+    {
+      name: "Pikolo",
+      size: 9,
+      art: ["╭PIKOLO─╮", "│ CAFE  │", "│       │"],
+    },
+    {
+      name: "Wilensky's",
+      size: 9,
+      art: ["╭───────╮", "│WILENSK│", "│ Y'S   │", "│ DELI  │"],
+    },
+    {
+      name: "Fairmount Bagel",
+      size: 9,
+      art: ["╭───────╮", "│FAIRMNT│", "│BAGELS │", "│ ◯ ◯ ◯ │"],
+    },
+    {
+      name: "St-Viateur Bagel",
+      size: 9,
+      art: ["╭───────╮", "│ST-VIAT│", "│ BAGEL │", "│ ◯  ◯  │"],
+    },
+    {
+      name: "Boustan",
+      size: 9,
+      art: ["╱╲╱╲╱╲╱╲╱", "│BOUSTAN│", "│SHAWRMA│", "│ GOOD! │"],
+    },
+    {
+      name: "Café Olimpico",
+      size: 9,
+      art: ["╭OLIMPIC╮", "│ESPRESO│", "│ CAFFE │", "│ 1970  │"],
+    },
+    {
+      name: "Phonopolis",
+      size: 9,
+      art: ["╭───────╮", "│{PHONO}│", "│ POLIS │", "│ ♪  ♫  │"],
+    },
+    {
+      name: "Benelux",
+      size: 9,
+      art: ["╭───────╮", "│BENELUX│", "│ BIERE │", "│ ♨ ♨ ♨ │"],
+    },
+    {
+      name: "Phi Centre",
+      size: 9,
+      art: ["╔══PHI══╗", "║◉ ART ◉║", "║▓▓▓▓▓▓▓║"],
+    },
+    {
+      name: "Chatime",
+      size: 9,
+      art: ["╭───────╮", "│CHATIME│", "│BUBBLE │", "│  TEA  │"],
+    },
+    {
+      name: "Beauty's",
+      size: 9,
+      art: ["╭───────╮", "│BEAUTY'│", "│S LUNCH│", "│ *<>*  │"],
+    },
+    {
+      name: "Cabaret Mile End",
+      size: 9,
+      art: ["▁CABARET▁", "│ MILE  │", "│  END  │", "│ STAGE │"],
+    },
+    {
+      name: "Santropol",
+      size: 9,
+      art: ["╭───────╮", "│SANTROP│", "│  OL   │", "│ (___) │"],
+    },
+    {
+      name: "Marché PA",
+      size: 9,
+      art: ["╔MARCHE═╗", "║  PA   ║", "║GROCERY║"],
+    },
+    {
+      name: "Cheval Blanc",
+      size: 9,
+      art: ["╭───────╮", "│CHEVAL │", "│ BLANC │", "│ BIERE │"],
+    },
+    {
+      name: "Les Petits Frères",
+      size: 9,
+      art: ["╭───────╮", "│PETITS │", "│FRERES │", "│ ★ ♥ ★ │"],
+    },
+    {
+      name: "Renaissance",
+      size: 9,
+      art: ["╭───────╮", "│RENAIS │", "│ SANCE │", "│THRIFT │"],
+    },
+    {
+      name: "Myriade",
+      size: 9,
+      art: ["┌✺─✺─✺─✺┐", "│       │", "│MYRIADE│"],
+    },
+    {
+      name: "Palais Royale",
+      size: 9,
+      art: ["▀PALAIS▀▀", "█ROYALE  █", "█ RESTO █"],
+    },
+    {
+      name: "Casa d'Italia",
+      size: 9,
+      art: ["╔═CASA══╗", "║D'ITALI║", "║ ★ ★ ★ ║", "║CULTURA║"],
+    },
+    {
+      name: "Cinéma du Parc",
+      size: 9,
+      art: ["▀CINEMA▀▀", "█ DU    █", "█ PARC  █", "█ ◢▓▓◣  █"],
+    },
+    {
+      name: "Maynard's",
+      size: 9,
+      art: ["╭───────╮", "│MAYNARD│", "│POUTINE│", "│  ✷✷   │"],
+    },
+    {
+      name: "McCord",
+      size: 9,
+      art: ["▀McCORD▀▀", "█       █", "█ ◢■◣◢■◣█"],
+    },
 
     /* ── WIDE (size 13) ─── */
     {
@@ -291,98 +284,48 @@ window.GAME_DATA = {
       art: ["    /\\       ", "  /    \\     ", " / FIRE  \\   ", "│ CASERNE  │ ", "│  ✧✧26✯✧  │ "],
     },
 
-    // added wide 
+    // added wide
 
     {
-  name: "Stade Olympique",
-  size: 13,
-  art: [
-    "        ╱│   ",
-    "       ╱  │  ",
-    "      ╱   │  ",
-    " STADE    │  ",
-    "◢◣◢◣◢◣◣   │  ",
-  ],
-},
-{
-  name: "Biosphere",
-  size: 13,
-  art: [
-    "    ╱◇◇◇◇╲   ",
-    "   ◇◇◇◇◇◇◇   ",
-    "  ◇◇◇◇◇◇◇◇◇  ",
-    "   ◇◇◇◇◇◇◇   ",
-    "    ╲◇◇◇◇╱   ",
-  ],
-},
-{
-  name: "Habitat 67",
-  size: 13,
-  art: [
-    " ▓▓  ▓▓  ▓▓  ",
-    "▓▓▓ ▓▓▓ ▓▓▓  ",
-    "▓▓ 67  ▓▓ ▓▓ ",
-    " ▓▓  ▓▓▓  ▓▓ ",
-    "▓▓▓ ▓▓  ▓▓▓  ",
-  ],
-},
-{
-  name: "Place des Arts",
-  size: 13,
-  art: [
-    "▀▀▀▀▀▀▀▀▀▀▀▀▀",
-    "█ PLACE DES █",
-    "█   ARTS    █",
-    "█ ▢ ▢ ▢ ▢ ▢ █",
-    "▔▔▔▔▔▔▔▔▔▔▔▔▔",
-  ],
-},
-{
-  name: "Marché Jean-Talon",
-  size: 13,
-  art: [
-    "┌─━━━╋━━━━━─┐",
-    "│  MARCHÉ   │",
-    "│JEAN TALON │",
-    "│  FARMERS  │",
-    "└∞──∞∞──∞∞──┘",
-  ],
-},
-{
-  name: "Casa del Popolo",
-  size: 13,
-  art: [
-    "┏━━╋━━╋━━╋━━┓",
-    "│ CASA DEL  │",
-    "│  POPOLO   │",
-    "│  %%%%     │",
-    "┗━━╋━━╋━━╋━━┛",
-  ],
-},
-{
-  name: "BAnQ",
-  size: 13,
-  art: [
-    "┏━━━━━━━━━━━┓",
-    "┃   BAnQ    ┃",
-    "┣━━━━━━━━━━━┛",
-    "┃    ┃       ",
-    "┃    ┃       ",
-    "┗━━━━┻━━━━━━ ",
-  ],
-},
-{
-  name: "SAT Société",
-  size: 13,
-  art: [
-    "   ◢■■■■■◣   ",
-    "╭───────────╮",
-    "│    SAT    │",
-    "│  SOCIETE  │",
-    "│▓▓▓▓▓▓▓▓▓▓▓│",
-  ],
-},
-
+      name: "Stade Olympique",
+      size: 13,
+      art: ["        ╱│   ", "       ╱  │  ", "      ╱   │  ", " STADE    │  ", "◢◣◢◣◢◣◣   │  "],
+    },
+    {
+      name: "Biosphere",
+      size: 13,
+      art: ["    ╱◇◇◇◇╲   ", "   ◇◇◇◇◇◇◇   ", "  ◇◇◇◇◇◇◇◇◇  ", "   ◇◇◇◇◇◇◇   ", "    ╲◇◇◇◇╱   "],
+    },
+    {
+      name: "Habitat 67",
+      size: 13,
+      art: [" ▓▓  ▓▓  ▓▓  ", "▓▓▓ ▓▓▓ ▓▓▓  ", "▓▓ 67  ▓▓ ▓▓ ", " ▓▓  ▓▓▓  ▓▓ ", "▓▓▓ ▓▓  ▓▓▓  "],
+    },
+    {
+      name: "Place des Arts",
+      size: 13,
+      art: ["▀▀▀▀▀▀▀▀▀▀▀▀▀", "█ PLACE DES █", "█   ARTS    █", "█ ▢ ▢ ▢ ▢ ▢ █", "▔▔▔▔▔▔▔▔▔▔▔▔▔"],
+    },
+    {
+      name: "Marché Jean-Talon",
+      size: 13,
+      art: ["┌─━━━╋━━━━━─┐", "│  MARCHÉ   │", "│JEAN TALON │", "│  FARMERS  │", "└∞──∞∞──∞∞──┘"],
+    },
+    {
+      name: "Casa del Popolo",
+      size: 13,
+      art: ["┏━━╋━━╋━━╋━━┓", "│ CASA DEL  │", "│  POPOLO   │", "│  %%%%     │", "┗━━╋━━╋━━╋━━┛"],
+    },
+    {
+      name: "BAnQ",
+      size: 13,
+      art: ["┏━━━━━━━━━━━┓", "┃   BAnQ    ┃", "┣━━━━━━━━━━━┛", "┃    ┃       ", "┃    ┃       ", "┗━━━━┻━━━━━━ "],
+    },
+    {
+      name: "SAT Société",
+      size: 13,
+      art: ["   ◢■■■■■◣   ", "╭───────────╮", "│    SAT    │", "│  SOCIETE  │", "│▓▓▓▓▓▓▓▓▓▓▓│"],
+    },
   ],
 
   /* ─────────────────────────────────────────────────────────
@@ -462,248 +405,195 @@ window.GAME_DATA = {
     },
 
     /* ── WIDE (size 13) ── */
-{
-  name: "Stade Olympique",
-  size: 13,
-  art: [
-    "        ╱│   ",
-    "       ╱  │  ",
-    "      ╱   │  ",
-    " STADE    │  ",
-    "◢◣◢◣◢◣◣   │  ",
-    "▉▉▉▉▉▉▉▉▉▉▉▉▉",
-  ],
-},
-{
-  name: "Biosphere",
-  size: 13,
-  art: [
-    "    ╱◇◇◇◇╲   ",
-    "   ◇◇◇◇◇◇◇   ",
-    "  ◇◇◇◇◇◇◇◇◇  ",
-    "   ◇◇◇◇◇◇◇   ",
-    "    ╲◇◇◇◇╱   ",
-    "╰───────────╯",
-  ],
-},
-{
-  name: "Habitat 67",
-  size: 13,
-  art: [
-    " ▓▓  ▓▓  ▓▓  ",
-    "▓▓▓ ▓▓▓ ▓▓▓  ",
-    "▓▓ 67  ▓▓ ▓▓ ",
-    " ▓▓  ▓▓▓  ▓▓ ",
-    "▓▓▓ ▓▓  ▓▓▓  ",
-    "╰───────────╯",
-  ],
-},
-{
-  name: "Place des Arts",
-  size: 13,
-  art: [
-    "▀▀▀▀▀▀▀▀▀▀▀▀▀",
-    "█ PLACE DES █",
-    "█   ARTS    █",
-    "█ ▢ ▢ ▢ ▢ ▢ █",
-    "▔▔▔▔▔▔▔▔▔▔▔▔▔",
-  ],
-},
-{
-  name: "Marché Jean-Talon",
-  size: 13,
-  art: [
-    "┌─━━━╋━━━━━─┐",
-    "│  MARCHÉ   │",
-    "│JEAN TALON │",
-    "│  FARMERS  │",
-    "└∞──∞∞──∞∞──┘",
-  ],
-},
-{
-  name: "Casa del Popolo",
-  size: 13,
-  art: [
-    "┏━━╋━━╋━━╋━━┓",
-    "│ CASA DEL  │",
-    "│  POPOLO   │",
-    "│  %%%%     │",
-    "┗━━╋━━╋━━╋━━┛",
-  ],
-},
-{
-  name: "BAnQ",
-  size: 13,
-  art: [
-    "┏━━━━━━━━━━━┓",
-    "┃   BAnQ    ┃",
-    "┣━━━━━━━━━━━┛",
-    "┃    ┃       ",
-    "┃    ┃       ",
-    "┗━━━━┻━━━━━━ ",
-  ],
-},
-{
-  name: "SAT Société",
-  size: 13,
-  art: [
-    "   ◢■■■■■◣   ",
-    "╭───────────╮",
-    "│    SAT    │",
-    "│  SOCIETE  │",
-    "│▓▓▓▓▓▓▓▓▓▓▓│",
-    "╰───────────╯",
-  ],
-},
+    {
+      name: "Stade Olympique",
+      size: 13,
+      art: ["        ╱│   ", "       ╱  │  ", "      ╱   │  ", " STADE    │  ", "◢◣◢◣◢◣◣   │  ", "▉▉▉▉▉▉▉▉▉▉▉▉▉"],
+    },
+    {
+      name: "Biosphere",
+      size: 13,
+      art: ["    ╱◇◇◇◇╲   ", "   ◇◇◇◇◇◇◇   ", "  ◇◇◇◇◇◇◇◇◇  ", "   ◇◇◇◇◇◇◇   ", "    ╲◇◇◇◇╱   ", "╰───────────╯"],
+    },
+    {
+      name: "Habitat 67",
+      size: 13,
+      art: [" ▓▓  ▓▓  ▓▓  ", "▓▓▓ ▓▓▓ ▓▓▓  ", "▓▓ 67  ▓▓ ▓▓ ", " ▓▓  ▓▓▓  ▓▓ ", "▓▓▓ ▓▓  ▓▓▓  ", "╰───────────╯"],
+    },
+    {
+      name: "Place des Arts",
+      size: 13,
+      art: ["▀▀▀▀▀▀▀▀▀▀▀▀▀", "█ PLACE DES █", "█   ARTS    █", "█ ▢ ▢ ▢ ▢ ▢ █", "▔▔▔▔▔▔▔▔▔▔▔▔▔"],
+    },
+    {
+      name: "Marché Jean-Talon",
+      size: 13,
+      art: ["┌─━━━╋━━━━━─┐", "│  MARCHÉ   │", "│JEAN TALON │", "│  FARMERS  │", "└∞──∞∞──∞∞──┘"],
+    },
+    {
+      name: "Casa del Popolo",
+      size: 13,
+      art: ["┏━━╋━━╋━━╋━━┓", "│ CASA DEL  │", "│  POPOLO   │", "│  %%%%     │", "┗━━╋━━╋━━╋━━┛"],
+    },
+    {
+      name: "BAnQ",
+      size: 13,
+      art: ["┏━━━━━━━━━━━┓", "┃   BAnQ    ┃", "┣━━━━━━━━━━━┛", "┃    ┃       ", "┃    ┃       ", "┗━━━━┻━━━━━━ "],
+    },
+    {
+      name: "SAT Société",
+      size: 13,
+      art: ["   ◢■■■■■◣   ", "╭───────────╮", "│    SAT    │", "│  SOCIETE  │", "│▓▓▓▓▓▓▓▓▓▓▓│", "╰───────────╯"],
+    },
 
-/* ── REGULAR (size 9) ── */
-{
-  name: "Foufounes",
-  size: 9,
-  art: ["╔FOUFOU═╗", "║NES    ║", "║ ϟϟϟϟ  ║", "║ELECTR ║", "╙───────╜"],
-},
-{
-  name: "Quai des Brumes",
-  size: 9,
-  art: ["╭QUAI───╮", "│ DES   │", "│BRUMES │", "╰───────╯"],
-},
-{
-  name: "Club Soda",
-  size: 9,
-  art: ["╭CLUB───╮", "│ SODA  │", "│ MUSIC │", "╰───────╯"],
-},
-{
-  name: "Pikolo",
-  size: 9,
-  art: ["╭PIKOLO─╮", "│ CAFE  │", "│       │", "╰───────╯"],
-},
-{
-  name: "Wilensky's",
-  size: 9,
-  art: ["╭───────╮", "│WILENSK│", "│ Y'S   │", "│ DELI  │", "╰───────╯"],
-},
-{
-  name: "Fairmount Bagel",
-  size: 9,
-  art: ["╭───────╮", "│FAIRMNT│", "│BAGELS │", "│ ◯ ◯ ◯ │", "╰───────╯"],
-},
-{
-  name: "St-Viateur Bagel",
-  size: 9,
-  art: ["╭───────╮", "│ST-VIAT│", "│ BAGEL │", "│ ◯  ◯  │", "╰───────╯"],
-},
-{
-  name: "Boustan",
-  size: 9,
-  art: ["╱╲╱╲╱╲╱╲╱", "│BOUSTAN│", "│SHAWRMA│", "│ GOOD! │", "╰───────╯"],
-},
-{
-  name: "Café Olimpico",
-  size: 9,
-  art: ["╭OLIMPIC╮", "│ESPRESO│", "│ CAFFE │", "│ 1970  │", "╰───────╯"],
-},
-{
-  name: "Phonopolis",
-  size: 9,
-  art: ["╭───────╮", "│{PHONO}│", "│ POLIS │", "│ ♪  ♫  │", "╰───────╯"],
-},
-{
-  name: "Benelux",
-  size: 9,
-  art: ["╭───────╮", "│BENELUX│", "│ BIERE │", "│ ♨ ♨ ♨ │", "╰───────╯"],
-},
-{
-  name: "Chatime",
-  size: 9,
-  art: ["╭───────╮", "│CHATIME│", "│BUBBLE │", "│  TEA  │", "╰───────╯"],
-},
-{
-  name: "Beauty's",
-  size: 9,
-  art: ["╭───────╮", "│BEAUTY'│", "│S LUNCH│", "│ *<>*  │", "╰───────╯"],
-},
-{
-  name: "Cabaret Mile End",
-  size: 9,
-  art: ["▁CABARET▁", "│ MILE  │", "│  END  │", "│ STAGE │", "└───────┘"],
-},
-{
-  name: "Santropol",
-  size: 9,
-  art: ["╭───────╮", "│SANTROP│", "│  OL   │", "│ (___) │", "╰───────╯"],
-},
-{
-  name: "Marché PA",
-  size: 9,
-  art: ["╔MARCHE═╗", "║  PA   ║", "║GROCERY║", "╙───────╜"],
-},
-{
-  name: "Cheval Blanc",
-  size: 9,
-  art: ["╭───────╮", "│CHEVAL │", "│ BLANC │", "│ BIERE │", "╰───────╯"],
-},
-{
-  name: "Les Petits Frères",
-  size: 9,
-  art: ["╭───────╮", "│PETITS │", "│FRERES │", "│ ★ ♥ ★ │", "╰───────╯"],
-},
-{
-  name: "Renaissance",
-  size: 9,
-  art: ["╭───────╮", "│RENAIS │", "│ SANCE │", "│THRIFT │", "╰───────╯"],
-},
-{
-  name: "Myriade",
-  size: 9,
-  art: ["┌✺─✺─✺─✺┐", "│       │", "│MYRIADE│", "└───────┘"],
-},
-{
-  name: "Casa d'Italia",
-  size: 9,
-  art: ["╔═CASA══╗", "║D'ITALI║", "║ ★ ★ ★ ║", "║CULTURA║", "╚═══════╝"],
-},
-{
-  name: "Cinéma du Parc",
-  size: 9,
-  art: ["▀CINEMA▀▀", "█ DU    █", "█ PARC  █", "█ ◢▓▓◣  █", "▔▔▔▔▔▔▔▔▔"],
-},
-{
-  name: "Maynard's",
-  size: 9,
-  art: ["╭───────╮", "│MAYNARD│", "│POUTINE│", "│  ✷✷   │", "╰───────╯"],
-},
-{
-  name: "McCord",
-  size: 9,
-  art: ["▀McCORD▀▀", "█       █", "█ ◢■◣◢■◣█", "▔▔▔▔▔▔▔▔▔"],
-},
+    /* ── REGULAR (size 9) ── */
+    {
+      name: "Foufounes",
+      size: 9,
+      art: ["╔FOUFOU═╗", "║NES    ║", "║ ϟϟϟϟ  ║", "║ELECTR ║", "╙───────╜"],
+    },
+    {
+      name: "Quai des Brumes",
+      size: 9,
+      art: ["╭QUAI───╮", "│ DES   │", "│BRUMES │", "╰───────╯"],
+    },
+    {
+      name: "Club Soda",
+      size: 9,
+      art: ["╭CLUB───╮", "│ SODA  │", "│ MUSIC │", "╰───────╯"],
+    },
+    {
+      name: "Pikolo",
+      size: 9,
+      art: ["╭PIKOLO─╮", "│ CAFE  │", "│       │", "╰───────╯"],
+    },
+    {
+      name: "Wilensky's",
+      size: 9,
+      art: ["╭───────╮", "│WILENSK│", "│ Y'S   │", "│ DELI  │", "╰───────╯"],
+    },
+    {
+      name: "Fairmount Bagel",
+      size: 9,
+      art: ["╭───────╮", "│FAIRMNT│", "│BAGELS │", "│ ◯ ◯ ◯ │", "╰───────╯"],
+    },
+    {
+      name: "St-Viateur Bagel",
+      size: 9,
+      art: ["╭───────╮", "│ST-VIAT│", "│ BAGEL │", "│ ◯  ◯  │", "╰───────╯"],
+    },
+    {
+      name: "Boustan",
+      size: 9,
+      art: ["╱╲╱╲╱╲╱╲╱", "│BOUSTAN│", "│SHAWRMA│", "│ GOOD! │", "╰───────╯"],
+    },
+    {
+      name: "Café Olimpico",
+      size: 9,
+      art: ["╭OLIMPIC╮", "│ESPRESO│", "│ CAFFE │", "│ 1970  │", "╰───────╯"],
+    },
+    {
+      name: "Phonopolis",
+      size: 9,
+      art: ["╭───────╮", "│{PHONO}│", "│ POLIS │", "│ ♪  ♫  │", "╰───────╯"],
+    },
+    {
+      name: "Benelux",
+      size: 9,
+      art: ["╭───────╮", "│BENELUX│", "│ BIERE │", "│ ♨ ♨ ♨ │", "╰───────╯"],
+    },
+    {
+      name: "Chatime",
+      size: 9,
+      art: ["╭───────╮", "│CHATIME│", "│BUBBLE │", "│  TEA  │", "╰───────╯"],
+    },
+    {
+      name: "Beauty's",
+      size: 9,
+      art: ["╭───────╮", "│BEAUTY'│", "│S LUNCH│", "│ *<>*  │", "╰───────╯"],
+    },
+    {
+      name: "Cabaret Mile End",
+      size: 9,
+      art: ["▁CABARET▁", "│ MILE  │", "│  END  │", "│ STAGE │", "└───────┘"],
+    },
+    {
+      name: "Santropol",
+      size: 9,
+      art: ["╭───────╮", "│SANTROP│", "│  OL   │", "│ (___) │", "╰───────╯"],
+    },
+    {
+      name: "Marché PA",
+      size: 9,
+      art: ["╔MARCHE═╗", "║  PA   ║", "║GROCERY║", "╙───────╜"],
+    },
+    {
+      name: "Cheval Blanc",
+      size: 9,
+      art: ["╭───────╮", "│CHEVAL │", "│ BLANC │", "│ BIERE │", "╰───────╯"],
+    },
+    {
+      name: "Les Petits Frères",
+      size: 9,
+      art: ["╭───────╮", "│PETITS │", "│FRERES │", "│ ★ ♥ ★ │", "╰───────╯"],
+    },
+    {
+      name: "Renaissance",
+      size: 9,
+      art: ["╭───────╮", "│RENAIS │", "│ SANCE │", "│THRIFT │", "╰───────╯"],
+    },
+    {
+      name: "Myriade",
+      size: 9,
+      art: ["┌✺─✺─✺─✺┐", "│       │", "│MYRIADE│", "└───────┘"],
+    },
+    {
+      name: "Casa d'Italia",
+      size: 9,
+      art: ["╔═CASA══╗", "║D'ITALI║", "║ ★ ★ ★ ║", "║CULTURA║", "╚═══════╝"],
+    },
+    {
+      name: "Cinéma du Parc",
+      size: 9,
+      art: ["▀CINEMA▀▀", "█ DU    █", "█ PARC  █", "█ ◢▓▓◣  █", "▔▔▔▔▔▔▔▔▔"],
+    },
+    {
+      name: "Maynard's",
+      size: 9,
+      art: ["╭───────╮", "│MAYNARD│", "│POUTINE│", "│  ✷✷   │", "╰───────╯"],
+    },
+    {
+      name: "McCord",
+      size: 9,
+      art: ["▀McCORD▀▀", "█       █", "█ ◢■◣◢■◣█", "▔▔▔▔▔▔▔▔▔"],
+    },
 
-/* ── NARROW (size 6) ── */
-{
-  name: "SWIRL",
-  size: 6,
-  art: ["┌~~~~┐", "|SWRL|", "|YUM |", "└────┘"],
-},
-{
-  name: "SAQ",
-  size: 6,
-  art: ["╱────╲", "│ SAQ│", "│VINS│", "└────┘"],
-},
-{
-  name: "BIXI",
-  size: 6,
-  art: [" **** ", "|BIXI|", "/====\\"],
-},
-{
-  name: "Samosa King",
-  size: 6,
-  art: ["┌────┐", "|SMOS|", "| $1 |", "└────┘"],
-},
-{
-  name: "Gnocchi",
-  size: 6,
-  art: ["┌────┐", "|GNOC|", "| $5 |", "└────┘"],
-},
+    /* ── NARROW (size 6) ── */
+    {
+      name: "SWIRL",
+      size: 6,
+      art: ["┌~~~~┐", "|SWRL|", "|YUM |", "└────┘"],
+    },
+    {
+      name: "SAQ",
+      size: 6,
+      art: ["╱────╲", "│ SAQ│", "│VINS│", "└────┘"],
+    },
+    {
+      name: "BIXI",
+      size: 6,
+      art: [" **** ", "|BIXI|", "/====\\"],
+    },
+    {
+      name: "Samosa King",
+      size: 6,
+      art: ["┌────┐", "|SMOS|", "| $1 |", "└────┘"],
+    },
+    {
+      name: "Gnocchi",
+      size: 6,
+      art: ["┌────┐", "|GNOC|", "| $5 |", "└────┘"],
+    },
   ],
 
   /* ─────────────────────────────────────────────────────────
@@ -890,7 +780,7 @@ window.GAME_DATA = {
        - If width changes, STO_W constant in main script auto-updates
          (it reads STORE[0].length), so safe to resize horizontally.
        ───────────────────────────────────────────────────────── */
-        // MANGER C'EST LA VIE 
+  // MANGER C'EST LA VIE
   storeArt: [
     ".============================.",
     "|  G R O C E R Y  C H A I N  |",
@@ -1001,234 +891,96 @@ window.GAME_DATA = {
       d: 2500,
     },
   ],
-
-
 }; /* ── DIALOGUE POOLS ────────────────────────────────────── */
-
 
 const DM = (() => {
   function shuffle(a) {
     const b = [...a];
     for (let i = b.length - 1; i > 0; i--) {
-      const j = Math.random() * (i + 1) | 0;
+      const j = (Math.random() * (i + 1)) | 0;
       [b[i], b[j]] = [b[j], b[i]];
     }
     return b;
   }
 
   // Stat tags: block within conversation if already used, never boost
-  const STAT_TAGS = new Set(['stat-36b', 'stat-47', 'stat-18b', 'stat-61b', 'stat-100b']);
+  const STAT_TAGS = new Set(["stat-36b", "stat-47", "stat-18b", "stat-61b", "stat-100b"]);
   const COOLDOWN = 3; // conversations before a theme resurfaces
 
-  let convTags  = new Set();
+  let convTags = new Set();
   const coolMap = new Map(); // tag → conversations since last used (0 = just used)
 
   class Deck {
-    constructor(src) { this.src = src; this.pile = []; }
-    _fill() { this.pile = shuffle([...this.src]); }
-    take(i) { return this.pile.splice(i, 1)[0]; }
-    pop()   { if (!this.pile.length) this._fill(); return this.pile.pop(); }
+    constructor(src) {
+      this.src = src;
+      this.pile = [];
+    }
+    _fill() {
+      this.pile = shuffle([...this.src]);
+    }
+    take(i) {
+      return this.pile.splice(i, 1)[0];
+    }
+    pop() {
+      if (!this.pile.length) this._fill();
+      return this.pile.pop();
+    }
   }
 
-  const isTagged = d => d.src.length > 0 && typeof d.src[0] !== 'string';
-  const tagsOf   = x => x?.tags ?? [];
-  const textOf   = x => typeof x === 'string' ? x : x.t;
+  const isTagged = (d) => d.src.length > 0 && typeof d.src[0] !== "string";
+  const tagsOf = (x) => x?.tags ?? [];
+  const textOf = (x) => (typeof x === "string" ? x : x.t);
 
-  const isCooled    = tags => tags.some(t => { const a = coolMap.get(t); return a !== undefined && a < COOLDOWN; });
-  const isStatClash = tags => tags.some(t => STAT_TAGS.has(t) && convTags.has(t));
-  const isBoostable = tags => tags.some(t => !STAT_TAGS.has(t) && convTags.has(t));
+  const isCooled = (tags) =>
+    tags.some((t) => {
+      const a = coolMap.get(t);
+      return a !== undefined && a < COOLDOWN;
+    });
+  const isStatClash = (tags) => tags.some((t) => STAT_TAGS.has(t) && convTags.has(t));
+  const isBoostable = (tags) => tags.some((t) => !STAT_TAGS.has(t) && convTags.has(t));
 
   function score(item, boost) {
     const tags = tagsOf(item);
-    if (isStatClash(tags))          return -2;
-    if (isCooled(tags))             return -1;
-    if (boost && isBoostable(tags)) return  2;
+    if (isStatClash(tags)) return -2;
+    if (isCooled(tags)) return -1;
+    if (boost && isBoostable(tags)) return 2;
     return 0;
   }
 
   function recordTags(tags) {
-    for (const t of tags) { convTags.add(t); coolMap.set(t, 0); }
+    for (const t of tags) {
+      convTags.add(t);
+      coolMap.set(t, 0);
+    }
   }
 
   function draw(deck, { boost = false } = {}) {
     if (!deck.pile.length) deck._fill();
     if (!isTagged(deck)) return textOf(deck.pop());
-    let bestIdx = 0, bestScore = -999;
+    let bestIdx = 0,
+      bestScore = -999;
     for (let i = 0; i < deck.pile.length; i++) {
       const s = score(deck.pile[i], boost);
-      if (s > bestScore) { bestScore = s; bestIdx = i; }
+      if (s > bestScore) {
+        bestScore = s;
+        bestIdx = i;
+      }
     }
     const item = deck.take(bestIdx);
     recordTags(tagsOf(item));
     return textOf(item);
   }
 
-  function startConv() { convTags = new Set(); }
-  function endConv()   { for (const [t, v] of coolMap) coolMap.set(t, v + 1); convTags = new Set(); }
+  function startConv() {
+    convTags = new Set();
+  }
+  function endConv() {
+    for (const [t, v] of coolMap) coolMap.set(t, v + 1);
+    convTags = new Set();
+  }
 
   return { Deck, draw, startConv, endConv };
 })();
-
-
-// new 
-
-const DECK_ANGRY_HELLO = new DM.Deck([
-  { t: "corporations are making record profits while we starve",                       tags: [] },
-  { t: "Galen Weston pocketed $2 billion last year",                                   tags: ["weston"] },
-  { t: "they lock the dumpsters so we can't even take the waste",                     tags: ["dumpsters"] },
-  { t: "they had record profits during a pandemic",                                    tags: [] },
-  { t: "they use shrinkflation so you don't notice",                                  tags: ["shrinkflation"] },
-  { t: "they call it dynamic pricing. it's price gouging",                            tags: ["dynamic-pricing"] },
-  { t: "they pay $14/hr and pocket billions",                                          tags: [] },
-  { t: "Robin Hood had the right idea. just saying",                                  tags: ["robin-hood"] },
-  { t: "free market except the market is a cartel",                                   tags: ["cartel"] },
-  { t: "the invisible hand is in my pocket",                                          tags: ["invisible-hand"] },
-  { t: "trickle-down economics: they trickle, we drown",                             tags: [] },
-  { t: "record profits, record food bank lines",                                      tags: ["food-bank"] },
-  { t: "food banks have waiting lists. waiting lists",                                tags: ["food-bank"] },
-  { t: "three families control most of what you eat",                                 tags: ["three-co"] },
-  { t: "Galen Weston's bonus could feed this block for a decade",                    tags: ["weston"] },
-  { t: "shrinkflation: same price, less chip, more rage",                            tags: ["shrinkflation"] },
-  { t: "they call it margin optimization. I call it a mugging",                      tags: [] },
-  { t: "three companies run the whole aisle",                                         tags: ["three-co"] },
-  { t: "loblaws alone controls almost a third of the grocery stores",                              tags: ["three-co"] },
-  { t: "47% markup at grocery stores. forty-seven!!",                                tags: ["stat-47"] },
-  { t: "they're making billions while we cut meals",                                  tags: [] },
-  { t: "$100 billion in sales and we're still hungry",                               tags: ["stat-100b"] },
-  { t: "they cleared $3.6 billion in profit in one year",                            tags: ["stat-36b"] },
-  { t: "competition bureau says it's concentrated. no kidding",                      tags: ["three-co"] },
-  { t: "we would've saved $18 billion if they didn't jack it",                      tags: ["stat-18b"] },
-  { t: "loblaws made $61 billion and you're telling me bread is $6?",               tags: ["stat-61b", "bread"] },
-  { t: "47% markup and we're supposed to smile?",                                    tags: ["stat-47"] },
-  { t: "they made billions during a crisis",                                          tags: [] },
-  { t: "three companies control most of the food in this country",                   tags: ["three-co"] },
-  { t: "they're using 'predatory pricing', they adjust the price based on who's looking?", tags: ["dynamic-pricing"] },
-  { t: "oligopoly, but make it groceries",                                            tags: ["three-co"] },
-  { t: "they optimized profit, not hunger",                                           tags: [] },
-  { t: "free market, captive customers",                                              tags: ["cartel"] },
-  { t: "price fixing without the meeting",                                            tags: ["price-fixing"] },
-  { t: "same cartel, different flyer",                                               tags: ["cartel"] },
-  { t: "price fixing fine was $500k. their profit was $3.6 billion. do the math",  tags: ["price-fixing", "stat-36b"] },
-  { t: "empire, metro, loblaws: three brands, one cartel",                          tags: ["three-co", "cartel"] },
-  { t: "they control 80% of the market and have the audacity to sell loyalty cards", tags: ["three-co"] },
-  { t: "shrinkflation: less product, same price, same face on the label",           tags: ["shrinkflation"] },
-  { t: "Robin Hood had a point and we've been politely ignoring it for 800 years",  tags: ["robin-hood"] },
-  { t: "they settled the price-fixing case and kept price-fixing",                  tags: ["price-fixing"] },
-  { t: "food bank usage is up 40%. coincidentally, so are profits",                tags: ["food-bank"] },
-  { t: "the invisible hand of the market just took my lunch",                       tags: ["invisible-hand"] },
-  { t: "three CEOs, one grocery bill, everyone else's problem",                    tags: ["three-co"] },
-]);
-
-const DECK_HUNGRY_HELLO = new DM.Deck([
-  { t: "I've been skipping lunch to afford dinner",                                  tags: [] },
-  { t: "my kids think cereal is a full meal",                                        tags: ["cereal"] },
-  { t: "I stretch meals until they break",                                            tags: [] },
-  { t: "I haven't had a real meal in three days",                                   tags: [] },
-  { t: "my diet is very clean. there's nothing in it",                              tags: [] },
-  { t: "I have three jobs and still can't afford groceries",                        tags: [] },
-  { t: "nothing in the fridge again tonight",                                        tags: [] },
-  { t: "I feel ashamed of being poor, like I should hide it",                      tags: [] },
-  { t: "you seen the price of bread lately?",                                        tags: ["bread"] },
-  { t: "I used to eat three meals a day.",                                           tags: [] },
-  { t: "$6 for tofu. Can you believe it?",                                           tags: [] },
-  { t: "I can't afford to live. Can you?",                                           tags: [] },
-  { t: "I'm not keeping it together, I'm too hungry to think",                     tags: [] },
-  { t: "I eat before I grocery shop so I don't cry in aisle 3",                   tags: [] },
-  { t: "I make do with food flavored experiences",                                   tags: [] },
-  { t: "Well, I'm functionally fasting",                                             tags: [] },
-  { t: "I've started doing cost-per-calorie math. I've changed",                   tags: [] },
-  { t: "my meal planning is just grief, honestly",                                   tags: [] },
-]);
-
-const DECK_ANGRY_PITCH = new DM.Deck([
-  { t: "it's not right!",                                                             tags: [] },
-  { t: "they profit while we starve, maudine",                                       tags: [] },
-  { t: "record corporate profits, record food bank lines!",                          tags: ["food-bank"] },
-  { t: "they're getting richer while we starve, cibole.",                           tags: [] },
-  { t: "câline, food bank ran out by Tuesday.",                                      tags: ["food-bank"] },
-  { t: "loblaws, metro, empire — same machine, tabarnouche",                        tags: ["three-co"] },
-  { t: "they made $3.6 billion last year, câline",                                  tags: ["stat-36b"] },
-  { t: "isn't it time we stopped asking nicely for the basic necessities?",                                    tags: [] },
-  { t: "food system designed to extract, not feed",                                  tags: [] },
-  { t: "tabarnouche! isn't it time to take what's ours?",                           tags: [] },
-  { t: "I'll fix my mood when they stop fixing prices",                              tags: ["price-fixing"] },
-  { t: "they call it inflation, I call it a heist",                                  tags: [] },
-  { t: "record profits, record audacity",                                             tags: [] },
-  { t: "they're farming profit, not food",                                           tags: [] },
-  { t: "they stock shelves, we stock resentment",                                    tags: [] },
-  { t: "the system is broken. or working perfectly, depending on who you ask",      tags: [] },
-  { t: "they turned a crisis into a line item",                                      tags: [] },
-  { t: "the invisible hand has been very busy in our pockets",                      tags: ["invisible-hand"] },
-  { t: "they call it shrinkflation. I call it theft with math",                     tags: ["shrinkflation"] },
-  { t: "profit margin on groceries hit 47%. let that land",                         tags: ["stat-47"] },
-  { t: "they bought back their stock while we bought less food",                    tags: [] },
-  { t: "they settled. paid nothing. kept going. you good with that?",              tags: ["price-fixing"] },
-  { t: "oligopoly with a flyer",                                                     tags: ["three-co"] },
-  { t: "three men control your dinner. tonight we redistribute",                    tags: ["three-co"] },
-  { t: "grocery profits are up 40%, tabarnouche",                                   tags: [] },
-  { t: "record profits should mean there's plenty to go around, câline.",          tags: [] },
-  { t: "cibole! tonight we rise up",                                                 tags: [] },
-]);
-
-const DECK_HUNGRY_PITCH = new DM.Deck([
-  { t: "nobody should have to live with hunger",                                     tags: [] },
-  { t: "what if we didn't need to worry about food anymore?",                       tags: [] },
-  { t: "no one should go hungry.",                                                   tags: [] },
-  { t: "the shelves are full, our fridges are empty.",                              tags: [] },
-  { t: "they lock the dumpsters now.",                                               tags: ["dumpsters"] },
-  { t: "they throw good food in the dumpsters",                                      tags: ["dumpsters"] },
-  { t: "when did feeding your family become a luxury?",                             tags: [] },
-  { t: "bread is SIX dollars.",                                                      tags: ["bread"] },
-  { t: "everyone deserves to eat",                                                   tags: [] },
-  { t: "you shouldn't have to choose between rent and food",                        tags: [] },
-  { t: "hunger isn't a personal failure",                                            tags: [] },
-  { t: "what if tonight, everyone on our block ate?",                               tags: [] },
-  { t: "you know, they waste more food than we could ever take",                                    tags: [] },
-  { t: "somebody's eating good and it's not us.",                                   tags: [] },
-  { t: "they waste it, we need it. simple.",                                         tags: [] },
-  { t: "there's a store full of food 30 feet away",                                 tags: [] },
-  { t: "they'll write it off as shrinkage anyway — let's help them",               tags: [] },
-  { t: "the food exists. someone just decided it wasn't ours",                     tags: [] },
-  { t: "they'd rather it rot than let it go",                                       tags: ["dumpsters"] },
-  { t: "hunger is a policy choice. so is this",                                     tags: [] },
-  { t: "your kids shouldn't have to learn to ignore hunger",                       tags: [] },
-  { t: "bread shouldn't require a business case",                                   tags: ["bread"] },
-  { t: "they planned for shrinkage. let's deliver",                                 tags: [] },
-]);
-
-
-const DECK_STRONGER_PITCH = new DM.Deck([
-  { t: "the store is full. our fridges are empty. tonight we fix that",              tags: [] },
-  { t: "they made $3.6 billion last year. we're taking some bread",                  tags: ["stat-36b", "bread"] },
-  { t: "we walk in and take what we need. historically, this is exactly how change happens", tags: ["robin-hood"] },
-  { t: "they throw food in dumpsters while people starve. we're taking it back",     tags: ["dumpsters"] },
-  { t: "we go in tonight. we take what we need. bread is six dollars — we're done asking nicely", tags: ["bread"] },
-  { t: "one night, one store, enough food for the whole block",                      tags: [] },
-  { t: "we shouldn't have to live like this. so tonight we're going to the grocery store to take what is ours",                  tags: [] },
-  { t: "one store, one night, no one goes hungry",                                   tags: [] },
-  { t: "this isn't a crime. it's a correction",                                      tags: [] },
-  { t: "tonight, nobody on this block worries about food",                           tags: [] },
-  { t: "we're paying 27% more than in 2020. we're taking some of it back",          tags: [] },
-  { t: "we're not stealing. we're correcting a theft",                               tags: [] },
-  { t: "three companies control the food. tonight we take some back",                tags: ["three-co"] },
-  { t: "they made $3.6 billion in profit. we're taking some groceries",              tags: ["stat-36b"] },
-  { t: "47% markup on everything we eat. tonight we redistribute some of that",      tags: ["stat-47"] },
-  { t: "they turned a crisis into profit. we're just turning it back",               tags: [] },
-  { t: "they wasted $1.2 billion in food last year. we're taking some back",        tags: ["dumpsters"] },
-  { t: "this is civil disobedience with snacks",                                     tags: [] },
-  { t: "we walk in, take what we need, they write it off as shrinkage. everybody eats", tags: [] },
-  { t: "the food exists. it's just not ours yet",                                   tags: [] },
-  { t: "we're robins. not robbers",                                                  tags: ["robin-hood"] },
-  { t: "tonight we eat. all of us",                                                  tags: [] },
-  { t: "they call it property. we call it groceries",                                tags: [] },
-  { t: "one act of solidarity feeds a whole block",                                  tags: [] },
-  { t: "it's not theft if they stole it first",                                      tags: [] },
-  { t: "we're correcting a very long-running error",                                 tags: [] },
-  { t: "we go in, we take what our families need, we leave. that's it",             tags: [] },
-  { t: "the plan is simple: full shelves, empty fridges, one night to fix that",    tags: [] },
-]);
-
-// end new 
 
 // ambient chatter from hungry/sad npcs while they wander
 const D_AMB_HUNGRY = [
@@ -1246,6 +998,16 @@ const D_AMB_HUNGRY = [
   "I window-shop at the produce section",
   "I scan prices like it's a horror game",
   "I drink water so I feel full",
+
+  "prices keep going up...",
+  "my kids are hungry",
+  "I shop at Segals when I can",
+  "I have three jobs",
+  "I skip meals now.",
+  "I saw the total and just nodded",
+  "the beep at checkout hurts more each time",
+  "I don't check prices, they check me",
+  "iga if you're feeling rich",
 ];
 
 // ambient chatter from angry npcs while they wander
@@ -1295,28 +1057,7 @@ const D_AMB_NARC = [
 ];
 
 // ambient chatter from  npcs while they wander
-const D_AMB = [
-  "prices keep going up...",
-  "my kids are hungry",
-  "I got this coupon app",
-  "it just keeps going up",
-  "I shop at Segals when I can",
-  "I have three jobs",
-  "I skip meals now.",
-  "I saw the total and just nodded",
-  "I went for groceries, left with trauma",
-  "the beep at checkout hurts more each time",
-  "I don't check prices, they check me",
-
-  "metro and provigo, same story different sign",
-  "maxi's cheaper until it isn't",
-  "iga if you're feeling rich",
-  "super c if you're lucky",
-  "segals is the only break I get",
-];
-
-
-
+const D_AMB = [];
 
 const P_GREET = [
   "hey. you okay?",
@@ -1351,141 +1092,183 @@ const D_NARC_HELLO = [
   "people should stop eating avocados if they are broke",
 ];
 
+
+// new 
 // NPC is saying their first line of dialgue to the player.
 // they are angry about the state of expensive food in montreal
-const D_ANGRY_HELLO = [
-  "corporations are making record profits while we starve",
-  "Galen Weston pocketed $2 billion last year",
-  "did you know they lock the dumpsters so we can't even eat the expired food",
-  "they had record profits during a pandemic",
-  "they use shrinkflation so you don't notice",
-  "they call it dynamic pricing. it's price gouging",
-  "they pay $14/hr and pocket billions",
 
-  "Robin Hood had the right idea. just saying",
+const DECK_ANGRY_HELLO = new DM.Deck([
+  { t: "corporations are making record profits while we starve", tags: [] },
+  { t: "Galen Weston pocketed $2 billion last year", tags: ["weston"] },
+  { t: "they lock the dumpsters so we can't even take the waste", tags: ["dumpsters"] },
+  { t: "they had record profits during a pandemic", tags: [] },
+  { t: "they use shrinkflation so you don't notice", tags: ["shrinkflation"] },
+  { t: "they call it dynamic pricing. it's price gouging", tags: ["dynamic-pricing"] },
+  { t: "they pay $14/hr and pocket billions", tags: [] },
+  { t: "Robin Hood had the right idea. just saying", tags: ["robin-hood"] },
+  { t: "free market except the market is a cartel", tags: ["cartel"] },
+  { t: "the invisible hand is in my pocket", tags: ["invisible-hand"] },
+  { t: "trickle-down economics: they trickle, we drown", tags: [] },
+  { t: "record profits, record food bank lines", tags: ["food-bank"] },
+  { t: "food banks have waiting lists. waiting lists", tags: ["food-bank"] },
+  { t: "three families control most of what you eat", tags: ["three-co"] },
+  { t: "Galen Weston's bonus could feed this block for a decade", tags: ["weston"] },
+  { t: "shrinkflation: same price, less chip, more rage", tags: ["shrinkflation"] },
+  { t: "they call it margin optimization. I call it a mugging", tags: [] },
+  { t: "three companies run the whole aisle", tags: ["three-co"] },
+  { t: "loblaws alone controls almost a third of the grocery stores", tags: ["three-co"] },
+  { t: "47% markup at grocery stores. forty-seven!!", tags: ["stat-47"] },
+  { t: "they're making billions while we cut meals", tags: [] },
+  { t: "$100 billion in sales and we're still hungry", tags: ["stat-100b"] },
+  { t: "they cleared $3.6 billion in profit in one year", tags: ["stat-36b"] },
+  { t: "competition bureau says it's concentrated. no kidding", tags: ["three-co"] },
+  { t: "we would've saved $18 billion if they didn't jack it", tags: ["stat-18b"] },
+  { t: "loblaws made $61 billion and you're telling me bread is $6?", tags: ["stat-61b", "bread"] },
+  { t: "47% markup and we're supposed to smile?", tags: ["stat-47"] },
+  { t: "they made billions during a crisis", tags: [] },
+  { t: "three companies control most of the food in this country", tags: ["three-co"] },
+  { t: "they're using 'predatory pricing', they adjust the price based on who's looking?", tags: ["dynamic-pricing"] },
+  { t: "oligopoly, but make it groceries", tags: ["three-co"] },
+  { t: "they optimized profit, not hunger", tags: [] },
+  { t: "free market, captive customers", tags: ["cartel"] },
+  { t: "price fixing without the meeting", tags: ["price-fixing"] },
+  { t: "same cartel, different flyer", tags: ["cartel"] },
+  { t: "price fixing fine was $500k. their profit was $3.6 billion. do the math", tags: ["price-fixing", "stat-36b"] },
+  { t: "empire, metro, loblaws: three brands, one cartel", tags: ["three-co", "cartel"] },
+  { t: "they control 80% of the market and have the audacity to sell loyalty cards", tags: ["three-co"] },
+  { t: "shrinkflation: less product, same price, same face on the label", tags: ["shrinkflation"] },
+  { t: "Robin Hood had a point and we've been politely ignoring it for 800 years", tags: ["robin-hood"] },
+  { t: "they settled the price-fixing case and kept price-fixing", tags: ["price-fixing"] },
+  { t: "food bank usage is up 40%. coincidentally, so are profits", tags: ["food-bank"] },
+  { t: "the invisible hand of the market just took my lunch", tags: ["invisible-hand"] },
+  { t: "three CEOs, one grocery bill, everyone else's problem", tags: ["three-co"] },
+    { t: "they gave us a loyalty card instead of a fair price"
+, tags: [] },
 
-  "free market except the market is a cartel",
-  "the invisible hand is in my pocket",
-  "trickle-down economics: they trickle, we drown",
-  "record profits, record food bank lines",
-  "food banks have waiting lists. waiting lists",
-  "three families control most of what you eat",
-  "Galen Weston's bonus could feed this block for a decade",
-  "shrinkflation: same price, less chip, more rage",
-  "they call it margin optimization. I call it a mugging",
-  "loblaws alone controls almost a third of this",
-  "47% markup at grocery stores. forty-seven!!",
-  "they're making billions while we cut meals",
-  "$100 billion in sales and we're still hungry",
-  "they cleared $3.6 billion in profit in one year",
-  "competition bureau says it's concentrated. no kidding",
-  "we would've saved $18 billion if they didn't jack it",
-  "loblaws made $61 billion and you're telling me bread is $6?",
-  "47% markup on groceries and we're supposed to smile?",
-  "they made billions during a crisis",
-  "three companies control most of the food in this country",
-  "they're using 'predatory pricing', they adjust the price based on who's looking?",
-  "oligopoly, but make it groceries",
-  "they optimized profit, not hunger",
-  "free market, captive customers",
-  "price fixing without the meeting",
-  "same cartel, different flyer",
-  "they made $3.6 billion in one year and called it a food system",
-  "price fixing fine was $500k. their profit was $3.6 billion. do the math",
-  "empire, metro, loblaws: three brands, one cartel",
-  "they control 80% of the market and have the audacity to sell loyalty cards",
-  "shrinkflation: less product, same price, same face on the label",
-  "Robin Hood had a point and we've been politely ignoring it for 800 years",
-  "they settled the price-fixing case and kept price-fixing",
-  "food bank usage is up 40%. coincidentally, so are profits",
-  "the invisible hand of the market just took my lunch",
-  "three CEOs, one grocery bill, everyone else's problem",
-];
+
+
+]);
 
 // NPC is saying their first line of dialgue to the player.
 // they are hungry and sad about the state of expensive food in montreal
-const D_HUNGRY_HELLO = [
-  "I've been skipping lunch to afford dinner",
-  "my kids think cereal is a full meal",
-  "I stretch meals until they break",
-  "I haven't had a real meal in three days",
-  "my diet is very clean. there's nothing in it",
-  "I have three jobs and still can't afford groceries",
-  "nothing in the fridge again tonight",
-  "I feel ashamed of being poor, like I should hide it",
-  "you seen the price of bread lately?",
-  "I used to eat three meals a day.",
-  "$6 for tofu. Can you believe it?",
-  "I can't afford to live. Can you?",
-  "I'm not keeping it together, I'm too hungry to think",
-  "I eat before I grocery shop so I don't cry in aisle 3",
-  "I make do with food flavored experiences",
-  "Well, I'm functionally fasting",
-  "I've started doing cost-per-calorie math. I've changed",
-  "my meal planning is just grief, honestly",
-];
+
+const DECK_HUNGRY_HELLO = new DM.Deck([
+  { t: "I've been skipping lunch to afford dinner", tags: [] },
+  { t: "my kids think cereal is a full meal", tags: ["cereal"] },
+  { t: "I stretch meals until they break", tags: [] },
+  { t: "I haven't had a real meal in three days", tags: [] },
+  { t: "my diet is very clean. there's nothing in it", tags: [] },
+  { t: "I have three jobs and still can't afford groceries", tags: [] },
+  { t: "nothing in the fridge again tonight", tags: [] },
+  { t: "I feel ashamed of being poor, like I should hide it", tags: [] },
+  { t: "you seen the price of bread lately?", tags: ["bread"] },
+  { t: "I used to eat three meals a day.", tags: [] },
+  { t: "$6 for tofu. Can you believe it?", tags: [] },
+  { t: "I can't afford to live. Can you?", tags: [] },
+  { t: "I'm not keeping it together, I'm too hungry to think", tags: [] },
+  { t: "I eat before I grocery shop so I don't cry in aisle 3", tags: [] },
+  { t: "I make do with food flavored experiences", tags: [] },
+    { t: "Well, I'm functionally fasting", tags: ["fasting"] },
+  { t: "I've started doing cost-per-calorie math. I've changed", tags: [] },
+  { t: "my meal planning is just grief, honestly", tags: [] },
+    { t: "I'm doing intermittent fasting. involuntarily", tags: ["fasting"] },
+
+]);
 
 // player makes 1st pitch to an angry npc, trying to get them onside.
 // they speak to anger and structural INJUSTICE around food
-const D_ANGRY_PITCH = [
-  "it's not right!",
-  "they profit while we starve, maudine",
-  "record profits should mean there's plenty to go around, câline.",
-  "grocery profits are up 40%, tabarnouche",
-  "record corporate profits, record food bank lines!",
-  "they're getting richer while we starve, cibole.",
-  "câline, food bank ran out by Tuesday.",
-  "we're fixing everything tonight, cibole.",
-  "cibole! tonight we rise up",
-  "loblaws, metro, empire — same machine, tabarnouche",
-  "they made $3.6 billion last year, câline",
-  "isn't it time we stopped asking nicely for the basic necessities?",
-  "food system designed to extract, not feed",
 
-  "tabarnouche! isn't it time to take what's ours?",
-  "I'll fix my mood when they stop fixing prices",
-  "they call it inflation, I call it a heist",
-  "record profits, record audacity",
-  "they're farming profit, not food",
-  "they stock shelves, we stock resentment",
-  "the system is broken. or working perfectly, depending on who you ask",
-  "they turned a crisis into a line item",
-  "the invisible hand has been very busy in our pockets",
-  "they call it shrinkflation. I call it theft with math",
-  "profit margin on groceries hit 47%. let that land",
-  "they bought back their stock while we bought less food",
-  "they settled. paid nothing. kept going. you good with that?",
-  "oligopoly with a flyer",
-  "three men control your dinner. tonight we redistribute",
-];
+const DECK_ANGRY_PITCH = new DM.Deck([
+  { t: "it's not right!", tags: [] },
+  { t: "they profit while we starve, maudine", tags: [] },
+  { t: "record corporate profits, record food bank lines!", tags: ["food-bank"] },
+  { t: "they're getting richer while we starve, cibole.", tags: [] },
+  { t: "câline, food bank ran out by Tuesday.", tags: ["food-bank"] },
+  { t: "loblaws, metro, empire — same machine, tabarnouche", tags: ["three-co"] },
+  { t: "they made $3.6 billion last year, câline", tags: ["stat-36b"] },
+  { t: "isn't it time we stopped asking nicely for the basic necessities?", tags: [] },
+  { t: "food system designed to extract, not feed", tags: [] },
+  { t: "tabarnouche! isn't it time to take what's ours?", tags: [] },
+  { t: "I'll fix my mood when they stop fixing prices", tags: ["price-fixing"] },
+  { t: "they call it inflation, I call it a heist", tags: [] },
+  { t: "record profits, record audacity", tags: [] },
+  { t: "they're farming profit, not food", tags: [] },
+  { t: "they stock shelves, we stock resentment", tags: [] },
+  { t: "the system is broken. or working perfectly, depending on who you ask", tags: [] },
+  { t: "they turned a crisis into a line item", tags: [] },
+  { t: "the invisible hand has been very busy in our pockets", tags: ["invisible-hand"] },
+  { t: "they call it shrinkflation. I call it theft with math", tags: ["shrinkflation"] },
+  { t: "profit margin on groceries hit 47%. let that land", tags: ["stat-47"] },
+  { t: "they bought back their stock while we bought less food", tags: [] },
+  { t: "they settled. paid nothing. kept going. you good with that?", tags: ["price-fixing"] },
+  { t: "oligopoly with a flyer", tags: ["three-co"] },
+  { t: "three men control your dinner. tonight we redistribute", tags: ["three-co"] },
+  { t: "grocery profits are up 40%, tabarnouche", tags: [] },
+  { t: "record profits should mean there's plenty to go around, câline.", tags: [] },
+  { t: "cibole! tonight we rise up", tags: [] },
+]);
+
 // player makes 1st pitch to a hungry/sad npc, trying to get them onside.
 // they speak to sadness and literal hunger
-const D_HUNGRY_PITCH = [
-  "nobody should have to live with hunger",
-  "what if we didn't need to worry about food anymore?",
-  "no one should go hungry.",
-  "the shelves are full, our fridges are empty.",
-  "they lock the dumpsters now.",
-  "they throw good food in the dumpsters",
-  "when did feeding your family become a luxury?",
-  "bread is SIX dollars.",
-  "everyone deserves to eat",
-  "you shouldn't have to choose between rent and food",
-  "hunger isn't a personal failure",
-  "what if tonight, everyone on our block ate?",
-  "you know, they waste more food than we could ever take",
 
-  "somebody's eating good and it's not us.",
-  "they waste it, we need it. simple.",
-  "there's a store full of food 30 feet away",
-  "they'll write it off as shrinkage anyway — let's help them",
-  "the food exists. someone just decided it wasn't ours",
-  "they'd rather it rot than let it go",
-  "hunger is a policy choice. so is this",
-  "your kids shouldn't have to learn to ignore hunger",
-  "bread shouldn't require a business case",
-  "they planned for shrinkage. let's deliver",
-];
+const DECK_HUNGRY_PITCH = new DM.Deck([
+  { t: "nobody should have to live with hunger", tags: [] },
+  { t: "what if we didn't need to worry about food anymore?", tags: [] },
+  { t: "no one should go hungry.", tags: [] },
+  { t: "the shelves are full, our fridges are empty.", tags: [] },
+  { t: "they lock the dumpsters now.", tags: ["dumpsters"] },
+  { t: "they throw good food in the dumpsters", tags: ["dumpsters"] },
+  { t: "when did feeding your family become a luxury?", tags: [] },
+  { t: "bread is SIX dollars.", tags: ["bread"] },
+  { t: "everyone deserves to eat", tags: [] },
+  { t: "you shouldn't have to choose between rent and food", tags: [] },
+  { t: "hunger isn't a personal failure", tags: [] },
+  { t: "what if tonight, everyone on our block ate?", tags: [] },
+  { t: "you know, they waste more food than we could ever take", tags: [] },
+  { t: "somebody's eating good and it's not us.", tags: [] },
+  { t: "they waste it, we need it. simple.", tags: [] },
+  { t: "there's a store full of food 30 feet away", tags: [] },
+  { t: "they'll write it off as shrinkage anyway — let's help them", tags: [] },
+  { t: "the food exists. someone just decided it wasn't ours", tags: [] },
+  { t: "they'd rather it rot than let it go", tags: ["dumpsters"] },
+  { t: "hunger is a policy choice. so is this", tags: [] },
+  { t: "your kids shouldn't have to learn to ignore hunger", tags: [] },
+  { t: "bread shouldn't require a business case", tags: ["bread"] },
+  { t: "they planned for shrinkage. let's deliver", tags: [] },
+]);
+
+const DECK_STRONGER_PITCH = new DM.Deck([
+  { t: "the store is full. our fridges are empty. tonight we fix that", tags: [] },
+  { t: "they made $3.6 billion last year. we're taking some bread", tags: ["stat-36b", "bread"] },
+  { t: "we walk in and take what we need. historically, this is exactly how change happens", tags: ["robin-hood"] },
+  { t: "they throw food in dumpsters while people starve. we're taking it back", tags: ["dumpsters"] },
+  { t: "we go in tonight. we take what we need. bread is six dollars — we're done asking nicely", tags: ["bread"] },
+  { t: "one night, one store, enough food for the whole block", tags: [] },
+  { t: "we shouldn't have to live like this. so tonight we're going to the grocery store to take what is ours", tags: [] },
+  { t: "one store, one night, no one goes hungry", tags: [] },
+  { t: "this isn't a crime. it's a correction", tags: [] },
+  { t: "tonight, nobody on this block worries about food", tags: [] },
+  { t: "we're paying 27% more than in 2020. we're taking some of it back", tags: [] },
+  { t: "we're not stealing. we're correcting a theft", tags: [] },
+  { t: "three companies control the food. tonight we take some back", tags: ["three-co"] },
+  { t: "they made $3.6 billion in profit. we're taking some groceries", tags: ["stat-36b"] },
+  { t: "47% markup on everything we eat. tonight we redistribute some of that", tags: ["stat-47"] },
+  { t: "they turned a crisis into profit. we're just turning it back", tags: [] },
+  { t: "they wasted $1.2 billion in food last year. we're taking some back", tags: ["dumpsters"] },
+  { t: "this is civil disobedience with snacks", tags: [] },
+  { t: "we walk in, take what we need, they write it off as shrinkage. everybody eats", tags: [] },
+  { t: "the food exists. it's just not ours yet", tags: [] },
+  { t: "we're robins. not robbers", tags: ["robin-hood"] },
+  { t: "tonight we eat. all of us", tags: [] },
+  { t: "they call it property. we call it groceries", tags: [] },
+    { t: "the shelves are insured. our hunger isn't. come with us?", tags: [] },
+
+  { t: "one act of solidarity feeds a whole block", tags: [] },
+  { t: "it's not theft if they stole it first", tags: [] },
+  { t: "we're correcting a very long-running error", tags: [] },
+  { t: "we go in, we take what our families need, we leave. that's it", tags: [] },
+  { t: "the plan is simple: full shelves, empty fridges, one night to fix that", tags: [] },
+]);
 
 // comes after one the pitckes above, needs to be short and an invitation
 const D_INVITE = [
@@ -1545,7 +1328,6 @@ const D_STRONGER_PITCH = [
   "they call it property. we call it groceries",
   "one act of solidarity feeds a whole block",
   "historically, this is how things change",
-  "they made $3.6 billion in profit. we're taking some groceries",
   "it's not theft if they stole it first",
   "we're correcting a very long-running error",
 ];
@@ -1792,29 +1574,25 @@ const A1_LOOP_MSGS = [
   { t: "TABARNAK CÂLICE CRISSE VIARGE OSTIE DE...", c: "#ff0000" },
 ];
 
+// Plain shuffle decks — no tag system needed
+const DECK_GREET = new DM.Deck(P_GREET);
+const DECK_INVITE = new DM.Deck(D_INVITE);
+const DECK_BACK_OFF = new DM.Deck(D_BACK_OFF);
+const DECK_SAY_MORE = new DM.Deck(D_SAY_MORE);
+const DECK_JOIN = new DM.Deck(D_JOIN_PHRASE);
+const DECK_CONSENT = new DM.Deck(D_CONSENT_PHRASE);
+const DECK_MISMATCH = new DM.Deck(D_MISMATCH);
+const DECK_NO_BYE = new DM.Deck(D_NO_BYE);
+const DECK_NOT_NOW = new DM.Deck(D_NOT_NOW);
+const DECK_RETURN = new DM.Deck(D_RETURN);
+const DECK_NARC_HELLO = new DM.Deck(D_NARC_HELLO);
+const DECK_NARC_REV = new DM.Deck(D_NARC_REVEAL);
+const DECK_ACK_NARC = new DM.Deck(D_ACK_NARC);
 
-
-        // Plain shuffle decks — no tag system needed
-        const DECK_GREET = new DM.Deck(P_GREET);
-        const DECK_INVITE = new DM.Deck(D_INVITE);
-        const DECK_BACK_OFF = new DM.Deck(D_BACK_OFF);
-        const DECK_SAY_MORE = new DM.Deck(D_SAY_MORE);
-        const DECK_JOIN = new DM.Deck(D_JOIN_PHRASE);
-        const DECK_CONSENT = new DM.Deck(D_CONSENT_PHRASE);
-        const DECK_MISMATCH = new DM.Deck(D_MISMATCH);
-        const DECK_NO_BYE = new DM.Deck(D_NO_BYE);
-        const DECK_NOT_NOW = new DM.Deck(D_NOT_NOW);
-        const DECK_RETURN = new DM.Deck(D_RETURN);
-        const DECK_NARC_HELLO = new DM.Deck(D_NARC_HELLO);
-        const DECK_NARC_REV = new DM.Deck(D_NARC_REVEAL);
-        const DECK_ACK_NARC = new DM.Deck(D_ACK_NARC);
-        const DECK_ACK_HA = new DM.Deck(D_ACK_HUNGRY_ANGRY);
-
-        // Ambient decks — shuffle only, no tag system (they're overheard, not conversation)
-        const DECK_AMB_NARC = new DM.Deck(D_AMB_NARC);
-        const DECK_AMB_HUNGRY = new DM.Deck(D_AMB_HUNGRY);
-        const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
-        const DECK_AMB = new DM.Deck(D_AMB);
+// Ambient decks — shuffle only, no tag system (they're overheard, not conversation)
+const DECK_AMB_NARC = new DM.Deck(D_AMB_NARC);
+const DECK_AMB_HUNGRY = new DM.Deck(D_AMB_HUNGRY);
+const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
 
 /* ── STORE ART (shared by Acts 2, 3) ──────────────────── */
 const STORE = window.GAME_DATA.storeArt;
