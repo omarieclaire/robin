@@ -236,6 +236,8 @@
     <div class="conversations" id="output"></div>
 
     <script src="game-data.js"></script>
+    <script src="game-data-words.js"></script>
+
     <script>
       // Stubs so game.js doesn't crash on missing DOM / audio / game infrastructure
       window.GAME_DATA = window.GAME_DATA || {
@@ -303,86 +305,123 @@
     <script>
       function simulateConversation(npcType, npcKind) {
         const lines = [];
-        const add = (speaker, text, meta = "") => lines.push({ speaker, text, meta });
+        const add = (speaker, text, meta = "", tags = []) => lines.push({ speaker, text, meta, tags });
 
         DM.startConv();
 
+        // ambient
         const ambLine = npcType === "narc" ? DM.draw(DECK_AMB_NARC) : npcKind === "hungry" ? DM.draw(DECK_AMB_HUNGRY) : DM.draw(DECK_AMB_ANGRY);
         add("ambient", ambLine);
 
-        add("player", DM.draw(DECK_GREET));
+        // step 1: player greeting — capture tone
+        const greetResult = DM.drawWithTags(DECK_GREET);
+        const greetTone = greetResult.tags[0] ?? "casual";
+        add("player", greetResult.text);
 
-        const npcHello = npcType === "narc" ? DM.draw(DECK_NARC_HELLO) : npcKind === "angry" ? DM.draw(DECK_ANGRY_HELLO) : DM.draw(DECK_HUNGRY_HELLO);
-        add("npc", npcHello);
+        // step 2: npc hello — with prefix
+        const helloDeck = npcType === "narc" ? DECK_NARC_HELLO : npcKind === "angry" ? DECK_ANGRY_HELLO : DECK_HUNGRY_HELLO;
+        const { text: helloText, tags: helloTags } = DM.drawWithTags(helloDeck);
+        const prefixPool = HELLO_PREFIX[greetTone]?.[npcType === "narc" ? "narc" : npcKind] ?? [];
+        const helloPrefix = prefixPool.length > 0 ? prefixPool[Math.floor(Math.random() * prefixPool.length)] + " " : "";
+        add("npc", helloPrefix + helloText, "", helloTags);
 
-        const prefix = npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
-        const angryPitch = DM.draw(DECK_ANGRY_PITCH, { boost: true });
-        const hungryPitch = DM.draw(DECK_HUNGRY_PITCH, { boost: true });
+        // seed convTags with hello tags
+        for (const t of helloTags) DM._seedConvTag(t);
 
-        let playerPitch, matched;
-        if (npcType === "narc") {
-          playerPitch = Math.random() < 0.5 ? angryPitch : hungryPitch;
-          matched = false;
-        } else {
-          const shouldMatch = Math.random() < 0.75;
-          matched = shouldMatch;
-          playerPitch = npcKind === "angry" ? (shouldMatch ? angryPitch : hungryPitch) : shouldMatch ? hungryPitch : angryPitch;
+        // step 3: build first pitch choices with follows
+        const npcPrefix = npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+        const angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, { boost: true, follows: helloTags });
+        const hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, { boost: true, follows: helloTags });
+        const choiceTags = [angryResult.tags, hungryResult.tags, []];
+
+        const bail = Math.random() < 0.1;
+        let choiceIdx = bail ? 2 : npcKind === "angry" ? (Math.random() < 0.75 ? 0 : 1) : Math.random() < 0.75 ? 1 : 0;
+        if (npcType === "narc") choiceIdx = Math.random() < 0.5 ? 0 : 1;
+
+        const backOffEarly = DM.draw(DECK_BACK_OFF_EARLY);
+        add("choice", (choiceIdx === 0 ? "▶ " : "  ") + "a→ " + npcPrefix + angryResult.text, "", angryResult.tags);
+        add("choice", (choiceIdx === 1 ? "▶ " : "  ") + "h→ " + npcPrefix + hungryResult.text, "", hungryResult.tags);
+
+        add("choice", (choiceIdx === 2 ? "▶ " : "  ") + "n→ " + backOffEarly);
+
+        // step 3a: bailed early
+        if (choiceIdx === 2) {
+          add("player", backOffEarly);
+          DM.endConv();
+          return { lines, outcome: "backed", npcType, npcKind };
         }
 
-        add("choice", "a→ " + prefix + angryPitch);
-        add("choice", "h→ " + prefix + hungryPitch);
+        const pitchTags = choiceTags[choiceIdx];
+        add("player", choiceIdx === 0 ? npcPrefix + angryResult.text : npcPrefix + hungryResult.text, "", pitchTags);
+        for (const t of pitchTags ?? []) DM._seedConvTag(t);
 
-        add("npc", DM.draw(DECK_SAY_MORE));
-        add("player", DM.draw(DECK_INVITE));
+        // step 4: npc reacts
+        const matched = (choiceIdx === 0 && npcKind === "angry") || (choiceIdx === 1 && npcKind === "hungry");
 
-        let outcome;
-
+        let sayMoreTags = pitchTags;
         if (npcType === "narc") {
-          add("npc", DM.draw(DECK_SAY_MORE));
-          if (Math.random() < 0.7) {
-            add("player", DM.draw(DECK_STRONGER_PITCH, { boost: true }));
-            add("npc", DM.draw(DECK_NARC_REV), "narc-reveal");
-            outcome = "narc";
-          } else {
-            add("player", DM.draw(DECK_BACK_OFF));
-            outcome = "backed";
-          }
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, { follows: pitchTags, boost: false });
+          sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : pitchTags;
+          add("npc", skeptResult.text, "", sayMoreTags);
         } else if (!matched) {
-          add("npc", DM.draw(DECK_MISMATCH) + " " + DM.draw(DECK_NO_BYE));
-          outcome = "declined";
-        } else if (Math.random() < 0.5) {
-          const jp = DM.draw(DECK_JOIN),
-            cp = DM.draw(DECK_CONSENT);
-          if (Math.random() < 0.5) {
-            add("npc", jp);
-            add("npc", cp);
-          } else {
-            add("npc", cp);
-            add("npc", jp);
-          }
-          outcome = "joined";
+          const mismatchDeck = choiceIdx === 0 && npcKind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
+          add("npc", DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE));
+          DM.endConv();
+          return { lines, outcome: "declined", npcType, npcKind };
         } else {
-          add("npc", DM.draw(DECK_SAY_MORE));
-          add("player", DM.draw(DECK_STRONGER_PITCH, { boost: true }));
-          if (Math.random() < 0.6) {
-            const jp = DM.draw(DECK_JOIN),
-              cp = DM.draw(DECK_CONSENT);
-            if (Math.random() < 0.5) {
-              add("npc", jp);
-              add("npc", cp);
-            } else {
-              add("npc", cp);
-              add("npc", jp);
-            }
-            outcome = "joined";
-          } else {
-            add("npc", DM.draw(DECK_NOT_NOW));
-            outcome = "deferred";
-          }
+          const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, { follows: pitchTags, boost: false });
+          sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : pitchTags;
+          console.log("sayMoreTags:", sayMoreTags, "warmResult.tags:", warmResult.tags, "pitchTags:", pitchTags);
+          add("npc", warmResult.text, "", sayMoreTags);
         }
 
-        DM.endConv();
-        return { lines, outcome, npcType, npcKind };
+        // step 5: second round choices
+        const pitchFollows = sayMoreTags ?? pitchTags ?? helloTags ?? [];
+
+        console.log(
+          "STRONGER_PITCH draw — pitchFollows:",
+          pitchFollows,
+          "pile size:",
+          DECK_STRONGER_PITCH.pile.length,
+          "pile follows values:",
+          DECK_STRONGER_PITCH.pile.map((x) => x.follows ?? "none"),
+        );
+        const strongerResult = DM.drawWithTags(DECK_STRONGER_PITCH, { boost: false, follows: pitchFollows });
+        const strongerLine = strongerResult.text;
+        const strongerTags = strongerResult.tags;
+
+        const inviteLine = DM.draw(DECK_INVITE);
+        const backOffLate = DM.draw(DECK_BACK_OFF_LATE);
+        const goStronger = Math.random() < 0.8;
+
+        add("choice", (goStronger ? "▶ " : "  ") + "s→ " + strongerLine, "", strongerTags);
+        add("choice", (!goStronger ? "▶ " : "  ") + "n→ " + backOffLate);
+
+        if (!goStronger) {
+          add("player", backOffLate);
+          DM.endConv();
+          return { lines, outcome: "backed", npcType, npcKind };
+        }
+
+        add("player", strongerLine, "", strongerTags);
+        add("player", inviteLine);
+
+        // step 5 resolve
+        if (npcType === "narc") {
+          add("npc", DM.draw(DECK_NARC_REV), "narc-reveal");
+          DM.endConv();
+          return { lines, outcome: "narc", npcType, npcKind };
+        } else if (Math.random() < 0.6) {
+          const pair = DM.draw(DECK_JOIN_CONSENT);
+          add("npc", pair.join);
+          add("npc", pair.consent);
+          DM.endConv();
+          return { lines, outcome: "joined", npcType, npcKind };
+        } else {
+          add("npc", DM.draw(DECK_NOT_NOW));
+          DM.endConv();
+          return { lines, outcome: "deferred", npcType, npcKind };
+        }
       }
 
       function renderConv(conv, idx) {
@@ -397,15 +436,32 @@
         let h = `<div class="conv-block">`;
         h += `<div class="conv-header"><span>conversation ${idx + 1}</span>`;
         h += `<span class="badge ${typeLabel}">${typeLabel}</span></div>`;
+        // replace the single line render loop with this:
+        let prevSpeaker = null;
         for (const line of conv.lines) {
           if (line.speaker === "ambient") {
             h += `<div class="ambient">${esc(line.text)}</div>`;
+            prevSpeaker = null;
             continue;
           }
-          // const cls = `line ${line.speaker === "choice" ? "choice npc" : line.speaker}${line.meta ? " " + line.meta : ""}`;          h += `<div class="${cls}"><div class="bubble">${esc(line.text)}</div></div>`;
-
           const cls = `line ${line.speaker === "choice" ? "choice player" : line.speaker}${line.meta ? " " + line.meta : ""}`;
-          h += `<div class="${cls}"><div class="bubble">${esc(line.text)}</div></div>`;
+          if (line.speaker === "npc" && prevSpeaker === "npc") {
+            // strip last closing </div></div> and append to previous bubble
+
+            const tagNote2 =
+              line.tags && line.tags.length > 0
+                ? `<span style="opacity:0.35; font-size:0.75rem; margin-left:6px">(${line.tags.join(", ")})</span>`
+                : `<span style="opacity:0.2; font-size:0.75rem; margin-left:6px">(0)</span>`;
+            h = h.slice(0, h.lastIndexOf("</div></div>"));
+            h += `<br><br>${esc(line.text)}${tagNote2}</div></div>`;
+          } else {
+            const tagNote =
+              line.tags && line.tags.length > 0
+                ? `<span style="opacity:0.35; font-size:0.75rem; margin-left:6px">(${line.tags.join(", ")})</span>`
+                : `<span style="opacity:0.2; font-size:0.75rem; margin-left:6px">(0)</span>`;
+            h += `<div class="${cls}"><div class="bubble">${esc(line.text)}${tagNote}</div></div>`;
+          }
+          prevSpeaker = line.speaker;
         }
         h += `<div class="outcome ${conv.outcome}">${outcomeText[conv.outcome] || conv.outcome}</div>`;
         h += `</div>`;
@@ -417,6 +473,35 @@
       }
 
       function runSim() {
+        [
+          DECK_ANGRY_HELLO,
+          DECK_HUNGRY_HELLO,
+          DECK_NARC_HELLO,
+          DECK_ANGRY_PITCH,
+          DECK_HUNGRY_PITCH,
+          DECK_STRONGER_PITCH,
+          DECK_SAY_MORE_WARM,
+          DECK_SAY_MORE_SKEPTICAL,
+          DECK_GREET,
+          DECK_INVITE,
+          DECK_BACK_OFF_EARLY,
+          DECK_BACK_OFF_LATE,
+          DECK_JOIN_CONSENT,
+          DECK_NO_BYE,
+          DECK_NOT_NOW,
+          DECK_RETURN,
+          DECK_NARC_REV,
+          DECK_ACK_NARC,
+          DECK_MISMATCH_TOO_LITERAL,
+          DECK_MISMATCH_TOO_STRUCTURAL,
+          DECK_AMB_NARC,
+          DECK_AMB_HUNGRY,
+          DECK_AMB_ANGRY,
+        ].forEach((d) => {
+          if (d) d.pile = [];
+        });
+        DM.startConv();
+
         const sel = document.getElementById("npcType").value;
         const count = Math.min(20, Math.max(1, parseInt(document.getElementById("count").value) || 3));
         let html = "";

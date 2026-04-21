@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>dialogue editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f5f3ef;
+  --bg2:     #eceae4;
+  --bg3:     #e4e2dc;
+  --bg4:     #d8d6d0;
+  --border:  #ccc9c2;
+  --border2: #b8b5ae;
+  --text:    #1a1916;
+  --muted:   #7a7870;
+  --dim:     #353533;
+  --accent:  #8a6a1a;
+  --accent2: #2a6a3a;
+  --danger:  #8a2020;
+  --col: 320px;
+  --col-collapsed: 34px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Georgia', 'Times New Roman', serif;  /* readable serif for dialogue text */
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* header */
+#hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+#hdr-title {
+color: var(--accent);  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+#breadcrumb {
+  flex: 1;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+}
+.hbtn {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 5px 13px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.hbtn:hover { border-color: var(--accent); color: var(--accent); }
+.hbtn.primary { border-color: var(--accent); color: var(--accent); }
+
+/* columns */
+#cols { display: flex; flex: 1; overflow-x: auto; overflow-y: hidden; }
+
+.col {
+  flex-shrink: 0;
+  width: var(--col);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.15s;
+  overflow: hidden;
+  position: relative;
+}
+.col.collapsed { width: var(--col-collapsed); cursor: pointer; }
+
+.col-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 34px;
+  gap: 6px;
+}
+.col-hdr-label {
+  font-size: 9px;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.col.collapsed .col-hdr-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 8px;
+  padding: 4px 0;
+}
+.col.collapsed .col-body,
+.col.collapsed .col-prog { display: none; }
+
+.col-tog {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.col-tog:hover { color: var(--accent); }
+
+.col-prog { height: 2px; background: var(--border); flex-shrink: 0; }
+.col-prog-bar { height: 100%; background: var(--accent2); transition: width 0.3s; }
+
+.col-body { flex: 1; overflow-y: auto; padding: 6px; }
+.col-body::-webkit-scrollbar { width: 3px; }
+.col-body::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* items */
+.item {
+  padding: 9px 11px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  cursor: pointer;
+  border-radius: 2px;
+  position: relative;
+}
+.item:hover:not(.editing) { border-color: var(--border2); }
+.item.selected { border-color: var(--accent); background: #f5ead0; }
+.item.dimmed { opacity: 0.2; pointer-events: none; }
+
+/* unvisited = bold warm white. visited = noticeably dimmer. */
+.item.unvisited .item-text { font-weight: bold; color: #1a1916; }
+.item.visited   .item-text { color: #b0ae a8; }
+
+.item-text { line-height: 1.6; font-size: 13px; }
+
+.item-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+
+.tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  font-family: 'Courier New', monospace;
+  background: var(--bg4);
+  color: var(--muted);
+  border: 1px solid #383430;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+.tag.f  { background: #0e1e12; color: #5a9a6a; border-color: #1e3e24; }  /* follows — green */
+.tag.nm { background: #1e0e0e; color: #a05050; border-color: #3e1e1e; }  /* no match — red */
+
+.badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  font-family: 'Courier New', monospace;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+.b-angry  { background: #281400; color: #c47a3a; border-color: #482800; }
+.b-hungry { background: #00182a; color: #4a8aaa; border-color: #00304a; }
+.b-narc   { background: #181428; color: #7a6aaa; border-color: #281e48; }
+
+.section-sep {
+  font-size: 9px;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  padding: 8px 4px 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.section-sep:first-child { border-top: none; margin-top: 0; padding-top: 4px; }
+
+/* editing */
+.item.editing { border-color: var(--accent2); background: #081208; }
+
+.edit-ta {
+  width: 100%;
+  background: #fdfcfa;
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 52px;
+  padding: 5px;
+  outline: none;
+  line-height: 1.6;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; align-items: center; }
+.tag-e {
+  font-size: 9px;
+  padding: 1px 5px;
+  font-family: 'Courier New', monospace;
+  background: var(--bg4);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.tag-e:hover { background: #281e04; }
+.tag-x { color: var(--danger); font-size: 11px; line-height: 1; cursor: pointer; }
+
+.tag-in {
+  font-size: 10px;
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  width: 90px;
+  outline: none;
+}
+.tag-in:focus { border-color: var(--accent2); }
+
+.follows-row { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 10px; color: var(--muted); font-family: 'Courier New', monospace; }
+.follows-in {
+  font-size: 10px;
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  background: var(--bg);
+  color: #5a9a6a;
+  border: 1px solid #1e3e24;
+  border-radius: 2px;
+  width: 110px;
+  outline: none;
+}
+
+.edit-acts { display: flex; gap: 4px; margin-top: 6px; }
+.ebtn {
+  font-size: 9px;
+  padding: 3px 10px;
+  font-family: 'Courier New', monospace;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.ebtn.save   { border-color: var(--accent2); color: var(--accent2); }
+.ebtn.cancel { color: var(--muted); }
+.ebtn.del    { border-color: var(--danger); color: var(--danger); margin-left: auto; }
+
+.add-btn {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 4px;
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.add-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+/* autocomplete */
+.ac {
+  position: absolute;
+  z-index: 200;
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  max-height: 110px;
+  overflow-y: auto;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  min-width: 130px;
+}
+.ac-item { padding: 3px 10px; cursor: pointer; color: var(--text); }
+.ac-item:hover { background: #1e1a06; color: var(--accent); }
+
+.end-note {
+  padding: 9px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted);
+  font-style: italic;
+  border: 1px dashed var(--border);
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+#error-box {
+  background: #281616;
+  border: 1px solid #582020;
+  color: #c07070;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  display: none;
+  flex-shrink: 0;
+}
+
+/* score indicators */
+.score-badge {
+  font-size: 9px; padding: 1px 5px;
+  font-family: 'Courier New', monospace;
+  border-radius: 2px; border: 1px solid; letter-spacing: 0.5px;
+}
+.score-3  { background: #d8f0d8; color: #1a5a1a; border-color: #a0d0a0; }
+.score-2  { background: #f0ecd0; color: #5a4a10; border-color: #d0c880; }
+.score-0  { background: var(--bg4); color: var(--muted); border-color: var(--border2); }
+.score-n1 { background: #f0e8d8; color: #8a6a30; border-color: #d0b880; }
+.item.impossible { display: none; }
+.score-divider {
+  font-size: 8px; font-family: 'Courier New', monospace;
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 5px 4px 2px; color: var(--muted);
+  border-top: 1px dashed var(--border); margin-top: 2px; opacity: 0.5;
+}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <span id="hdr-title">dialogue editor</span>
+  <span id="breadcrumb">select a greeting to begin</span>
+  <button class="hbtn" onclick="resetVisited()">reset visited</button>
+  <button class="hbtn primary" onclick="exportJS()">export js</button>
+</div>
+<div id="error-box"></div>
+<div id="cols"></div>
+
+<script src="game-data.js"></script>
+<script src="game-data-words.js"></script>
+
+<script>
+// stubs — exact copy from phrase-tester.html
+window.GAME_DATA = window.GAME_DATA || {
+  buildings: [], playerArt: [[" @ "], [" @ "]], npcArts: [["&"]],
+  npcColors: ["#aaa"], narcArt: ["%"], robinArt: ["R"], narrativeQuotes: [],
+};
+const _noop = () => {};
+const _noopO = () => ({});
+window.audio = { play: _noop };
+window.grid = { set: _noop, text: _noop, textCenter: _noop, art: _noop };
+window.Util = window.Util || {
+  pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
+  clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+  randInt: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
+  lerp: (a, b, t) => a + (b - a) * t,
+};
+window.phase = "editor";
+window.W = 80; window.H = 30; window.dialogStack = [];
+window.C_PLAYER = "#7aba7a"; window.C_DIM = "#555"; window.C_DANGER = "#c44";
+window.C_SUCCESS = "#7aba7a"; window.C_TEAL = "#7ababa"; window.C_ORANGE = "#ba8a4a"; window.C_WARN = "#ba8a4a";
+window.bannerTimer = 0; window.hasPlayed = false;
+window.showBanner = _noop; window.updateBanner = _noop; window.renderBanner = _noop;
+window.dialogUpdate = _noop; window.dialogRender = _noop;
+window.addFloat = _noop; window.spark = _noop; window.triggerChromatic = _noop;
+window.endGame = _noop; window.initAct2b = _noop;
+window.hudLabel = { textContent: "" }; window.hudScore = { textContent: "", style: {} }; window.hudStatus = { textContent: "", style: {} };
+if (!document.getElementById("gamescreen")) {
+  const gs = document.createElement("canvas"); gs.id = "gamescreen"; gs.style.display = "none"; document.body.appendChild(gs);
+}
+window.gs = document.getElementById("gamescreen");
+window.input = { isDown: _noop, justPressed: _noop }; window.clickPending = false;
+window.CONV_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+window.DIALOG_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+window.A1_LOOP_MSGS = []; window.HA = [[""]]; window.HC = ["#fff"];
+</script>
+
+<script>
+// ── point D at the live game arrays ──────────────────────────────────────────
+// same names the phrase tester uses, same .src unwrapping for DM.Deck instances
+const D = {
+  P_GREET:                      P_GREET,
+  HELLO_PREFIX:                 HELLO_PREFIX,
+  D_NARC_HELLO:                 D_NARC_HELLO,
+  DECK_ANGRY_HELLO:             DECK_ANGRY_HELLO.src,
+  DECK_HUNGRY_HELLO:            DECK_HUNGRY_HELLO.src,
+  DECK_ANGRY_PITCH:             DECK_ANGRY_PITCH.src,
+  DECK_HUNGRY_PITCH:            DECK_HUNGRY_PITCH.src,
+  D_SAY_MORE_WARM:              DECK_SAY_MORE_WARM.src,
+  D_SAY_MORE_SKEPTICAL:         DECK_SAY_MORE_SKEPTICAL.src,
+  DECK_STRONGER_PITCH:          DECK_STRONGER_PITCH.src,
+  D_INVITE:                     D_INVITE,
+  DECK_MISMATCH_TOO_LITERAL:    DECK_MISMATCH_TOO_LITERAL.src,
+  DECK_MISMATCH_TOO_STRUCTURAL: DECK_MISMATCH_TOO_STRUCTURAL.src,
+  D_JOIN_CONSENT_PAIRS:         D_JOIN_CONSENT_PAIRS,
+  D_BACK_OFF_EARLY:             DECK_BACK_OFF_EARLY.src,
+  D_BACK_OFF_LATE:              DECK_BACK_OFF_LATE.src,
+  D_NARC_REVEAL:                D_NARC_REVEAL,
+  D_NOT_NOW:                    D_NOT_NOW,
+  D_NO_BYE:                     D_NO_BYE,
+  D_RETURN:                     D_RETURN,
+};
+
+// ── visited state (localStorage only) ────────────────────────────────────────
+const SK = 'dlg_ed_v5';
+let VIS = {};
+function loadV(){ try{ const s=localStorage.getItem(SK); if(s) VIS=JSON.parse(s); }catch(e){} }
+function saveV(){ try{ localStorage.setItem(SK,JSON.stringify(VIS)); }catch(e){} }
+function resetVisited(){ if(!confirm('Reset all visited markers?'))return; VIS={}; saveV(); render(); }
+function vis(k){ return !!VIS[k]; }
+function markV(k){ VIS[k]=true; saveV(); }
+
+function allTags(){
+  const s=new Set();
+  Object.entries(D).forEach(([k,v])=>{
+    if(k==='HELLO_PREFIX'||!Array.isArray(v))return;
+    v.forEach(x=>{ if(x&&x.tags)x.tags.forEach(t=>s.add(t)); if(x&&x.follows)s.add(x.follows); });
+  });
+  return [...s].sort();
+}
+
+// ── DM scoring (mirrors game logic exactly) ───────────────────────────────────
+const STAT_TAGS = new Set(['stat-36b','stat-47','stat-18b','stat-61b','stat-100b']);
+
+// Score an item given follows tags and previously used convTags
+// Returns: 3 (follows match), 2 (boost), 0 (fair), -1 (cooled), -2 (impossible/stat clash)
+function dmScore(item, followTags, convTagsUsed) {
+  const tags = item.tags || [];
+  const follows = item.follows;
+
+  // follows match → always wins
+  if (follows && followTags && followTags.includes(follows)) return 3;
+
+  // stat clash → impossible this conversation
+  if (tags.some(t => STAT_TAGS.has(t) && convTagsUsed.has(t))) return -2;
+
+  // fair draw
+  return 0;
+}
+
+// Sort and annotate items by score. Hide score -2. Insert dividers between score groups.
+function scoreAndSort(items, followTags, convTagsUsed) {
+  const scored = items.map(item => ({
+    ...item,
+    score: dmScore(item, followTags, convTagsUsed)
+  }));
+  // hide impossible
+  const visible = scored.filter(x => x.score > -2);
+  const hidden  = scored.filter(x => x.score === -2);
+  // sort descending by score, stable (preserve original order within same score)
+  visible.sort((a, b) => b.score - a.score);
+  return { visible, hiddenCount: hidden.length };
+}
+
+// ── path + ui state ───────────────────────────────────────────────────────────
+let P={}, COL_COLLAPSED={}, EDIT_KEY=null;
+
+// ── flow ──────────────────────────────────────────────────────────────────────
+function buildCols(){
+  const cols=[];
+
+  cols.push({id:'greet',label:'greeting (player)',deckName:'P_GREET',
+    items:D.P_GREET.map((x,i)=>({key:`P_GREET:${i}`,text:x.t,tags:x.tags,idx:i,
+      selected:P.greetIdx===i,dimmed:P.greetIdx!=null&&P.greetIdx!==i})),
+    onSelect:(dn,i)=>{P={greetIdx:i,tone:D.P_GREET[i].tags[0]||'casual'};render();}
+  });
+  if(P.tone==null)return cols;
+
+  const NPC=['angry','hungry','narc'];
+  cols.push({id:'npctype',label:'npc type',deckName:null,
+    items:NPC.map((t,i)=>({key:`npctype:${t}`,text:t,tags:[],idx:i,badge:t,
+      selected:P.npcType===t,dimmed:P.npcType!=null&&P.npcType!==t})),
+    onSelect:(dn,i)=>{P.npcType=NPC[i];delete P.prefixIdx;delete P.helloIdx;delete P.pitchDeck;delete P.pitchIdx;delete P.smIdx;delete P.strongerDeck;delete P.strongerIdx;render();}
+  });
+  if(P.npcType==null)return cols;
+
+  const tone=P.tone, kind=P.npcType==='narc'?'narc':P.npcType;
+  const prefixes=(D.HELLO_PREFIX[tone]||{})[kind]||[];
+  cols.push({id:'prefix',label:'hello prefix',deckName:null,
+    items:prefixes.map((p,i)=>({key:`prefix:${tone}:${kind}:${i}`,text:p,tags:[],idx:i,italic:true,
+      selected:P.prefixIdx===i,dimmed:P.prefixIdx!=null&&P.prefixIdx!==i})),
+    onSelect:(dn,i)=>{P.prefixIdx=i;delete P.helloIdx;delete P.pitchDeck;delete P.pitchIdx;delete P.smIdx;delete P.strongerDeck;delete P.strongerIdx;render();}
+  });
+  if(P.prefixIdx==null)return cols;
+
+  const helloDN=P.npcType==='narc'?'D_NARC_HELLO':P.npcType==='angry'?'DECK_ANGRY_HELLO':'DECK_HUNGRY_HELLO';
+  cols.push({id:'hello',label:`${P.npcType} hello`,deckName:helloDN,
+    items:D[helloDN].map((x,i)=>({key:`${helloDN}:${i}`,text:x.t||x,tags:x.tags||[],idx:i,
+      selected:P.helloIdx===i,dimmed:P.helloIdx!=null&&P.helloIdx!==i})),
+    onSelect:(dn,i)=>{P.helloIdx=i;P.helloTags=(D[dn][i].tags||[]);delete P.pitchDeck;delete P.pitchIdx;delete P.smIdx;delete P.strongerDeck;delete P.strongerIdx;render();}
+  });
+  if(P.helloIdx==null)return cols;
+
+  const hTags=P.helloTags||[];
+  const convAfterHello = new Set(hTags); // stat tags seeded from hello
+  const mkPI=(dn,x,i)=>{
+    const sc = dmScore(x, hTags, convAfterHello);
+    return {key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
+      score:sc,
+      selected:P.pitchDeck===dn&&P.pitchIdx===i,
+      dimmed:P.pitchIdx!=null&&!(P.pitchDeck===dn&&P.pitchIdx===i)};
+  };
+  const sortPitch=(dn)=>{
+    const {visible} = scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)), hTags, convAfterHello);
+    return visible;
+  };
+  cols.push({id:'pitch',label:'pitch (player)',deckName:null,
+    sections:[
+      {label:'angry pitch',    deckName:'DECK_ANGRY_PITCH',  items:sortPitch('DECK_ANGRY_PITCH')},
+      {label:'hungry pitch',   deckName:'DECK_HUNGRY_PITCH', items:sortPitch('DECK_HUNGRY_PITCH')},
+      {label:'back off early', deckName:'D_BACK_OFF_EARLY',  items:D.D_BACK_OFF_EARLY.map((x,i)=>({
+        key:`D_BACK_OFF_EARLY:${i}`,text:x.t,tags:[],idx:i,deckName:'D_BACK_OFF_EARLY',score:0,
+        selected:P.pitchDeck==='D_BACK_OFF_EARLY'&&P.pitchIdx===i,
+        dimmed:P.pitchIdx!=null&&!(P.pitchDeck==='D_BACK_OFF_EARLY'&&P.pitchIdx===i)}))},
+    ],
+    onSelect:(dn,i)=>{P.pitchDeck=dn;P.pitchIdx=i;P.pitchTags=(D[dn][i].tags||[]);P.isBoEarly=(dn==='D_BACK_OFF_EARLY');delete P.smIdx;delete P.strongerDeck;delete P.strongerIdx;render();}
+  });
+  if(P.pitchIdx==null)return cols;
+  if(P.isBoEarly){
+    cols.push({id:'end0',label:'— end —',deckName:null,items:[{key:'e0',text:'conversation ends (back off early)',tags:[],isEnd:true}],onSelect:()=>{}});
+    return cols;
+  }
+
+  const isAP=P.pitchDeck==='DECK_ANGRY_PITCH';
+  const mismatch=(isAP&&P.npcType==='hungry')||(!isAP&&P.pitchDeck==='DECK_HUNGRY_PITCH'&&P.npcType==='angry');
+  if(mismatch){
+    const mdn=isAP?'DECK_MISMATCH_TOO_STRUCTURAL':'DECK_MISMATCH_TOO_LITERAL';
+    cols.push({id:'mismatch',label:'mismatch (npc)',deckName:mdn,
+      items:D[mdn].map((x,i)=>({key:`${mdn}:${i}`,text:x.t,tags:x.tags||[],idx:i,selected:false,dimmed:false})),
+      onSelect:()=>{}});
+    cols.push({id:'end1',label:'— end —',deckName:null,items:[{key:'e1',text:'conversation ends (mismatch)',tags:[],isEnd:true}],onSelect:()=>{}});
+    return cols;
+  }
+
+  const smDN=P.npcType==='narc'?'D_SAY_MORE_SKEPTICAL':'D_SAY_MORE_WARM';
+  const pTags=P.pitchTags||[];
+  const convAfterPitch = new Set([...convAfterHello, ...pTags]);
+  const {visible: smItems} = scoreAndSort(
+    D[smDN].map((x,i)=>({key:`${smDN}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,
+      score:0, selected:P.smIdx===i, dimmed:P.smIdx!=null&&P.smIdx!==i})),
+    pTags, convAfterPitch
+  );
+  cols.push({id:'saymore',label:`say more (${P.npcType==='narc'?'skeptical':'warm'})`,deckName:smDN,
+    items:smItems,
+    onSelect:(dn,i)=>{P.smIdx=i;P.smTags=((D[dn][i].tags||[]).length?D[dn][i].tags:pTags);delete P.strongerDeck;delete P.strongerIdx;render();}
+  });
+  if(P.smIdx==null)return cols;
+
+  const fTags=P.smTags||pTags;
+  const convAfterSM = new Set([...convAfterPitch, ...fTags]);
+  const mkSPI=(dn,x,i)=>{
+    const sc = dmScore(x, fTags, convAfterSM);
+    return {key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
+      score:sc,
+      selected:P.strongerDeck===dn&&P.strongerIdx===i,
+      dimmed:P.strongerIdx!=null&&!(P.strongerDeck===dn&&P.strongerIdx===i)};
+  };
+  const {visible: strongerItems} = scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI('DECK_STRONGER_PITCH',x,i)), fTags, convAfterSM);
+  cols.push({id:'stronger',label:'stronger pitch (player)',deckName:null,
+    sections:[
+      {label:'stronger pitch',deckName:'DECK_STRONGER_PITCH',items:strongerItems},
+      {label:'back off late', deckName:'D_BACK_OFF_LATE',    items:D.D_BACK_OFF_LATE.map((x,i)=>({
+        key:`D_BACK_OFF_LATE:${i}`,text:x.t,tags:[],idx:i,deckName:'D_BACK_OFF_LATE',score:0,
+        selected:P.strongerDeck==='D_BACK_OFF_LATE'&&P.strongerIdx===i,
+        dimmed:P.strongerIdx!=null&&!(P.strongerDeck==='D_BACK_OFF_LATE'&&P.strongerIdx===i)}))},
+    ],
+    onSelect:(dn,i)=>{P.strongerDeck=dn;P.strongerIdx=i;P.isBOLate=(dn==='D_BACK_OFF_LATE');render();}
+  });
+  if(P.strongerIdx==null)return cols;
+  if(P.isBOLate){
+    cols.push({id:'end2',label:'— end —',deckName:null,items:[{key:'e2',text:'conversation ends (back off late)',tags:[],isEnd:true}],onSelect:()=>{}});
+    return cols;
+  }
+
+  cols.push({id:'invite',label:'invite (appended to pitch)',deckName:'D_INVITE',
+    items:D.D_INVITE.map((x,i)=>({key:`D_INVITE:${i}`,text:x.t||x,tags:[],idx:i,selected:false,dimmed:false})),
+    onSelect:()=>{}
+  });
+
+  if(P.npcType==='narc'){
+    cols.push({id:'outcome',label:'narc reveal → end',deckName:'D_NARC_REVEAL',
+      items:D.D_NARC_REVEAL.map((x,i)=>({key:`D_NARC_REVEAL:${i}`,text:x.t||x,tags:[],idx:i,selected:false,dimmed:false})),
+      onSelect:()=>{}});
+  } else {
+    cols.push({id:'outcome',label:'outcome',deckName:null,
+      sections:[
+        {label:'join (+ consent)',           deckName:'D_JOIN_CONSENT_PAIRS',items:D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({key:`D_JOIN_CONSENT_PAIRS:${i}`,text:`"${x.join}" / "${x.consent}"`,tags:[],idx:i,selected:false,dimmed:false}))},
+        {label:'not now (→ D_RETURN later)', deckName:'D_NOT_NOW',          items:D.D_NOT_NOW.map((x,i)=>({key:`D_NOT_NOW:${i}`,text:x.t||x,tags:[],idx:i,selected:false,dimmed:false}))},
+      ],onSelect:()=>{}});
+  }
+  return cols;
+}
+
+// ── render ────────────────────────────────────────────────────────────────────
+function render(){
+  updateBC();
+  const wrap=document.getElementById('cols');
+  wrap.innerHTML='';
+  buildCols().forEach(cd=>wrap.appendChild(buildColEl(cd)));
+  const last=[...wrap.children].filter(c=>!c.classList.contains('collapsed')).pop();
+  if(last)setTimeout(()=>last.scrollIntoView({behavior:'smooth',block:'nearest',inline:'end'}),50);
+}
+
+function buildColEl(cd){
+  const el=document.createElement('div');
+  el.className='col'+(COL_COLLAPSED[cd.id]?' collapsed':'');
+  const hdr=document.createElement('div');hdr.className='col-hdr';
+  const lbl=document.createElement('span');lbl.className='col-hdr-label';lbl.textContent=cd.label;
+  const tog=document.createElement('button');tog.className='col-tog';tog.textContent=COL_COLLAPSED[cd.id]?'›':'‹';
+  tog.onclick=(e)=>{e.stopPropagation();COL_COLLAPSED[cd.id]=!COL_COLLAPSED[cd.id];render();};
+  hdr.appendChild(lbl);hdr.appendChild(tog);el.appendChild(hdr);
+  if(COL_COLLAPSED[cd.id])el.onclick=()=>{COL_COLLAPSED[cd.id]=false;render();};
+  const prog=document.createElement('div');prog.className='col-prog';
+  const pb=document.createElement('div');pb.className='col-prog-bar';
+  const all=cd.items?cd.items:(cd.sections||[]).flatMap(s=>s.items);
+  pb.style.width=all.length?`${(all.filter(x=>vis(x.key)).length/all.length)*100}%`:'0%';
+  prog.appendChild(pb);el.appendChild(prog);
+  const body=document.createElement('div');body.className='col-body';
+  if(cd.sections){
+    cd.sections.forEach(sec=>{
+      const sep=document.createElement('div');sep.className='section-sep';sep.textContent=sec.label;body.appendChild(sep);
+      if(sec.deckName)body.appendChild(makeAddBtn(sec.deckName));
+      // insert dividers between score groups
+      let lastScore=null;
+      sec.items.forEach(item=>{
+        if(item.score!=null && lastScore!==null && item.score!==lastScore){
+          const div=document.createElement('div');div.className='score-divider';
+          div.textContent= item.score===0?'— fair draw —': item.score===-1?'— cooled —':'';
+          if(div.textContent) body.appendChild(div);
+        }
+        body.appendChild(makeItemEl(item,sec.deckName,cd.onSelect));
+        if(item.score!=null) lastScore=item.score;
+      });
+    });
+  } else if(cd.items){
+    if(cd.deckName)body.appendChild(makeAddBtn(cd.deckName));
+    let lastScore=null;
+    cd.items.forEach(item=>{
+      if(item.score!=null && lastScore!==null && item.score!==lastScore){
+        const div=document.createElement('div');div.className='score-divider';
+        div.textContent= item.score===0?'— fair draw —': item.score===-1?'— cooled —':'';
+        if(div.textContent) body.appendChild(div);
+      }
+      body.appendChild(makeItemEl(item,cd.deckName,cd.onSelect));
+      if(item.score!=null) lastScore=item.score;
+    });
+  }
+  el.appendChild(body);
+  return el;
+}
+
+function makeItemEl(item,deckName,onSelect){
+  const el=document.createElement('div');
+  if(item.isEnd){el.className='end-note';el.textContent=item.text;return el;}
+  const dn=deckName||item.deckName;
+  let cls='item';
+  if(vis(item.key))cls+=' visited';else cls+=' unvisited';
+  if(item.selected)cls+=' selected';
+  if(item.dimmed)cls+=' dimmed';
+  el.className=cls;
+  if(EDIT_KEY===item.key&&dn){buildEditMode(el,item,dn);return el;}
+  const tt=document.createElement('div');tt.className='item-text';
+  if(item.italic)tt.style.fontStyle='italic';
+  tt.textContent=item.text;el.appendChild(tt);
+  const meta=document.createElement('div');meta.className='item-meta';
+  if(item.badge){const b=document.createElement('span');b.className=`badge b-${item.badge}`;b.textContent=item.badge;meta.appendChild(b);}
+  (item.tags||[]).forEach(t=>{const s=document.createElement('span');s.className='tag';s.textContent=t;meta.appendChild(s);});
+  if(item.follows){const s=document.createElement('span');s.className='tag f';s.textContent='→'+item.follows;meta.appendChild(s);}
+  if(item.noMatch){const s=document.createElement('span');s.className='tag nm';s.textContent='no match';meta.appendChild(s);}
+  if(meta.children.length)el.appendChild(meta);
+  // score badge — only show on scored items
+  if(item.score!=null){
+    const scoreLabel = item.score===3?'follows ✓':item.score===2?'boost':item.score===0?'fair draw':'cooled';
+    const sb=document.createElement('span');
+    sb.className=`score-badge score-${item.score<0?'n'+Math.abs(item.score):item.score}`;
+    sb.textContent=scoreLabel;
+    // add to meta or create a new row
+    const sr=document.createElement('div');sr.style.marginTop='4px';sr.appendChild(sb);
+    el.appendChild(sr);
+  }
+  el.addEventListener('click',(e)=>{if(e.target.closest('.ebtn,.tag-x,.tag-in,.edit-ta,.follows-in'))return;markV(item.key);onSelect(dn,item.idx);});
+  el.addEventListener('dblclick',(e)=>{e.stopPropagation();if(!dn)return;EDIT_KEY=item.key;render();});
+  return el;
+}
+
+function buildEditMode(el,item,deckName){
+  const arr=D[deckName];if(!arr)return;
+  const obj=arr[item.idx];
+  const ta=document.createElement('textarea');ta.className='edit-ta';
+  const tv=obj.t||(typeof obj==='string'?obj:'');
+  ta.value=tv;ta.rows=Math.max(2,Math.ceil(tv.length/38));el.appendChild(ta);
+  if(obj.tags!==undefined){
+    const tr=document.createElement('div');tr.className='tag-row';
+    const refresh=()=>{
+      tr.innerHTML='';
+      (obj.tags||[]).forEach((t,ti)=>{
+        const sp=document.createElement('span');sp.className='tag-e';
+        sp.innerHTML=`${esc(t)} <span class="tag-x">×</span>`;
+        sp.querySelector('.tag-x').onclick=()=>{obj.tags.splice(ti,1);refresh();};
+        tr.appendChild(sp);
+      });
+      const inp=document.createElement('input');inp.className='tag-in';inp.placeholder='+tag';
+      tr.appendChild(inp);
+      let ac=null;
+      inp.addEventListener('input',()=>{
+        if(ac){ac.remove();ac=null;}
+        const v=inp.value.trim().toLowerCase();if(!v)return;
+        const m=allTags().filter(t=>t.includes(v)&&!(obj.tags||[]).includes(t));if(!m.length)return;
+        ac=document.createElement('div');ac.className='ac';el.style.position='relative';
+        m.slice(0,8).forEach(t=>{const d=document.createElement('div');d.className='ac-item';d.textContent=t;
+          d.onmousedown=(e)=>{e.preventDefault();if(!obj.tags)obj.tags=[];obj.tags.push(t);inp.value='';refresh();if(ac){ac.remove();ac=null;}};ac.appendChild(d);});
+        el.appendChild(ac);
+      });
+      inp.addEventListener('keydown',(e)=>{
+        if(e.key==='Enter'||e.key===','){e.preventDefault();const v=inp.value.replace(/,$/,'').trim();if(v){if(!obj.tags)obj.tags=[];obj.tags.push(v);inp.value='';refresh();}}
+        if(e.key==='Escape'){EDIT_KEY=null;render();}
+      });
+      inp.addEventListener('blur',()=>setTimeout(()=>{if(ac){ac.remove();ac=null;}},150));
+    };
+    el.appendChild(tr);refresh();
+  }
+  const noF=new Set(['P_GREET','D_JOIN_CONSENT_PAIRS','D_INVITE','D_NO_BYE','D_NOT_NOW','D_NARC_REVEAL','D_RETURN','D_BACK_OFF_EARLY','D_BACK_OFF_LATE']);
+  if(!noF.has(deckName)){
+    const fr=document.createElement('div');fr.className='follows-row';fr.innerHTML='<span>follows:</span>';
+    const fi=document.createElement('input');fi.className='follows-in';fi.value=obj.follows||'';fi.placeholder='tag…';
+    fi.addEventListener('change',()=>{obj.follows=fi.value.trim()||undefined;});
+    fr.appendChild(fi);el.appendChild(fr);
+  }
+  const acts=document.createElement('div');acts.className='edit-acts';
+  const sv=document.createElement('button');sv.className='ebtn save';sv.textContent='save';
+  sv.onclick=()=>{const v=ta.value.trim();if(!v)return;if(obj.t!==undefined)obj.t=v;else if(typeof arr[item.idx]==='string')arr[item.idx]=v;EDIT_KEY=null;render();};
+  const cn=document.createElement('button');cn.className='ebtn cancel';cn.textContent='cancel';cn.onclick=()=>{EDIT_KEY=null;render();};
+  const dl=document.createElement('button');dl.className='ebtn del';dl.textContent='delete';
+  dl.onclick=()=>{if(!confirm('delete?'))return;arr.splice(item.idx,1);EDIT_KEY=null;render();};
+  acts.appendChild(sv);acts.appendChild(cn);acts.appendChild(dl);el.appendChild(acts);
+}
+
+function makeAddBtn(dn){
+  const btn=document.createElement('button');btn.className='add-btn';btn.textContent='+ add line';
+  btn.onclick=(e)=>{e.stopPropagation();const arr=D[dn];if(!arr)return;
+    const ni=dn==='D_JOIN_CONSENT_PAIRS'?{join:'new join phrase',consent:'new consent'}:{t:'new line',tags:[]};
+    arr.push(ni);EDIT_KEY=`${dn}:${arr.length-1}`;render();};
+  return btn;
+}
+
+function updateBC(){
+  const parts=[];
+  if(P.greetIdx!=null)parts.push(D.P_GREET[P.greetIdx].t);
+  if(P.npcType)parts.push(P.npcType);
+  if(P.prefixIdx!=null){const k=P.npcType==='narc'?'narc':P.npcType;parts.push('"'+(D.HELLO_PREFIX[P.tone][k][P.prefixIdx]||'').trim()+'"');}
+  if(P.helloIdx!=null){const dn=P.npcType==='narc'?'D_NARC_HELLO':P.npcType==='angry'?'DECK_ANGRY_HELLO':'DECK_HUNGRY_HELLO';const h=D[dn][P.helloIdx];const t=h.t||h;parts.push('"'+t.slice(0,28)+(t.length>28?'…':'')+'"');}
+  document.getElementById('breadcrumb').textContent=parts.join(' → ')||'select a greeting to begin';
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function exportJS(){
+  const ts=(tags)=>tags&&tags.length?`, tags: [${tags.map(t=>`"${t}"`).join(', ')}]`:`, tags: []`;
+  const fs=(f)=>f?`, follows: "${f}"`:'';
+  let out='';
+  out+=`const P_GREET = [\n`;D.P_GREET.forEach(x=>{out+=`  { t: ${JSON.stringify(x.t)}${ts(x.tags)} },\n`;});out+=`];\n\n`;
+  out+=`const HELLO_PREFIX = {\n`;
+  ['casual','concerned','direct'].forEach(tone=>{out+=`  ${tone}: {\n`;['angry','hungry','narc'].forEach(k=>{out+=`    ${k}: [${D.HELLO_PREFIX[tone][k].map(s=>JSON.stringify(s)).join(', ')}],\n`;});out+=`  },\n`;});
+  out+=`};\n\n`;
+  const wArr=(name,arr,deck)=>{
+    out+=`const ${name} = ${deck?'new DM.Deck(':''}[\n`;
+    arr.forEach(x=>{
+      if(x&&x.join!==undefined){out+=`  { join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)} },\n`;return;}
+      const t=x.t||(typeof x==='string'?x:'');
+      out+=`  { t: ${JSON.stringify(t)}${ts(x.tags||[])}${fs(x.follows)} },\n`;
+    });
+    out+=`]${deck?')':''};\n\n`;
+  };
+  wArr('D_NARC_HELLO',D.D_NARC_HELLO,false);
+  wArr('DECK_ANGRY_HELLO',D.DECK_ANGRY_HELLO,true);
+  wArr('DECK_HUNGRY_HELLO',D.DECK_HUNGRY_HELLO,true);
+  wArr('DECK_ANGRY_PITCH',D.DECK_ANGRY_PITCH,true);
+  wArr('DECK_HUNGRY_PITCH',D.DECK_HUNGRY_PITCH,true);
+  wArr('D_SAY_MORE_WARM',D.D_SAY_MORE_WARM,true);
+  wArr('D_SAY_MORE_SKEPTICAL',D.D_SAY_MORE_SKEPTICAL,true);
+  wArr('DECK_STRONGER_PITCH',D.DECK_STRONGER_PITCH,true);
+  wArr('D_INVITE',D.D_INVITE,false);
+  wArr('DECK_MISMATCH_TOO_LITERAL',D.DECK_MISMATCH_TOO_LITERAL,true);
+  wArr('DECK_MISMATCH_TOO_STRUCTURAL',D.DECK_MISMATCH_TOO_STRUCTURAL,true);
+  wArr('D_JOIN_CONSENT_PAIRS',D.D_JOIN_CONSENT_PAIRS,false);
+  wArr('D_BACK_OFF_EARLY',D.D_BACK_OFF_EARLY,true);
+  wArr('D_BACK_OFF_LATE',D.D_BACK_OFF_LATE,true);
+  wArr('D_NARC_REVEAL',D.D_NARC_REVEAL,false);
+  wArr('D_NOT_NOW',D.D_NOT_NOW,false);
+  wArr('D_NO_BYE',D.D_NO_BYE,false);
+  wArr('D_RETURN',D.D_RETURN,false);
+  const blob=new Blob([out],{type:'text/javascript'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='game-data-words.js';a.click();URL.revokeObjectURL(url);
+}
+
+window.addEventListener('error',(e)=>{
+  const box=document.getElementById('error-box');box.style.display='block';
+  box.textContent='error: '+e.message+' — '+e.filename+':'+e.lineno;
+});
+
+loadV();
+render();
+</script>
+</body>
+</html>
