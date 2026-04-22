@@ -1,3 +1,5 @@
+console.log(window.LANG.test);
+
 (function () {
   const { GameLoop, Input, State, Timer, Util, Device } = OMC;
   const gs = document.getElementById("game-screen");
@@ -15,9 +17,27 @@
   const muteBtn = document.getElementById("mute-btn");
   muteBtn.addEventListener("click", () => {
     const muted = audio.toggleMute();
-    muteBtn.textContent = muted ? "muted" : "mute";
+    muteBtn.textContent = muted ? window.LANG.muteMuted : window.LANG.muteMute;
     muteBtn.style.color = muted ? "#444" : C_DIM;
   });
+
+  const langBtn = document.getElementById("lang-btn");
+
+langBtn.textContent = window.LANG === window.LANG_FR ? 'EN' : 'FR';
+
+langBtn.addEventListener("click", () => {
+  if (window.LANG === window.LANG_EN) {
+    localStorage.setItem("lang", "fr");
+  } else {
+    localStorage.setItem("lang", "en");
+  }
+  location.reload();
+});
+
+  let _lastPhaseForBtn = null;
+  function syncLangBtn() {
+    langBtn.style.display = !phase || phase === "done" ? "" : "none";
+  }
 
   const audio = new Audio_({ basePath: "sounds/", poolSize: 8, volume: 0.7 });
   audio.register({
@@ -191,6 +211,11 @@
   const C_DIM = "#888"; // muted text, tap prompts
   const C_MID = "#aaa"; // medium text
 
+  function playerPulseColor(t) {
+    // Gentle 1.4Hz white glow — works in any act, just pass the act timer
+    return Math.sin(t / 0.01) > 0.3 ? "#e69224" : C_PLAYER;
+  }
+
   const state = new State({ score: 0 });
   const tmr = new Timer();
   input.mapActions({ left: ["ArrowLeft", "a"], right: ["ArrowRight", "d"], up: ["ArrowUp", "w"], down: ["ArrowDown", "s"] });
@@ -310,9 +335,13 @@
   let convPlayerColor = C_PLAYER;
   let convNPCColor = C_DIM;
   let convVisible = false;
+  let convFading = false;
+  let convFadeTimer = 0;
+  const convFadeDuration = 180; // ms to fade out - fast and snappy for retro feel
   let convAnchorPX = 0;
   let convAnchorNX = 10;
   let convAnchorY = 10;
+  let convEncounterIndex = 0; // Track which encounter this is for positioning adjustments
   let convChoiceY1 = 0,
     convChoiceY2 = 0,
     convChoiceBX = 0,
@@ -323,9 +352,17 @@
     convLog = [];
     convChoices = null;
     convVisible = false;
+    convFading = false;
+    convFadeTimer = 0;
     convChoiceY1 = 0;
     convChoiceY2 = 0;
     convChoiceHover = -1;
+  }
+
+  function convStartFade() {
+    if (!convVisible) return;
+    convFading = true;
+    convFadeTimer = 0;
   }
 
   function convResetLater(ms) {
@@ -333,7 +370,7 @@
     setTimeout(() => {
       if (phase !== p) return;
       dialogStack = [];
-      convReset();
+      convStartFade();
     }, ms);
   }
 
@@ -345,6 +382,7 @@
     } else {
       convLog.push({ text, side, color });
     }
+    console.log(">>> LINE:", text.substring(0, 30), "| side:", side, "| convLog.length:", convLog.length, "| convAnchorY:", convAnchorY);
   }
   function convShowChoices(labels) {
     convChoices = labels;
@@ -356,6 +394,38 @@
 
   function convRender() {
     if (!convVisible || (convLog.length === 0 && !convChoices)) return;
+
+    // Calculate opacity for fade-out animation - BOXES fade first, text stays visible longer
+    let boxOpacity = 1.0;
+    let textOpacity = 1.0;
+    if (convFading) {
+      const progress = convFadeTimer / convFadeDuration;
+      // Boxes fade out in first 60% of animation
+      boxOpacity = Math.max(0, 1.0 - progress / 0.6);
+      // Text fades out in last 70% of animation
+      textOpacity = progress < 0.3 ? 1.0 : Math.max(0, 1.0 - (progress - 0.3) / 0.7);
+    }
+
+    // Helper function to apply opacity to box borders
+    function applyBoxOpacity(hexColor) {
+      if (!hexColor || boxOpacity === 1.0) return hexColor;
+      const hex = hexColor.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${boxOpacity})`;
+    }
+
+    // Helper function to apply opacity to text
+    function applyTextOpacity(hexColor) {
+      if (!hexColor || textOpacity === 1.0) return hexColor;
+      const hex = hexColor.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${textOpacity})`;
+    }
+
     //dialogue box conversation box
     const boxW = Math.min(W - 12, 36);
     const innerW = boxW - 4;
@@ -378,8 +448,9 @@
         if (cur) lines.push(cur);
       }
       const age = convLog.length - 1 - i;
-      const dimmed = age > 1;
-      allBoxes.push({ lines, color: dimmed ? "#444" : entry.color, side: entry.side, isChoice: false });
+      const dimmed = age > 1; // Keep the last 2 boxes vivid
+      const baseColor = dimmed ? "#444" : entry.color;
+      allBoxes.push({ lines, color: baseColor, side: entry.side, isChoice: false });
     }
     if (convChoices) {
       const choiceLines = [];
@@ -399,15 +470,48 @@
       }
       allBoxes.push({ lines: choiceLines, color: convPlayerColor, side: "you", isChoice: true });
     }
-    // Total height: each box = top border + lines + bottom border + 1-row gap after.
-    // Subtract the trailing gap from the last box so we don't over-pad.
-    let totalH = 0;
-    for (const box of allBoxes) totalH += box.lines.length + 2 + 1;
-    totalH -= 1; // no gap after last box
-    // Anchor: bottom of stack is just above the characters
     const charY = convAnchorY;
-    const bottomY = charY - 1;
-    const topY = bottomY - totalH + 1;
+    const lastBox = allBoxes[allBoxes.length - 1];
+    const lastBoxH = lastBox.lines.length + 2; // top border + lines + bottom border
+
+    // Keep last box's BOTTOM at a fixed position relative to character
+    // ALWAYS draw last box at same position, show previous box above it
+    // Adjust for encounters 1 and 2 (conv 2 and 3) due to camera lerp
+
+    // Standard offset for all conversations now that camera settling is fixed
+    const yOffset = 2;
+    const lastBoxBottom = charY - yOffset;
+
+    const lastBoxTop = lastBoxBottom - (lastBoxH - 1); // -1 because bottom border is inclusive
+
+    // Show ALL boxes, with the LAST box at a fixed position
+    // Older boxes stack above it without affecting its position
+    const boxesToShow = allBoxes;
+
+    // Calculate where to start drawing so the LAST box ends at lastBoxBottom
+    // Work backwards from lastBoxTop
+    let totalPriorHeight = 0;
+    for (let i = 0; i < boxesToShow.length - 1; i++) {
+      totalPriorHeight += boxesToShow[i].lines.length + 2; // height of each prior box (no gap between boxes)
+    }
+    const topY = lastBoxTop - totalPriorHeight;
+
+    // if (convLog.length <= 3) {
+    //   console.log(
+    //     "RENDER: charY=" +
+    //       charY +
+    //       " lastBoxH=" +
+    //       lastBoxH +
+    //       " boxes=" +
+    //       boxesToShow.length +
+    //       " -> topY=" +
+    //       topY +
+    //       " lastBoxTop=" +
+    //       lastBoxTop +
+    //       " lastBoxBottom=" +
+    //       lastBoxBottom,
+    //   );
+    // }
     // Center horizontally between player and NPC
     const psx = convAnchorPX;
     const nsx = convAnchorNX;
@@ -423,29 +527,47 @@
                          adjacent paddings don't overlap. */
     {
       const padX = 1;
-      let cyClear = Math.max(0, topY);
-      for (const box of allBoxes) {
+      let cyClear = topY; // Start from topY even if negative
+      for (const box of boxesToShow) {
         const xPos = box.side === "them" ? bxR : bxL;
         const boxH = box.lines.length + 2;
         const x0 = Math.max(0, xPos - padX);
         const x1 = Math.min(W, xPos + boxW + padX);
-        for (let y = cyClear; y < cyClear + boxH && y < H; y++) for (let x = x0; x < x1; x++) grid.set(x, y, " ", null);
-        // cyClear += boxH + 1;
+
+        // Only clear if this box is at least partially visible
+        const boxStartY = cyClear;
+        const boxEndY = cyClear + boxH;
+        if (boxEndY > 0) {
+          // Clear only the visible portion
+          const clearStartY = Math.max(0, boxStartY);
+          const clearEndY = Math.min(H, boxEndY);
+          for (let y = clearStartY; y < clearEndY; y++) {
+            for (let x = x0; x < x1; x++) {
+              grid.set(x, y, " ", null);
+            }
+          }
+        }
         cyClear += boxH;
       }
     }
-    let cy = Math.max(0, topY);
-    for (const box of allBoxes) {
+    let cy = topY; // Start from topY even if negative, don't clamp
+    for (const box of boxesToShow) {
       if (cy + box.lines.length + 2 > H) break;
       const xPos = box.side === "them" ? bxR : bxL;
-      if (box.isChoice) {
-        convChoiceY1 = cy;
+
+      // Only draw if this box would be visible (cy >= 0)
+      const boxStartY = cy;
+      const boxEndY = cy + box.lines.length + 2;
+      const isVisible = boxEndY > 0; // At least part of the box is on-screen
+
+      if (box.isChoice && isVisible) {
+        convChoiceY1 = Math.max(0, cy);
         convChoiceBX = xPos;
         convChoiceBW = boxW;
         convChoiceYs = [];
         let tempCount = 0;
         for (let ci = 0; ci < convChoices.length; ci++) {
-          convChoiceYs.push(cy + 1 + tempCount);
+          convChoiceYs.push(Math.max(0, cy + 1 + tempCount));
           const cWords = ("\u25B6 " + convChoices[ci]).split(" ");
           let cLines = [],
             cc = "";
@@ -459,59 +581,82 @@
           tempCount += cLines.length + 1;
         }
       }
-      grid.text(CONV_BOX.tl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.tr, xPos, cy, box.color);
+
+      // Draw top border only if visible
+      if (cy >= 0 && isVisible) {
+        grid.text(CONV_BOX.tl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.tr, xPos, cy, applyBoxOpacity(box.color));
+      }
       cy++;
+
       for (let li = 0; li < box.lines.length; li++) {
-        grid.text(CONV_BOX.v + " ".repeat(boxW - 2) + CONV_BOX.v, xPos, cy, box.color);
-        if (box.lines[li] === "") {
-          cy++;
-          continue;
-        }
-        /* Choices: left-aligned with two shades + hover. Regular: centered. */
-        const pad = box.isChoice ? 0 : Math.floor((innerW - box.lines[li].length) / 2);
-        let lineCol = box.color;
-        if (box.isChoice) {
-          /* Figure out which choice this line belongs to */
-          let choiceIdx = 0,
-            linesCount = 0;
-          for (let ci = 0; ci < (convChoices || []).length; ci++) {
-            const cWords = ("\u25B6 " + convChoices[ci]).split(" ");
-            let cLines = [];
-            let cc = "";
-            for (const w of cWords) {
-              if (cc.length + w.length + 1 > innerW) {
-                cLines.push(cc);
-                cc = "  " + w;
-              } else cc = cc ? cc + " " + w : w;
+        if (cy >= 0 && isVisible) {
+          grid.text(CONV_BOX.v + " ".repeat(boxW - 2) + CONV_BOX.v, xPos, cy, applyBoxOpacity(box.color));
+          if (box.lines[li] !== "") {
+            /* Choices: left-aligned with two shades + hover. Regular: centered. */
+            const pad = box.isChoice ? 0 : Math.floor((innerW - box.lines[li].length) / 2);
+            let lineCol = box.color;
+            if (box.isChoice) {
+              /* Figure out which choice this line belongs to */
+              let choiceIdx = 0,
+                linesCount = 0;
+              for (let ci = 0; ci < (convChoices || []).length; ci++) {
+                const cWords = ("\u25B6 " + convChoices[ci]).split(" ");
+                let cLines = [];
+                let cc = "";
+                for (const w of cWords) {
+                  if (cc.length + w.length + 1 > innerW) {
+                    cLines.push(cc);
+                    cc = "  " + w;
+                  } else cc = cc ? cc + " " + w : w;
+                }
+                if (cc) cLines.push(cc);
+                if (li >= linesCount && li < linesCount + cLines.length) {
+                  choiceIdx = ci;
+                  break;
+                }
+                linesCount += cLines.length + 1;
+              }
+              lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convPlayerColor;
+              if (convChoiceHover === choiceIdx) lineCol = "#fff";
             }
-            if (cc) cLines.push(cc);
-            if (li >= linesCount && li < linesCount + cLines.length) {
-              choiceIdx = ci;
-              break;
-            }
-            linesCount += cLines.length + 1;
+            grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, applyTextOpacity(lineCol));
           }
-          lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convPlayerColor;
-          if (convChoiceHover === choiceIdx) lineCol = "#fff";
         }
-        grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, lineCol);
         cy++;
       }
-      grid.text(CONV_BOX.bl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.br, xPos, cy, box.color);
-      if (box.isChoice) {
-        convChoiceY2 = cy;
+
+      // Draw bottom border only if visible
+      if (cy >= 0 && isVisible) {
+        grid.text(CONV_BOX.bl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.br, xPos, cy, applyBoxOpacity(box.color));
+      }
+      if (box.isChoice && isVisible) {
+        convChoiceY2 = Math.max(0, cy);
       }
       // remove to remove  extra gap — boxes stack tight for comic-book feel */
       cy++;
     }
 
-    // Short tails pointing to characters
-    // if (cy < H) {
-    //   const tailL = Util.clamp(psx, bx + 1, bx + boxW - 2);
-    //   const tailR = Util.clamp(nsx, bx + 1, bx + boxW - 2);
-    //   grid.set(tailL, cy, "\\", convPlayerColor);
-    //   grid.set(tailR, cy, "/", convNPCColor);
-    // }
+    // Short tails pointing to characters - only show tail for most recent speaker
+    if (cy < H && boxesToShow.length > 0) {
+      // Find the most recent non-dimmed box (the active speaker)
+      const lastBox = boxesToShow[boxesToShow.length - 1];
+
+      if (lastBox.side === "you") {
+        // Player speaking: tail from left-offset box toward player
+        const tailX = Util.clamp(psx, bxL + 1, bxL + boxW - 2);
+        // Only draw if tail won't overlap player position
+        if (tailX !== psx || cy !== convAnchorY) {
+          grid.set(tailX, cy, "ᐯ", convPlayerColor); // Canadian syllabics down triangle
+        }
+      } else if (lastBox.side === "them") {
+        // NPC speaking: tail from right-offset box toward NPC
+        const tailX = Util.clamp(nsx, bxR + 1, bxR + boxW - 2);
+        // Only draw if tail won't overlap NPC position
+        if (tailX !== nsx || cy !== convAnchorY) {
+          grid.set(tailX, cy, "ᐯ", convNPCColor); // Canadian syllabics down triangle
+        }
+      }
+    }
   }
 
   function dialogRender() {
@@ -686,69 +831,20 @@
     A1_PSY_RATIO = 0.55;
 
   /* Array-of-turns encounter format */
-  const A1E = [
-    {
-      turns: [
-        {
-          who: "p",
-          texts: [
-            "when did food get so expensive?",
-            "ugh, when did grocery stores get so fucké?",
-            "crisse, when did food get sacrament chére?",
-            "ostie, when did food get SO expensive??",
-            "CÂLICE. when did food get this expensive??",
-          ],
-        },
-        { who: "n", text: "I use a coupon app" },
-        {
-          who: "p",
-          texts: ["uh, ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],
-        },
-      ],
-    },
-    {
-      turns: [
-        {
-          who: "p",
-          texts: [
-            "$2 for one apple?",
-            "2 piasses for a freaking apple??",
-            "ostie de... $2 for ONE apple?",
-            "esti de marde, 2 PIASSES for ONE apple",
-            "CÂLICE. 2 for an apple??!",
-          ],
-        },
-        { who: "n", text: "yeah, and?" },
-        {
-          who: "p",
-          texts: [
-            "and...we can't survive like this",
-            "viarge, we can't keep living like this",
-            "câline, we just CAN'T survive like this",
-            "CRISSE. nobody can survive like this",
-            "TABARNAK. nobody should have to survive like this",
-          ],
-        },
-      ],
-    },
-    {
-      turns: [
-        {
-          who: "p",
-          texts: [
-            "someone should do something",
-            "câline, someone HAS to do something",
-            "CRISSE, somebody has to do something about this",
-            "câline. somebody needs to do something",
-            "ESTI DE CÂLICE DE TABARNAK. someone has to do something",
-          ],
-        },
-        { who: "n", text: "you know, stealing from a thief isn't stealing" },
-        { who: "p", texts: ["what?", "...what?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
-      ],
-    },
-  ];
-  const NQ = window.GAME_DATA.narrativeQuotes;
+  // ACT 1 TIMING: Add 'delay: <milliseconds>' to any turn to customize timing for that specific line
+  // Example: { who: "n", text: "I use a coupon app", delay: 2500 }
+  let A1E = window.LANG.a1Encounters;
+
+  let A1_LOOP_MSGS = window.LANG.a1LoopMsgs;
+
+  let STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
+
+  let NQ = window.LANG === window.LANG_FR ? window.GAME_DATA.narrativeQuotesFR : window.GAME_DATA.narrativeQuotesEN;
+
+  //  A1_LOOP_MSGS = window.LANG === window.LANG_FR
+  //   ? A1_LOOP_MSGS_FR
+  //   : A1_LOOP_MSGS_EN;
+
   function initAct1() {
     audio.play("level");
     audio.preload(["music_act2"]); // background preload for next act
@@ -838,6 +934,7 @@
       if (tooClose) continue;
       placed++;
       const msg = Util.pick(["ugh", "merde", ":(", "sigh", "...", "pfft", "crisse", "oy", "bruh", "why", "$$$", "tired"]);
+      const startShowing = Math.random() < 0.4;
       a1AmbNPCs.push({
         x: nx,
         y: ny,
@@ -849,7 +946,7 @@
         msg,
         msgT: 0,
         msgMax: 3000,
-        msgCD: Util.randInt(6000, 15000),
+        msgCD: Util.randInt(8000, 22000) + placed * 400,
       });
     }
 
@@ -867,7 +964,7 @@
       hudStatus.textContent = "";
     } else {
       a1St = "pause";
-      showBanner("is this a life?", "#9ab0cc", 3000, true);
+      showBanner(window.LANG.bannerIsThisALife, "#9ab0cc", 3000, true);
       hudLabel.textContent = "";
       hudScore.textContent = "";
       hudStatus.textContent = "";
@@ -988,18 +1085,19 @@
       if (convVisible && a1EncNPC) {
         convAnchorPX = psx;
         convAnchorNX = a1EncNPC.x - ox;
-        if (!convVisible || convLog.length === 0) convAnchorY = psy;
+        // Y is set once at conversation start and never changes
       }
       const e = A1E[a1EI];
       const turns = e.turns;
       if (a1ES < turns.length) {
-        if (a1ES === 0 && !convVisible) {
-          // First turn — set up conv panel
+        if (a1ES === 0 && !convVisible && a1ST2 > 600) {
+          // Wait 600ms for camera to settle before showing first dialogue
           dialogStack = [];
           convReset();
           convAnchorPX = psx;
           convAnchorNX = a1EncNPC.x - ox;
           convAnchorY = psy;
+          convEncounterIndex = a1EI; // Store encounter index for render adjustments
           convPlayerColor = C_PLAYER;
           convNPCColor = a1EncNPC.col || "#7a8aaa";
           convVisible = true;
@@ -1010,7 +1108,8 @@
           convAddLine(txt, side, col);
           a1ES = 1;
           a1ST2 = 0;
-        } else if (a1ST2 > (turns[a1ES]?.delay ?? 1200)) {
+        } else if (a1ST2 > (turns[a1ES]?.delay ?? 3500)) {
+          // ACT 1 TIMING: Default delay between text boxes (in ms)
           const t = turns[a1ES];
           const side = t.who === "p" ? "you" : "them";
           const col = t.who === "p" ? C_PLAYER : convNPCColor;
@@ -1025,7 +1124,7 @@
         a1EI++;
         a1EncNPC = null;
         dialogStack = [];
-        convReset();
+        convStartFade();
         a1Path = [{ x: a1PX, y: a1PY }, ...np];
         a1PI = 0;
         if (a1EI >= a1NPCs.length) a1NP = 0;
@@ -1035,7 +1134,7 @@
       a1ST2 += dt;
       a1IdleTimer += dt;
       if (a1IdleTimer > 15000) {
-        convReset();
+        convStartFade();
         a1St = "outro";
         a1ST2 = 0;
         a1NP = 0;
@@ -1049,7 +1148,7 @@
         if (convChoiceY2 > 0 && clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
           const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
           audio.play("click");
-          convReset();
+          convStartFade();
           a1ST2 = 0;
           if (clickSY < splitY) {
             // "I've had enough"
@@ -1070,9 +1169,9 @@
               overlay.classList.remove("hidden");
               ovTitle.textContent = ".";
               ovTitle.style.color = C_DANGER;
-              ovSub.textContent = "you kept living like this\nuntil you couldn't anymore";
+              ovSub.textContent = window.LANG.bannerKeepLivingLike;
               ovHint.textContent = "";
-              startBtn.textContent = "try again?";
+              startBtn.textContent = window.LANG.endScreenTryAgain;
               overlay.querySelectorAll(".final").forEach((e) => e.remove());
               overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
               return;
@@ -1095,7 +1194,7 @@
       // Keyboard: up = "I've had enough", down = "keep living"
       if (a1ST2 > 800) {
         if (input.justPressed("up")) {
-          convReset();
+          convStartFade();
           const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
           showBanner(lm.t, lm.c, 2000, true);
           a1LoopCount++;
@@ -1227,7 +1326,10 @@
       const sx = n.x - ox,
         sy = n.y - oy;
       if (sx >= 0 && sx < W && sy >= 0 && sy < H) {
-        let c = n.enc < a1EI ? "#555" : n.enc === a1EI ? (Math.sin(a1T / 200) > 0 ? n.col : C_PLAYER) : "#444";
+        // flashing npc
+        // let c = n.enc < a1EI ? "#555" : n.enc === a1EI ? (Math.sin(a1T / 10000) > 0 ? n.col : C_PLAYER) : "#444";
+        let c = n.enc < a1EI ? "#555" : n.enc === a1EI ? n.col : "#444";
+
         grid.set(sx, sy, n.ch, c);
       }
     }
@@ -1240,13 +1342,15 @@
           const txt = an.msg.substring(0, Math.min(an.msg.length, W - 2));
           const tx = Util.clamp(asx - Math.floor(txt.length / 2), 0, W - txt.length);
           // npc text
-          if (asy - 1 >= 0) grid.text(txt, tx, asy - 1, "#444");
+          // if (asy - 1 >= 0) grid.text(txt, tx, asy - 1, "#778");
+          // darker
+          if (asy - 1 >= 0) grid.text(txt, tx, asy - 1, "#556");
         }
       }
     }
     const px = Math.round(a1PX) - ox,
       py = Math.round(a1PY) - oy;
-    if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", C_PLAYER);
+    if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
     dialogRender();
     convRender();
 
@@ -1258,9 +1362,10 @@
       convAnchorPX = px;
       convAnchorNX = px;
       convAnchorY = py;
+      convEncounterIndex = 3; // Choice screen is after 3 encounters
       convPlayerColor = C_PLAYER;
       convVisible = true;
-      convShowChoices(["I've had enough", "What choice do I have? I'll just keep living like this"]);
+      convShowChoices(window.LANG.act1Choices);
     }
     renderBanner();
   }
@@ -1308,7 +1413,7 @@
   let A2_RU_H = 3,
     A2_VRW = 7;
 
-  let A2_BH_PER, A2_LANE_YS, A2_GND;
+  let A2_BH_PER, A2_LANE_YS, A2_GND, A2_TOP_PAD;
   let a2WX, a2T, a2Ht, a2Spd;
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
@@ -1332,14 +1437,17 @@
     const numRoads = 3;
     const numBands = numRoads + 1;
     const totalStreetH = numRoads * A2_RU_H * 2;
+    // Don't reduce A2_BH_PER — keep spacing identical, just shift origin down
     A2_BH_PER = Math.max(4, Math.floor((A2_GND - totalStreetH) / numBands));
+    A2_TOP_PAD = Math.floor(H * 0.06);
     A2_LANE_YS = [];
     for (let road = 0; road < numRoads; road++) {
-      const roadY = (road + 1) * A2_BH_PER + road * A2_RU_H * 2;
-      A2_LANE_YS.push(roadY); // lane 0 of this road
-      A2_LANE_YS.push(roadY + A2_RU_H); // lane 1 of this road
+      const roadY = A2_TOP_PAD + (road + 1) * A2_BH_PER + road * A2_RU_H * 2;
+      A2_LANE_YS.push(roadY);
+      A2_LANE_YS.push(roadY + A2_RU_H);
     }
   }
+
   function a2RuY(ri) {
     return A2_LANE_YS[ri] || A2_LANE_YS[0];
   }
@@ -1350,7 +1458,7 @@
 
   function a2BandY(bi) {
     if (bi <= 3) {
-      const y = bi * (A2_BH_PER + A2_RU_H * 2);
+      const y = A2_TOP_PAD + bi * (A2_BH_PER + A2_RU_H * 2);
       return { y, h: A2_BH_PER };
     }
     return { y: A2_GND - 2, h: 2 };
@@ -1387,10 +1495,11 @@
         }
       }
     }
-    /* NPCs across all 6 lanes */
-    for (let ri = 0; ri < A2_NUM_LANES; ri++) {
+    /* NPCs across all 6 lanes (skip top road - lanes 0-1 - to avoid dialogue cutoff) */
+    for (let ri = 2; ri < A2_NUM_LANES; ri++) {
       // density
-      for (let nx = from + Util.randInt(35, 55); nx < to; nx += Util.randInt(45, 70)) {
+      // reduce npc density
+      for (let nx = from + Util.randInt(55, 80); nx < to; nx += Util.randInt(70, 110)) {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
@@ -1409,8 +1518,17 @@
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
         /* Narc ambient tells */
         const ambLine = tp === "narc" ? drawAmb(DECK_AMB_NARC) : npcKind === "hungry" ? drawAmb(DECK_AMB_HUNGRY) : drawAmb(DECK_AMB_ANGRY);
-        const npcArt = tp === "narc" ? ["%", "\u03C6"] : Util.pick(A2_NPC_ARTS);
-        const npcCol = tp === "narc" ? "#b99" : Util.pick(A2_NPC_COLORS);
+
+        // Narcs use currency-symbol heads — bright, varied, same 2-row structure as NPCs
+        // Player won't know on sight, but will feel the pattern after a few hits
+        const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
+        const narcHead = Util.pick(narcHeads);
+        const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]); // φ ψ Ω §
+        const npcArt = tp === "narc" ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
+        // Narcs are vivid like regulars but skew toward warm/alert tones
+        const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+        const npcCol = tp === "narc" ? Util.pick(narcCols) : Util.pick(A2_NPC_COLORS);
+
         a2NPCs.push({
           wx: nx,
           ru: ri,
@@ -1485,15 +1603,20 @@
     a2SDT = null;
     dialogStack = [];
     a2GenChunk(0, W * 3);
-    hudLabel.textContent = "CREW";
+    hudLabel.textContent = window.LANG.hudCrewLabel;
     hudScore.textContent = "0";
-    hudStatus.textContent = "Tap \u25B2\u25BC to move!";
+    hudStatus.textContent = window.LANG.hudAct2Status;
     hudStatus.style.color = C_SUCCESS;
     bannerTimer = 0;
-    showBanner("recruit your crew", C_ORANGE, 2500);
+    showBanner(window.LANG.bannerRecruitCrew, C_ORANGE, 5000);
+
     setTimeout(() => {
-      if (phase === "act2") bannerText += "\n\nbut watch out for narcs";
-    }, 1400);
+      if (phase === "act2") {
+        bannerText += "\n\n" + window.LANG.bannerWatchNarcs;
+
+        bannerTimer = Math.max(bannerTimer, 3500); // reset timer after appending line
+      }
+    }, 1800);
   }
 
   function updateAct2(dt) {
@@ -1534,6 +1657,7 @@
         convPlayerColor = C_PLAYER;
         convNPCColor = a2TN.col || "#7a8aaa";
         convVisible = true;
+        DM.startConv(); // ← reset tag pool before every new conversation
         const greetResult = DM.drawWithTags(DECK_GREET);
         a2LastGreetTone = greetResult.tags[0] ?? "casual";
         convAddLine(greetResult.text, "you", convPlayerColor);
@@ -1576,7 +1700,8 @@
         const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
         const angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, { boost: true, follows: a2TN.helloTags });
         const hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, { boost: true, follows: a2TN.helloTags });
-a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels = [prefix + angryResult.text, prefix + hungryResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
+        a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];
+        a2ChoiceLabels = [prefix + angryResult.text, prefix + hungryResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
         convShowChoices(a2ChoiceLabels);
         a2Choice = -1;
         a2TP = 1;
@@ -1641,7 +1766,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
           }
           convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
 
-          addFloat(Util.pick(["read the room", "you need to listen better", "wrong energy"]), 0, 0, C_WARN);
+          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
 
           a2TP = 7;
         } else {
@@ -1707,13 +1832,13 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
           a2TN = null;
           a2TalkCD = 500;
           if (wasNarc) {
-            showBanner("good call. that was a narc.", C_SUCCESS, 3000);
+            showBanner(window.LANG.bannerGoodCallNarc, C_SUCCESS, 3000);
           } else {
-            addFloat(Util.pick(["maybe a bit too cautious?", "give people a chance", "things will never change if we don't try"]), 0, 0, C_WARN);
+            addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
           }
           setTimeout(() => {
             dialogStack = [];
-            convReset();
+            convStartFade();
           }, 800);
         } else if (a2TN.tp === "narc") {
           convAddLine(DM.draw(DECK_NARC_REV), "them", C_DANGER);
@@ -1743,13 +1868,13 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         a2TalkCD = 500;
         if (wasNarc) {
           // showBanner("good call. that was a narc.", C_SUCCESS, 3000);
-          addFloat(Util.pick(["good call. that smelled like a narc"]), 0, 0, C_SUCCESS);
+          addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
         } else {
-          addFloat(Util.pick(["maybe a bit too cautious?", "give people a chance", "things will never change if we don't try"]), 0, 0, C_WARN);
+          addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
         }
         setTimeout(() => {
           dialogStack = [];
-          convReset();
+          convStartFade();
         }, 800);
       }
       // ── TP 30: mismatch — NPC adds noBye then leaves ──
@@ -1769,27 +1894,29 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         a2TalkCD = 500;
         setTimeout(() => {
           dialogStack = [];
-          convReset();
+          convStartFade();
         }, 1000);
       }
 
       // ── TP 8: recruit ──
       else if (a2TP === 8 && a2TT > 2500) {
         DM.endConv();
-
         const n = a2TN;
         n.st = "rec";
         a2CrewCount++;
         audio.play("recruit");
         spark(Math.round(a2PX), Math.round(a2PY), C_TEAL, 10);
         a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-        addFloat(Util.pick(["New Robin!", "They're in!", "Crew grows!"]), 0, 0, C_TEAL);
+        console.log("float test:", window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows);
+        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
+
+        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
         setTimeout(() => {
           dialogStack = [];
-          convReset();
+          convStartFade();
         }, 1000);
       }
 
@@ -1804,7 +1931,17 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         audio.play("narc");
         spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
         triggerChromatic(500);
-        addFloat("(That was a NARC!)", 0, 0, C_DANGER);
+        // Higher float for narc reveal — negative jy so it renders above center
+        // const narcFloat = { text: "⚠ NARC ALERT ⚠", color: C_DANGER, life: 2400, max: 2400, boxed: true, jx: 0, jy: -6 };
+        // floats.push(narcFloat);
+        // spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 18); // big red burst
+        // spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 12);
+
+        // try banner instead to see if it's more visible <-- this seemed to do nothing diff than above? look into it later
+        showBanner(window.LANG.bannerNarc, C_DANGER, 2200, true);
+        for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
+        spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
+
         if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
         a2TN.cd = 1000;
         a2TN = null;
@@ -1822,12 +1959,12 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         const n = a2TN;
         n.st = "maybe";
         n.cd = 9999;
-        addFloat(Util.pick(["Not yet. But they're thinking", "They need time"]), 0, 0, "#a80");
+        addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, "#a80");
         a2TN = null;
         a2TalkCD = 500;
         setTimeout(() => {
           dialogStack = [];
-          convReset();
+          convStartFade();
         }, 1000);
         // Return of the mack — only fires if player isn't in conversation
         setTimeout(
@@ -1864,11 +2001,11 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     if (a2SD) {
       if (a2SDT === null) {
         a2SDT = 0;
-        showBanner("You have a crew.", C_PLAYER, 2400);
+        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, 2400);
       }
       a2SDT += dt;
       if (a2SDT > 3600 && a2SDT - dt <= 3600) {
-        showBanner("time to rally the whole neighbourhood", C_ORANGE, 999999);
+        showBanner(window.LANG.bannerTimeToRally, C_ORANGE, 999999);
       }
       if (a2SDT > 5000 && clickPending) {
         clickPending = false;
@@ -1974,9 +2111,11 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         if (n.st !== "idle") continue;
         if (n.cd > 0) continue;
         if (n.ru !== a2PRu) continue;
+
         if (Math.abs(n.wx - pwx) < 3) {
           audio.play("bump");
-
+          // Snap/move player to just-before NPC so they don't overlap
+          a2PX = n.wx - a2WX - 3;
           a2TN = n;
           a2TP = 0;
           a2TT = 0;
@@ -1990,7 +2129,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     if (!a2SV) {
       if (!a2TimeWarned && a2T > A2_TIME_WARN_MS) {
         a2TimeWarned = true;
-        showBanner("Cops are circling. Wrap it up.", C_WARN, 3000);
+        showBanner(window.LANG.bannerCopsCircling, C_WARN, 3000);
       }
       if (a2T > A2_TIME_LIMIT_MS) {
         endGame("busted");
@@ -1998,8 +2137,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       }
     }
 
-    hudLabel.textContent = "CREW";
-    /* Flash HUD on recruit */
+    hudLabel.textContent = window.LANG.hudCrewLabel; /* Flash HUD on recruit */
     if (a2HudFlashT > 0) {
       hudScore.textContent = a2HudFlashMsg;
       hudScore.style.color = C_SUCCESS;
@@ -2094,8 +2232,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       if (cx2 >= 0 && cx2 + 3 < W) grid.art(r.art || A2_ROB, cx2, cy2, crewCol);
     }
     // Player — glow effect at start
-    const playerCol = a2T < 3000 ? (Math.floor(a2T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
-    grid.art(A2_PA[a2PAnim], ppx, ppy, playerCol);
+    grid.art(A2_PA[a2PAnim], ppx, ppy, playerPulseColor(a2T));
 
     // Ambient mutters above nearby NPCs
     for (const n of a2NPCs) {
@@ -2184,9 +2321,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         col: isNarc ? "#b99" : Util.pick(A2B_NPC_COL),
         shoutT: 0,
         shoutMsg: "",
-        amb: isNarc
-          ? Util.pick(["capitalism!", "stocks", "investments", "meritocracy"])
-          : Util.pick(["hungry", "ugh", "broke", "tired", "help", "sigh", "rent...", "bills", "empty"]),
+        amb: isNarc ? Util.pick(window.LANG.act2bAmbNarc) : Util.pick(window.LANG.act2bAmbCrowd),
       });
     }
   }
@@ -2222,15 +2357,24 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     a2bFloats = [];
     a2bBursts = [];
     a2bDone = false;
-    a2bStoreX = Math.floor(30000 * 0.007) + W;
+    a2bStoreX = Math.floor(45000 * 0.007) + W; // ~45s at base speed 0.007
+
     /* Generate building rows — enough for the whole level */
     a2bTopParts = a2bGenRow(a2bStoreX + W);
     a2bBotParts = a2bGenRow(a2bStoreX + W);
     a2bGenNPCs();
     dialogStack = [];
     bannerTimer = 0;
-    showBanner("rally the neighbourhood!\navoid narcs", C_ORANGE, 3000);
-    hudLabel.textContent = "CREW";
+    showBanner(window.LANG.bannerRallyNeighbourhood, C_ORANGE, 6000);
+
+    setTimeout(() => {
+      if (phase === "act2b") {
+        bannerText += "\n\n" + window.LANG.bannerAvoidNarcs;
+        bannerTimer = Math.max(bannerTimer, 4000);
+      }
+    }, 2000);
+
+    hudLabel.textContent = window.LANG.hudCrewLabel;
     hudScore.textContent = String(a2CrewCount);
     hudStatus.textContent = "";
     hudStatus.style.color = C_SUCCESS;
@@ -2282,7 +2426,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
             spark(Math.round(a2bPX), Math.round(a2bPY), C_DANGER, 12);
             triggerChromatic(450);
             a2bHt++;
-            addFloat(Util.pick(["NARC!", "NARC", "OOPS!"]), 0, 0, C_DANGER);
+            addFloat(Util.pick([window.LANG.floatNarc, window.LANG.floatNarc, window.LANG.floatOops]), 0, 0, C_DANGER);
             if (a2bHt >= A2B_MH) {
               setTimeout(() => endGame("busted"), 1500);
               return;
@@ -2304,7 +2448,19 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
               b: newBob,
             });
             a2Crew.push({ b: newBob, ru: 0, art: n.art, col: n.col });
-            addFloat(Util.pick(["OUI!", "LET'S GO!", "ALLONS-Y!", "COUNT ME IN!", "YEAH!", "FOR REAL!"]), 0, 0, n.col);
+            addFloat(
+              Util.pick([
+                window.LANG.floatOui,
+                window.LANG.floatLetsGo,
+                window.LANG.floatAllonsY,
+                window.LANG.floatCountMeIn,
+                window.LANG.floatYeah,
+                window.LANG.floatForReal,
+              ]),
+              0,
+              0,
+              n.col,
+            );
           }
         }
       }
@@ -2319,7 +2475,21 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     if (a2bStoreX - a2bWX <= W - 4 && !a2bDone) {
       a2bDone = true;
       a2bSpd = 0;
-      showBanner(a2CrewCount + " robins. one store. let's eat.", C_TEAL, 999999);
+
+      showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
+      setTimeout(() => {
+        if (phase === "act3") {
+          bannerText += window.LANG.bannerOneStore;
+          bannerTimer = 999999;
+        }
+      }, 1200);
+      setTimeout(() => {
+        if (phase === "act3") {
+          bannerText += window.LANG.bannerLetsEat;
+          bannerTimer = 999999;
+        }
+      }, 2400);
+
       setTimeout(() => initAct3(), 1500);
     }
     /* HUD */
@@ -2408,7 +2578,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     }
 
     /* ── Player — same 2-row art as Act 2 ── */
-    grid.art(A2_PA[Math.floor(a2bT / 250) % 2], ppx, ppy, C_PLAYER);
+    grid.art(A2_PA[Math.floor(a2bT / 250) % 2], ppx, ppy, playerPulseColor(a2bT));
 
     /* ── NPC ambient text boxes ── */
     for (const n of a2bNPCs) {
@@ -2467,7 +2637,15 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       if (stsx < W + 10) {
         const stY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2) - Math.floor(STO_H / 2);
         const fl = Math.sin(Date.now() / 400) > 0 ? C_PLAYER : "#a22";
-        grid.art(STORE, stsx, stY, fl);
+        const _stFlash = Math.sin(Date.now() / 400) > 0;
+        for (let _ri = 0; _ri < STORE.length; _ri++) {
+          const _row = STORE[_ri];
+          const _hasLetter = /[A-Za-z]/.test(_row);
+          const _rowCol = _hasLetter ? (_stFlash ? "#fff" : C_ORANGE) : _stFlash ? C_PLAYER : "#a44";
+          for (let _ci = 0; _ci < _row.length; _ci++) {
+            if (_row[_ci] !== " ") grid.set(stsx + _ci, stY + _ri, _row[_ci], _rowCol);
+          }
+        }
       }
     }
 
@@ -2478,7 +2656,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
                ACT 3: STOREFRONT — static scene, click to enter
                ══════════════════════════════════════════════════════════ */
   const RA2 = ["@", "\u0126"];
-  let a3T;
+  let a3T, a3CrewOffsets;
   function ensureCrew() {
     /* Dev scaffolding: pads a2Crew to a2CrewCount when jumping to act via keyboard shortcuts */
     if (!a2Crew) a2Crew = [];
@@ -2501,14 +2679,52 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     a3T = 0;
     bannerTimer = 0;
     dialogStack = [];
-    showBanner(a2CrewCount + " Robins. One store. Let's eat.", C_DANGER, 999999);
-    hudLabel.textContent = "CREW";
+
+    showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
+    setTimeout(() => {
+      if (phase === "act3") {
+        bannerText += " One store.";
+        bannerTimer = 999999;
+      }
+    }, 1200);
+    setTimeout(() => {
+      if (phase === "act3") {
+        bannerText += " Let's eat.";
+        bannerTimer = 999999;
+      }
+    }, 2400);
+
+    hudLabel.textContent = window.LANG.hudCrewLabel;
     hudScore.textContent = a2CrewCount;
     hudStatus.textContent = "";
+    // Build walk-in animation: robins slide in from off-screen edges
+    {
+      const sY = Math.floor(H * 0.62);
+      const scx = Math.floor((W - STO_W) / 2);
+      const dc = scx + Math.floor(STO_W / 2);
+      const ly = sY + 3;
+      const rc = Math.min(a2CrewCount, 12);
+      const maxSlots = Math.max(1, Math.ceil(rc / 2));
+      const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
+      a3CrewOffsets = [];
+      for (let i = 0; i < rc; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const slot = Math.floor((i + 2) / 2);
+        const tx = Util.clamp(dc + side * slot * spacing, 2, W - 5);
+        const startX = side < 0 ? -4 : W + 4; // enter from left or right edge
+        a3CrewOffsets.push({ cx: startX, tx, delay: 300 + i * 180 });
+      }
+    }
   }
   function updateAct3(dt) {
     a3T += dt;
     updateBanner(dt);
+    // Animate robins walking in
+    if (a3CrewOffsets) {
+      for (const c of a3CrewOffsets) {
+        if (a3T > c.delay) c.cx = Util.lerp(c.cx, c.tx, 0.07);
+      }
+    }
     if (clickPending) {
       clickPending = false;
       if (a3T > 1200) initAct4();
@@ -2532,23 +2748,47 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       stY = sY - STO_H;
     if (scx > 8) grid.art(sb, scx - 7, sY - sb.length, "#555");
     if (scx + STO_W + 8 < W) grid.art(sb, scx + STO_W + 1, sY - sb.length, "#555");
-    grid.art(STORE, scx, stY, Math.sin(Date.now() / 500) > 0 ? C_PLAYER : "#a44");
+    // Render STORE row by row: structure in dim, label rows bright
+    const storeFlash = Math.sin(Date.now() / 500) > 0;
+    for (let ri = 0; ri < STORE.length; ri++) {
+      const row = STORE[ri];
+      // Heuristic: rows with letters A-Z are label rows
+      const hasLetter = /[A-Za-z]/.test(row);
+      const rowCol = hasLetter
+        ? storeFlash
+          ? "#fff"
+          : C_ORANGE // label: white <-> orange
+        : storeFlash
+          ? C_PLAYER
+          : "#a44"; // structure: orange <-> red
+      for (let ci = 0; ci < row.length; ci++) {
+        if (row[ci] !== " ") grid.set(scx + ci, stY + ri, row[ci], rowCol);
+      }
+    }
     const dc = scx + Math.floor(STO_W / 2),
       ly = sY + 3,
       rc = Math.min(a2CrewCount, 12);
     /* Player in middle — draw FIRST so robins don't overlap */
-    const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
-    grid.art(A2_PA[Math.floor(a3T / 250) % 2], dc, ly, plGlow);
+    grid.art(A2_PA[Math.floor(a3T / 250) % 2], dc, ly, playerPulseColor(a3T));
+
+    // const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
+    // grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), plGlow);
     /* Robins on either side — use their preserved art + color */
     const maxSlots = Math.max(1, Math.ceil(rc / 2));
     const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
     for (let i = 0; i < rc; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const slot = Math.floor((i + 2) / 2);
-      const rx = dc + side * slot * spacing;
+      const rx = a3CrewOffsets
+        ? Math.round(a3CrewOffsets[i].cx)
+        : (() => {
+            const side = i % 2 === 0 ? -1 : 1;
+            const slot = Math.floor((i + 2) / 2);
+            return dc + side * slot * spacing;
+          })();
       const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
       const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
-      if (rx >= 0 && rx + 3 < W && ly + 3 < H) grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
+      if (rx >= 0 && rx + 3 < W && ly + 3 < H) {
+        grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
+      }
     }
     if (a3T > 1500) grid.textCenter("[ TAP TO ENTER ]", Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
     renderBanner();
@@ -2570,7 +2810,9 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
   let s4Alys, s4GE, s4CM;
   let s4ExitPinned, s4ExitAisle, s4PlayerAisle;
   /* Combo system: consecutive grabs within window = multiplier */
+
   let s4GrabBursts, s4RobinCheerT;
+  let s4TickerX, s4TickerMsg, s4TickerNextIdx;
   /* ── LAYOUT CONSTANTS (computed in init from H) ── */
   let S4_SHELF_ROWS /* how many shelf rows in the unit */,
     S4_SHELF_ROW_H /* height per shelf row (food art height + divider) */,
@@ -2603,6 +2845,8 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     audio.play("level");
     Music.transition("music_act5"); // heist music
     audio.preload(["music_act6"]);
+    const D_INTERCOM_TICKER = window.LANG.intercoms;
+
     phase = "act4";
     ensureCrew();
     bannerTimer = 0;
@@ -2735,28 +2979,31 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     s4As = [{ y: S4_AISLE_TOP, items: [], isExit: false, aisleH: S4_AISLE_BOT - S4_AISLE_TOP }];
     s4GE = 0;
 
-    hudLabel.textContent = "HAUL";
+    hudLabel.textContent = window.LANG.hudHaulLabel;
     hudScore.textContent = "$0";
     hudScore.style.color = C_PLAYER;
-    hudStatus.textContent = "TAP FOOD TO GRAB!";
+    hudStatus.textContent = window.LANG.hudAct4Status;
     hudStatus.style.color = C_TEAL;
-    showBanner("grab everything you can!", C_PLAYER, 2500);
+    showBanner(window.LANG.bannerGrabEverything, C_PLAYER, 2500);
+
+    s4TickerMsg = D_INTERCOM_TICKER[0];
+    s4TickerX = W; // starts off right edge
+    s4TickerNextIdx = 1;
   }
 
   const SU = [
-    { a: 0, h: "GRAB!", c: C_TEAL },
-    { a: 0.15, h: "COPS CALLED", c: "#a80" },
-    { a: 0.35, h: "HURRY", c: C_WARN },
-    { a: 0.55, h: "CLOSE!", c: "#c60" },
-    { a: 0.75, h: "GET OUT!", c: C_DANGER },
-    { a: 0.9, h: "LAST CHANCE", c: "#a00" },
-    { a: 1, h: "TOO LATE", c: "#800" },
+    { a: 0.15, h: window.LANG.urgencyCopsCalled, c: "#a80" },
+    { a: 0.35, h: window.LANG.urgencyHurry, c: C_WARN },
+    { a: 0.55, h: window.LANG.urgencyClose, c: "#c60" },
+    { a: 0.75, h: window.LANG.urgencyGetOut, c: C_DANGER },
+    { a: 0.9, h: window.LANG.urgencyLastChance, c: "#a00" },
+    { a: 1, h: window.LANG.urgencyTooLate, c: "#800" },
   ];
 
   function updateAct4(dt) {
     tmr.update(dt);
     s4GT += dt / 1000;
-    //shorter levell
+    // Shorten from ~50s to ~30s
     s4Ug = Math.min(1, s4Ug + (s4UR * 1.6 * dt) / 1000);
     s4Sp = 0.006 + s4Ug * 0.008;
     updateBanner(dt);
@@ -2777,15 +3024,15 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     if (!s4ExitPinned && s4GT > 6) {
       s4ExitPinned = true;
       audio.play("exit");
-      showBanner("EXIT OPEN \u2014 BOTTOM RIGHT!", C_TEAL, 3000);
+      showBanner(window.LANG.bannerExitOpen, C_TEAL, 3000);
     }
 
     /* Intercom */
-    s4IT += dt;
-    if (s4IT > 20000 && s4Ug > 0.1) {
-      s4IT = 0;
-      showBanner(Util.pick(D_INTERCOM), C_DANGER, 2000, true);
-    }
+    // s4IT += dt;
+    // if (s4IT > 20000 && s4Ug > 0.1) {
+    //   s4IT = 0;
+    //   showBanner(Util.pick(D_INTERCOM), C_DANGER, 2000, true);
+    // }
 
     /* Robin floats */
     for (let i = s4RobinFloats.length - 1; i >= 0; i--) {
@@ -2873,7 +3120,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         triggerChromatic(380);
         state.set("score", Math.max(0, state.get("score") - 20));
         s4St2 = 800;
-        showBanner("SECURITY GRABBED SOME FOOD! -$20", C_DANGER, 1000, true);
+        showBanner(window.LANG.bannerSecurityGrabbed, C_DANGER, 1000, true);
       }
     }
     /* Spawn new guards periodically */
@@ -2885,9 +3132,17 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       });
     }
 
+    // Scroll ticker -- slow it down
+    s4TickerX -= 0.01 * dt;
+    if (s4TickerX + s4TickerMsg.length < 0) {
+      s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx % D_INTERCOM_TICKER.length];
+      s4TickerNextIdx++;
+      s4TickerX = W + 2;
+    }
+
     /* ── HUD ── */
     const my = state.get("score");
-    hudLabel.textContent = "HAUL";
+    hudLabel.textContent = window.LANG.hudHaulLabel;
     hudScore.textContent = "$" + (my + s4AlyScore);
     hudStatus.textContent = "You $" + my + " + Crew $" + s4AlyScore;
     hudStatus.style.color = s4Ug < 0.35 ? C_TEAL : s4Ug < 0.7 ? C_WARN : C_DANGER;
@@ -2971,8 +3226,8 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
 
     /* ── Player ── */
     if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
-      let pc = C_PLAYER;
-      if (s4Ug > 0.7) pc = Math.floor(Date.now() / 200) % 2 ? C_WARN : C_PLAYER;
+      // Keep urgency flash when heat is high, otherwise use normal pulse
+      let pc = s4Ug > 0.7 ? (Math.floor(Date.now() / 200) % 2 ? C_WARN : C_PLAYER) : playerPulseColor(s4GT * 1000);
       grid.art(A2_PA[Math.floor(s4GT * 4) % 2], Math.round(s4PX2), Math.round(s4PY2), pc);
     }
 
@@ -3007,13 +3262,31 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       grid.textCenter([">> COPS EN ROUTE <<", "!! FIND AN EXIT !!"][Math.floor(Date.now() / 800) % 2], 0, C_DANGER);
     }
 
+    // Intercom ticker — one row above the bookcase top
+    const tickerY = S4_SHELF_TOP - 1;
+    if (tickerY >= 0) {
+      // Clear the row first
+      for (let x = 0; x < W; x++) grid.set(x, tickerY, " ", null);
+      // Draw scrolling text
+      const tx = Math.round(s4TickerX);
+      const tickerColor = s4Ug > 0.5 ? C_DANGER : "#6a8a9a";
+      for (let i = 0; i < s4TickerMsg.length; i++) {
+        const cx = tx + i;
+        if (cx >= 0 && cx < W) grid.set(cx, tickerY, s4TickerMsg[i], tickerColor);
+      }
+      // Left label
+      if (tickerY >= 0) grid.text("📢", 0, tickerY, "#555"); // fallback: use ">>" if emoji breaks
+    }
+
     renderBanner();
   }
   /* ══════════════════════════════════════════════════════════
                ACT 5: THE DROP-OFF — community fridge
                ══════════════════════════════════════════════════════════ */
-  const FRIDGE = window.GAME_DATA.fridgeArt;
-  let a5T, a5P, a5Crew, a5Neighbours, a5NI, a5FoodPlacements;
+
+  console.log("LANG at FRIDGE init:", window.LANG === window.LANG_FR ? "FR" : "EN");
+  let FRIDGE = window.LANG === window.LANG_FR ? window.GAME_DATA.fridgeArtFR : window.GAME_DATA.fridgeArtEN;
+
   function initAct5() {
     audio.play("level");
     Music.transition("music_act6"); // drop-off, warmth
@@ -3051,7 +3324,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         tx: Util.clamp(targetX, 2, W - 5),
         ty: lineY,
         arrived: false,
-        item: Util.pick(["OATS", "NUTS", "PAIN", "OIL", "JUS", "POTATOES", "SOUPE"]),
+        item: Util.pick(window.LANG.crewItems),
         art: cs.art,
         col: cs.col,
       });
@@ -3063,7 +3336,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     // Neighbours arrive after food is placed — centred around the fridge
     const shuffled = Util.shuffle(END_NAMES.slice());
     a5Neighbours = [];
-    const fridgeWidth = window.GAME_DATA.fridgeArt[0].length;
+    const fridgeWidth = FRIDGE[0].length;
     const fridgeCX = Math.floor(W / 2);
     const numNeighbours = Math.min(4, shuffled.length);
     for (let i = 0; i < numNeighbours; i++) {
@@ -3098,7 +3371,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         tx: Util.clamp(tx, 2, W - 6),
         ty,
         name: nm.n,
-        msg: Util.pick(["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"]),
+        msg: Util.pick(window.LANG.neighbourMsgs),
         arrived: false,
         msgShow: false,
         col: window.GAME_DATA.npcColors[(i + 3) % window.GAME_DATA.npcColors.length],
@@ -3122,12 +3395,13 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         }
       }
       if (allArrived && a5T > 1500) {
-        showBanner("let's share the bounty", "#d4a030  ", 3000);
+        showBanner(window.LANG.bannerShareBounty, "#d4a030  ", 3000);
         a5P = 1;
         a5T = 0;
       }
     }
-    if (a5P === 1 && a5T > 3500) a5P = 2;
+    // r  rigger the food drop earlier
+    if (a5P === 1 && a5T > 1200) a5P = 2;
     if (clickPending && a5P === 2) {
       clickPending = false;
       audio.play("drop");
@@ -3138,9 +3412,10 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       for (let _i = 0; _i < 6; _i++) burstGood(_fx + Math.floor(Math.random() * _fw), _fy + Math.floor(Math.random() * FRIDGE.length), C_TEAL, 7);
       triggerFlashGood();
       a5T = 0;
-      showBanner("food glorious food.", C_SUCCESS, 2000);
+      showBanner(window.LANG.bannerFoodGloriousFood, C_SUCCESS, 2000);
     }
-    if (a5P === 3 && a5T > 2500) {
+    if (a5P === 3 && a5T > 4000) {
+      // longer to let the full fill animation play
       a5P = 4;
       a5T = 0;
     }
@@ -3184,7 +3459,8 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     }
     const plX = a5Crew._playerX || Math.floor(W / 2);
     const plY = a5Crew._playerY || fy + FRIDGE.length + 1;
-    grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), C_PLAYER);
+    grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
+
     // Tap prompt
     if (a5P === 2) grid.textCenter("[ TAP TO PLACE FOOD ]", plY + 4, Math.sin(Date.now() / 300) > 0 ? C_TEAL : C_DIM);
     // Food appearing in fridge — real food art reused from Act 4
@@ -3198,10 +3474,23 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
                            4 slots per shelf. */
       if (!a5FoodPlacements) {
         a5FoodPlacements = [];
-        const numToPlace = Math.min(a2CrewCount, 8);
+
+        const numToPlace = 8; // always fill both shelves regardless of crew count
+
         for (let i = 0; i < numToPlace; i++) a5FoodPlacements.push({ food: Util.pick(FOODS), col: Util.pick(FC) });
       }
-      const showCount = a5P === 3 ? Math.min(a5FoodPlacements.length, Math.floor(a5T / 400)) : a5FoodPlacements.length;
+      let showCount;
+      if (a5P === 3) {
+        if (a5T < 2400) {
+          showCount = Math.min(a5FoodPlacements.length, Math.floor(a5T / 300));
+        } else {
+          // Fast second pass — flash all items in
+          showCount = a5FoodPlacements.length;
+        }
+      } else {
+        showCount = a5FoodPlacements.length;
+      }
+
       const slotsPerShelf = 4;
       const shelfInnerW = fridgeW - 2;
       const slotW = Math.floor(shelfInnerW / slotsPerShelf);
@@ -3247,16 +3536,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
 
   let endT,
     endD = {};
-  const END_NAMES = [
-    { n: "Marie", p: "their" },
-    { n: "Manu", p: "his" },
-    { n: "Fatima", p: "her" },
-    { n: "Olivier", p: "his" },
-    { n: "Mei", p: "her" },
-    { n: "Amadou", p: "his" },
-    { n: "Sophie", p: "her" },
-    { n: "Youssef", p: "his" },
-  ];
+  let END_NAMES = window.LANG.endNames;
 
   function initEnd() {
     Music.transition("music_act7"); // drop-off, warmth
@@ -3268,14 +3548,9 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     dialogStack = [];
     const my = state.get("score") || 0,
       tot = my + s4AlyScore;
-    const VIG_TEMPLATES = [
-      (nm) => nm.n + " ate for the first time today",
-      (nm) => nm.n + " is making " + nm.p + " mother's potato casserole tonight",
-      (nm) => nm.n + " brought a pot of soup for " + nm.p + " friends",
-      (nm) => nm.n + " has bread for " + nm.p + " children",
-      (nm) => nm.n + " shared half with a stranger on the way home",
-      (nm) => nm.n + " is cooking a real dinner for " + nm.p + " grandma",
-    ];
+
+    const VIG_TEMPLATES = window.LANG.vigTemplates;
+
     const vig = [];
     const shuffled = Util.shuffle(END_NAMES);
     const templates = Util.shuffle(VIG_TEMPLATES.slice());
@@ -3287,18 +3562,18 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     let t = 0;
     const GAP = 950;
     endD.lines = [];
-    endD.lines.push({ t, text: "your crew brought home $" + tot + " of groceries", col: C_DANGER });
+    endD.lines.push({ t, text: window.LANG.endCrewBrought(tot), col: C_DANGER });
     t += GAP;
-    endD.lines.push({ t, text: "you carried $" + (my || 0) + " of it", col: "#bbb" });
+    endD.lines.push({ t, text: window.LANG.endYouCarried(my || 0), col: "#bbb" });
     t += GAP + 400;
     for (let i = 0; i < vig.length; i++) {
       endD.lines.push({ t, text: vig[i], col: C_DIM });
       t += GAP;
     }
     t += 400;
-    endD.lines.push({ t, text: (fed || 68) + " people ate tonight", col: C_SUCCESS });
+    endD.lines.push({ t, text: window.LANG.endPeopleAte(fed || 68), col: C_SUCCESS });
     t += 1100;
-    endD.lines.push({ t, text: "(and you ate too)", col: "#bbb", extraGap: 1 });
+    endD.lines.push({ t, text: window.LANG.endYouAte, col: "#bbb", extraGap: 1 });
     endD.doneT = t + 1600;
   }
 
@@ -3342,12 +3617,17 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
   /* ══════════════════════════════════════════════════════════
                        CTA: This really happened. Post-game epilogue.
                        ══════════════════════════════════════════════════════════ */
-  let ctaT, ctaDone;
+  let ctaT, ctaDone, ctaChoice, ctaEndLine, ctaEndCol;
   function initCTA() {
     Music.transition("music_act8"); // drop-off, warmth
     phase = "cta";
+
     ctaT = 0;
     ctaDone = false;
+    ctaChoice = null;
+    ctaEndLine = "";
+    ctaEndCol = C_DIM;
+
     bannerTimer = 0;
     dialogStack = [];
     hudLabel.textContent = "";
@@ -3359,6 +3639,32 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     ctaT += dt;
     const endAt = 999999;
     const canTap = ctaT > 14000;
+
+    if (ctaT > 12500 && !ctaChoice) {
+      if (!convVisible) {
+        convReset();
+        convAnchorY = Math.floor(H * 0.75);
+        convAnchorPX = Math.floor(W / 2);
+        convAnchorNX = Math.floor(W / 2);
+        convVisible = true;
+        convShowChoices(["yes — tell me how", "maybe someday"]);
+      }
+      if (clickPending && convChoiceY2 > 0 && clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+        clickPending = false;
+        ctaChoice = clickSY < Math.floor((convChoiceY1 + convChoiceY2) / 2) ? "yes" : "maybe";
+        convStartFade();
+        if (ctaChoice === "yes") {
+          burstGood(Math.floor(W / 2), Math.floor(H / 2), C_TEAL, 16);
+          triggerFlashGood();
+          ctaEndLine = "then it starts with you.";
+          ctaEndCol = C_TEAL;
+        } else {
+          ctaEndLine = "the neighbourhood will wait.";
+          ctaEndCol = C_DIM;
+        }
+      }
+    }
+
     if (!ctaDone && (ctaT > endAt || (clickPending && canTap))) {
       clickPending = false;
       ctaDone = true;
@@ -3382,19 +3688,16 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
   }
 
   function renderCTA() {
-    const CTA_STORY = [
-      { t: 0, text: "in december 2025,", col: "#8957ff" },
-      { t: 1100, text: "40 people dressed as santa", col: C_TEAL },
-      { t: 2200, text: "robbed a grocery store chain in montreal", col: C_DANGER },
-      { t: 3300, text: "they gave the food to the hungry", col: C_TEAL },
-      { t: 4600, text: "", col: C_MID, extraGap: 1 },
-      { t: 5400, text: "in february 2026, they hit again", col: C_DANGER },
-      { t: 6700, text: "", col: C_MID, extraGap: 1 },
-      { t: 7500, text: "they called themselves", col: C_TEAL },
-      { t: 8600, text: "ROBINS DES RUELLES", col: C_PLAYER },
-      { t: 9900, text: "", col: C_MID, extraGap: 1 },
-      { t: 10700, text: "is your neighbourhood next?", col: C_ORANGE },
-    ];
+    const _hcOrig = HC.splice(0, HC.length, ...HC_CTA);
+    renderCity(ctaT * 0.004, 0);
+    HC.splice(0, HC.length, ..._hcOrig);
+
+    const CTA_STORY = window.LANG.ctaStory.map((s, i) => ({
+      ...s,
+      col: [C_PLAYER, C_TEAL, C_DANGER, "#4dbb88", C_MID, "#e06060", C_MID, C_DIM, C_PLAYER, C_MID, C_ORANGE][i],
+      ...(i === 8 ? { flash: true } : {}),
+      ...(i === 4 || i === 6 || i === 9 ? { extraGap: 1 } : {}),
+    }));
 
     function wrap(text) {
       if (!text) return [""];
@@ -3413,19 +3716,37 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
 
     const wrapped = CTA_STORY.map((l) => wrap(l.text));
     const totalH = wrapped.reduce((sum, ls, i) => sum + ls.length + (CTA_STORY[i].extraGap || 0), 0) + CTA_STORY.length - 1;
-    let y = Math.max(2, Math.floor((H - totalH) / 2));
+    const blockY = Math.max(2, Math.floor((H - totalH) / 2));
+
+    // Dark rectangle behind all text
+    for (let ry = Math.max(0, blockY - 2); ry < Math.min(H, blockY + totalH + 2); ry++) {
+      for (let rx = 4; rx < W - 4; rx++) {
+        grid.set(rx, ry, " ", "#111");
+      }
+    }
+
+    let y = blockY;
 
     for (let i = 0; i < CTA_STORY.length; i++) {
       const seg = CTA_STORY[i];
       if (ctaT >= seg.t) {
-        wrapped[i].forEach((ln, j) => {
-          if (y + j < H - 2) grid.textCenter(ln, y + j, seg.col);
-        });
+        if (seg.flash) {
+          const flick = ["#fff", "#ffd700", C_ORANGE];
+          const fc = flick[Math.floor(Date.now() / 400) % flick.length];
+          wrapped[i].forEach((ln, j) => {
+            if (y + j < H - 2) grid.textCenter(ln, y + j, fc);
+          });
+        } else {
+          wrapped[i].forEach((ln, j) => {
+            if (y + j < H - 2) grid.textCenter(ln, y + j, seg.col);
+          });
+        }
       }
       y += wrapped[i].length + 1 + (seg.extraGap || 0);
     }
 
-    if (ctaT > 12500) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
+    if (ctaChoice && ctaEndLine) grid.textCenter(ctaEndLine, H - 4, ctaEndCol);
+    if (ctaT > 12500 && !ctaChoice) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
   }
 
   /* ── END GAME (failure) ────────────────────────────────── */
@@ -3444,24 +3765,24 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     let title, sub, color;
     if (result === "busted") {
       color = C_DANGER;
-      title = "BUSTED!";
-      sub = "too many narcs";
+      title = window.LANG.endGameBustedTitle;
+      sub = window.LANG.endGameBustedSub;
     } else {
       color = C_DANGER;
-      title = tot > 0 ? "CAUGHT!" : "CAUGHT EMPTY";
-      sub = tot > 0 ? "Cops got you.\nrobins escaped with $" + s4AlyScore + "." : "next time.";
+      title = tot > 0 ? window.LANG.endGameCaughtTitle : window.LANG.endGameCaughtEmpty;
+      sub = tot > 0 ? window.LANG.endGameCaughtSub + s4AlyScore + "." : window.LANG.endGameCaughtSubEmpty;
     }
     overlay.classList.remove("hidden");
     ovTitle.textContent = title;
     ovTitle.style.color = color;
     ovSub.textContent = sub;
     ovHint.textContent = "";
-    startBtn.textContent = "TRY AGAIN";
+    startBtn.textContent = window.LANG.endGameTryAgain;
     overlay.querySelectorAll(".final").forEach((e) => e.remove());
     overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
     const gu = document.createElement("button");
     gu.className = "give-up-btn";
-    gu.textContent = "GIVE UP FOREVER";
+    gu.textContent = window.LANG.endGameGiveUp;
     gu.style.background = C_DIM;
     gu.style.marginTop = "4px";
     gu.addEventListener("click", () => {
@@ -3501,6 +3822,15 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     });
   }
   function update(dt) {
+    // Update conversation fade timer
+    if (convFading) {
+      convFadeTimer += dt;
+      if (convFadeTimer >= convFadeDuration) {
+        // Fade complete, reset conversation
+        convReset();
+      }
+    }
+
     for (let i = floats.length - 1; i >= 0; i--) {
       floats[i].life -= dt;
       if (floats[i].life <= 0) floats.splice(i, 1);
@@ -3597,7 +3927,13 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
         sy = Math.round(s.y);
       if (sx >= 0 && sx < W && sy >= 0 && sy < H) grid.set(sx, sy, s.ch, s.color);
     }
+
     gs.innerHTML = grid.html();
+    if (phase !== _lastPhaseForBtn) {
+      _lastPhaseForBtn = phase;
+      syncLangBtn();
+    }
+
     if (chromaticT > 0) {
       chromaticT -= 16;
       gs.classList.add("chroma");
@@ -3611,7 +3947,17 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
       gs.classList.add("flash-gold");
     } else gs.classList.remove("flash-gold");
   }
+
   function startGame() {
+    // re-read language-dependent art now that language is chosen
+    STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
+    FRIDGE = window.LANG === window.LANG_FR ? window.GAME_DATA.fridgeArtFR : window.GAME_DATA.fridgeArtEN;
+    NQ = window.LANG === window.LANG_FR ? window.GAME_DATA.narrativeQuotesFR : window.GAME_DATA.narrativeQuotesEN;
+
+    A1E = window.LANG.a1Encounters;
+    END_NAMES = window.LANG.endNames;
+
+    A1_LOOP_MSGS = window.LANG.a1LoopMsgs;
     // Music.stop(); // ← any edge case
     floats.length = 0;
     s4AlyScore = 0;
@@ -3626,11 +3972,10 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     loop.start();
     // hasPlayed is set to true when the player reaches Act 2
   }
-  ovTitle.textContent = "ROBIN  DES RUELLES";
-  ovSub.innerHTML = "walk around and talk to your neighbours anything could happen<br><br>";
-  ovHint.innerHTML =
-    '\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br><span style="color:#aaa">A game about feeding our neighbourhood</span>';
-  startBtn.textContent = "PLAY";
+  ovTitle.textContent = window.LANG.overlayTitle;
+  ovSub.innerHTML = window.LANG.overlaySub;
+  ovHint.innerHTML = window.LANG.overlayHint;
+  startBtn.textContent = window.LANG.playBtn;
   // startBtn.addEventListener("click", startGame);
 
   // startBtn handler — already have this, just add preload:
@@ -3638,7 +3983,7 @@ a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];        a2ChoiceLabels 
     await audio.unlock();
     await audio.preload(["click", "music_act1"]);
     console.log("playing music");
-    
+
     Music.play("music_act1");
     startGame();
   });

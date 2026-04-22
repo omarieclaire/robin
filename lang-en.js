@@ -1,0 +1,177 @@
+window.LANG_EN = {
+  test: "Hello from English",
+  playBtn: "PLAY",
+  overlayTitle: "ROBIN  DES RUELLES",
+  overlaySub: "walk around and talk to your neighbours anything could happen<br><br>",
+  overlayHint: "\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br>",
+  hudCrewLabel: "CREW",
+  hudAct2Status: "Tap \u25B2\u25BC to move!",
+  hudHaulLabel: "HAUL",
+  hudAct4Status: "TAP FOOD TO GRAB!",
+
+  // banners
+  bannerIsThisALife: "is this a life?",
+  bannerRecruitCrew: "recruit your crew",
+  bannerWatchNarcs: "but watch out for narcs",
+  bannerRallyNeighbourhood: "rally the neighbourhood!",
+  bannerAvoidNarcs: "avoid narcs",
+  bannerYouHaveACrew: "You have a crew.",
+  bannerTimeToRally: "time to rally the whole neighbourhood",
+  bannerCopsCircling: "Cops are circling. Wrap it up.",
+  bannerGoodCallNarc: "good call. that was a narc.",
+  bannerExitOpen: "EXIT OPEN \u2014 BOTTOM RIGHT!",
+  bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
+  bannerGrabEverything: "click and grab everything you can!",
+  bannerFoodGloriousFood: "food glorious food.",
+  bannerShareBounty: "let's share the bounty",
+  bannerNarc: "\u26A0 NARC! \u26A0",
+
+  // act 4 urgency stages
+  urgencyCopsCalled: "COPS CALLED",
+  urgencyHurry: "HURRY",
+  urgencyClose: "CLOSE!",
+  urgencyGetOut: "GET OUT!",
+  urgencyLastChance: "LAST CHANCE",
+  urgencyTooLate: "TOO LATE",
+
+  // floats
+  floatReadTheRoom: "read the room",
+  floatListenBetter: "you need to listen better",
+  floatWrongEnergy: "wrong energy",
+  floatTooCautious: "maybe a bit too cautious?",
+  floatGiveChance: "give people a chance",
+  floatNeverChange: "things will never change if we don't try",
+  floatGoodCallSmelled: "good call. that smelled like a narc",
+  floatNewRobin: "New Robin!",
+  floatTheyreIn: "They're in!",
+  floatCrewGrows: "Crew grows!",
+  floatNotYet: "Not yet. But they're thinking",
+  floatNeedTime: "They need time",
+  floatNarc: "NARC!",
+  floatOops: "OOPS!",
+
+  // act 2b floats
+  floatOui: "OUI!",
+  floatLetsGo: "LET'S GO!",
+  floatAllonsY: "ALLONS-Y!",
+  floatCountMeIn: "COUNT ME IN!",
+  floatYeah: "YEAH!",
+  floatForReal: "FOR REAL!",
+
+  // end game overlay
+  endGameBustedTitle: "BUSTED!",
+  endGameBustedSub: "too many narcs",
+  endGameCaughtTitle: "CAUGHT!",
+  endGameCaughtEmpty: "CAUGHT EMPTY",
+  endGameCaughtSub: "Cops got you.\nrobins escaped with $",
+  endGameCaughtSubEmpty: "next time.",
+  endGameTryAgain: "TRY AGAIN",
+  endGameGiveUp: "GIVE UP FOREVER",
+
+  // act 5
+  bannerKeepLivingLike: "you kept living like this\nuntil you couldn't anymore",
+  endScreenTryAgain: "try again?",
+
+  a1Encounters: [
+  {
+    turns: [
+      { who: "p", texts: ["when did food get so expensive?", "ugh, when did grocery stores get so fucké?", "crisse, when did food get sacrament chére?", "ostie, when did food get SO expensive??", "CÂLICE. when did food get this expensive??"] },
+      { who: "n", text: "I use a coupon app" },
+      { who: "p", texts: ["uh, ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
+    ],
+  },
+  {
+    turns: [
+      { who: "p", texts: ["$2 for an apple?", "2 piasses for a freaking apple??", "ostie de... $2 for ONE apple?", "esti de marde, 2 PIASSES for ONE apple", "CÂLICE. 2 for an apple??!"] },
+      { who: "n", text: "yeah, and?" },
+      { who: "p", texts: ["and...we can't survive like this", "viarge, we can't keep living like this", "câline, we just CAN'T survive like this", "CRISSE. nobody can survive like this", "TABARNAK. nobody should have to survive like this"] },
+    ],
+  },
+  {
+    turns: [
+      { who: "p", texts: ["someone should do something", "câline, someone HAS to do something", "CRISSE, somebody has to do something about this", "câline. somebody needs to do something", "ESTI DE CÂLICE DE TABARNAK. someone has to do something"] },
+      { who: "n", text: "you know, stealing from a thief isn't stealing" },
+      { who: "p", texts: ["what?!", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
+    ],
+  },
+],
+
+a1LoopMsgs: [
+  { t: "nothing changes...", c: "#999" },
+  { t: "...câline, encore ça", c: "#aaa" },
+  { t: "ostie. encore.", c: "#b09abf" },
+  { t: "crisse, pis quoi encore", c: "#b080c0" },
+  { t: "ostie. ENCORE LA MÊME CHOSE", c: "#c060a0" },
+  { t: "OSTIE DE CÂLICE. vraiment??", c: "#c84080" },
+  { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
+  { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
+  { t: "OSTIE CÂLICE CRISSE TABARNAK", c: "#dd0020" },
+  { t: "TABARNAK CÂLICE CRISSE VIARGE OSTIE DE...", c: "#ff0000" },
+],
+
+ctaStory: [
+  { t: 0, text: "in december 2025," },
+  { t: 1100, text: "40 people dressed as santa" },
+  { t: 2200, text: "robbed a grocery store chain in montreal" },
+  { t: 3300, text: "they gave the food to the hungry" },
+  { t: 4600, text: "" },
+  { t: 5400, text: "in february 2026, they hit again" },
+  { t: 6700, text: "" },
+  { t: 7500, text: "they called themselves" },
+  { t: 8600, text: "ROBINS DES RUELLES" },
+  { t: 9900, text: "" },
+  { t: 10700, text: "is your neighbourhood next?" },
+],
+vigTemplates: [
+  (nm) => nm.n + " ate for the first time today",
+  (nm) => nm.n + " is making " + nm.p + " mother's potato casserole tonight",
+  (nm) => nm.n + " brought a pot of soup for " + nm.p + " friends",
+  (nm) => nm.n + " has bread for " + nm.p + " children",
+  (nm) => nm.n + " shared half with a stranger on the way home",
+  (nm) => nm.n + " is cooking a real dinner for " + nm.p + " grandma",
+],
+endNames: [
+  { n: "Marie", p: "her" },
+  { n: "Manu", p: "his" },
+  { n: "Fatima", p: "her" },
+  { n: "Olivier", p: "his" },
+  { n: "Mei", p: "her" },
+  { n: "Amadou", p: "his" },
+  { n: "Sophie", p: "her" },
+  { n: "Youssef", p: "his" },
+],
+
+endCrewBrought: (tot) => "your crew brought home $" + tot + " of groceries",
+endYouCarried: (my) => "you carried $" + my + " of it",
+endPeopleAte: (fed) => fed + " people ate tonight",
+endYouAte: "(and you ate too)", 
+
+muteMuted: "muted",
+muteMute: "mute",
+act1Choices: ["I've had enough", "What choice do I have? I'll just keep living like this"],
+bannerOneStore: "\nOne store.",
+bannerLetsEat: "\nLet's eat.",
+neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
+intercoms: [
+  "ATTENTION SHOPPERS: today's special — dignity",
+  "ATTENTION SHOPPERS: your hunger is not our problem",
+  "SPECIAL: two cans of shame for the price of three",
+  "REMINDER: our CEO's third yacht thanks you for shopping here",
+  "STORE HOURS: open until we decide you've spent enough",
+  "ATTENTION: attention: the customers have had enough",
+  "ATTENTION: price check on everything: free",
+  "SECURITY: management requests you stop robbing us",
+  "ATTENTION: cleanup on ALL aisles",
+  "SECURITY: CODE RED",
+  "ATTENTION SHOPPERS: empathy is out of stock",
+  "ATTENTION SHOPPERS: price check on dignity… denied",
+  "ATTENTION: security to every aisle",
+  "SECURITY: the store is experiencing an unplanned redistribution event",
+],
+
+act2bAmbNarc: ["capitalism!", "stocks", "investments", "meritocracy"],
+act2bAmbCrowd: ["hungry", "ugh", "broke", "tired", "help", "sigh", "rent...", "bills", "empty"],
+crewItems: ["OATS", "NUTS", "BREAD", "OIL", "JUICE", "POTATOES", "SOUP"],
+
+};
+

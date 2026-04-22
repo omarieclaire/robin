@@ -62,7 +62,19 @@
         text-transform: lowercase;
       }
 
-      #mute-btn {
+      #button-div {
+        display: flex;
+        padding-left: 10px;
+      }
+
+      #overlay #lang-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+
+      #mute-btn,
+      #lang-btn {
         background: none;
         border: 1px solid #444;
         color: #888;
@@ -72,8 +84,10 @@
         border-radius: 3px;
         font-family: inherit;
         flex-shrink: 0;
+        margin-left: 5px;
       }
-      #mute-btn:hover {
+      #mute-btn:hover,
+      #lang-btn:hover {
         border-color: #888;
         color: #ccc;
       }
@@ -264,7 +278,7 @@
         font-weight: bold;
         /* text-shadow: 0 0 12px rgba(137, 87, 255, 0.4); */
       }
-      #overlay button {
+      #start-btn {
         margin-top: 16px;
         padding: 14px 52px;
         color: #fff;
@@ -276,12 +290,10 @@
         letter-spacing: 4px;
         border-radius: 2px;
         transition: all 0.2s ease;
-        /* text-shadow: 0 0 8px rgba(137, 87, 255, 0.5); */
       }
-      #overlay button:hover {
+      #start-btn:hover {
         background: var(--c-accent);
         color: #fff;
-        /* box-shadow: 0 0 24px rgba(137, 87, 255, 0.5); */
         transform: scale(1.03);
       }
       #overlay .hint {
@@ -297,7 +309,9 @@
     <div id="hud">
       <span><span id="hud-label">CREW</span> <span class="val" id="hud-score">0</span></span
       ><span class="status" id="hud-status"></span>
-      <button id="mute-btn">mute</button>
+      <span id="button-div">
+        <button id="mute-btn">mute</button>
+      </span>
     </div>
 
     <div id="scene-nav">
@@ -308,15 +322,26 @@
       <div id="game-screen"></div>
     </div>
     <div id="overlay">
+      <div id="lang-div"><button id="lang-btn">FR</button></div>
+
       <h1 id="ov-title">ROBINS DES RUELLES</h1>
       <pre class="endart" id="ov-art">  @</pre>
       <div class="sub" id="ov-sub"></div>
       <div class="hint" id="ov-hint"></div>
       <button id="start-btn">PLAY</button>
     </div>
+    <script src="lang-en.js"></script>
+    <script src="lang-fr.js"></script>
+    <script src="lang-init.js"></script>
+
     <script src="omc-kit.js"></script>
     <script src="game-data.js"></script>
-        <script src="game-data-words.js"></script>
+    <script src="game-data-food.js"></script>
+    <script src="game-data-words-engine.js"></script>
+    <script id="words-script"></script>
+    <script>      
+      document.getElementById("words-script").src = window.LANG === window.LANG_FR ? "game-data-words-fr.js" : "game-data-words.js";
+    </script>
     <script src="game.js"></script>
   </body>
 </html>
