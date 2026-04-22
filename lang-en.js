@@ -173,5 +173,16 @@ act2bAmbNarc: ["capitalism!", "stocks", "investments", "meritocracy"],
 act2bAmbCrowd: ["hungry", "ugh", "broke", "tired", "help", "sigh", "rent...", "bills", "empty"],
 crewItems: ["OATS", "NUTS", "BREAD", "OIL", "JUICE", "POTATOES", "SOUP"],
 
+hudAct4Haul: (my, crew) => "You $" + my + " + Crew $" + crew,
+
+
+bannerOneStore: " One store.",
+bannerLetsEat: " Let's eat.",
+tapToContinue: "[ tap to continue ]",
+tapToEnter: "[ TAP TO ENTER ]",
+promptTap: "[ tap ]",
+promptTapToPlaceFood: "[ TAP TO PLACE FOOD ]",
+urgencyCopsEnRoute: ">> COPS EN ROUTE <<",
+urgencyFindExit: "!! FIND AN EXIT !!",
 };
 

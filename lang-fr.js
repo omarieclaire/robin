@@ -173,4 +173,14 @@ act2bAmbNarc: ["capitalisme!", "actions", "investissements", "méritocratie"],
 act2bAmbCrowd: ["faim", "ugh", "fauché", "épuisé", "aide", "soupir", "loyer...", "factures", "vide"],
 crewItems: ["AVOINE", "NOIX", "PAIN", "HUILE", "JUS", "PATATES", "SOUPE"],
 
+hudAct4Haul: (my, crew) => "Toi " + my + "$ + Équipe " + crew + "$",
+
+bannerOneStore: " Une épicerie.",
+bannerLetsEat: " On mange.",
+tapToContinue: "[ appuie pour continuer ]",
+tapToEnter: "[ APPUIE POUR ENTRER ]",
+promptTap: "[ toucher ]",
+promptTapToPlaceFood: "[ TOUCHER POUR DÉPOSER ]",
+urgencyCopsEnRoute: ">> FLICS EN ROUTE <<",
+urgencyFindExit: "!! TROUVE UNE SORTIE !!",
 };

@@ -21,16 +21,16 @@
 
   const langBtn = document.getElementById("lang-btn");
 
-langBtn.textContent = window.LANG === window.LANG_FR ? 'EN' : 'FR';
+  langBtn.textContent = window.LANG === window.LANG_FR ? "EN" : "FR";
 
-langBtn.addEventListener("click", () => {
-  if (window.LANG === window.LANG_EN) {
-    localStorage.setItem("lang", "fr");
-  } else {
-    localStorage.setItem("lang", "en");
-  }
-  location.reload();
-});
+  langBtn.addEventListener("click", () => {
+    if (window.LANG === window.LANG_EN) {
+      localStorage.setItem("lang", "fr");
+    } else {
+      localStorage.setItem("lang", "en");
+    }
+    location.reload();
+  });
 
   let _lastPhaseForBtn = null;
   function syncLangBtn() {
@@ -2250,7 +2250,7 @@ langBtn.addEventListener("click", () => {
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-    if (a2SD && a2SDT !== null && a2SDT > 4500) grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
+    if (a2SD && a2SDT !== null && a2SDT > 4500) grid.textCenter(window.LANG.tapToContinue, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
     /* Heat is shown in the HUD — no in-game overlay needed */
     renderBanner();
   }
@@ -2792,7 +2792,7 @@ langBtn.addEventListener("click", () => {
         grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
       }
     }
-    if (a3T > 1500) grid.textCenter("[ TAP TO ENTER ]", Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
+    if (a3T > 1500) grid.textCenter(window.LANG.tapToContinue, Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
     renderBanner();
   }
 
@@ -3144,7 +3144,7 @@ langBtn.addEventListener("click", () => {
     const my = state.get("score");
     hudLabel.textContent = window.LANG.hudHaulLabel;
     hudScore.textContent = "$" + (my + s4AlyScore);
-    hudStatus.textContent = "You $" + my + " + Crew $" + s4AlyScore;
+    hudStatus.textContent = window.LANG.hudAct4Haul(my, s4AlyScore);
     hudStatus.style.color = s4Ug < 0.35 ? C_TEAL : s4Ug < 0.7 ? C_WARN : C_DANGER;
   }
   function renderAct4() {
@@ -3259,7 +3259,7 @@ langBtn.addEventListener("click", () => {
         grid.set(0, y, "\u2551", bc);
         grid.set(W - 1, y, "\u2551", bc);
       }
-      grid.textCenter([">> COPS EN ROUTE <<", "!! FIND AN EXIT !!"][Math.floor(Date.now() / 800) % 2], 0, C_DANGER);
+      grid.textCenter([window.LANG.urgencyCopsEnRoute, window.LANG.urgencyFindExit][Math.floor(Date.now() / 800) % 2], 0, C_DANGER);
     }
 
     // Intercom ticker — one row above the bookcase top
@@ -3461,7 +3461,7 @@ langBtn.addEventListener("click", () => {
     grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
 
     // Tap prompt
-    if (a5P === 2) grid.textCenter("[ TAP TO PLACE FOOD ]", plY + 4, Math.sin(Date.now() / 300) > 0 ? C_TEAL : C_DIM);
+    if (a5P === 2) grid.textCenter(window.LANG.promptTapToPlaceFood, plY + 4, Math.sin(Date.now() / 300) > 0 ? C_TEAL : C_DIM);
     // Food appearing in fridge — real food art reused from Act 4
     if (a5P >= 3) {
       /* New fridge layout (width 37, height 18):
@@ -3524,7 +3524,7 @@ langBtn.addEventListener("click", () => {
       }
     }
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
-      grid.textCenter("[ tap to continue ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
+      grid.textCenter(window.LANG.tapToEnter, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
     dialogRender();
     renderBanner();
   }
@@ -3609,7 +3609,7 @@ langBtn.addEventListener("click", () => {
       if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
       y += wrapped[i].length + 1 + (l.extraGap || 0);
     }
-    if (endT >= (endD.doneT || 9999)) grid.textCenter("[ tap ]", H - 3, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
+    if (endT >= (endD.doneT || 9999)) grid.textCenter(window.LANG.promptTap, H - 3, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
     renderBanner();
   }
 
@@ -3745,7 +3745,7 @@ langBtn.addEventListener("click", () => {
     }
 
     if (ctaChoice && ctaEndLine) grid.textCenter(ctaEndLine, H - 4, ctaEndCol);
-    if (ctaT > 12500 && !ctaChoice) grid.textCenter("[ tap ]", H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
+    if (ctaT > 12500 && !ctaChoice) grid.textCenter(window.LANG.promptTap, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
   }
 
   /* ── END GAME (failure) ────────────────────────────────── */
@@ -3955,11 +3955,9 @@ langBtn.addEventListener("click", () => {
 
     A1E = window.LANG.a1Encounters;
     END_NAMES = window.LANG.endNames;
-D_INTERCOM_TICKER = window.LANG.intercoms;
+    D_INTERCOM_TICKER = window.LANG.intercoms;
 
-    FOODS = window.LANG === window.LANG_FR
-    ? window.GAME_DATA.foodsFR
-    : window.GAME_DATA.foods;
+    FOODS = window.LANG === window.LANG_FR ? window.GAME_DATA.foodsFR : window.GAME_DATA.foods;
 
     A1_LOOP_MSGS = window.LANG.a1LoopMsgs;
     // Music.stop(); // ← any edge case
