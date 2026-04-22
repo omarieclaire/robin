@@ -1,6 +1,3 @@
-console.log("yo");
-
-
 const D_AMB_HUNGRY = [
   "mes enfants ont faim",
   "je saute des repas maintenant",

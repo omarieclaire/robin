@@ -128,13 +128,9 @@ const DM = (() => {
   }
 
   function drawWithTags(deck, opts = {}) {
-    console.log("drawWithTags called, src size:", deck.src.length, "pile size:", deck.pile.length);
 
     if (!deck.pile.length) deck._fill();
-    console.log(
-      "after fill, pile follows:",
-      deck.pile.map((x) => x?.follows ?? "none").filter((x) => x !== "none"),
-    );
+
 
     if (!isTagged(deck)) return { text: textOf(deck.pop()), tags: [] };
 

@@ -1,5 +1,3 @@
-console.log(window.LANG.test);
-
 (function () {
   const { GameLoop, Input, State, Timer, Util, Device } = OMC;
   const gs = document.getElementById("game-screen");
@@ -382,7 +380,7 @@ langBtn.addEventListener("click", () => {
     } else {
       convLog.push({ text, side, color });
     }
-    console.log(">>> LINE:", text.substring(0, 30), "| side:", side, "| convLog.length:", convLog.length, "| convAnchorY:", convAnchorY);
+    // console.log(">>> LINE:", text.substring(0, 30), "| side:", side, "| convLog.length:", convLog.length, "| convAnchorY:", convAnchorY);
   }
   function convShowChoices(labels) {
     convChoices = labels;
@@ -837,7 +835,11 @@ langBtn.addEventListener("click", () => {
 
   let A1_LOOP_MSGS = window.LANG.a1LoopMsgs;
 
+  let FOODS = window.GAME_DATA.foods;
+
   let STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
+
+  let D_INTERCOM_TICKER = window.LANG.intercoms;
 
   let NQ = window.LANG === window.LANG_FR ? window.GAME_DATA.narrativeQuotesFR : window.GAME_DATA.narrativeQuotesEN;
 
@@ -2797,7 +2799,6 @@ langBtn.addEventListener("click", () => {
   /* ══════════════════════════════════════════════════════════
                ACT 4: THE HEIST — side-scrolling grocery grab
                ══════════════════════════════════════════════════════════ */
-  const FOODS = window.GAME_DATA.foods;
   const FC = ["#b90", "#a86", "#8a6", "#ca8", "#a97", "#c66", C_DANGER, "#c70", "#48a"];
   const S4_BC_W = 20,
     S4_SLOT_W = 9,
@@ -2845,7 +2846,6 @@ langBtn.addEventListener("click", () => {
     audio.play("level");
     Music.transition("music_act5"); // heist music
     audio.preload(["music_act6"]);
-    const D_INTERCOM_TICKER = window.LANG.intercoms;
 
     phase = "act4";
     ensureCrew();
@@ -3284,7 +3284,6 @@ langBtn.addEventListener("click", () => {
                ACT 5: THE DROP-OFF — community fridge
                ══════════════════════════════════════════════════════════ */
 
-  console.log("LANG at FRIDGE init:", window.LANG === window.LANG_FR ? "FR" : "EN");
   let FRIDGE = window.LANG === window.LANG_FR ? window.GAME_DATA.fridgeArtFR : window.GAME_DATA.fridgeArtEN;
 
   function initAct5() {
@@ -3956,6 +3955,11 @@ langBtn.addEventListener("click", () => {
 
     A1E = window.LANG.a1Encounters;
     END_NAMES = window.LANG.endNames;
+D_INTERCOM_TICKER = window.LANG.intercoms;
+
+    FOODS = window.LANG === window.LANG_FR
+    ? window.GAME_DATA.foodsFR
+    : window.GAME_DATA.foods;
 
     A1_LOOP_MSGS = window.LANG.a1LoopMsgs;
     // Music.stop(); // ← any edge case
@@ -3982,7 +3986,6 @@ langBtn.addEventListener("click", () => {
   startBtn.addEventListener("click", async () => {
     await audio.unlock();
     await audio.preload(["click", "music_act1"]);
-    console.log("playing music");
 
     Music.play("music_act1");
     startGame();
