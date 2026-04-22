@@ -1155,8 +1155,17 @@
           if (clickSY < splitY) {
             // "I've had enough"
             a1St = "outro";
+            // burst from player position
+            const ox = Math.floor(a1CX),
+              oy = Math.floor(a1CY);
+            const px = Math.round(a1PX) - ox,
+              py = Math.round(a1PY) - oy;
+            burstGood(px, py, C_PLAYER, 16);
+            triggerFlashGood();
             a1NP = 0;
-            showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
+            setTimeout(() => {
+              showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
+            }, 1200);
             a1NP = 1;
           } else {
             // "keep living like this"
@@ -2312,7 +2321,12 @@
     for (let nx = 20; nx < a2bStoreX - 20; nx += Util.randInt(spacing, spacing + 6)) {
       const isNarc = Math.random() < 0.15;
       const ny = Util.randInt(A2B_ROAD_Y1 + 2, A2B_ROAD_Y2 - 2);
-      const npcArt = isNarc ? ["%", "\u03C6"] : Util.pick(A2_NPC_ARTS);
+      const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
+      const narcHead = Util.pick(narcHeads);
+      const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
+      const npcArt = isNarc ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
+      const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+      const npcCol = isNarc ? Util.pick(narcCols) : Util.pick(A2B_NPC_COL);
       a2bNPCs.push({
         wx: nx + Util.randInt(-3, 3),
         wy: ny,
@@ -2320,7 +2334,7 @@
         st: "idle",
         ch: npcArt[0],
         art: npcArt,
-        col: isNarc ? "#b99" : Util.pick(A2B_NPC_COL),
+        col: npcCol,
         shoutT: 0,
         shoutMsg: "",
         amb: isNarc ? Util.pick(window.LANG.act2bAmbNarc) : Util.pick(window.LANG.act2bAmbCrowd),
@@ -2425,10 +2439,15 @@
             n.st = "narc";
             audio.play("bump");
             audio.play("narc");
-            spark(Math.round(a2bPX), Math.round(a2bPY), C_DANGER, 12);
-            triggerChromatic(450);
+            // big burst from both player AND narc position
+            spark(Math.round(a2bPX), Math.round(a2bPY), C_DANGER, 36);
+            spark(Math.round(n.wx - a2bWX), Math.round(n.wy), C_DANGER, 36);
+            // extra burst from center screen
+            spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 24);
+            triggerChromatic(600);
             a2bHt++;
             addFloat(Util.pick([window.LANG.floatNarc, window.LANG.floatNarc, window.LANG.floatOops]), 0, 0, C_DANGER);
+            showBanner(window.LANG.bannerNarc, C_DANGER, 1800, true);
             if (a2bHt >= A2B_MH) {
               setTimeout(() => endGame("busted"), 1500);
               return;
@@ -2658,8 +2677,7 @@
                ACT 3: STOREFRONT — static scene, click to enter
                ══════════════════════════════════════════════════════════ */
   const RA2 = ["@", "\u0126"];
-  let a3T, a3CrewOffsets;
-  function ensureCrew() {
+let a3T, a3CrewOffsets, a3Entering, a3PlayerX, a3PlayerY;  function ensureCrew() {
     /* Dev scaffolding: pads a2Crew to a2CrewCount when jumping to act via keyboard shortcuts */
     if (!a2Crew) a2Crew = [];
     while (a2Crew.length < a2CrewCount) {
@@ -2681,6 +2699,10 @@
     a3T = 0;
     bannerTimer = 0;
     dialogStack = [];
+
+    a3T = 0;
+    a3Entering = false;
+    a3PlayerX = 0;
 
     showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
     setTimeout(() => {
@@ -2714,22 +2736,57 @@
         const slot = Math.floor((i + 2) / 2);
         const tx = Util.clamp(dc + side * slot * spacing, 2, W - 5);
         const startX = side < 0 ? -4 : W + 4; // enter from left or right edge
-        a3CrewOffsets.push({ cx: startX, tx, delay: 300 + i * 180 });
+        a3CrewOffsets.push({ cx: startX, tx, cy: Math.floor(H * 0.62) + 3, delay: 300 + i * 180 });
       }
     }
   }
+
   function updateAct3(dt) {
     a3T += dt;
     updateBanner(dt);
     // Animate robins walking in
-    if (a3CrewOffsets) {
+    if (a3CrewOffsets && !a3Entering) {
       for (const c of a3CrewOffsets) {
-        if (a3T > c.delay) c.cx = Util.lerp(c.cx, c.tx, 0.07);
+        if (a3T > c.delay) {
+          c.cx = Util.lerp(c.cx, c.tx, 0.07);
+          if (!c.arrived && Math.abs(c.cx - c.tx) < 0.8) {
+            c.arrived = true;
+            burstGood(Math.round(c.tx), Math.floor(H * 0.62) + 3, a2Crew[a3CrewOffsets.indexOf(c)]?.col || C_TEAL, 6);
+          }
+        }
+      }
+    }
+    if (a3Entering) {
+      a3T += 0; // just keep ticking
+      const sY = Math.floor(H * 0.62);
+      const scx = Math.floor((W - STO_W) / 2);
+      const dc = scx + Math.floor(STO_W / 2);
+      // Move all crew toward door
+      let allIn = true;
+      for (const c of a3CrewOffsets) {
+        c.cx = Util.lerp(c.cx, dc, 0.06);
+        c.cy = Util.lerp(c.cy, sY - 2, 0.06);
+        if (Math.abs(c.cx - dc) > 1 || Math.abs(c.cy - (sY - 2)) > 1) allIn = false;
+      }
+      // Move player toward door
+
+      a3PlayerX = Util.lerp(a3PlayerX, dc, 0.15);
+      a3PlayerY = Util.lerp(a3PlayerY || Math.floor(H * 0.62) + 3, sY - 2, 0.15);
+      if (allIn && Math.abs(a3PlayerX - dc) < 1) {
+        initAct4();
+        return;
       }
     }
     if (clickPending) {
       clickPending = false;
-      if (a3T > 1200) initAct4();
+      if (a3T > 1200) {
+        a3Entering = true;
+        const sY = Math.floor(H * 0.62);
+        const scx = Math.floor((W - STO_W) / 2);
+        const dc = scx + Math.floor(STO_W / 2);
+        a3PlayerX = dc; // start from current player position
+        bannerTimer = 0;
+      }
     }
   }
   function renderAct3() {
@@ -2771,9 +2828,9 @@
       ly = sY + 3,
       rc = Math.min(a2CrewCount, 12);
     /* Player in middle — draw FIRST so robins don't overlap */
-    grid.art(A2_PA[Math.floor(a3T / 250) % 2], dc, ly, playerPulseColor(a3T));
-
-    // const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
+const plX = a3Entering ? Math.round(a3PlayerX) : dc;
+const plY = a3Entering ? Math.round(a3PlayerY || ly) : ly;
+grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY, playerPulseColor(a3T));    // const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
     // grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), plGlow);
     /* Robins on either side — use their preserved art + color */
     const maxSlots = Math.max(1, Math.ceil(rc / 2));
@@ -2789,7 +2846,8 @@
       const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
       const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
       if (rx >= 0 && rx + 3 < W && ly + 3 < H) {
-        grid.art(crewArt, rx, ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3), crewCol);
+        const ry = a3Entering ? Math.round(a3CrewOffsets[i].cy) : ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
+        grid.art(crewArt, rx, ry, crewCol);
       }
     }
     if (a3T > 1500) grid.textCenter(window.LANG.tapToContinue, Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
@@ -3275,7 +3333,7 @@
         if (cx >= 0 && cx < W) grid.set(cx, tickerY, s4TickerMsg[i], tickerColor);
       }
       // Left label
-      if (tickerY >= 0) grid.text("📢", 0, tickerY, "#555"); // fallback: use ">>" if emoji breaks
+      if (tickerY >= 0) grid.text("", 0, tickerY, "#555"); // fallback: use ">>" if emoji breaks
     }
 
     renderBanner();
