@@ -101,6 +101,8 @@
         background: #0d0d0d;
         border-bottom: 1px solid #1a1a1a;
         flex-shrink: 0;
+                display: none;
+
       }
       #scene-nav button {
         flex: 1;
@@ -344,5 +346,10 @@
       document.getElementById("words-script").src = window.LANG === window.LANG_FR ? "game-data-words-fr.js" : "game-data-words.js";
     </script>
     <script src="game.js"></script>
+    <script>
+      if (/[?&]debug/.test(location.search) || location.hash === '#debug') {
+  document.getElementById('scene-nav').style.display = 'flex';
+}
+    </script>
   </body>
 </html>
