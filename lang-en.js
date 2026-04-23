@@ -23,7 +23,7 @@ window.LANG_EN = {
   bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
   bannerGrabEverything: "click and grab everything you can!",
   bannerFoodGloriousFood: "food glorious food.",
-  bannerShareBounty: "let's share the bounty",
+  bannerShareBounty: "share the bounty?",
   bannerNarc: "\u26A0 NARC! \u26A0",
 
   // act 4 urgency stages
