@@ -94,6 +94,9 @@
         overflow-y: hidden;
       }
 
+    .item.angry  { border-left: 3px solid #c06060; }
+.item.hungry { border-left: 3px solid #c0a040; }
+
       .col {
         flex-shrink: 0;
         width: var(--col);
@@ -376,6 +379,11 @@
       }
       .follows-in:focus {
         border-color: var(--accent2);
+      }
+      .score-4 {
+        background: #d8f0d8;
+        color: #1a5a1a;
+        border-color: #a0d0a0;
       }
 
       .edit-acts {
@@ -735,21 +743,46 @@
       }
 
       // ── DM scoring ────────────────────────────────────────────────────────────────
-      const STAT_TAGS = new Set(["stat-36b", "stat-47", "stat-18b", "stat-61b", "stat-100b"]);
+      // Replace STAT_TAGS with the full TOPIC_TAGS list
+      const TOPIC_TAGS = new Set([
+        "bread",
+        "weston",
+        "price-fixing",
+        "dumpsters",
+        "wasted-food",
+        "food-bank",
+        "three-co",
+        "cartel",
+        "dynamic-pricing",
+        "shrinkflation",
+        "robin-hood",
+        "boycott",
+        "points",
+        "wages",
+        "ceo-pay",
+        "audit",
+        "bailout",
+        "stat-36b",
+        "stat-47",
+        "stat-18b",
+        "stat-61b",
+        "stat-100b",
+      ]);
 
-      function dmScore(item, followTags, convTagsUsed) {
+      // Fix dmScore: use TOPIC_TAGS, add boost, fix score values
+      function dmScore(item, followTags, convTagsUsed, boost = false) {
         const tags = item.tags || [];
-        if (item.follows && followTags && followTags.includes(item.follows)) return 3;
-        if (tags.some((t) => STAT_TAGS.has(t) && convTagsUsed.has(t))) return -2;
+        if (item.follows && followTags && followTags.includes(item.follows)) return 4;
+        if (tags.some((t) => TOPIC_TAGS.has(t) && convTagsUsed.has(t))) return -2;
+        if (boost && tags.some((t) => followTags && followTags.includes(t))) return 2;
         return 0;
       }
-
-      function scoreAndSort(items, followTags, convTagsUsed) {
-        const scored = items.map((item) => ({ ...item, score: dmScore(item, followTags, convTagsUsed) }));
-        const visible = scored.filter((x) => x.score > -2);
-        visible.sort((a, b) => b.score - a.score);
-        return visible;
-      }
+function scoreAndSort(items, followTags, convTagsUsed, boost = false) {
+  const scored = items.map((item) => ({ ...item, score: dmScore(item, followTags, convTagsUsed, boost) }));
+  const visible = scored.filter((x) => x.score > -2);
+  visible.sort((a, b) => b.score - a.score);
+  return visible;
+}
 
       // ── path + ui state ───────────────────────────────────────────────────────────
       let P = {},
@@ -870,7 +903,7 @@
         const hTags = P.helloTags || [];
         const convAfterHello = new Set(hTags);
         const mkPI = (dn, x, i) => {
-          const sc = dmScore(x, hTags, convAfterHello);
+          const sc = dmScore(x, hTags, convAfterHello, true);
           return {
             key: `${dn}:${i}`,
             text: x.t,
@@ -970,8 +1003,8 @@
             dimmed: P.smIdx != null && P.smIdx !== i,
           })),
           pTags,
-          convAfterPitch,
-        );
+convAfterPitch,
+  true,        );
         cols.push({
           id: "saymore",
           label: `say more (${P.npcType === "narc" ? "skeptical" : "warm"})`,
@@ -1007,6 +1040,7 @@
           D.DECK_STRONGER_PITCH.map((x, i) => mkSPI("DECK_STRONGER_PITCH", x, i)),
           fTags,
           convAfterSM,
+          true, 
         );
         cols.push({
           id: "stronger",
@@ -1112,15 +1146,49 @@
       function render() {
         updateBC();
         const wrap = document.getElementById("cols");
+
+        // save scroll positions before wiping the DOM
+        const scrolls = {};
+        wrap.querySelectorAll(".col").forEach((c) => {
+          const body = c.querySelector(".col-body");
+          if (body) scrolls[c.dataset.colId] = body.scrollTop;
+        });
+
         wrap.innerHTML = "";
-        buildCols().forEach((cd) => wrap.appendChild(buildColEl(cd)));
+        buildCols().forEach((cd) => {
+          const colEl = buildColEl(cd);
+          colEl.dataset.colId = cd.id;
+          wrap.appendChild(colEl);
+        });
+
+        // restore scroll positions
+        wrap.querySelectorAll(".col").forEach((c) => {
+          const body = c.querySelector(".col-body");
+          if (body && scrolls[c.dataset.colId]) body.scrollTop = scrolls[c.dataset.colId];
+        });
+
         const last = [...wrap.children].filter((c) => !c.classList.contains("collapsed")).pop();
         if (last) setTimeout(() => last.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "end" }), 50);
+
+        if (EDIT_KEY) {
+          setTimeout(() => {
+            const el = document.querySelector(`[data-key="${EDIT_KEY}"]`);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              const ta = el.querySelector("textarea");
+              if (ta) {
+                ta.focus();
+                ta.setSelectionRange(ta.value.length, ta.value.length);
+              }
+            }
+          }, 60);
+        }
       }
 
       function buildColEl(cd) {
         const el = document.createElement("div");
         el.className = "col" + (COL_COLLAPSED[cd.id] ? " collapsed" : "");
+        
         const hdr = document.createElement("div");
         hdr.className = "col-hdr";
         const lbl = document.createElement("span");
@@ -1193,12 +1261,17 @@
           return el;
         }
         const dn = deckName || item.deckName;
+
+     
         let cls = "item";
         if (vis(item.key)) cls += " visited";
         else cls += " unvisited";
         if (item.selected) cls += " selected";
         if (item.dimmed) cls += " dimmed";
         el.className = cls;
+
+           if (dn === "DECK_ANGRY_HELLO" || dn === "DECK_ANGRY_PITCH") el.classList.add("angry");
+if (dn === "DECK_HUNGRY_HELLO" || dn === "DECK_HUNGRY_PITCH") el.classList.add("hungry");
         el.dataset.key = item.key;
         if (EDIT_KEY === item.key && dn) {
           buildEditMode(el, item, dn);
@@ -1230,23 +1303,33 @@
           meta.appendChild(s);
         }
         if (meta.children.length) el.appendChild(meta);
-        if (item.score != null) {
-          const scoreLabel = item.score === 3 ? "follows ✓" : item.score === 2 ? "boost" : item.score === 0 ? "fair draw" : "cooled";
-          const sb = document.createElement("span");
-          sb.className = `score-badge score-${item.score < 0 ? "n" + Math.abs(item.score) : item.score}`;
-          sb.textContent = scoreLabel;
-          const sr = document.createElement("div");
-          sr.style.marginTop = "4px";
-          sr.appendChild(sb);
-          el.appendChild(sr);
-        }
+       if (item.score != null) {
+  const scoreLabel = item.score === 4 ? "follows ✓"
+                   : item.score === 2 ? "boost"
+                   : item.score === 0 ? "fair draw"
+                   : "suppressed";
+  const sb = document.createElement("span");
+  sb.className = `score-badge score-${item.score < 0 ? "n" + Math.abs(item.score) : item.score}`;
+  sb.textContent = scoreLabel;
+  const sr = document.createElement("div");
+  sr.style.marginTop = "4px";
+  sr.appendChild(sb);
+  el.appendChild(sr);
+}
+        let clickTimer = null;
+
         el.addEventListener("click", (e) => {
           if (e.target.closest(".ebtn,.tag-x,.tag-in,.edit-ta,.follows-in")) return;
-          markV(item.key);
-          onSelect(dn, item.idx);
+          clearTimeout(clickTimer);
+          clickTimer = setTimeout(() => {
+            markV(item.key);
+            onSelect(dn, item.idx);
+          }, 220);
         });
+
         el.addEventListener("dblclick", (e) => {
           e.stopPropagation();
+          clearTimeout(clickTimer); // cancel the single-click action
           if (!dn) return;
           EDIT_KEY = item.key;
           render();
@@ -1268,7 +1351,8 @@
         // blur on textarea → auto-save text and close edit mode
         ta.addEventListener("blur", () => {
           setTimeout(() => {
-            if (EDIT_KEY !== item.key) return; // already closed by button
+            if (EDIT_KEY !== item.key) return;
+            if (el.contains(document.activeElement)) return; // focus stayed inside item
             const v = ta.value.trim();
             if (!v) return;
             if (obj.t !== undefined) obj.t = v;
