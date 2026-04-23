@@ -462,8 +462,6 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "this is the most reasonable thing I've said all week.", tags: [] },
   { t: "the store closes at 10. we don't have to.", tags: ["dumpsters"] },
   { t: "the bin is public property once it's on the curb. I read that somewhere.", tags: ["dumpsters"] },
-  { t: "PA is forty minutes away and still expensive. so.", tags: [] },
-  { t: "Jean-Talon has beautiful produce. I stood there. then I left.", tags: [] },
   { t: "three blocks from a Metro and I still can't afford it.", tags: [] },
   { t: "Hochelaga doesn't have a PA. we have what we have.", tags: [] },
   { t: "your kids are watching you put things back at checkout. not tonight.", tags: ["kids"], follows: "kids" },
@@ -694,7 +692,6 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "the Competition Bureau shrugged. we don't have to.", tags: ["three-co"], follows: "audit" },
 ]);
 
-// this is where I stopped 
 
 
 const D_INVITE = [

@@ -486,27 +486,7 @@
     return MIRROR_H[ch] || ch;
   }
 
-  // function renderInterFrame() {
-  //   const f = INTER_FRAMES[interFrameIdx];
-  //   const colW = W < 36 ? Math.min(3, f.colW) : f.colW;
-  //   const color = bannerColor || C_DIM;
-  //   grid.text(f.tl, 0, 0, color);
-  //   for (let x = 1; x < W - 1; x++) grid.set(x, 0, f.top, color);
-  //   grid.text(f.tr, W - 1, 0, color);
-  //   grid.text(f.bl, 0, H - 1, color);
-  //   for (let x = 1; x < W - 1; x++) grid.set(x, H - 1, f.bot, color);
-  //   grid.text(f.br, W - 1, H - 1, color);
-  //   for (let y = 1; y < H - 1; y++) {
-  //     const rowIdx = (y - 1) % f.left.length;
-  //     const row = f.left[rowIdx];
-  //     const leftStr = row.substring(0, colW);
-  //     grid.text(leftStr, 0, y, color);
-  //     // place right column right-to-left from screen edge
-  //     for (let i = 0; i < colW; i++) {
-  //       grid.set(W - 1 - i, y, mirrorChar(leftStr[i]), color);
-  //     }
-  //   }
-  // }
+
   function renderInterFrame() {
     const f = INTER_FRAMES[interFrameIdx];
     // Fall back to single rail on narrow screens so patterns aren't
@@ -1910,13 +1890,13 @@
     bannerTimer = 0;
     // showBanner(window.LANG.bannerRecruitCrew, C_ORANGE, 5000);
 
-    setTimeout(() => {
-      if (phase === "act2") {
-        bannerText += "\n\n" + window.LANG.bannerWatchNarcs;
+    // setTimeout(() => {
+    //   if (phase === "act2") {
+    //     bannerText += "\n\n" + window.LANG.bannerWatchNarcs;
 
-        bannerTimer = Math.max(bannerTimer, 3500); // reset timer after appending line
-      }
-    }, 1800);
+    //     bannerTimer = Math.max(bannerTimer, 3500); // reset timer after appending line
+    //   }
+    // }, 1800);
   }
 
   function updateAct2(dt) {

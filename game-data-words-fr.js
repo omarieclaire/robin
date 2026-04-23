@@ -547,17 +547,12 @@ const DECK_STRONGER_PITCH = new DM.Deck([
 ]);
 
 
-// this is where I stopped 
-
 const D_INVITE = [
   { t: "viens avec nous ce soir ?", tags: [] },
   { t: "fait que. t'es dedans ?", tags: [] },
-  { t: "tu viens avec nous ?", tags: [] },
   { t: "tu veux en être ?", tags: [] },
   { t: "t'es avec nous ?", tags: [] },
   { t: "ce soir. t'es libre ?", tags: [] },
-  { t: "la porte est ouverte si tu veux.", tags: [] },
-  { t: "on y va ce soir. je dis ça je dis rien.", tags: [] },
   { t: "on aurait besoin de quelqu'un comme toi.", tags: [] },
   { t: "qu'est-ce que t'as à perdre ?", tags: [] },
   { t: "on attend plus. toi non plus t'as pas besoin.", tags: [] },
@@ -572,33 +567,28 @@ const D_INVITE = [
   { t: "on a fini de demander gentiment. toi ?", tags: [] },
   { t: "ce soir on mange. tu veux nous rejoindre ?", tags: [] },
   { t: "dis juste le mot.", tags: [] },
-  { t: "t'as pas à décider là maintenant. enfin, un peu oui.", tags: [] },
-  { t: "je vais prendre un peut-être comme un oui.", tags: [] },
 ];
+
 
 const DECK_MISMATCH_TOO_LITERAL = new DM.Deck([
   { t: "c'est pas une question d'un repas. c'est tous les repas.", tags: [] },
   { t: "je veux pas la charité. je veux que ça arrête.", tags: [] },
-  { t: "on peut pas juste prendre du pain pour toujours. c'est pas le point.", tags: ["bread"] },
   { t: "j'ai pas faim. je suis en colère. c'est différent.", tags: [] },
   { t: "un repas règle rien de tout ça.", tags: [] },
   { t: "nourris-moi ce soir, la même chose arrive demain.", tags: [] },
-  { t: "j'apprécie mais un sandwich c'est pas le point.", tags: [] },
-  { t: "je cherche pas une collation. je cherche un changement.", tags: [] },
+  { t: "j'apprécie. je pense juste plus loin que ce soir.", tags: [] },
   { t: "c'est un symptôme. je parle de la maladie.", tags: [] },
   { t: "le problème c'est pas que j'ai faim. c'est pourquoi.", tags: [] },
   { t: "j'ai mangé. c'est pas une question de mon estomac.", tags: [] },
-  { t: "tu traites ça comme de la charité. c'est pas ça.", tags: [] },
   { t: "court terme, sûr. pis après ?", tags: [] },
   { t: "on peut pas manger pour s'en sortir.", tags: [] },
-  { t: "je veux pas leur bouffe. je veux qu'ils arrêtent.", tags: [] },
   { t: "tu décris un symptôme. je veux parler de la cause.", tags: [] },
-  { t: "prendre du pain change pas qui possède la boulangerie.", tags: ["bread"] },
   { t: "j'ai dépassé la faim. je suis à un stade différent maintenant.", tags: [] },
   { t: "c'est pas rien. c'est juste pas assez.", tags: [] },
   { t: "j'ai besoin que le système change, pas mon souper.", tags: [] },
   { t: "ce soir règle ce soir. je parle de chaque soir.", tags: [] },
 ]);
+
 
 const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   { t: "je sais tout ça. j'ai juste besoin de manger ce soir.", tags: [] },
@@ -616,13 +606,11 @@ const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   { t: "je te crois. j'ai juste besoin de passer ce soir d'abord.", tags: [] },
   { t: "les affaires structurelles je comprends. c'est juste pas où j'en suis là.", tags: [] },
   { t: "sûr. mais aussi — t'as de la bouffe ?", tags: [] },
-  { t: "je sais pour Weston. je sais aussi pour mon frigo vide.", tags: ["weston"] },
-  { t: "l'affaire du cartel du pain c'est réel mais le pain coûte aussi juste six dollars et j'ai faim.", tags: ["bread", "price-fixing"] },
-  { t: "je vais marcher sur le parlement la semaine prochaine. ce soir j'ai besoin d'un souper.", tags: [] },
   { t: "l'analyse est correcte. mon frigo est encore vide.", tags: [] },
   { t: "je veux la révolution. je veux aussi qu'elle vienne avec de la bouffe.", tags: [] },
   { t: "très convaincant. j'ai encore pas mangé.", tags: [] },
 ]);
+
 
 const D_JOIN_CONSENT_PAIRS = [
   { join: "tu sais quoi, j'attendais que quelqu'un dise ça à voix haute", consent: "je suis dedans" },
@@ -660,55 +648,53 @@ const D_JOIN_CONSENT_PAIRS = [
   { join: "j'ai failli me convaincre de pas revenir. je l'ai pas fait.", consent: "allons-y" },
   { join: "honnêtement je pensais que quelqu'un de plus courageux que moi ferait ça en premier", consent: "c'est nous. allons-y" },
   { join: "je pourrais être chez moi à regarder la TV. c'est mieux que ça.", consent: "allons-y" },
+  { join: "je suis prêt.", consent: "où je signe ?" },
+  { join: "tant pis.", consent: "je suis dedans." },
+  { join: "chaque jour je me dis que demain va être différent.", consent: "je suis dedans." },
+  { join: "si c'est pas nous, c'est qui ?", consent: "en avant !" },
+  { join: "j'allais écrire une lettre ferme.", consent: "compte sur moi !" },
+  { join: "le boycott a rien changé.", consent: "ça va peut-être faire quelque chose. je suis dedans." },
 ];
+
 
 const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "laisse faire.", tags: [] },
   { t: "oublie ce que j'ai dit.", tags: [] },
   { t: "rien. ignore-moi.", tags: [] },
-  { t: "laisse tomber.", tags: [] },
-  { t: "mauvais timing.", tags: [] },
   { t: "fais semblant que j'ai rien dit.", tags: [] },
   { t: "je ventile juste.", tags: [] },
-  { t: "mauvaise personne, désolé.", tags: [] },
   { t: "je pensais à voix haute.", tags: [] },
-  { t: "t'en fais pas.", tags: [] },
-  { t: "je me suis mal exprimé.", tags: [] },
   { t: "c'était rien.", tags: [] },
-  { t: "de toute façon.", tags: [] },
+  { t: "laisse tomber.", tags: [] },
+    { t: "de toute façon.", tags: [] },
+
   { t: "on va juste — laisse faire.", tags: [] },
 ]);
+
 
 const D_BACK_OFF_LATE = new DM.Deck([
   { t: "complètement hypothétique. oublie ça.", tags: [] },
   { t: "fais semblant que j'ai dit quelque chose sur la météo.", tags: [] },
   { t: "je ventile juste. philosophiquement.", tags: [] },
-  { t: "mauvaise personne. ignore tout.", tags: [] },
   { t: "j'ai pas la bonne face pour cette conversation.", tags: [] },
   { t: "c'était un test. tu as réussi. il y a pas de plan.", tags: [] },
   { t: "c'était un extrait d'une pièce que j'écris.", tags: [] },
-  { t: "extrêmement hypothétique. je peux pas assez insister là-dessus.", tags: [] },
   { t: "j'ai aucune idée de quoi je parlais.", tags: [] },
   { t: "je voulais dire ça comme métaphore.", tags: [] },
   { t: "légalement, rien de ça s'est passé.", tags: [] },
-  { t: "je décrivais un film. je me rappelle plus lequel.", tags: [] },
-  { t: "mauvaise personne. mauvais quartier.", tags: [] },
-  { t: "on s'entend tous les deux que j'ai rien dit de ça.", tags: [] },
   { t: "je faisais un numéro. je vais partir maintenant.", tags: [] },
   { t: "en y repensant, je m'éloigne de cette conversation.", tags: [] },
   { t: "mon avocat aimerait que j'arrête de parler.", tags: [] },
 ]);
 
+
 const D_NARC_REVEAL = [
   { t: "mon mari est un FLIC", tags: [] },
-  { t: "j'appelle là MAINTENANT", tags: [] },
   { t: "je POSSÈDE des actions Loblaws", tags: [] },
   { t: "j'appelle le 911 !", tags: [] },
   { t: "yo trouve-toi un emploi !", tags: [] },
   { t: "c'est un Metro, pas un manifeste", tags: [] },
   { t: "c'est du VOL !", tags: [] },
-  { t: "serre juste ta ceinture", tags: [] },
-  { t: "PAS sous ma surveillance !", tags: [] },
   { t: "monsieur c'est une épicerie", tags: [] },
   { t: "c'est PAS comme ça que le changement arrive !", tags: [] },
   { t: "le marché va régler ça naturellement !", tags: [] },
@@ -717,8 +703,8 @@ const D_NARC_REVEAL = [
   { t: "les marchés sont EN HAUSSE aujourd'hui !", tags: [] },
   { t: "t'as juste à essayer de budgéter", tags: [] },
   { t: "je suis au conseil de Loblaws partenaires communautaires !", tags: [] },
-  { t: "Galen est un BON homme !", tags: [] },
-  { t: "j'ai besoin que tu arrêtes de parler MAINTENANT", tags: [] },
+  { t: "la réduflation c'est de l'INNOVATION !", tags: [] },
+  { t: "certains d'entre nous AIMENT être touchés par la main invisible !", tags: [] },
 ];
 
 const D_NOT_NOW = [
@@ -730,7 +716,6 @@ const D_NOT_NOW = [
   { t: "j'ai de l'anxiété", tags: [] },
   { t: "mon cœur dit oui, ma tolérance au risque dit non", tags: [] },
   { t: "j'ai besoin de réfléchir", tags: [] },
-  { t: "mes enfants sont à la maison", tags: [] },
   { t: "j'ai du travail demain", tags: [] },
   { t: "j'ai peur de me faire prendre", tags: [] },
   { t: "demande-moi encore dans une heure", tags: [] },
@@ -741,7 +726,14 @@ const D_NOT_NOW = [
   { t: "j'ai besoin d'y dormir dessus.", tags: [] },
   { t: "je suis presque là. donne-moi une journée.", tags: [] },
   { t: "t'as pas tort. j'ai juste peur.", tags: [] },
+  { t: "je suis à deux doigts. je suis juste pas encore là.", tags: [] },
+  { t: "j'ai besoin de manger quelque chose d'abord. ironiquement.", tags: [] },
+  { t: "j'arrête pas de presque dire oui.", tags: [] },
+  { t: "donne-moi jusqu'à demain. je suis sérieux.", tags: [] },
+  { t: "je veux. c'est juste — pas ce soir.", tags: [] },
+  { t: "j'ai pensé à exactement ça. j'ai juste besoin d'une journée de plus.", tags: [] },
 ];
+
 
 const D_NO_BYE = [
   { t: "ouais, non merci", tags: [] },
@@ -759,7 +751,9 @@ const D_NO_BYE = [
   { t: "respectueusement, non", tags: [] },
   { t: "non ferme", tags: [] },
   { t: "je vais m'en aller là", tags: [] },
+  { t: "j'ai pas envie, merci.", tags: [] },
 ];
+
 
 const D_RETURN = [
   { t: "hé — j'ai changé d'idée. je suis dedans.", tags: [] },
@@ -770,7 +764,6 @@ const D_RETURN = [
   { t: "j'ai pensé à mes enfants. je suis dedans.", tags: ["kids"] },
   { t: "tant pis. je suis dedans.", tags: [] },
   { t: "je suis rentré et j'ai regardé mon frigo. okay. je suis dedans.", tags: [] },
-  { t: "j'arrêtais pas de penser à ce que tu as dit sur la benne. allons-y.", tags: ["dumpsters"] },
   { t: "j'ai appelé ma sœur. elle a dit fais-le. fait que.", tags: [] },
   { t: "j'ai failli me convaincre trois fois. pis non.", tags: [] },
   { t: "je suis resté devant le magasin pendant vingt minutes. pis je suis revenu ici.", tags: [] },
@@ -781,6 +774,8 @@ const D_RETURN = [
   { t: "j'ai pensé à ce que tu as dit sur les enfants. je suis dedans.", tags: ["kids"] },
   { t: "okay. tu m'as convaincu. allons-y.", tags: [] },
 ];
+
+
 
 const D_ACK_HUNGRY_ANGRY = ["exactement,", "hein ?"];
 const D_ACK_NARC = ["ben, ", "tu sais, ", "honnêtement, ", "je veux dire, "];
