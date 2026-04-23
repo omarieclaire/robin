@@ -120,12 +120,6 @@ const D_AMB_NARC = [
   "I heard groceries are actually a low-margin business",
   "maybe stop buying avocados",
   "someone has to pay for the renovations",
-  // new narc
-  "I get my points at Shoppers too. it's very convenient.",
-  "the boycott was just social media noise",
-  "Joe Fresh has great basics, actually",
-  "the Competition Bureau looked into it. nothing to see.",
-  "Galen Jr. is nothing like Galen Sr.",
 ];
 
 // ─────────────────────────────────────────
@@ -699,6 +693,8 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   // audit → three-co: the Bureau shrugged
   { t: "the Competition Bureau shrugged. we don't have to.", tags: ["three-co"], follows: "audit" },
 ]);
+
+// this is where I stopped 
 
 
 const D_INVITE = [

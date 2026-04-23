@@ -407,6 +407,8 @@
   function initInter(lines, nextFn, frameIdx) {
     phase = "inter";
     interFrameIdx = frameIdx || 0;
+      // interFrameIdx = frameIdx ?? 0;  // ?? instead of || so frameIdx=0 is intentional, not a fallback
+
 
     interT = 0;
     interLines = lines;
@@ -522,7 +524,7 @@
     for (let x = 1; x < W - 1; x++) grid.set(x, 0, f.top, color);
     for (let x = 1; x < W - 1; x++) grid.set(x, H - 1, f.bot, color);
 
-    // side columns — your original right-side logic, untouched
+    // side columns — original right-side logic, untouched
     for (let y = 1; y < H - 1; y++) {
       const rowIdx = (y - 1) % f.left.length;
       const leftStr = f.left[rowIdx].substring(0, colW);
@@ -1596,7 +1598,7 @@
             // { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
             // { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
           ],
-          initAct2,
+          initAct2, 0,
         );
     }
   }
@@ -2363,7 +2365,7 @@
               d: 2000,
             },
           ],
-          initAct2b,
+          initAct2b, 1,
         );
       }
       return;
@@ -2881,7 +2883,7 @@
                 d: 1200,
               },
             ],
-            initAct3,
+            initAct3, 2,
           ),
         1500,
       );
@@ -3160,8 +3162,8 @@
               d: 2500,
             },
           ],
-          initAct4,
-          4,
+          initAct4, 
+          3,
         );
         return;
       }
@@ -4295,7 +4297,7 @@
           },
         ],
         initAct5,
-        5,
+        4,
       );
       return;
     }
@@ -4651,7 +4653,7 @@
               d: 3000,
             },
           ],
-          initAct1,
+          initAct1, 0,
         ),
       2: () =>
         initInter(
@@ -4667,7 +4669,7 @@
               d: 2000,
             },
           ],
-          initAct2,
+          initAct2,1,
         ),
       3: () =>
         initInter(
@@ -4683,7 +4685,7 @@
               d: 2000,
             },
           ],
-          initAct2b,
+          initAct2b,2,
         ),
       4: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
@@ -4705,7 +4707,7 @@
               d: 1200,
             },
           ],
-          initAct3,
+          initAct3,3,
           3,
         );
       },
@@ -4719,7 +4721,7 @@
               d: 2500,
             },
           ],
-          initAct4,
+          initAct4,4,
           4,
         );
       },
@@ -4734,7 +4736,7 @@
               d: 2500,
             },
           ],
-          initAct5,
+          initAct5,5,
           5,
         );
       },
