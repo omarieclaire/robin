@@ -11,6 +11,8 @@ window.LANG_EN = {
 
   // banners
   bannerIsThisALife: "is this a life?",
+  bannerWhoIsInControl: "who's in control here?",
+
   bannerRecruitCrew: "recruit your crew",
   bannerWatchNarcs: "but watch out for narcs",
   bannerRallyNeighbourhood: "rally the neighbourhood!",
@@ -77,13 +79,13 @@ window.LANG_EN = {
     turns: [
       { who: "p", texts: ["when did food get so expensive?", "ugh, when did grocery stores get so fucké?", "crisse, when did food get sacrament chére?", "ostie, when did food get SO expensive??", "CÂLICE. when did food get this expensive??"] },
       { who: "n", text: "I use a coupon app" },
-      { who: "p", texts: ["uh, ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
+      { who: "p", texts: ["ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
     ],
   },
   {
     turns: [
       { who: "p", texts: ["$2 for an apple?", "2 piasses for a freaking apple??", "ostie de... $2 for ONE apple?", "esti de marde, 2 PIASSES for ONE apple", "CÂLICE. 2 for an apple??!"] },
-      { who: "n", text: "yeah, and?" },
+      { who: "n", text: "and?" },
       { who: "p", texts: ["and...we can't survive like this", "viarge, we can't keep living like this", "câline, we just CAN'T survive like this", "CRISSE. nobody can survive like this", "TABARNAK. nobody should have to survive like this"] },
     ],
   },
@@ -91,7 +93,7 @@ window.LANG_EN = {
     turns: [
       { who: "p", texts: ["someone should do something", "câline, someone HAS to do something", "CRISSE, somebody has to do something about this", "câline. somebody needs to do something", "ESTI DE CÂLICE DE TABARNAK. someone has to do something"] },
       { who: "n", text: "you know, stealing from a thief isn't stealing" },
-      { who: "p", texts: ["what?!", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
+      { who: "p", texts: ["what?", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
     ],
   },
 ],
@@ -131,7 +133,7 @@ vigTemplates: [
   (nm) => nm.n + " is cooking a real dinner for " + nm.p + " grandma",
 ],
 endNames: [
-  { n: "Marie", p: "her" },
+  { n: "Marie", p: "their" },
   { n: "Manu", p: "his" },
   { n: "Fatima", p: "her" },
   { n: "Olivier", p: "his" },
@@ -148,7 +150,7 @@ endYouAte: "(and you ate too)",
 
 muteMuted: "muted",
 muteMute: "mute",
-act1Choices: ["I've had enough", "What choice do I have? I'll just keep living like this"],
+act1Choices: ["I've had enough", "what choice do I have?"],
 bannerOneStore: "\nOne store.",
 bannerLetsEat: "\nLet's eat.",
 neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
@@ -184,5 +186,13 @@ promptTap: "[ tap ]",
 promptTapToPlaceFood: "[ TAP TO PLACE FOOD ]",
 urgencyCopsEnRoute: ">> COPS EN ROUTE <<",
 urgencyFindExit: "!! FIND AN EXIT !!",
+
+
+controlsAct2: "arrow keys or tap to move",
+controlsAct2b: "arrow keys or tap to move",
+controlsAct4: "arrow keys to move — click to grab food",
+
+endGameTimedOutTitle: "BUSTED!",
+endGameTimedOutSub: "The narcs reported you. Next time work faster.",
 };
 

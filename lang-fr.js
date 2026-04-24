@@ -2,7 +2,7 @@ window.LANG_FR = {
   test: "Bonjour de la version française",
   playBtn: "JOUER",
   overlayTitle: "ROBIN  DES RUELLES",
-  overlaySub: "promène-toi et parle à tes voisins — n'importe quoi peut arriver<br><br>",
+  overlaySub: "promène-toi et parle à tes voisins n'importe quoi peut arriver<br><br>",
   overlayHint: "\u25B2\u25BC pour changer de rangée<br>Marche vers les gens pour leur parler<br><br>",
   hudCrewLabel: "ÉQUIPE",
   hudAct2Status: "Appuie \u25B2\u25BC pour bouger!",
@@ -11,6 +11,7 @@ window.LANG_FR = {
 
   // banners
   bannerIsThisALife: "c'est ça, la vie?",
+  bannerWhoIsInControl: "c'est qui qui décide ici?",
   bannerRecruitCrew: "recrute ton équipe",
   bannerWatchNarcs: "mais méfie-toi des mouchards",
   bannerRallyNeighbourhood: "rallie le quartier!",
@@ -91,7 +92,7 @@ window.LANG_FR = {
     turns: [
       { who: "p", texts: ["quelqu'un devrait faire quelque chose", "câline, quelqu'un DOIT faire quelque chose", "CRISSE, quelqu'un doit faire quelque chose", "câline. quelqu'un doit agir", "ESTI DE CÂLICE DE TABARNAK. quelqu'un doit faire quelque chose"] },
       { who: "n", text: "voler un voleur, c'est pas voler" },
-      { who: "p", texts: ["quoi?!", "...WTF?", "ostie... ça veut dire quoi", "QU'EST-CE QUE TU DIS?", "TABARNAK! répète ça!"], delay: 2800 },
+      { who: "p", texts: ["quoi?", "...WTF?", "ostie... ça veut dire quoi", "QU'EST-CE QUE TU DIS?", "TABARNAK! répète ça!"], delay: 2800 },
     ],
   },
 ],
@@ -148,7 +149,7 @@ endYouAte: "(toi aussi tu as mangé)",
 
 muteMuted: "sourdine",
 muteMute: "son",
-act1Choices: ["j'en ai assez", "Qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
+act1Choices: ["j'en ai assez", "qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
 bannerOneStore: "\nUne épicerie.",
 bannerLetsEat: "\nOn mange.",
 neighbourMsgs: ["merci", "mes enfants mangent ce soir", "enfin", "avec amour!", "merci beaucoup", "thank you"],
@@ -183,4 +184,11 @@ promptTap: "[ toucher ]",
 promptTapToPlaceFood: "[ TOUCHER POUR DÉPOSER ]",
 urgencyCopsEnRoute: ">> FLICS EN ROUTE <<",
 urgencyFindExit: "!! TROUVE UNE SORTIE !!",
+
+controlsAct2: "flèches ou touche pour bouger",
+controlsAct2b: "flèches ou touche pour bouger",
+controlsAct4: "flèches pour bouger — clique pour prendre la bouffe",
+
+endGameTimedOutTitle: "POGNÉ!",
+endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite.",
 };

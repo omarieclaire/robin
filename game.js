@@ -19,6 +19,31 @@
     muteBtn.style.color = muted ? "#444" : C_DIM;
   });
 
+  const quitBtn = document.getElementById("quit-btn");
+  quitBtn.addEventListener("click", () => {
+    try {
+      loop.stop();
+    } catch (_) {}
+    floats.length = 0;
+    sparks.length = 0;
+    dialogStack = [];
+    convReset();
+    bannerTimer = 0;
+    bannerText = "";
+    clickPending = false;
+    a2TN = null;
+    a2CrewCount = 0;
+    a2Crew = [];
+    phase = "done";
+    overlay.classList.remove("hidden");
+    ovTitle.textContent = window.LANG.overlayTitle;
+    ovTitle.style.color = C_PLAYER;
+    ovSub.innerHTML = window.LANG.overlaySub;
+    // ovHint.innerHTML = window.LANG.overlayHint;
+    startBtn.textContent = window.LANG.playBtn;
+    startBtn.style.display = "";
+  });
+
   const langBtn = document.getElementById("lang-btn");
 
   langBtn.textContent = window.LANG === window.LANG_FR ? "EN" : "FR";
@@ -255,6 +280,7 @@
     right: ["ArrowRight", "d"],
     up: ["ArrowUp", "w"],
     down: ["ArrowDown", "s"],
+    action: ["Enter", " "],
   });
   let loop, phase;
   const floats = [];
@@ -404,21 +430,23 @@
   }
 
   let interT, interLines, interLI, interNext, interDone, interFrameIdx;
-  function initInter(lines, nextFn, frameIdx) {
+  let interControlsHint = null;
+  function initInter(lines, nextFn, frameIdx, controlsHint) {
+    if (!lines || lines.length === 0) {
+      if (nextFn) nextFn();
+      return;
+    }
     phase = "inter";
     interFrameIdx = frameIdx || 0;
-      // interFrameIdx = frameIdx ?? 0;  // ?? instead of || so frameIdx=0 is intentional, not a fallback
-
-
     interT = 0;
     interLines = lines;
     interLI = 0;
     interNext = nextFn;
     interDone = false;
+    interControlsHint = controlsHint || null;
     bannerTimer = 0;
     dialogStack = [];
     clickPending = false;
-    // show first line immediately
     showBanner(interLines[0].t, interLines[0].c, 99999, true);
     interLI = 1;
   }
@@ -438,7 +466,7 @@
     }
     console.log("interLI", interLI, "interLines.length", interLines.length, "interT", Math.round(interT), "interDone", interDone);
     // auto-advance after last line
-    if (!interDone && interLI >= interLines.length && interT > 2500) {
+    if (!interDone && interLI >= interLines.length && interT > 5000) {
       interDone = true;
       bannerTimer = 0;
       interNext();
@@ -486,7 +514,6 @@
     return MIRROR_H[ch] || ch;
   }
 
-
   function renderInterFrame() {
     const f = INTER_FRAMES[interFrameIdx];
     // Fall back to single rail on narrow screens so patterns aren't
@@ -516,9 +543,13 @@
   }
 
   function renderInter() {
-    console.log("W=", W, "H=", H);
     renderInterFrame();
     renderBanner();
+    if (interControlsHint) {
+      const hintY = Math.floor(H * 0.72);
+      grid.textCenter(interControlsHint, hintY, Math.sin(Date.now() / 600) > 0 ? C_DIM : "#555");
+      grid.textCenter("tap to continue", hintY + 2, Math.sin(Date.now() / 400) > 0 ? "#444" : "#333");
+    }
   }
 
   function convStartFade() {
@@ -1062,7 +1093,7 @@
     ];
     a1Path = [
       { x: vRoadX(sc), y: ry0 },
-      { x: ex0 - 2, y: ry0 },
+      { x: ex0 - 4, y: ry0 },
     ];
     a1PA = [
       [
@@ -1143,7 +1174,7 @@
       }
       if (tooClose) continue;
       placed++;
-      const msg = Util.pick(["ugh", "merde", ":(", "sigh", "...", "pfft", "crisse", "oy", "bruh", "why", "$$$", "tired"]);
+      const msg = Util.pick(["ugh", "merde", ":(", "sigh", "...", "pfft", "crisse", "oy", "bruh", "why me", "$$$", "so tired"]);
       const startShowing = Math.random() < 0.4;
       a1AmbNPCs.push({
         x: nx,
@@ -1201,7 +1232,8 @@
     }
     if (a1St === "pause") {
       a1ST2 += dt;
-      if (a1ST2 > 1000) {
+      // 2sec player pause before walking
+      if (a1ST2 > 5000) {
         a1St = "walk";
         a1ST2 = 0;
         a1IdleTimer = 0;
@@ -1369,7 +1401,6 @@
           if (clickSY < splitY) {
             // "I've had enough"
             a1St = "outro";
-            // burst from player position
             const ox = Math.floor(a1CX),
               oy = Math.floor(a1CY);
             const px = Math.round(a1PX) - ox,
@@ -1377,10 +1408,12 @@
             burstGood(px, py, C_PLAYER, 16);
             triggerFlashGood();
             a1NP = 0;
+            a1ST2 = 0;
+            a1PauseT = 1200; // hold off the outro loop until NQ[0] is ready
             setTimeout(() => {
               showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
+              a1NP = 1;
             }, 1200);
-            a1NP = 1;
           } else {
             // "keep living like this"
             const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
@@ -1575,10 +1608,12 @@
       if (a1ST2 > 800)
         initInter(
           [
-            // { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
-            // { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
+            { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
+            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
           ],
-          initAct2, 0,
+          initAct2,
+          0,
+          window.LANG.controlsAct2,
         );
     }
   }
@@ -1650,6 +1685,7 @@
     const pieces = [];
     let remain = blockW;
     let iter = 0;
+    let lastArt = null;
     while (remain > 0 && iter++ < 20) {
       const fits = BUILDINGS.filter((b) => b.size <= remain);
       if (fits.length === 0) break;
@@ -1658,12 +1694,15 @@
         return r === 0 || r >= 6;
       });
       const pool = canClean.length > 0 ? canClean : fits;
-      const b = pool[Math.floor(Math.random() * pool.length)];
+      // Avoid placing the same building art consecutively
+      const noRepeat = pool.filter((b) => b.art !== lastArt);
+      const chosen = (noRepeat.length > 0 ? noRepeat : pool)[Math.floor(Math.random() * (noRepeat.length > 0 ? noRepeat.length : pool.length))];
+      lastArt = chosen.art;
       pieces.push({
-        art: b.art,
-        w: b.size,
+        art: chosen.art,
+        w: chosen.size,
       });
-      remain -= b.size;
+      remain -= chosen.size;
     }
     return pieces;
   }
@@ -2032,9 +2071,9 @@
             }
           }
         }
-        if (input.isDown("up")) a2Choice = 0;
-        if (input.isDown("down")) a2Choice = 1;
-        if (input.isDown("action")) a2Choice = 2;
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
@@ -2046,13 +2085,18 @@
           if (a2Choice === 2) {
             a2TP = 25;
           } else {
+            // Append invite line after a short beat
+        // Append invite line after a short beat
+            setTimeout(() => {
+              if (a2TP === 14) convAddLine(DM.draw(DECK_F_INVITE), "you", convPlayerColor);
+            }, 1200);
             a2TP = 14;
           }
           a2TT = 0;
         }
       }
       // ── TP 14: check match, route accordingly ──
-      else if (a2TP === 14 && a2TT > 1600) {
+      else if (a2TP === 14 && a2TT > 3000) {
         const matched = (a2Choice === 0 && a2TN.kind === "angry") || (a2Choice === 1 && a2TN.kind === "hungry");
         if (a2TN.tp === "narc") {
           const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, {
@@ -2076,15 +2120,24 @@
           addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
 
           a2TP = 7;
-        } else {
-          const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
-            follows: a2ChoiceTags?.[a2Choice] ?? [],
-            boost: true,
-          });
-          a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
-          convAddLine(warmResult.text, "them", convNPCColor);
-          a2TP = 15;
-        }
+        
+          } else {
+  if (Math.random() < 0.8) {
+    // skip "say more" — join immediately
+    const pair = DM.draw(DECK_JOIN_CONSENT);
+    convAddLine(pair.join, "them", convNPCColor);
+    a2TN._line2 = pair.consent;
+    a2TP = 21;
+  } else {
+    const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
+      follows: a2ChoiceTags?.[a2Choice] ?? [],
+      boost: true,
+    });
+    a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
+    convAddLine(warmResult.text, "them", convNPCColor);
+    a2TP = 15;
+  }
+}
         a2TT = 0;
       }
 
@@ -2118,8 +2171,9 @@
             a2Choice = clickSY < half ? 0 : 1;
           }
         }
-        if (input.justPressed("up")) a2Choice = 0;
-        if (input.justPressed("down")) a2Choice = 1;
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
@@ -2225,9 +2279,6 @@
           art: n.art,
           col: n.col,
         });
-        console.log("float test:", window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows);
-        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
-
         addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
         a2TN.cd = 1000;
         a2TN = null;
@@ -2260,7 +2311,7 @@
         for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
         spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
 
-        if (a2Ht >= A2_MH) setTimeout(() => endGame("busted"), 2000);
+        if (a2Ht >= A2_MH) setTimeout(() => quickBust("busted", initAct2), 2000);
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
@@ -2332,20 +2383,15 @@
       }
       if (a2SDT > 5000 && clickPending) {
         clickPending = false;
+
         initInter(
           [
-            {
-              t: window.LANG.bannerRallyNeighbourhood,
-              c: C_ORANGE,
-              d: 2000,
-            },
-            {
-              t: window.LANG.bannerAvoidNarcs,
-              c: C_ORANGE,
-              d: 2000,
-            },
+            { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
+            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2000 },
           ],
-          initAct2b, 1,
+          initAct2b,
+          1,
+          window.LANG.controlsAct2b,
         );
       }
       return;
@@ -2469,7 +2515,7 @@
         showBanner(window.LANG.bannerCopsCircling, C_WARN, 3000);
       }
       if (a2T > A2_TIME_LIMIT_MS) {
-        endGame("busted");
+        quickBust("timeout", initAct2);
         return;
       }
     }
@@ -2659,7 +2705,7 @@
         narc: isNarc,
         st: "idle",
         ch: npcArt[0],
-        art: npcArt,
+        art: isNarc ? ["[$]", "/!\\ "] : npcArt,
         col: npcCol,
         shoutT: 0,
         shoutMsg: "",
@@ -2761,7 +2807,7 @@
       for (const n of a2bNPCs) {
         if (n.st !== "idle") continue;
         /* Wider trigger: 6 in X, 4 in Y. */
-        if (Math.abs(n.wx - pwx) < 6 && Math.abs(n.wy - a2bPY) < 4) {
+        if (Math.abs(n.wx - pwx) < 6 && Math.abs(n.wy - a2bPY) < 3) {
           if (n.narc) {
             n.st = "narc";
             audio.play("bump");
@@ -2776,7 +2822,7 @@
             addFloat(Util.pick([window.LANG.floatNarc, window.LANG.floatNarc, window.LANG.floatOops]), 0, 0, C_DANGER);
             showBanner(window.LANG.bannerNarc, C_DANGER, 1800, true);
             if (a2bHt >= A2B_MH) {
-              setTimeout(() => endGame("busted"), 1500);
+              setTimeout(() => quickBust("busted", initAct2b), 1500);
               return;
             }
           } else {
@@ -2863,7 +2909,9 @@
                 d: 1200,
               },
             ],
-            initAct3, 2,
+            initAct3,
+            2,
+            null,
           ),
         1500,
       );
@@ -3059,6 +3107,7 @@
     a3T = 0;
     a3Entering = false;
     a3PlayerX = 0;
+    a3EntryBurst = false;
 
     // showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
     // setTimeout(() => {
@@ -3134,17 +3183,18 @@
       a3PlayerX = Util.lerp(a3PlayerX, dc, 0.15);
       a3PlayerY = Util.lerp(a3PlayerY || Math.floor(H * 0.62) + 3, sY - 2, 0.15);
       if (allIn && Math.abs(a3PlayerX - dc) < 1) {
-        initInter(
-          [
-            {
-              t: window.LANG.bannerGrabEverything,
-              c: C_PLAYER,
-              d: 2500,
-            },
-          ],
-          initAct4, 
-          3,
-        );
+        if (!a3EntryBurst) {
+          a3EntryBurst = true;
+          // Particle burst as crew enters store
+          const _entryStY = Math.floor(H * 0.62);
+          for (let _b = 0; _b < 10; _b++) {
+            burstGood(dc + Util.randInt(-3, 3), _entryStY - 1, a2Crew[_b % a2Crew.length]?.col || C_TEAL, 8);
+          }
+          triggerFlashGood();
+          setTimeout(() => {
+            initInter([{ t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 }], initAct4, 3, window.LANG.controlsAct4);
+          }, 1200);
+        }
         return;
       }
     }
@@ -3263,15 +3313,21 @@
     let bx = s4Bookcases.length > 0 ? Math.max(from, s4Bookcases[s4Bookcases.length - 1].wx + S4_BC_W + S4_BC_GAP) : from;
     while (bx < to) {
       const items = [];
-      for (let row = 0; row < S4_SHELF_ROWS; row++)
-        for (let col = 0; col < ns; col++)
+      for (let row = 0; row < S4_SHELF_ROWS; row++) {
+        let lastFood = null;
+        for (let col = 0; col < ns; col++) {
+          const foodPool = FOODS.filter((f) => f !== lastFood);
+          const chosenFood = Util.pick(foodPool.length > 0 ? foodPool : FOODS);
+          lastFood = chosenFood;
           items.push({
             row,
             col,
-            food: Util.pick(FOODS),
+            food: chosenFood,
             color: Util.pick(FC),
             grabbed: false,
           });
+        }
+      }
       s4Bookcases.push({
         wx: bx,
         items,
@@ -3486,7 +3542,7 @@
         s4LM = i;
       }
     if (s4Ug >= 1) {
-      endGame("caught");
+      quickBust("caught", initAct4);
       return;
     }
 
@@ -3723,7 +3779,10 @@
       // if (exSX - 8 >= 0) grid.set(exSX - 8, S4_FLOOR_Y, "\u2551", C_DANGER);
       if (exSX + 8 < W) grid.set(exSX + 8, S4_FLOOR_Y, "\u2551", C_DANGER);
       const _ef = Math.sin(Date.now() / 220) > 0;
-      grid.text("[ >> EXIT >> ]", Util.clamp(exSX - 7, 0, W - 14), S4_FLOOR_Y, _ef ? "#fff" : "#e60008");
+      const _exitLabel = "[ >> EXIT >> ]";
+      const _exitX = Util.clamp(exSX - 7, 0, W - _exitLabel.length);
+      if (S4_FLOOR_Y - 1 >= 0) grid.text(_exitLabel, _exitX, S4_FLOOR_Y - 1, _ef ? "#fff" : C_DANGER);
+      grid.text(_exitLabel, _exitX, S4_FLOOR_Y, _ef ? C_DANGER : "#fff");
       // if (S4_FLOOR_Y - 1 >= 0) grid.text("EXIT ↓", Util.clamp(exSX - 2, 0, W - 6), S4_FLOOR_Y - 1, C_TEAL);
     }
 
@@ -4264,21 +4323,56 @@
     if (ctaT > 12500 && !ctaChoice) grid.textCenter(window.LANG.promptTap, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
   }
 
+  function quickBust(result, restartFn) {
+    if (phase === "done") return;
+    phase = "done";
+    loop.stop();
+    audio.play("bust");
+    triggerChromatic(1500);
+
+    const isTimeout = result === "timeout";
+    const msg = isTimeout ? window.LANG.endGameTimedOutTitle : result === "busted" ? window.LANG.endGameBustedTitle : window.LANG.endGameCaughtTitle;
+    const col = C_DANGER;
+
+    // Show a brief full-screen message without buttons
+    overlay.classList.remove("hidden");
+    ovTitle.textContent = msg;
+    ovTitle.style.color = col;
+    ovSub.textContent = isTimeout
+      ? window.LANG.endGameTimedOutSub
+      : result === "busted"
+        ? window.LANG.endGameBustedSub
+        : window.LANG.endGameCaughtSub;
+
+    ovHint.textContent = "";
+    startBtn.style.display = "none";
+    overlay.querySelectorAll(".final").forEach((e) => e.remove());
+    overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
+
+    // Auto-restart after 2 seconds
+    setTimeout(() => {
+      overlay.classList.add("hidden");
+      startBtn.style.display = "";
+      floats.length = 0;
+      sparks.length = 0;
+      dialogStack = [];
+      convReset();
+      bannerTimer = 0;
+      bannerText = "";
+      clickPending = false;
+      a2TN = null;
+      a2CrewCount = 0;
+      a2Crew = [];
+      restartFn();
+      loop.start();
+    }, 2000);
+  }
+
   /* ── END GAME (failure) ────────────────────────────────── */
   function endGame(result) {
     if (phase === "done") return;
     if (result === "escaped") {
-      initInter(
-        [
-          {
-            t: window.LANG.bannerShareBounty,
-            c: C_SUCCESS,
-            d: 2500,
-          },
-        ],
-        initAct5,
-        4,
-      );
+      initInter([{ t: window.LANG.bannerShareBounty, c: C_SUCCESS, d: 2500 }], initAct5, 4, null);
       return;
     }
     Music.stop();
@@ -4312,6 +4406,7 @@
     gu.style.marginTop = "4px";
     gu.addEventListener("click", () => {
       hasPlayed = false;
+      overlay.classList.add("hidden");
       startGame();
     });
     startBtn.after(gu);
@@ -4503,25 +4598,26 @@
     overlay.classList.add("hidden");
     if (hasPlayed) {
       initAct2();
+      loop.start();
     } else {
-      initInter(
-        [
-          {
-            t: window.LANG.bannerIsThisALife,
-            c: "#9ab0cc",
-            d: 3000,
-          },
-        ],
-        initAct1,
-        0,
-      );
+      bannerText = "";
+      bannerTimer = 0;
+      showBanner(window.LANG.bannerIsThisALife, "#9ab0cc", 99999, true);
+      initAct1();
+      loop.start();
+      setTimeout(() => {
+        bannerText += "\n\n" + window.LANG.bannerWhoIsInControl;
+        bannerTimer = 99999;
+      }, 3000);
+      setTimeout(() => {
+        bannerTimer = 0;
+      }, 5500);
     }
-    loop.start();
     // hasPlayed is set to true when the player reaches Act 2
   }
   ovTitle.textContent = window.LANG.overlayTitle;
   ovSub.innerHTML = window.LANG.overlaySub;
-  ovHint.innerHTML = window.LANG.overlayHint;
+  // ovHint.innerHTML = window.LANG.overlayHint;
   startBtn.textContent = window.LANG.playBtn;
   // startBtn.addEventListener("click", startGame);
 
@@ -4544,8 +4640,11 @@
       floats.length = 0;
       sparks.length = 0;
       dialogStack = [];
+      convReset();
       bannerTimer = 0;
+      bannerText = "";
       clickPending = false;
+      a2TN = null;
       const jmp = {
         1: () => initAct1(),
         2: () => initAct2(),
@@ -4633,39 +4732,28 @@
               d: 3000,
             },
           ],
-          initAct1, 0,
+          initAct1,
+          0,
         ),
       2: () =>
         initInter(
           [
-            {
-              t: window.LANG.bannerRecruitCrew,
-              c: C_ORANGE,
-              d: 2000,
-            },
-            {
-              t: window.LANG.bannerWatchNarcs,
-              c: C_ORANGE,
-              d: 2000,
-            },
+            { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
+            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
           ],
-          initAct2,1,
+          initAct2,
+          1,
+          window.LANG.controlsAct2,
         ),
       3: () =>
         initInter(
           [
-            {
-              t: window.LANG.bannerRallyNeighbourhood,
-              c: C_ORANGE,
-              d: 2000,
-            },
-            {
-              t: window.LANG.bannerAvoidNarcs,
-              c: C_ORANGE,
-              d: 2000,
-            },
+            { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
+            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2000 },
           ],
-          initAct2b,2,
+          initAct2b,
+          2,
+          window.LANG.controlsAct2b,
         ),
       4: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
@@ -4687,23 +4775,14 @@
               d: 1200,
             },
           ],
-          initAct3,3,
+          initAct3,
+          3,
           3,
         );
       },
       5: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
-        initInter(
-          [
-            {
-              t: window.LANG.bannerGrabEverything,
-              c: C_PLAYER,
-              d: 2500,
-            },
-          ],
-          initAct4,4,
-          4,
-        );
+        initInter([{ t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 }], initAct4, 4, window.LANG.controlsAct4);
       },
       6: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
@@ -4716,7 +4795,8 @@
               d: 2500,
             },
           ],
-          initAct5,5,
+          initAct5,
+          5,
           5,
         );
       },
@@ -4736,9 +4816,13 @@
     } catch (_) {}
     overlay.classList.add("hidden");
     floats.length = 0;
+    sparks.length = 0;
     dialogStack = [];
+    convReset();
     bannerTimer = 0;
+    bannerText = "";
     clickPending = false;
+    a2TN = null;
     jumps[e.key]();
     loop.start();
   });
