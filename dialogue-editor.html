@@ -589,14 +589,14 @@
         // ── 5. PITCH + D_F_INVITE (appended) + D_NO_BYE ──────────────────────────
         const pitchUnlocked=P.helloIdx!=null;
         const hTags=P.helloTags||[], convH=new Set(hTags);
-        const mkPI=(dn,x,i)=>{
-          const sc=pitchUnlocked?dmScore(x,hTags,convH,true):0;
-          return {key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,score:sc,
-            selected:P.pitchDeck===dn&&P.pitchIdx===i,
-            dimmed:P.pitchIdx!=null&&!(P.pitchDeck===dn&&P.pitchIdx===i)};
-        };
+        const mkPI=(dn,x,i)=>({
+          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
+          selected:P.pitchDeck===dn&&P.pitchIdx===i,
+          dimmed:P.pitchIdx!=null&&!(P.pitchDeck===dn&&P.pitchIdx===i),
+        });
+        // scoreAndSort handles scoring — pass boost=true so link-tag overlap gives score 2
         const sortPitch=dn=>pitchUnlocked
-          ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,convH)
+          ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,convH,true)
           :D[dn].map((x,i)=>mkPI(dn,x,i));
 
         cols.push(col({
@@ -663,12 +663,11 @@
           _tail(cols); return cols;
         }
 
-        const mkSM=(dn,x,i)=>{
-          const sc=npcRespUnlocked?dmScore(x,pTags,convP,true):0;
-          return {key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,score:sc,
-            selected:P.smDeck===dn&&P.smIdx===i,
-            dimmed:P.smIdx!=null&&!(P.smDeck===dn&&P.smIdx===i)};
-        };
+        const mkSM=(dn,x,i)=>({
+          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,
+          selected:P.smDeck===dn&&P.smIdx===i,
+          dimmed:P.smIdx!=null&&!(P.smDeck===dn&&P.smIdx===i),
+        });
         const smWarm=npcRespUnlocked?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,convP,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
         const smSkep=npcRespUnlocked?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,convP,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
         const joinItems=D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({
@@ -704,12 +703,11 @@
         // ── 8. STRONGER PITCH ─────────────────────────────────────────────────────
         const strongerUnlocked=npcRespUnlocked&&P.smIdx!=null&&!P.joinedEarly;
         const fTags=P.smTags||pTags, convSM=new Set([...convP,...fTags]);
-        const mkSPI=(dn,x,i)=>{
-          const sc=strongerUnlocked?dmScore(x,fTags,convSM,true):0;
-          return {key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,score:sc,
-            selected:P.strongerDeck===dn&&P.strongerIdx===i,
-            dimmed:P.strongerIdx!=null&&!(P.strongerDeck===dn&&P.strongerIdx===i)};
-        };
+        const mkSPI=(dn,x,i)=>({
+          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
+          selected:P.strongerDeck===dn&&P.strongerIdx===i,
+          dimmed:P.strongerIdx!=null&&!(P.strongerDeck===dn&&P.strongerIdx===i),
+        });
         const strongerItems=strongerUnlocked
           ?scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i)),fTags,convSM,true)
           :D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i));
