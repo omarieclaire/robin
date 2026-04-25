@@ -1,6 +1,6 @@
 window.LANG_EN = {
   test: "Hello from English",
-  playBtn: "PLAYY",
+  playBtn: "PLAY",
   overlayTitle: "ROBIN  DES RUELLES",
   overlaySub: "walk around and talk to your neighbours anything could happen<br><br>",
   overlayHint: "\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br>",

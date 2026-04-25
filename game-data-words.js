@@ -1,27 +1,41 @@
-// 1. we talk to an npc (hi)
-// 2. the npcs talks back (this gives us some clue about them)
-// 3. we (the player) choose how to reply based on what they said from DECK_HUNGRY_PITCH AND THEN after a second or two D_INVITE or DECK_ANGRY_PITCH AND THEN after a second or two D_INVITE or D_BACK_OFF_EARLY
-//    1. if we chose D_BACK_OFF_EARLY option, that conv ends
-// 4. if we chose any other option, they reply to us
-//    1. if the NPC feels misunderstood (a hunger/anger mismatch) they say  (DECK_MISMATCH_TOO_STRUCTURAL or DECK_MISMATCH_TOO_LITERAL depending on how they are misunderstood) and then this conv ends
-//    2. if they are matched in energy AND are not a narc,  they EITHER
-//       1. join immediately with D_JOIN_PHRASE and then D_CONSENT_PHRASE (concatenated into the same line, but delivered separately in time) and then this conv ends OR
-//       2. ask for more info with D_SAY_MORE_WARM
-//    3. If they ARE a narc, they say D_SAY_MORE_SKEPTICAL
-// 5. the player now has the choice between saying D_BACK_OFF_LATE or DECK_STRONGER_PITCH.
-//    1. Once the player makes the choice and IF they choose DECK_STRONGER_PITCH we concatenate D_INVITE after that pitch. Same line, but delivered separately in time.
-//       1. if the player choses the stronger pitch and it's a narc, we get the D_NARC_REVEAL and this conv ends
-//       2. If the player chooses the stronger pitch and it's not a narc
-//             1. either the NPCs joins  with D_JOIN_PHRASE and then D_CONSENT_PHRASE (concatenated into the same line, but delivered separately in time) and then this conv ends
-//             2. or there's a chance the NPC says NOT_NOW instead of joining, then later returns with DECK_RETURN and joins anyway
+// 1. We talk to an NPC (player greets from DECK_GREET)
+// 2. The NPC talks back (from DECK_HUNGRY_HELLO, DECK_ANGRY_HELLO, or DECK_NARC_HELLO depending on NPC type)
+//    — this gives us a clue about them (their tags feed the next step)
+// 3. The player chooses how to reply from two pitched options + a bail option:
+//    — Option A: a line from DECK_ANGRY_PITCH (if chosen, DECK_F_INVITE appends after ~1.2s)
+//    — Option B: a line from DECK_HUNGRY_PITCH (if chosen, DECK_F_INVITE appends after ~1.2s)
+//    — Option C: a line from DECK_BACK_OFF_EARLY → conversation ends immediately
+// 4. If the player chose A or B, the NPC responds:
+//    a. If the NPC feels misunderstood (angry NPC got a hungry pitch or vice versa):
+//       — they say a line from DECK_MISMATCH_TOO_STRUCTURAL (hungry NPC got angry pitch)
+//         or DECK_MISMATCH_TOO_LITERAL (angry NPC got hungry pitch), followed by DECK_NO_BYE
+//       — conversation ends
+//    b. If the pitch matched the NPC's energy AND the NPC is not a narc:
+//       — 80% chance: they join immediately — DECK_JOIN_CONSENT delivers a join phrase,
+//         then a consent phrase a beat later (same object, two fields, timed separately) → conv ends
+//       — 20% chance: they ask for more with a line from DECK_SAY_MORE_WARM → go to step 5
+//    c. If the NPC IS a narc (regardless of pitch match):
+//       — they respond with DECK_SAY_MORE_SKEPTICAL → go to step 5
+// 5. The player now chooses between:
+//    — DECK_STRONGER_PITCH (if chosen, DECK_INVITE appends after ~1.5s)
+//    — DECK_BACK_OFF_LATE → conversation ends (narc: silent win; non-narc: cautious float)
+//    If the player chose DECK_STRONGER_PITCH:
+//    a. If it's a narc → DECK_NARC_REV plays, heat increases, conversation ends
+//    b. If it's not a narc:
+//       — 60% chance: they join — DECK_JOIN_CONSENT delivers join + consent phrases timed separately → conv ends
+//       — 40% chance: NPC says DECK_NOT_NOW, conversation ends,
+//         but after 4–7s they return with a line from DECK_RETURN and join anyway
 
-// ambient chatter from hungry/sad npcs while they wander
+// Ambient chatter from hungry/sad NPCs while they wander —
 // short, no context needed, player probably won't read most of these
 
-// how we decide what line to display
-// 1. if the line before this one is tagged and this line is tagged and those tags are shared, it's more likely we get this line
-// 2. there is a list of tags that are special that we don't reuse (until we need to) so once we've used something with that tag we'll skip all others with that tag until we need to.
-// 3. other stuff?
+// How the line selection system works:
+// 1. If the previous line and a candidate line share tags, that candidate scores higher and is more likely to be drawn
+// 2. A set of designated "topic tags" (bread, wages, cartel, etc.) go on cooldown once used —
+//    lines with those tags are suppressed for COOLDOWN(3) conversations, then become eligible again
+// 3. Within a single conversation, topic tags that have already fired are fully suppressed (no repeats)
+// 4. Some lines have a `follows` field — if it matches a tag from the previous line, it scores highest of all (score 4),
+//    making it the preferred transition for specific tag-to-tag handoffs
 
 // ─────────────────────────────────────────
 // AMBIENT — HUNGRY

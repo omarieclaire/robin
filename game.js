@@ -19,6 +19,228 @@
     muteBtn.style.color = muted ? "#444" : C_DIM;
   });
 
+  // ── UNIFIED MOBILE CONTROLS ───────────────────────────────────
+  const MOBILE_DEAD_ZONE_CELLS = 3;
+  const MOBILE_SWIPE_PX = 22;
+  const MOBILE_LANE_HOP_REPEAT_MS = 350;
+
+  const _mob = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    startTime: 0,
+    dir: null,
+    swiped: false,
+    tapped: false,
+    holding: false,
+    hopTimer: 0,
+    pendingUp: false,
+    pendingDown: false,
+    pendingLeft: false,
+    pendingRight: false,
+    holdLeft: false,
+    holdRight: false,
+  };
+
+function _mobResolveDir(dx, dy) {
+    if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
+    return dy < 0 ? "up" : "down";
+  }
+
+function _mobFireStep(dir) {
+    if (dir === "up")    _mob.pendingUp    = true;
+    if (dir === "down")  _mob.pendingDown  = true;
+    if (dir === "left")  _mob.pendingLeft  = true;
+    if (dir === "right") _mob.pendingRight = true;
+  }
+
+  function _mobEnd(ex, ey) {
+    if (!_mob.active) return;
+    if (!_mob.swiped && !_mob.holding) {
+      const dx = ex - _mob.startX;
+      const dy = ey - _mob.startY;
+      if (Math.sqrt(dx * dx + dy * dy) < MOBILE_SWIPE_PX) {
+        const r = gs.getBoundingClientRect();
+        const cellW = r.width / W; // actual pixel width per cell
+        const cellH = r.height / H; // actual pixel height per cell
+        const tapCX = (ex - r.left) / cellW;
+        const tapCY = (ey - r.top) / cellH;
+        if (phase === "act2") {
+          const pl = { x: Math.round(a2PX), y: Math.round(a2PY) };
+          const ddx = tapCX - pl.x,
+            ddy = tapCY - pl.y;
+          console.log("act2 tap: ddx:", Math.round(ddx), "ddy:", Math.round(ddy), "dir:", _mobResolveDir(ddx, ddy));
+          if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
+        }
+        if (phase === "act2b") {
+          const pl = { x: Math.round(a2bPX), y: Math.round(a2bPY) };
+          const ddx = tapCX - pl.x, ddy = tapCY - pl.y;
+          if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
+        }
+        if (phase === "act4") {
+          const pl = { x: Math.round(s4PX2), y: Math.round(s4PY2) };
+          const ddx = tapCX - pl.x, ddy = tapCY - pl.y;
+          console.log("act4 tap: tapCY:", Math.round(tapCY), "S4_AISLE_TOP:", S4_AISLE_TOP, "S4_AISLE_BOT:", S4_AISLE_BOT, "pl.y:", pl.y);
+          // Give aisle a 5-row buffer above S4_AISLE_TOP so taps near the shelf edge still move player
+          if (tapCY >= S4_AISLE_TOP && tapCY <= S4_FLOOR_Y) {
+            if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
+          }
+        }
+      }
+    }
+    _mob.active = false;
+    _mob.pointerId = null;
+    _mob.holdLeft = false;
+    _mob.holdRight = false;
+    _mob.dir = null;
+    _mob.holding = false;
+  }
+
+  if (Device.isMobile) {
+    gs.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (phase !== "act2" && phase !== "act2b" && phase !== "act4") return;
+        if (_mob.pointerId !== null) return;
+        _mob.active = true;
+        _mob.pointerId = e.pointerId;
+        _mob.startX = e.clientX;
+        _mob.startY = e.clientY;
+        _mob.currentX = e.clientX;
+        _mob.currentY = e.clientY;
+        _mob.startTime = performance.now();
+        _mob.dir = null;
+        _mob.swiped = false;
+        _mob.tapped = false;
+        _mob.holding = false;
+        _mob.hopTimer = 0;
+       
+        _mob.holdLeft  = false;
+      _mob.holdRight = false;
+      _mob.dragAccX  = 0;
+      _mob.dragAccY  = 0;
+      _mob.lastX     = e.clientX;
+      _mob.lastY     = e.clientY;
+    }, { passive: true });
+
+ 
+    gs.addEventListener("pointermove", (e) => {
+      if (e.pointerId !== _mob.pointerId) return;
+      _mob.currentX = e.clientX;
+      _mob.currentY = e.clientY;
+      // Engage holding as soon as finger moves half a cell
+      const fingerMovedX = Math.abs(e.clientX - _mob.startX) > 8;
+      const fingerMovedY = Math.abs(e.clientY - _mob.startY) > 8;
+      if ((fingerMovedX || fingerMovedY) && !_mob.holding) {
+        _mob.holding = true;
+        _mob.lastX = e.clientX;
+        _mob.lastY = e.clientY;
+      }
+    }, { passive: true });
+
+    gs.addEventListener(
+      "pointerup",
+      (e) => {
+        if (e.pointerId === _mob.pointerId) _mobEnd(e.clientX, e.clientY);
+      },
+      { passive: true },
+    );
+    gs.addEventListener(
+      "pointercancel",
+      (e) => {
+        if (e.pointerId === _mob.pointerId) _mobEnd(e.clientX, e.clientY);
+      },
+      { passive: true },
+    );
+  }
+
+  
+
+  function _mobUpdate(dt) {
+    if (!Device.isMobile || !_mob.active) return;
+    if (phase !== "act2" && phase !== "act2b" && phase !== "act4") return;
+    if (!_mob.holding) return;
+
+    const r = gs.getBoundingClientRect();
+    const cellW = r.width / W;
+    const cellH = r.height / H;
+
+    // Delta from last frame position — player mirrors finger movement exactly
+    const dxPx = _mob.currentX - _mob.lastX;
+    const dyPx = _mob.currentY - _mob.lastY;
+    _mob.lastX = _mob.currentX;
+    _mob.lastY = _mob.currentY;
+
+    const dxCells = dxPx / cellW;
+    const dyCells = dyPx / cellH;
+
+    if (phase === "act2") {
+      const newX = a2PX + dxCells;
+      const newY = a2PY + dyCells;
+      const worldNewX = Math.round(a2WX + newX);
+      const worldNewY = Math.round(newY);
+      // Move freely if on road, slide along one axis if blocked
+      if (isRoad(worldNewX, worldNewY)) {
+        a2PX = newX;
+        a2PY = newY;
+      } else if (isRoad(worldNewX, Math.round(a2PY))) {
+        a2PX = newX;
+      } else if (isRoad(Math.round(a2WX + a2PX), worldNewY)) {
+        a2PY = newY;
+      }
+    } else if (phase === "act2b") {
+      a2bPX += dxCells;
+      a2bPY += dyCells;
+      a2bPY = Util.clamp(a2bPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
+      a2bPX = Util.clamp(a2bPX, 3, W - 4);
+    } else if (phase === "act4") {
+      s4PX2 += dxCells;
+      s4PY2 += dyCells;
+      s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+      s4PX2 = Util.clamp(s4PX2, 4, W - 6);
+    }
+  }
+
+  if (Device.isMobile) {
+    const _origIsDown = input.isDown.bind(input);
+    input.isDown = function (keyOrAction) {
+      if (phase === "act2" || phase === "act2b" || phase === "act4") {
+        if (keyOrAction === "left" && _mob.holdLeft) return true;
+        if (keyOrAction === "right" && _mob.holdRight) return true;
+        if ((phase === "act2b" || phase === "act4") && keyOrAction === "up" && _mob.holding && _mob.dir === "up") return true;
+        if ((phase === "act2b" || phase === "act4") && keyOrAction === "down" && _mob.holding && _mob.dir === "down") return true;
+      }
+      return _origIsDown(keyOrAction);
+    };
+
+    const _origJP = input.justPressed.bind(input);
+    input.justPressed = function (keyOrAction) {
+      if (phase === "act2" || phase === "act2b" || phase === "act4") {
+        if (keyOrAction === "up" && _mob.pendingUp) {
+          _mob.pendingUp = false;
+          return true;
+        }
+        if (keyOrAction === "down" && _mob.pendingDown) {
+          _mob.pendingDown = false;
+          return true;
+        }
+        if (keyOrAction === "left" && _mob.pendingLeft) {
+          _mob.pendingLeft = false;
+          return true;
+        }
+        if (keyOrAction === "right" && _mob.pendingRight) {
+          _mob.pendingRight = false;
+          return true;
+        }
+      }
+      return _origJP(keyOrAction);
+    };
+  }
+  // ── END UNIFIED MOBILE CONTROLS ───────────────────────────────
+
   const quitBtn = document.getElementById("quit-btn");
   quitBtn.addEventListener("click", () => {
     try {
@@ -266,6 +488,52 @@
   const C_DIM = "#888"; // muted text, tap prompts
   const C_MID = "#aaa"; // medium text
 
+  const HAT_CHAR = "ƛ";
+  const HAT_COLOR = C_ORANGE;
+  let _originalPlayerHead = null;
+  let _originalCrewHeads = [];
+
+  function applyHats() {
+    // Instant apply — used for restoration/cleanup only
+    applyPlayerHat();
+    for (let i = 0; i < a2Crew.length; i++) applyCrewHat(i);
+  }
+
+  function applyCrewHat(i) {
+    const c = a2Crew[i];
+    if (!c || !c.art || c.art.length === 0) return;
+    if (_originalCrewHeads[i] === undefined) _originalCrewHeads[i] = c.art[0][0];
+    c.art = [HAT_CHAR + c.art[0].slice(1), ...c.art.slice(1)];
+    c._hatColor = HAT_COLOR;
+  }
+
+  function applyPlayerHat() {
+    if (_originalPlayerHead) return; // already hatted
+    _originalPlayerHead = [A2_PA[0][0][0], A2_PA[1][0][0]];
+    for (let frame = 0; frame < A2_PA.length; frame++) {
+      A2_PA[frame] = [HAT_CHAR + A2_PA[frame][0].slice(1), ...A2_PA[frame].slice(1)];
+    }
+  }
+
+  function removeHats() {
+    // Restore player
+    if (_originalPlayerHead) {
+      for (let frame = 0; frame < A2_PA.length; frame++) {
+        A2_PA[frame] = [_originalPlayerHead[frame] + A2_PA[frame][0].slice(1), ...A2_PA[frame].slice(1)];
+      }
+      _originalPlayerHead = null;
+    }
+    // Restore crew
+    for (let i = 0; i < a2Crew.length; i++) {
+      const orig = _originalCrewHeads[i];
+      if (orig && a2Crew[i] && a2Crew[i].art) {
+        a2Crew[i].art = [orig + a2Crew[i].art[0].slice(1), ...a2Crew[i].art.slice(1)];
+        delete a2Crew[i]._hatColor;
+      }
+    }
+    _originalCrewHeads = [];
+  }
+
   function playerPulseColor(t) {
     // Gentle 1.4Hz white glow — works in any act, just pass the act timer
     return Math.sin(t / 0.01) > 0.3 ? "#e69224" : C_PLAYER;
@@ -334,16 +602,71 @@
     }
   }
   /* ── BANNER ────────────────────────────────────────────── */
+  /* ── BANNER SYSTEM ─────────────────────────────────────────
+     showBanner(text, color, duration, silent)
+       text supports \n for hard line breaks.
+
+     showBannerSequence(lines, silent)
+       lines = array of:
+         { t, c, d }          — print this line (appended to box), show for d ms
+         { pause: true, d }   — silent beat before next line (box stays open)
+       Each line is appended to the same box. The box stays open until
+       the last line's timer expires.
+
+     To tweak inter-line pause, edit the `d` on a { pause } entry.
+     To tweak how long a line shows before the next, edit its `d`.
+  ─────────────────────────────────────────────────────────── */
   let bannerText = "",
     bannerColor = C_PLAYER,
     bannerTimer = 0;
+  let _bannerSeq = null; // active sequence state
+
   function showBanner(t, c, d, silent) {
     if (!silent) audio.play("trumpet");
+    _bannerSeq = null; // cancel any running sequence
     bannerText = t;
     bannerColor = c || C_PLAYER;
     bannerTimer = d || 3000;
   }
+
+  function showBannerSequence(lines, silent) {
+    /* lines: [{t,c,d} | {pause,d}] */
+    if (!lines || lines.length === 0) return;
+    _bannerSeq = { lines: [...lines], idx: 0, lineTimer: 0, silent };
+    bannerText = "";
+    bannerTimer = 99999; // kept open by sequence driver
+    // Seed color from first non-pause line
+    const first = lines.find((l) => !l.pause);
+    bannerColor = first ? first.c || C_PLAYER : C_PLAYER;
+    if (!silent) audio.play("trumpet");
+  }
+
   function updateBanner(dt) {
+    if (_bannerSeq) {
+      _bannerSeq.lineTimer -= dt;
+      if (_bannerSeq.lineTimer <= 0) {
+        const seq = _bannerSeq;
+        if (seq.idx >= seq.lines.length) {
+          // All lines done — start countdown to close
+          _bannerSeq = null;
+          bannerTimer = 400; // brief hold then close
+          return;
+        }
+        const entry = seq.lines[seq.idx];
+        seq.idx++;
+        if (entry.pause) {
+          // Silent beat — box stays, no new text
+          seq.lineTimer = entry.d || 800;
+        } else {
+          if (bannerText) bannerText += "\n" + entry.t;
+          else bannerText = entry.t;
+          if (entry.c) bannerColor = entry.c;
+          seq.lineTimer = entry.d || 3000;
+          if (!seq.silent) audio.play("paper"); // subtle per-line sound
+        }
+      }
+      return; // don't tick bannerTimer while sequence is running
+    }
     if (bannerTimer > 0) bannerTimer -= dt;
   }
   function renderBanner() {
@@ -381,7 +704,25 @@
     grid.text(BANNER_BOX.bl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.br, bx, by, bannerColor);
   }
 
+  function renderTapPrompt(msg, y, col1, col2) {
+    const flash = Math.sin(Date.now() / 300) > 0;
+    const c = flash ? col1 || "#fff" : col2 || C_PLAYER;
+    grid.textCenter("[ " + msg + " ]", y, c);
+  }
+
+  function handleTapWithParticles(condition, onTap, particleCol, particleX, particleY, big) {
+    if (clickPending && condition) {
+      clickPending = false;
+      if (big) burstGood(particleX, particleY, particleCol || C_PLAYER, 10);
+      else spark(particleX, particleY, particleCol || C_PLAYER, 5);
+      onTap();
+      return true;
+    }
+    return false;
+  }
+
   let dialogStack = [];
+
   function dialogPush(text, color, side, ax, ay, duration) {
     audio.play("paper");
     dialogStack.push({
@@ -543,12 +884,15 @@
   }
 
   function renderInter() {
+    // Solid dark background so banner reads over any game art
+    for (let iy = 0; iy < H; iy++) for (let ix = 0; ix < W; ix++) grid.set(ix, iy, " ", "#0d0d0d");
+
     renderInterFrame();
     renderBanner();
     if (interControlsHint) {
       const hintY = Math.floor(H * 0.72);
       grid.textCenter(interControlsHint, hintY, Math.sin(Date.now() / 600) > 0 ? C_DIM : "#555");
-      grid.textCenter("tap to continue", hintY + 2, Math.sin(Date.now() / 400) > 0 ? "#444" : "#333");
+      renderTapPrompt("tap to continue", hintY + 2, "#666", "#444");
     }
   }
 
@@ -703,8 +1047,8 @@
     }
 
     // clamp topY so it never goes above row 2
-const minTopY = phase === "act2" ? 2 : -999;
-    const topY = Math.max(minTopY, lastBoxTop - totalPriorHeight);
+    const rawTopY = lastBoxTop - totalPriorHeight;
+    const topY = phase === "act2" ? Math.max(2, rawTopY) : rawTopY;
     // if (convLog.length <= 3) {
     //   console.log(
     //     "RENDER: charY=" +
@@ -982,8 +1326,9 @@ const minTopY = phase === "act2" ? 2 : -999;
   let clickSX = -1,
     clickSY = -1,
     clickPending = false;
-gs.addEventListener("pointermove", (e) => {
-    e.preventDefault();    if (!convChoices) return;
+  gs.addEventListener("pointermove", (e) => {
+    e.preventDefault();
+    if (!convChoices) return;
     const r = gs.getBoundingClientRect();
     const fontSize = parseFloat(gs.style.fontSize);
     const probe = document.createElement("span");
@@ -1009,8 +1354,23 @@ gs.addEventListener("pointermove", (e) => {
       convChoiceHover = -1;
     }
   });
-gs.addEventListener("pointerup", (e) => {
-    e.preventDefault();    const r = gs.getBoundingClientRect();
+  gs.addEventListener(
+    "touchmove",
+    (e) => {
+      e.preventDefault();
+    },
+    { passive: false },
+  );
+  gs.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+    },
+    { passive: false },
+  );
+  gs.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    const r = gs.getBoundingClientRect();
     const fontSize = parseFloat(gs.style.fontSize);
     const probe = document.createElement("span");
     probe.style.cssText =
@@ -1312,7 +1672,7 @@ gs.addEventListener("pointerup", (e) => {
             if (q.pause) {
               a1PauseT = q.d;
             } else {
-              showBanner(q.t, q.c, q.d);
+              showBanner(q.t, q.c, q.d, true); // silent — trumpet already played at sequence start
             }
             a1NP++;
             a1ST2 = 0;
@@ -1517,7 +1877,7 @@ gs.addEventListener("pointerup", (e) => {
           if (q.pause) {
             a1PauseT = q.d;
           } else {
-            showBanner(q.t, q.c, q.d);
+            showBanner(q.t, q.c, q.d, true); // silent — trumpet already played at sequence start
           }
           a1NP++;
         } else {
@@ -1817,7 +2177,8 @@ gs.addEventListener("pointerup", (e) => {
       }
     }
     /* NPCs across all 6 lanes (skip top road - lanes 0-1 - to avoid dialogue cutoff) */
-    for (let ri = 2; ri < A2_NUM_LANES; ri++) {
+    const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
+    for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
       // density
       // reduce npc density
       for (let nx = from + Util.randInt(55, 80); nx < to; nx += Util.randInt(70, 110)) {
@@ -1917,7 +2278,10 @@ gs.addEventListener("pointerup", (e) => {
     a2TN = null;
     a2TP = 0;
     a2TT = 0;
+
     a2TalkCD = 3000;
+    a2MobileMoveX = 0;
+    a2MobileMoveT = 0;
     a2SV = false;
     a2SW = 500;
     a2SD = false;
@@ -2088,7 +2452,7 @@ gs.addEventListener("pointerup", (e) => {
             a2TP = 25;
           } else {
             // Append invite line after a short beat
-        // Append invite line after a short beat
+            // Append invite line after a short beat
             setTimeout(() => {
               if (a2TP === 14) convAddLine(DM.draw(DECK_F_INVITE), "you", convPlayerColor);
             }, 1200);
@@ -2122,24 +2486,23 @@ gs.addEventListener("pointerup", (e) => {
           addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
 
           a2TP = 7;
-        
+        } else {
+          if (Math.random() < 0.8) {
+            // skip "say more" — join immediately
+            const pair = DM.draw(DECK_JOIN_CONSENT);
+            convAddLine(pair.join, "them", convNPCColor);
+            a2TN._line2 = pair.consent;
+            a2TP = 21;
           } else {
-  if (Math.random() < 0.8) {
-    // skip "say more" — join immediately
-    const pair = DM.draw(DECK_JOIN_CONSENT);
-    convAddLine(pair.join, "them", convNPCColor);
-    a2TN._line2 = pair.consent;
-    a2TP = 21;
-  } else {
-    const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
-      follows: a2ChoiceTags?.[a2Choice] ?? [],
-      boost: true,
-    });
-    a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
-    convAddLine(warmResult.text, "them", convNPCColor);
-    a2TP = 15;
-  }
-}
+            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
+              follows: a2ChoiceTags?.[a2Choice] ?? [],
+              boost: true,
+            });
+            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
+            convAddLine(warmResult.text, "them", convNPCColor);
+            a2TP = 15;
+          }
+        }
         a2TT = 0;
       }
 
@@ -2385,7 +2748,7 @@ gs.addEventListener("pointerup", (e) => {
       }
       if (a2SDT > 7500 && clickPending) {
         clickPending = false;
-
+        spark(Math.floor(W / 2), H - 2, C_ORANGE, 5);
         initInter(
           [
             { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
@@ -2423,15 +2786,18 @@ gs.addEventListener("pointerup", (e) => {
 
     if (clickPending && phase === "act2") {
       clickPending = false;
-      const py = Math.round(a2PY);
-      if (clickSY < py - 2) {
-        a2HopIntent = -1;
-        a2HopTimer = 3000;
-      } else if (clickSY > py + 2) {
-        a2HopIntent = 1;
-        a2HopTimer = 3000;
+      if (!Device.isMobile) {
+        const py = Math.round(a2PY);
+        if (clickSY < py - 2) {
+          a2HopIntent = -1;
+          a2HopTimer = 3000;
+        } else if (clickSY > py + 2) {
+          a2HopIntent = 1;
+          a2HopTimer = 3000;
+        }
       }
     }
+    // Mobile left/right continuous movement from hold — no mobileMoveX needed
     if (a2HopTimer > 0) a2HopTimer -= dt;
     if (a2HopTimer <= 0) a2HopIntent = 0;
 
@@ -2467,8 +2833,11 @@ gs.addEventListener("pointerup", (e) => {
         a2TalkCD = Math.max(a2TalkCD, 300);
       }
     }
+    const a2TapStep = 2;
     if (input.isDown("left")) a2PX -= 0.02 * dt;
+    else if (input.justPressed("left")) a2PX -= a2TapStep;
     if (input.isDown("right")) a2PX += 0.02 * dt;
+    else if (input.justPressed("right")) a2PX += a2TapStep;
     a2PX = Util.clamp(a2PX, 4, W - 6);
 
     // Cleanup
@@ -2633,8 +3002,18 @@ gs.addEventListener("pointerup", (e) => {
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-    if (a2SD && a2SDT !== null && a2SDT > 4500) grid.textCenter(window.LANG.tapToContinue, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
-    /* Heat is shown in the HUD — no in-game overlay needed */
+    if (a2SD && a2SDT !== null && a2SDT > 4500)
+      renderTapPrompt("tap to continue", H - 2, "#fff", C_DIM); /* Heat is shown in the HUD — no in-game overlay needed */
+    // Mobile hint: shown for first 5 seconds, fades out
+    if (Device.isMobile && a2T < 5000 && !a2TN) {
+      const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
+      const hintCol = fade > 0.6 ? C_DIM : "#444";
+      // Position hints just above and below the player
+      const px = Math.round(a2PX),
+        py = Math.round(a2PY);
+      grid.textCenter("swipe ↑↓ to change lane", Math.max(1, py - 4), hintCol);
+      grid.textCenter("hold ◀ ▶ sides to move", Math.min(H - 2, py + 4), hintCol);
+    }
     renderBanner();
   }
 
@@ -2716,7 +3095,7 @@ gs.addEventListener("pointerup", (e) => {
     }
   }
 
-function initAct2b() {
+  function initAct2b() {
     audio.play("level");
     Music.transition("music_act3"); // act2b feels like a rally escalation — new track
     audio.preload(["music_act4"]);
@@ -2744,7 +3123,10 @@ function initAct2b() {
         b: c.b || Math.random() * 6,
       });
     }
+
     a2bHt = 0;
+    a2bMobileMoveX = 0;
+    a2bMobileMoveT = 0;
     a2bFloats = [];
     a2bBursts = [];
     a2bDone = false;
@@ -2779,17 +3161,27 @@ function initAct2b() {
     a2bSpd = 0.007 + a2bT * 0.0000003;
     /* Player movement — constrained to road */
     const ms = 0.025;
+    const tapStep = 2; // cells to move per tap — adjust to feel right
     if (input.isDown("up")) a2bPY -= ms * dt;
+    else if (input.justPressed("up")) a2bPY -= tapStep;
     if (input.isDown("down")) a2bPY += ms * dt;
-    if (input.isDown("left")) a2bPX -= ms * dt;
-    if (input.isDown("right")) a2bPX += ms * dt;
+    else if (input.justPressed("down")) a2bPY += tapStep;
+    if (input.isDown("left"))        a2bPX -= ms * dt;
+    else if (input.justPressed("left"))  a2bPX -= tapStep;
+    if (input.isDown("right"))       a2bPX += ms * dt;
+    else if (input.justPressed("right")) a2bPX += tapStep;
+
     if (clickPending && phase === "act2b") {
       clickPending = false;
-      if (clickSY < a2bPY - 2) a2bPY -= 3;
-      else if (clickSY > a2bPY + 2) a2bPY += 3;
-      if (clickSX < a2bPX - 3) a2bPX -= 3;
-      else if (clickSX > a2bPX + 3) a2bPX += 3;
+      if (!Device.isMobile) {
+        if (clickSY < a2bPY - 2) a2bPY -= 3;
+        else if (clickSY > a2bPY + 2) a2bPY += 3;
+        if (clickSX < a2bPX - 3) a2bPX -= 3;
+        else if (clickSX > a2bPX + 3) a2bPX += 3;
+      }
     }
+    // Mobile left/right from hold — no mobileMoveX needed
+
     a2bPY = Util.clamp(a2bPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
     a2bPX = Util.clamp(a2bPX, 3, W - 4);
     /* Floats */
@@ -2810,7 +3202,11 @@ function initAct2b() {
         if (n.st !== "idle") continue;
         /* Wider trigger: 6 in X, 4 in Y. */
         // too large on mobile — reduce NPC collision radius
-if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.narc) {
+
+        const hitW = Device.isMobile ? 3 : 6;
+        const hitH = Device.isMobile ? 1.5 : 3;
+        if (Math.abs(n.wx - pwx) < hitW && Math.abs(n.wy - a2bPY) < hitH) {
+          if (n.narc) {
             n.st = "narc";
             audio.play("bump");
             audio.play("narc");
@@ -2832,7 +3228,9 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
             audio.play("bump");
             a2CrewCount++;
             audio.play("recruit");
-            burstGood(Math.round(n.wx - a2bWX), n.wy, n.col, 12);
+            const _hitSX = Math.round(n.wx - a2bWX);
+            const _hitSY = n.wy;
+            burstGood(_hitSX, _hitSY, n.col, 12);
             triggerFlashGood();
             const newBob = Math.random() * 6;
             a2bMob.push({
@@ -3110,6 +3508,11 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     a3Entering = false;
     a3PlayerX = 0;
     a3EntryBurst = false;
+    a3HatsOn = false;
+    a3HatQueue = [];
+    a3HatQueueT = 0;
+    a3PlayerHatted = false;
+    if (_originalPlayerHead) removeHats();
 
     // showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
     // setTimeout(() => {
@@ -3168,6 +3571,36 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
         }
       }
     }
+    // Hat queue — apply one hat every 120ms, player last gets a burst
+    if (a3HatQueue.length > 0) {
+      a3HatQueueT -= dt;
+      if (a3HatQueueT <= 0) {
+        const next = a3HatQueue.shift();
+        if (next.type === "crew") {
+          applyCrewHat(next.idx);
+          audio.play("click");
+          // Tiny spark at that robin's screen position
+          const sY = Math.floor(H * 0.62);
+          const scx = Math.floor((W - (window.GAME_DATA.storeArtEN[0] || "").length) / 2);
+          const dc = scx + Math.floor((window.GAME_DATA.storeArtEN[0] || "").length / 2);
+          const rc = Math.min(a2CrewCount, 12);
+          const maxSlots = Math.max(1, Math.ceil(rc / 2));
+          const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
+          const side = next.idx % 2 === 0 ? -1 : 1;
+          const slot = Math.floor((next.idx + 2) / 2);
+          const tx = Util.clamp(dc + side * slot * spacing, 2, W - 5);
+          spark(tx, sY + 3, C_ORANGE, 4);
+        } else {
+          // Player — bigger burst, banner
+          applyPlayerHat();
+          a3PlayerHatted = true;
+          burstGood(Math.floor(W / 2), Math.floor(H * 0.62) + 3, C_ORANGE, 10);
+          showBanner(window.LANG.bannerHatsOn || "hats on.", C_ORANGE, 2000, true);
+        }
+        a3HatQueueT = 120; // ms between each hat
+      }
+    }
+
     if (a3Entering) {
       a3T += 0; // just keep ticking
       const sY = Math.floor(H * 0.62);
@@ -3202,7 +3635,15 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     }
     if (clickPending) {
       clickPending = false;
-      if (a3T > 1200) {
+      if (a3T > 1200 && !a3HatsOn && a3HatQueue.length === 0) {
+        a3HatsOn = true;
+        // Build queue: crew one by one, player last
+        a3HatQueue = a2Crew.map((_, i) => ({ type: "crew", idx: i }));
+        a3HatQueue.push({ type: "player" });
+        a3HatQueueT = 0;
+        a3PlayerHatted = false;
+      } else if (a3T > 1200 && a3HatsOn && a3PlayerHatted) {
+        burstGood(Math.floor(W / 2), Math.floor(H * 0.62) + 3, C_PLAYER, 8);
         a3Entering = true;
         const sY = Math.floor(H * 0.62);
         const scx = Math.floor((W - STO_W) / 2);
@@ -3273,7 +3714,14 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
-    if (a3T > 1500) grid.textCenter(window.LANG.tapToContinue, Math.min(H - 2, ly + 5), Math.sin(Date.now() / 300) > 0 ? C_PLAYER : C_DIM);
+    if (a3T > 1500) {
+      const tapFlash = Math.sin(Date.now() / 300) > 0;
+      const tapY = Math.min(H - 2, ly + 5);
+      const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
+      const tapMsg = a3HatsOn && a3PlayerHatted ? "[ tap to enter store ]" : hatsAnimating ? "" : "[ tap to put on hats ]";
+      const tapCol = a3HatsOn && a3PlayerHatted ? (tapFlash ? "#fff" : C_PLAYER) : tapFlash ? "#fff" : C_ORANGE;
+      grid.textCenter(tapMsg, tapY, tapCol);
+    }
     renderBanner();
   }
 
@@ -3346,6 +3794,8 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
 
     phase = "act4";
     ensureCrew();
+    // a3HatsOn = false; // uncomment to remove hats in drop-off scene
+
     bannerTimer = 0;
     tmr.clear();
     dialogStack = [];
@@ -3579,11 +4029,17 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     while (s4GE < s4WX + W + 80) s4GenBookcases(s4GE, s4GE + 80);
     s4Bookcases = s4Bookcases.filter((bc) => bc.wx + S4_BC_W > s4WX - 20);
 
-    /* ── Player movement — up/down only + click to move ── */
     if (s4St2 > 0) s4St2 -= dt;
     if (s4St2 <= 0) {
-      if (input.isDown("up")) s4PY2 -= 0.02 * dt;
-      if (input.isDown("down")) s4PY2 += 0.02 * dt;
+      const s4TapStep = 2;
+      if (input.isDown("up"))              s4PY2 -= 0.02 * dt;
+      else if (input.justPressed("up"))    s4PY2 -= s4TapStep;
+      if (input.isDown("down"))            s4PY2 += 0.02 * dt;
+      else if (input.justPressed("down"))  s4PY2 += s4TapStep;
+      if (input.isDown("left"))            s4PX2 -= 0.02 * dt;
+      else if (input.justPressed("left"))  s4PX2 -= s4TapStep;
+      if (input.isDown("right"))           s4PX2 += 0.02 * dt;
+      else if (input.justPressed("right")) s4PX2 += s4TapStep;
     }
 
     /* ── Click handling ── */
@@ -3613,7 +4069,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
               max: 400,
               col: it.color,
             });
-            addFloat(it.food.n + " +$" + it.food.p, 0, 0, it.color);
+            addFloat(it.food.n + " +$" + it.food.p, ix + Math.floor(S4_SLOT_W / 2), aY - 1, it.color);
             grabbedItem = true;
             break outer4;
           }
@@ -3634,7 +4090,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     }
 
     /* Clamp player to aisle */
-    s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP, S4_AISLE_BOT - 1);
+    s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
 
     /* ── Guard movement + collision ── */
     const worldPX = s4WX + s4PX2;
@@ -3705,7 +4161,8 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
           if (it.row !== row || it.grabbed) continue;
           const ix = sx + 1 + it.col * S4_SLOT_W + 1;
           const aH = it.food.a.length;
-          grid.art(it.food.a, ix, sY - aH, it.color);
+          // Render food art centered vertically in the slot rather than bottom-aligned
+          grid.art(it.food.a, ix, rY, it.color);
         }
         const sym = row < S4_SHELF_ROWS - 1 ? "\u2560" + "\u2550".repeat(iW) + "\u2563" : "\u255a" + "\u2550".repeat(iW) + "\u255d";
         grid.text(sym, sx, sY, "#666");
@@ -3941,6 +4398,8 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     if (clickPending && a5P === 2) {
       clickPending = false;
       audio.play("drop");
+      if (_originalPlayerHead) removeHats();
+      burstGood(Math.floor(W / 2), Math.floor(H / 2) - 4, C_TEAL, 10);
       a5P = 3;
       const _fw = FRIDGE[0].length,
         _fx = Math.floor((W - _fw) / 2),
@@ -3970,6 +4429,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
       }
       if (allArrived && a5T > 7000 && clickPending) {
         clickPending = false;
+        spark(Math.floor(W / 2), H - 2, C_TEAL, 5);
         a5P = 5;
         a5T = 0;
       }
@@ -3998,7 +4458,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
 
     // Tap prompt
-    if (a5P === 2) grid.textCenter(window.LANG.promptTapToPlaceFood, plY + 4, Math.sin(Date.now() / 300) > 0 ? C_TEAL : C_DIM);
+    if (a5P === 2) renderTapPrompt("TAP TO PLACE FOOD", plY + 4, "#fff", C_TEAL);
     // Food appearing in fridge — real food art reused from Act 4
     if (a5P >= 3) {
       /* New fridge layout (width 37, height 18):
@@ -4065,7 +4525,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
       }
     }
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
-      grid.textCenter(window.LANG.tapToEnter, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#666");
+      renderTapPrompt("TAP TO CONTINUE", H - 2, "#fff", C_TEAL);
     dialogRender();
     renderBanner();
   }
@@ -4150,6 +4610,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     updateBanner(dt);
     if (clickPending && endT > (endD.doneT || 9999)) {
       clickPending = false;
+      spark(Math.floor(W / 2), H - 3, C_DIM, 5);
       initCTA();
     }
   }
@@ -4178,7 +4639,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
       if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
       y += wrapped[i].length + 1 + (l.extraGap || 0);
     }
-    if (endT >= (endD.doneT || 9999)) grid.textCenter(window.LANG.promptTap, H - 3, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
+    if (endT >= (endD.doneT || 9999)) renderTapPrompt("tap", H - 3, "#bbb", C_DIM);
     renderBanner();
   }
 
@@ -4322,7 +4783,7 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     }
 
     if (ctaChoice && ctaEndLine) grid.textCenter(ctaEndLine, H - 4, ctaEndCol);
-    if (ctaT > 12500 && !ctaChoice) grid.textCenter(window.LANG.promptTap, H - 2, Math.sin(Date.now() / 400) > 0 ? C_DIM : "#bbb");
+    if (ctaT > 12500 && !ctaChoice) renderTapPrompt("tap", H - 2, "#bbb", C_DIM);
   }
 
   function quickBust(result, restartFn) {
@@ -4431,9 +4892,12 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
     fadeStart: 0.15 /* fraction of life at which it fades */,
     padX: 1 /* horizontal padding inside box */,
   };
+
   function addFloat(t, x, y, co) {
-    /* x, y args are ignored — floats auto-position by phase. */
-    /* Act 4 grocery grabs fire rapidly → shorter life so they don't pile */
+    /* x, y: pass actual screen coords to pin float above a collision point.
+       Pass 0,0 to fall back to the centered default position.
+       To nudge floats up/down, adjust FLOAT_PIN_OFFSET_Y below. */
+    const FLOAT_PIN_OFFSET_Y = -4; // negative = higher above the hit point
     const life = phase === "act4" ? 1200 : FLOAT_STYLE.life;
     floats.push({
       text: t,
@@ -4441,9 +4905,14 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
       life,
       max: life,
       boxed: FLOAT_STYLE.boxed,
+      pinX: x || 0,
+      pinY: y ? y + FLOAT_PIN_OFFSET_Y : 0,
+      pinned: !!(x || y),
     });
   }
+
   function update(dt) {
+    _mobUpdate(dt);
     // Update conversation fade timer
     if (convFading) {
       convFadeTimer += dt;
@@ -4522,7 +4991,12 @@ if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.nar
       const bw = lineW + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
       const bh = boxed ? lines.length + 2 : lines.length;
       let bx, by;
-      if (playful) {
+      if (f.pinned && f.pinX !== undefined) {
+        // Pinned to a world collision/grab point
+        if (f.jx === undefined) f.jx = 0; // no jitter for pinned floats
+        bx = Util.clamp(Math.round(f.pinX) - Math.floor(bw / 2), 0, W - bw);
+        by = Util.clamp(Math.round(f.pinY) - bh, 1, H - bh - 1);
+      } else if (playful) {
         /* Stable per-float position jitter — set once on first render */
         if (f.jx === undefined) {
           f.jx = Math.floor((Math.random() - 0.5) * 8);
