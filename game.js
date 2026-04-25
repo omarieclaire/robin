@@ -701,8 +701,10 @@
     for (let i = 0; i < boxesToShow.length - 1; i++) {
       totalPriorHeight += boxesToShow[i].lines.length + 2; // height of each prior box (no gap between boxes)
     }
-    const topY = lastBoxTop - totalPriorHeight;
 
+    // clamp topY so it never goes above row 2
+const minTopY = phase === "act2" ? 2 : -999;
+    const topY = Math.max(minTopY, lastBoxTop - totalPriorHeight);
     // if (convLog.length <= 3) {
     //   console.log(
     //     "RENDER: charY=" +
@@ -980,8 +982,8 @@
   let clickSX = -1,
     clickSY = -1,
     clickPending = false;
-  gs.addEventListener("pointermove", (e) => {
-    if (!convChoices) return;
+gs.addEventListener("pointermove", (e) => {
+    e.preventDefault();    if (!convChoices) return;
     const r = gs.getBoundingClientRect();
     const fontSize = parseFloat(gs.style.fontSize);
     const probe = document.createElement("span");
@@ -1007,8 +1009,8 @@
       convChoiceHover = -1;
     }
   });
-  gs.addEventListener("pointerup", (e) => {
-    const r = gs.getBoundingClientRect();
+gs.addEventListener("pointerup", (e) => {
+    e.preventDefault();    const r = gs.getBoundingClientRect();
     const fontSize = parseFloat(gs.style.fontSize);
     const probe = document.createElement("span");
     probe.style.cssText =
@@ -2375,13 +2377,13 @@
     if (a2SD) {
       if (a2SDT === null) {
         a2SDT = 0;
-        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, 2400);
+        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, 4500);
       }
       a2SDT += dt;
-      if (a2SDT > 3600 && a2SDT - dt <= 3600) {
+      if (a2SDT > 5500 && a2SDT - dt <= 5500) {
         showBanner(window.LANG.bannerTimeToRally, C_ORANGE, 999999);
       }
-      if (a2SDT > 5000 && clickPending) {
+      if (a2SDT > 7500 && clickPending) {
         clickPending = false;
 
         initInter(
@@ -2714,7 +2716,7 @@
     }
   }
 
-  function initAct2b() {
+function initAct2b() {
     audio.play("level");
     Music.transition("music_act3"); // act2b feels like a rally escalation — new track
     audio.preload(["music_act4"]);
@@ -2807,8 +2809,8 @@
       for (const n of a2bNPCs) {
         if (n.st !== "idle") continue;
         /* Wider trigger: 6 in X, 4 in Y. */
-        if (Math.abs(n.wx - pwx) < 6 && Math.abs(n.wy - a2bPY) < 3) {
-          if (n.narc) {
+        // too large on mobile — reduce NPC collision radius
+if (Math.abs(n.wx - pwx) < 3 && Math.abs(n.wy - a2bPY) < 2) {          if (n.narc) {
             n.st = "narc";
             audio.play("bump");
             audio.play("narc");
@@ -2896,17 +2898,17 @@
               {
                 t: a2CrewCount + " Robins.",
                 c: C_DANGER,
-                d: 1200,
+                d: 2000,
               },
               {
                 t: window.LANG.bannerOneStore.trim(),
                 c: C_DANGER,
-                d: 1200,
+                d: 2000,
               },
               {
                 t: window.LANG.bannerLetsEat.trim(),
                 c: C_DANGER,
-                d: 1200,
+                d: 2000,
               },
             ],
             initAct3,
@@ -4767,12 +4769,12 @@
             {
               t: window.LANG.bannerOneStore.trim(),
               c: C_DANGER,
-              d: 1200,
+              d: 2000,
             },
             {
               t: window.LANG.bannerLetsEat.trim(),
               c: C_DANGER,
-              d: 1200,
+              d: 2000,
             },
           ],
           initAct3,

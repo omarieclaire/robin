@@ -18,6 +18,11 @@
 // ambient chatter from hungry/sad npcs while they wander
 // short, no context needed, player probably won't read most of these
 
+// how we decide what line to display
+// 1. if the line before this one is tagged and this line is tagged and those tags are shared, it's more likely we get this line
+// 2. there is a list of tags that are special that we don't reuse (until we need to) so once we've used something with that tag we'll skip all others with that tag until we need to.
+// 3. other stuff?
+
 // ─────────────────────────────────────────
 // AMBIENT — HUNGRY
 // short, first-person, no corporate references
@@ -122,9 +127,9 @@ const D_AMB_NARC = [
 const P_GREET = [
   { t: "hey, how's it hanging?", tags: ["casual"] },
   { t: "you good?", tags: ["casual"] },
-  { t: "salut. sup?", tags: ["casual"] },
+  { t: "salut. what's up?", tags: ["casual"] },
   { t: "hey, you good?", tags: ["concerned"] },
-  { t: "hey neighbour.", tags: ["casual"] },
+  { t: "hey neighbour. how are you?", tags: ["casual"] },
   { t: "allô. what's up?", tags: ["casual"] },
   { t: "hey neighbour, you ok?", tags: ["concerned"] },
   { t: "hey, what's up?", tags: ["casual"] },
@@ -142,7 +147,7 @@ const P_GREET = [
 
 const HELLO_PREFIX = {
   casual: {
-    angry: ["new line", "what's up? I'll tell you —", "ha. ha. what's up?", "okay, honestly? "],
+    angry: ["yeah well —", "ha. ha.", "okay, honestly?"],
     hungry: ["honestly —", "ugh. ", "not great, actually — "],
     narc: ["great, thanks! ", "not much! ", "doing great! "],
   },
@@ -176,7 +181,6 @@ const D_NARC_HELLO = [
   { t: "the market self-corrects. it always does.", tags: ["market", "capitalism"] },
   { t: "I love the market economy.", tags: ["market", "capitalism"] },
   { t: "if people stopped doing drugs they could afford food.", tags: ["classism", "food", "drugs"] },
-  { t: "have you considered a second job?", tags: ["classism", "wages"] },
   { t: "the invisible hand will sort it out.", tags: ["invisible-hand", "market", "capitalism"] },
   { t: "when you use a points card food is basically free.", tags: ["points-card", "food", "classism"] },
   { t: "competition keeps prices down. I read that somewhere.", tags: ["market", "capitalism", "prices"] },
@@ -185,19 +189,18 @@ const D_NARC_HELLO = [
 
 const DECK_ANGRY_HELLO = new DM.Deck([
   { t: "the shareholders are migrating south for winter, honking contentedly", tags: ["honk", "shareholders"] },
-  { t: "the economy is a dumpster fire", tags: ["economy", "food-bank", "fire"] },
+  { t: "the economy is a dumpster fire", tags: ["economy", "fire"] },
   { t: "we got priced out of life", tags: ["life", "we"] },
-  { t: "did you know that Galen Weston owns a CASTLE?", tags: ["weston", "loblaws", "rich", "inequality"] },
+  { t: "did you know that Galen Weston owns a CASTLE?", tags: ["weston", "castle"] },
   { t: "shrinkflation, those pigs!", tags: ["shrinkflation", "pigs"] },
   { t: "Robin Hood had the right idea!", tags: ["robin-hood"] },
   { t: "food bank lineups are so long now", tags: ["food-bank", "winter"] },
   { t: "the market's been about to fix itself for 800 years.", tags: ["market", "fix"] },
   { t: "a billion dollars of food tossed out.", tags: ["wasted-food", "dumpsters"] },
-  { t: "profits up, quality of living is down.", tags: ["inequality", "wages", "prices"] },
   { t: "no-name? no shame!", tags: ["no-name", "budget", "food"] },
   { t: "everything is getting smaller but the price keeps going up.", tags: ["shrinkflation", "prices", "anger"] },
   { t: "were you at the April boycott?", tags: ["boycott", "loblaws", "anger", "solidarity"] },
-  { t: "plateau prices, hochelaga wages", tags: ["wages", "montreal", "inequality", "housing"] },
+  { t: "I pay plateau prices with hochelaga wages", tags: ["wages", "montreal", "inequality", "housing"] },
   { t: "my loyalty card is not feeling very mutual", tags: ["points-card", "loblaws", "anger", "prices"] },
   { t: "have you heard about 'shrinkflation'", tags: ["anger", "politics", "shrinkflation"] },
 ]);
@@ -221,16 +224,16 @@ const DECK_HUNGRY_HELLO = new DM.Deck([
   { t: "I got to art openings for the crackers and grapes.", tags: ["hunger", "montreal", "art", "food", "hustle"] },
   { t: "my diet is very clean. nothing in it.", tags: ["hunger", "food", "diet"] },
   { t: "I work three jobs and I still can't make it work.", tags: ["wages", "work", "hunger", "inequality", "3-jobs", "math"] },
-  { t: "I stretch meals until they snap.", tags: ["hunger", "food", "budget", "snap"] },
+  { t: "I've been stretching meals until they snap.", tags: ["hunger", "food", "budget", "snap"] },
   { t: "intermittent fasting. not by choice.", tags: ["hunger", "food", "fasting"] },
-  { t: "Segals is aspirational now.", tags: ["hunger", "montreal", "food", "prices", "segals"] },
+  { t: "even Segals is too expensive for me now.", tags: ["hunger", "montreal", "food", "prices", "segals"] },
   { t: "I've been living off the free samples at Marché Jean-Talon.", tags: ["hunger", "montreal", "food", "hustle", "market"] },
   { t: "I've been eating dollar store ramen for lunch all week.", tags: ["hunger", "food", "budget", "dollar-store"] },
   { t: "I split one meal into two days and call it meal prep.", tags: ["hunger", "food", "budget", "meal-prep"] },
   { t: "soup tonight. water-forward.", tags: ["hunger", "food", "budget", "soup"] },
   { t: "dinner was coffee. breakfast was also coffee.", tags: ["hunger", "food", "budget", "coffee"] },
   { t: "I ate $2 peanut butter chow mein for dinner.", tags: ["chow-mein"] },
-  { t: "started a garden. desperation mostly.", tags: ["survival", "garden"] },
+  { t: "started a garden. desperation mostly.", tags: ["garden"] },
   { t: "I bought one avocado. as a treat.", tags: ["hunger", "food", "prices", "avocado"] },
   { t: "I went to three stores to save $4.", tags: ["hunger", "food", "budget", "prices", "hustle"] },
   { t: "had to put things back at the checkout. we don't discuss it.", tags: ["hunger", "food", "shame", "prices", "budget"] },
@@ -246,6 +249,8 @@ const DECK_HUNGRY_HELLO = new DM.Deck([
 ]);
 
 const DECK_ANGRY_PITCH = new DM.Deck([
+    { t: "nice, are they taking the 401k route or just following the dividends? And what should we do while they are away?", tags: ["honk", "shareholders"] },
+
   { t: "steal from the rich. give to the poor. the rich have since lobbied against this.", tags: ["robin-hood"] },
   { t: "5 chips, alone in the bag, wondering where everyone went.", tags: ["shrinkflation"] },
   { t: "they call it a dumpster fire like it's a metaphor. it is not a metaphor. look at it.", tags: ["dumpsters", "fire"] },
@@ -256,7 +261,7 @@ const DECK_ANGRY_PITCH = new DM.Deck([
   { t: "and yet somehow he is not the villain in this story, legally.", tags: ["weston", "castle"] },
   { t: "right. almost there.", tags: ["market"] },
   { t: "the bag got smaller. the price didn't hear about it.", tags: ["shrinkflation"] },
-  { t: "Galen Weston owns a castle. you own a points card.", tags: ["castle", "points-card"] },
+  { t: "Yes, Galen Weston owns a castle. And you own a points card.", tags: ["castle", "points-card"] },
   { t: "now they know everything about you and gave you a coupon for beans", tags: ["points-card"] },
   { t: "moving further east every year. eventually I will be in the river.", tags: [] },
   { t: "I was at the boycott yes. I bought nothing. i do that every day but this time it counted", tags: ["boycott"] },
@@ -318,7 +323,6 @@ const DECK_ANGRY_PITCH = new DM.Deck([
   { t: "record profits the same quarter. they know we have nowhere else to go.", tags: ["stat-36b", "three-co"], follows: "boycott" },
   { t: "record profits, record food bank lines. they call it a supply chain issue.", tags: ["food-bank", "stat-36b"], follows: "stat-36b" },
   { t: "$15/hr to ring through $3.6 billion in groceries. do the math.", tags: ["wages"], follows: "stat-36b" },
-  { t: "essential worker pay hasn't kept up with essential worker groceries.", tags: ["wages"], follows: "wages" },
   { t: "a billion in wasted food. bins are locked.", tags: ["wasted-food", "dumpsters"], follows: "wasted-food" },
   { t: "PC Optimum points are a refund they owe you, repackaged as a gift.", tags: ["points"], follows: "points" },
   { t: "clean audit. record profits. CEO got a raise.", tags: ["ceo-pay"], follows: "audit" },
@@ -333,7 +337,7 @@ const DECK_ANGRY_PITCH = new DM.Deck([
 
 const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "potato haul. this is what it's come to.", tags: ["potato"] },
-  { t: "it's kind to feed the squirrels but you need to eat too.", tags: ["garden"] },
+  { t: "it's good to feed the squirrels but you need to eat too.", tags: ["garden"] },
   { t: "sober? oh no.", tags: ["chow-mein"] },
   { t: "oh like la croix, but food.", tags: ["soup"] },
   { t: "a cracker is just a tiny bread that gave up", tags: ["cracker"] },
@@ -379,7 +383,6 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "bread was $3. now it's $6. that gap is somebody's salary.", tags: ["bread"], follows: "bread" },
   { t: "sealed food. I check it every night.", tags: ["dumpsters"], follows: "dumpsters" },
   { t: "Robin Hood fed people. that's all this is.", tags: ["robin-hood"], follows: "robin-hood" },
-  { t: "wages went up $2. groceries went up $400. the bin didn't move at all.", tags: ["dumpsters", "wages"], follows: "wages" },
   { t: "the bin doesn't have a waiting list.", tags: ["dumpsters", "food-bank"], follows: "food-bank" },
   { t: "points. while my kids skip meals.", tags: ["points", "kids"], follows: "kids" },
   { t: "a points card is how they make you feel grateful for a partial refund.", tags: ["points"], follows: "points" },
