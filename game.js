@@ -2239,9 +2239,10 @@
     const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
       // First NPCs start far enough right that player has 2-3 seconds before encountering anyone
-      // Skip first ~200 world units so player has 2-3 seconds before first NPC
-      const npcStart = Math.max(from + Util.randInt(55, 80), 200);
-      for (let nx = npcStart; nx < to; nx += Util.randInt(70, 110)) {
+      // // Skip first ~200 world units so player has 2-3 seconds before first NPC
+      // const npcStart = Math.max(from + Util.randInt(55, 80), 200);
+      // for (let nx = npcStart; nx < to; nx += Util.randInt(70, 110)) {
+      for (let nx = from + Util.randInt(55, 80); nx < to; nx += Util.randInt(70, 110)) {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;

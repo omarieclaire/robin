@@ -129,7 +129,7 @@ window.LANG_EN = {
             "ESTI DE CÂLICE DE TABARNAK. someone has to do something",
           ],
         },
-        { who: "n", text: "you know, stealing from a thief isn't stealing" },
+        { who: "n", text: "you know, stealing from a thief isn't theft" },
         { who: "p", texts: ["what?", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
       ],
     },

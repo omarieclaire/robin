@@ -38,29 +38,29 @@ const DM = (() => {
   // never touches the coolmap.
   const TOPIC_TAGS = new Set([
     // named subjects — rotate these aggressively
-    "bread",
-    "weston",
-    "price-fixing",
-    "dumpsters",
-    "wasted-food",   // closely related to dumpsters — cool together
-    "food-bank",
-    "three-co",
-    "cartel",
-    "dynamic-pricing",
-    "shrinkflation",
-    "robin-hood",
-    "boycott",
-    "points",
-    "wages",
-    "ceo-pay",
-    "audit",
-    "bailout",
-    // stats — never repeat in same conversation
-    "stat-36b",
-    "stat-47",
-    "stat-18b",
-    "stat-61b",
-    "stat-100b",
+    "ghosts",
+    // "bread",
+    // "weston",
+    // "price-fixing",
+    // "dumpsters",
+    // "wasted-food",   
+    // "food-bank",
+    // "three-co",
+    // "cartel",
+    // "dynamic-pricing",
+    // "shrinkflation",
+    // "robin-hood",
+    // "boycott",
+    // "points",
+    // "wages",
+    // "ceo-pay",
+    // "audit",
+    // "bailout",
+    // "stat-36b",
+    // "stat-47",
+    // "stat-18b",
+    // "stat-61b",
+    // "stat-100b",
   ]);
 
   // ROUTING_TAGS: tone tags on the greet deck.
@@ -392,5 +392,9 @@ const DM = (() => {
     _debugConvTags,
     _debugLastDrawnTags,
     _debugCoolMap,
+      TOPIC_TAGS,
   };
+
+
+
 })();

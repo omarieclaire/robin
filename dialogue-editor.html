@@ -26,17 +26,18 @@
         /* selection system */
         --sel-bg:        #fffbe8;
         --sel-border:    #c8a020;
-        --sel-bar:       #c8a020;   /* left accent bar on selected */
+        --sel-bar:       #c8a020;
         --unsel-bg:      #faf8f2;
         --unsel-border:  #b8b3a6;
-        --other-bg:      #f5f2ea;   /* non-selected when something IS selected */
+        --other-bg:      #f5f2ea;
         --other-border:  #ccc8bc;
         --other-bar:     #ccc8bc;
       }
 
-body {
-  overscroll-behavior: none;
-  touch-action: none;        background: var(--bg);
+      body {
+        overscroll-behavior: none;
+        touch-action: none;
+        background: var(--bg);
         color: var(--text);
         font-family: "Georgia", "Times New Roman", serif;
         font-size: 13px;
@@ -113,8 +114,6 @@ body {
         overflow: hidden;
         position: relative;
       }
-      .col.locked .col-body   { pointer-events: none; }
-      .col.locked .col-hdr-label { color: var(--dim); }
 
       .col.browse .col-hdr    { background: #2a3420; border-bottom-color: #3a4830; }
       .col.browse .col-hdr-label { color: #7a9860; letter-spacing: 2px; }
@@ -139,10 +138,6 @@ body {
       .col-body { flex: 1; overflow-y: auto; padding: 6px; }
       .col-body::-webkit-scrollbar { width: 3px; }
       .col-body::-webkit-scrollbar-thumb { background: var(--border2); }
-
-      /* locked columns — full opacity, just muted header + no pointer events */
-      .col.locked .col-body { opacity: 1; }
-      .col.locked .item { cursor: default; }
 
       .col-locked-note {
         font-size: 9px; font-family: "Courier New", monospace;
@@ -172,12 +167,6 @@ body {
       .section-sep .sec-tog { font-size: 11px; color: var(--muted); margin-left: 6px; flex-shrink: 0; }
       .section-items.collapsed-sec { display: none; }
 
-      /* ── ITEMS — new selection system ─────────────────────────────────────────
-         selected:  gold left bar + warm highlight bg
-         other:     full-opacity text, slightly cool bg, recessed border
-         default:   neutral parchment
-         No opacity manipulation anywhere.
-      ── */
       .item {
         padding: 9px 11px 9px 13px;
         margin-bottom: 4px;
@@ -189,36 +178,43 @@ body {
         position: relative;
         transition: border-color 0.1s, background 0.1s;
       }
-      .item:hover:not(.editing):not(.selected) {
+      .item:hover:not(.editing):not(.selected):not(.inferred) {
         border-color: var(--border2);
         border-left-color: var(--border2);
         background: #f0ede4;
       }
 
-      /* SELECTED: gold bar + warm bg */
+      /* SELECTED: thick gold bar + strong warm bg */
       .item.selected {
         border-color: var(--sel-border);
-        border-left: 3px solid var(--sel-bar);
-        background: var(--sel-bg);
+        border-left: 6px solid var(--sel-bar);
+        background: #fff8d6;
       }
 
-      /* OTHER: when a sibling IS selected — slightly recessed, but text fully readable */
+      /* INFERRED: system auto-selected, green dotted border + green bar */
+      .item.inferred {
+        border: 1px dotted #7aaa58;
+        border-left: 6px solid #7aaa58;
+        background: #eef6e8;
+      }
+
+      /* OTHER: when a sibling IS selected */
       .item.other {
         border-color: var(--other-border);
         border-left-color: var(--other-bar);
         background: var(--other-bg);
       }
-      /* NPC-type coloured left bars still apply, just use different bar colours */
+
       .item.angry  { border-left-color: #b05050; }
       .item.hungry { border-left-color: #b08820; }
       .item.selected.angry  { border-left-color: var(--sel-bar); }
       .item.selected.hungry { border-left-color: var(--sel-bar); }
+      .item.inferred.angry  { border-left-color: #7aaa58; }
+      .item.inferred.hungry { border-left-color: #7aaa58; }
 
-      /* text always full opacity */
       .item-text  { line-height: 1.6; font-size: 13px; color: var(--text); }
-      .item.other .item-text { color: var(--text); }   /* explicit — never muted */
+      .item.other .item-text { color: var(--text); }
 
-      /* visited / unvisited — weight only, no colour change */
       .item.unvisited .item-text { font-weight: bold; }
       .item.visited   .item-text { font-weight: normal; }
 
@@ -239,7 +235,6 @@ body {
       .b-hungry { background: #e0eef8; color: #104080; border-color: #80a8d0; }
       .b-narc   { background: #f0e0f8; color: #500888; border-color: #b878d8; }
 
-      /* score badges — position only mode, so these are subtle */
       .score-badge {
         font-size: 9px; padding: 1px 5px; font-family: "Courier New", monospace;
         border-radius: 2px; border: 1px solid; letter-spacing: 0.5px;
@@ -249,7 +244,6 @@ body {
       .score-0  { background: var(--bg4); color: var(--muted); border-color: var(--border2); }
       .score-n2 { background: #f0e0c8; color: #805028; border-color: #c8a878; }
 
-      /* score group dividers — more distinct */
       .score-divider {
         font-size: 8px; font-family: "Courier New", monospace;
         text-transform: uppercase; letter-spacing: 1.5px;
@@ -258,15 +252,12 @@ body {
         background: #eef6e8;
       }
 
-      /* player columns: warm parchment header */
       .col.player .col-hdr { background: #f0ead8; border-bottom-color: #d0c8a8; }
       .col.player .col-hdr-label { color: #6a4e10; }
 
-      /* npc columns: cool green-grey header */
       .col.npc .col-hdr { background: #dce8d8; border-bottom-color: #b8ccb0; }
       .col.npc .col-hdr-label { color: #2a4a20; }
 
-      /* pencil icon on hover */
       .item:not(.editing) .edit-hint {
         display: none;
         position: absolute; top: 7px; right: 8px;
@@ -280,7 +271,6 @@ body {
         border: 1px dashed var(--border2); margin-bottom: 4px; border-radius: 2px;
       }
 
-      /* ── edit mode ── */
       .item.editing { border-color: var(--accent2); background: #eaf4e8; }
       .edit-ta {
         width: 100%; background: #faf8f2; border: 1px solid var(--border2);
@@ -491,7 +481,7 @@ body {
       function toggleSec(id,lbl) { SEC[`${id}::${lbl}`]=!SEC[`${id}::${lbl}`]; saveSec(); render(); }
 
       // ── scoring — exact match to DM.score() ──────────────────────────────────────
-      const TOPIC_TAGS = new Set([
+      const TOPIC_TAGS = typeof DM !== "undefined" && DM.TOPIC_TAGS ? DM.TOPIC_TAGS : new Set([
         "bread","weston","price-fixing","dumpsters","wasted-food","food-bank","three-co",
         "cartel","dynamic-pricing","shrinkflation","robin-hood","boycott","points","wages",
         "ceo-pay","audit","bailout","stat-36b","stat-47","stat-18b","stat-61b","stat-100b",
@@ -507,8 +497,6 @@ body {
         return 0;
       }
 
-      // scoreAndSort: sorts descending, suppressed (-2) items go to the bottom
-      // (position-only mode: no score badge shown unless score > 0)
       function scoreAndSort(items, followTags, convUsed, boost=false) {
         return items
           .map(x=>({...x, score:dmScore(x,followTags,convUsed,boost)}))
@@ -524,7 +512,44 @@ body {
         return [...s].sort();
       }
 
-      let P={}, EDIT_KEY=null;
+      let P={}, EDIT_KEY=null, colFilters={}, lastFocusColId=null, inferredKeys=new Set();
+
+      // ── leftward inference ────────────────────────────────────────────────────────
+      function inferLeft(dn, i) {
+        // infer npcType from hello deck
+        if (dn==="DECK_ANGRY_HELLO")  { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="angry";  inferredKeys.add("npcType"); inferredKeys.add("npctype:0"); } }
+        if (dn==="DECK_HUNGRY_HELLO") { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="hungry"; inferredKeys.add("npcType"); inferredKeys.add("npctype:1"); } }
+        if (dn==="D_NARC_HELLO")      { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="narc";   inferredKeys.add("npcType"); inferredKeys.add("npctype:2"); } }
+
+        // infer tone from greet if not manually set
+        if (!P.tone || inferredKeys.has("tone")) { P.tone="casual"; inferredKeys.add("tone"); }
+
+        // infer pitch/back-off flags
+        if (dn==="D_BACK_OFF_EARLY") { P.isBoEarly=true;  inferredKeys.add("isBoEarly"); }
+        if (dn==="D_BACK_OFF_LATE")  { P.isBOLate=true;   inferredKeys.add("isBOLate"); }
+        if (dn==="D_JOIN_CONSENT_PAIRS") { P.joinedEarly=true; inferredKeys.add("joinedEarly"); }
+
+        // infer pitch tags
+        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH") && D[dn] && D[dn][i]) {
+          if (!P.pitchTags || inferredKeys.has("pitchTags")) {
+            P.pitchTags=tagsOf(D[dn][i])||[];
+            inferredKeys.add("pitchTags");
+          }
+          if (!P.pitchDeck || inferredKeys.has("pitchDeck")) {
+            P.pitchDeck=dn; P.pitchIdx=i;
+            inferredKeys.add("pitchDeck");
+          }
+        }
+
+        // infer hello tags
+        if ((dn==="DECK_ANGRY_HELLO"||dn==="DECK_HUNGRY_HELLO"||dn==="D_NARC_HELLO") && D[dn] && D[dn][i]) {
+          if (!P.helloTags || inferredKeys.has("helloTags")) {
+            P.helloTags=tagsOf(D[dn][i])||[];
+            P.helloDN=dn; P.helloIdx=i;
+            inferredKeys.add("helloTags");
+          }
+        }
+      }
 
       function wrapPlain(arr, dn) {
         return arr.map((x,i)=>({
@@ -537,7 +562,7 @@ body {
 
       function buildCols() {
         const cols=[];
-        function col(def,unlocked){ return {...def,locked:!unlocked}; }
+        function col(def){ return {...def,locked:false}; }
 
         // ── AMBIENT ──────────────────────────────────────────────────────────────
         cols.push({
@@ -559,32 +584,45 @@ body {
           items:D.P_GREET.map((x,i)=>({
             key:`P_GREET:${i}`, text:x.t, tags:x.tags, idx:i,
             selected:P.greetIdx===i,
+            inferred: inferredKeys.has(`P_GREET:${i}`),
           })),
           onSelect:(_dn,i)=>{
             const same=P.greetIdx===i;
-            if(same){ ["greetIdx","tone","npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
-            P={greetIdx:i,tone:D.P_GREET[i].tags[0]||"casual"}; scrollColTop("npctype"); render();
+            if(same){
+              ["greetIdx","tone","npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+              inferredKeys.clear(); render(); return;
+            }
+            P.greetIdx=i; P.tone=D.P_GREET[i].tags[0]||"casual";
+            inferredKeys.delete("tone");
+            ["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+            scrollColTop("npctype"); render();
           },
-        }, true));
+        }));
 
         // ── 2. NPC TYPE ───────────────────────────────────────────────────────────
         const NPC=["angry","hungry","narc"];
         cols.push(col({
-          id:"npctype", label:"npc type", deckName:null, lockedNote:"select a greeting first", role:"npc",
+          id:"npctype", label:"npc type", deckName:null, role:"npc",
           clearKey:["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           items:NPC.map((t,i)=>({
             key:`npctype:${t}`, text:t, tags:[], idx:i, badge:t,
             selected:P.npcType===t,
+            inferred: inferredKeys.has(`npctype:${i}`),
           })),
           onSelect:(_dn,i)=>{
             const same=P.npcType===NPC[i];
-            if(same){ ["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
+            if(same){
+              ["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+              inferredKeys.delete("npcType"); inferredKeys.delete(`npctype:${i}`);
+              render(); return;
+            }
             P.npcType=NPC[i];
+            inferredKeys.delete("npcType"); inferredKeys.delete("npctype:0"); inferredKeys.delete("npctype:1"); inferredKeys.delete("npctype:2");
             ["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags",
              "isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
             scrollColTop("prefix"); render();
           },
-        }, P.tone!=null));
+        }));
 
         // ── 3. HELLO PREFIX ───────────────────────────────────────────────────────
         const tone=P.tone||"casual", kind=(!P.npcType||P.npcType==="narc")?"narc":P.npcType;
@@ -592,68 +630,78 @@ body {
         const prefixArr=D[prefixDN]||[];
         prefixArr.forEach((p,i)=>{ if(typeof p==="string") prefixArr[i]={t:p,tags:[]}; });
         cols.push(col({
-          id:"prefix", label:"hello prefix", deckName:prefixDN, lockedNote:"select npc type first", role:"player",
+          id:"prefix", label:"hello prefix", deckName:prefixDN, role:"player",
           clearKey:["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           items:prefixArr.map((p,i)=>({
             key:`${prefixDN}:${i}`, text:p.t||p, tags:p.tags||[], idx:i, italic:true,
             selected:P.prefixIdx===i,
+            inferred: inferredKeys.has(`${prefixDN}:${i}`),
           })),
           onSelect:(dn,i)=>{
             const same=P.prefixIdx===i;
-            if(same){ ["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
+            if(same){
+              ["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+              render(); return;
+            }
             P.prefixIdx=i;
             ["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags",
              "isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
             scrollColTop("hello"); render();
           },
-        }, P.npcType!=null));
+        }));
 
         // ── 4. HELLO ──────────────────────────────────────────────────────────────
-        const helloUnlocked=P.prefixIdx!=null;
         const mkHI=(dn,x,i)=>({
           key:`${dn}:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
           selected:P.helloIdx===i&&P.helloDN===dn,
+          inferred: inferredKeys.has(`${dn}:${i}`) && P.helloDN===dn,
         });
         const helloSel=(dn,i)=>{
           const same=P.helloIdx===i&&P.helloDN===dn;
-          if(same){ ["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
+          if(same){
+            ["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+            inferredKeys.delete("helloTags");
+            render(); return;
+          }
           P.helloIdx=i; P.helloDN=dn; P.helloTags=tagsOf(D[dn][i])||[];
+          inferredKeys.delete("helloTags");
+          inferLeft(dn, i);
           ["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags",
            "joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
           scrollColTop("pitch"); render();
         };
         if (!P.npcType||P.npcType!=="narc") {
           cols.push(col({
-            id:"hello", label:"hello", deckName:null, lockedNote:"select a prefix first", role:"npc",
+            id:"hello", label:"hello", deckName:null, role:"npc",
             clearKey:["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
             sections:[
               {label:"angry hello",  deckName:"DECK_ANGRY_HELLO",  items:D.DECK_ANGRY_HELLO.map((x,i)=>mkHI("DECK_ANGRY_HELLO",x,i))},
               {label:"hungry hello", deckName:"DECK_HUNGRY_HELLO", items:D.DECK_HUNGRY_HELLO.map((x,i)=>mkHI("DECK_HUNGRY_HELLO",x,i))},
             ],
             onSelect:helloSel,
-          }, helloUnlocked));
+          }));
         } else {
           cols.push(col({
-            id:"hello", label:"narc hello", deckName:"D_NARC_HELLO", lockedNote:"select a prefix first", role:"npc",
+            id:"hello", label:"narc hello", deckName:"D_NARC_HELLO", role:"npc",
             clearKey:["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
             items:D.D_NARC_HELLO.map((x,i)=>mkHI("D_NARC_HELLO",x,i)),
             onSelect:helloSel,
-          }, helloUnlocked));
+          }));
         }
 
         // ── 5. PITCH ─────────────────────────────────────────────────────────────
-        const pitchUnlocked=P.helloIdx!=null;
         const hTags=P.helloTags||[], convH=new Set(hTags.filter(t=>TOPIC_TAGS.has(t)));
         const mkPI=(dn,x,i)=>({
           key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
           selected:P.pitchDeck===dn&&P.pitchIdx===i,
+          inferred: inferredKeys.has("pitchDeck") && P.pitchDeck===dn && P.pitchIdx===i,
         });
-        const sortPitch=dn=>pitchUnlocked
+        const sortPitch=dn=>P.helloIdx!=null
           ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,convH,true)
           :D[dn].map((x,i)=>mkPI(dn,x,i));
 
         cols.push(col({
-          id:"pitch", label:"pitch (player)", deckName:null, lockedNote:"select a hello first", role:"player",
+          id:"pitch", label:"pitch (player)", deckName:null, role:"player",
           clearKey:["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           appendNote:{label:"then automatically: D_F_INVITE", deckName:"D_F_INVITE", items:D.D_F_INVITE},
           sections:[
@@ -669,14 +717,20 @@ body {
           ],
           onSelect:(dn,i)=>{
             const same=P.pitchDeck===dn&&P.pitchIdx===i;
-            if(same){ ["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
+            if(same){
+              ["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
+              inferredKeys.delete("pitchDeck"); inferredKeys.delete("pitchTags");
+              render(); return;
+            }
             P.pitchDeck=dn; P.pitchIdx=i;
             P.pitchTags=tagsOf(D[dn][i])||[];
             P.isBoEarly=dn==="D_BACK_OFF_EARLY";
+            inferredKeys.delete("pitchDeck"); inferredKeys.delete("pitchTags");
+            inferLeft(dn, i);
             ["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
             scrollColTop("f_invite"); render();
           },
-        }, pitchUnlocked));
+        }));
 
         if (P.isBoEarly) {
           cols.push({id:"end0",label:"\u2014 end \u2014",deckName:null,locked:false,
@@ -685,10 +739,8 @@ body {
         }
 
         // ── 6. D_F_INVITE ─────────────────────────────────────────────────────────
-        const fInviteUnlocked=pitchUnlocked&&P.pitchIdx!=null&&!P.isBoEarly;
         cols.push(col({
-          id:"f_invite", label:"first invite (player)", deckName:"D_F_INVITE",
-          lockedNote:"select a pitch first", role:"player",
+          id:"f_invite", label:"first invite (player)", deckName:"D_F_INVITE", role:"player",
           clearKey:["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           items:D.D_F_INVITE.map((x,i)=>({
             key:`D_F_INVITE:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
@@ -701,14 +753,13 @@ body {
             ["smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
             scrollColTop("npcresp"); render();
           },
-        }, fInviteUnlocked));
+        }));
 
         // ── 7. NPC RESPONSE ───────────────────────────────────────────────────────
         const pTags=P.pitchTags||[], convP=new Set([...Array.from(convH),...pTags.filter(t=>TOPIC_TAGS.has(t))]);
         const isAP=P.pitchDeck==="DECK_ANGRY_PITCH";
-        const mismatch=fInviteUnlocked&&P.fInviteIdx!=null&&
+        const mismatch=P.fInviteIdx!=null&&
           ((isAP&&P.npcType==="hungry")||(P.pitchDeck==="DECK_HUNGRY_PITCH"&&P.npcType==="angry"));
-        const npcRespUnlocked=fInviteUnlocked&&P.fInviteIdx!=null;
 
         if (mismatch) {
           const mdn=isAP?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL";
@@ -723,9 +774,10 @@ body {
         const mkSM=(dn,x,i)=>({
           key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,
           selected:P.smDeck===dn&&P.smIdx===i,
+          inferred: inferredKeys.has(`sm:${dn}:${i}`),
         });
-        const smWarm=npcRespUnlocked?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,convP,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
-        const smSkep=npcRespUnlocked?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,convP,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
+        const smWarm=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,convP,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
+        const smSkep=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,convP,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
         const joinItems=D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({
           key:`D_JOIN_CONSENT_PAIRS:${i}`,
           text:`\u201c${x.join}\u201d / \u201c${x.consent}\u201d`,
@@ -734,7 +786,7 @@ body {
         }));
 
         cols.push(col({
-          id:"npcresp", label:"npc response", deckName:null, lockedNote:"select a first invite first", role:"npc",
+          id:"npcresp", label:"npc response", deckName:null, role:"npc",
           clearKey:["smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           sections:[
             {label:"say more \u2014 warm (non-narc)",      deckName:"D_SAY_MORE_WARM",      items:smWarm},
@@ -747,10 +799,11 @@ body {
             P.smDeck=dn; P.smIdx=i;
             P.joinedEarly=dn==="D_JOIN_CONSENT_PAIRS";
             if (!P.joinedEarly) P.smTags=tagsOf(D[dn][i])||pTags;
+            inferLeft(dn, i);
             ["strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
             scrollColTop("stronger"); render();
           },
-        }, npcRespUnlocked));
+        }));
 
         if (P.joinedEarly) {
           cols.push({id:"end2",label:"\u2014 end \u2014",deckName:null,locked:false,
@@ -759,19 +812,18 @@ body {
         }
 
         // ── 8. STRONGER PITCH ─────────────────────────────────────────────────────
-        const strongerUnlocked=npcRespUnlocked&&P.smIdx!=null&&!P.joinedEarly;
         const fTags=P.smTags||pTags, convSM=new Set([...Array.from(convP),...fTags.filter(t=>TOPIC_TAGS.has(t))]);
         const mkSPI=(dn,x,i)=>({
           key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
           selected:P.strongerDeck===dn&&P.strongerIdx===i,
+          inferred: inferredKeys.has(`stronger:${dn}:${i}`),
         });
-        const strongerItems=strongerUnlocked
+        const strongerItems=P.smIdx!=null
           ?scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i)),fTags,convSM,true)
           :D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i));
 
         cols.push(col({
-          id:"stronger", label:"stronger pitch (player)", deckName:null,
-          lockedNote:"select a npc response first", role:"player",
+          id:"stronger", label:"stronger pitch (player)", deckName:null, role:"player",
           clearKey:["strongerDeck","strongerIdx","isBOLate"],
           sections:[
             {label:"stronger pitch", deckName:"DECK_STRONGER_PITCH", items:strongerItems},
@@ -783,9 +835,11 @@ body {
           onSelect:(dn,i)=>{
             const same=P.strongerDeck===dn&&P.strongerIdx===i;
             if(same){ ["strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
-            P.strongerDeck=dn; P.strongerIdx=i; P.isBOLate=dn==="D_BACK_OFF_LATE"; render();
+            P.strongerDeck=dn; P.strongerIdx=i; P.isBOLate=dn==="D_BACK_OFF_LATE";
+            inferLeft(dn, i);
+            render();
           },
-        }, strongerUnlocked));
+        }));
 
         if (P.isBOLate) {
           cols.push({id:"end3",label:"\u2014 end \u2014",deckName:null,locked:false,
@@ -794,30 +848,25 @@ body {
         }
 
         // ── 9. D_INVITE ───────────────────────────────────────────────────────────
-        const inviteUnlocked=strongerUnlocked&&P.strongerIdx!=null&&!P.isBOLate;
         cols.push(col({
           id:"invite", label:"D_INVITE (appended)", deckName:"D_INVITE",
-          lockedNote:"select a stronger pitch first",
           items:D.D_INVITE.map((x,i)=>({
             key:`D_INVITE:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
             selected:false,
           })),
           onSelect:()=>{},
-        }, inviteUnlocked));
+        }));
 
         // ── 10. OUTCOME ───────────────────────────────────────────────────────────
-        const outcomeUnlocked=inviteUnlocked;
         if (!P.npcType||P.npcType==="narc") {
           cols.push(col({
             id:"outcome", label:"narc reveal \u2192 end", deckName:"D_NARC_REVEAL",
-            lockedNote:"select a stronger pitch first",
             items:D.D_NARC_REVEAL.map((x,i)=>({key:`D_NARC_REVEAL:${i}`,text:x.t||x,tags:x.tags||[],idx:i,selected:false})),
             onSelect:()=>{},
-          }, outcomeUnlocked));
+          }));
         } else {
           cols.push(col({
             id:"outcome", label:"outcome", deckName:null,
-            lockedNote:"select a stronger pitch first",
             sections:[
               {label:"join (end)", deckName:"D_JOIN_CONSENT_PAIRS",
                 items:D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({key:`D_JOIN_CONSENT_PAIRS:out:${i}`,text:`\u201c${x.join}\u201d / \u201c${x.consent}\u201d`,tags:x.tags||[],idx:i,selected:false}))},
@@ -827,7 +876,7 @@ body {
                 items:D.D_RETURN.map((x,i)=>({key:`D_RETURN:${i}`,text:x.t||x,tags:x.tags||[],idx:i,selected:false}))},
             ],
             onSelect:()=>{},
-          }, outcomeUnlocked));
+          }));
         }
 
         return cols;
@@ -837,12 +886,11 @@ body {
         const have=new Set(cols.map(c=>c.id));
         ["f_invite","stronger","invite","outcome"].forEach(id=>{
           if (!have.has(id))
-            cols.push({id,label:id,deckName:null,locked:true,lockedNote:"not reached on this path",items:[],onSelect:()=>{}});
+            cols.push({id,label:id,deckName:null,locked:false,lockedNote:"not reached on this path",items:[],onSelect:()=>{}});
         });
       }
 
       function scrollColTop(colId) {
-        // called before render(); queues a scroll after the DOM updates
         setTimeout(()=>{
           const col=document.querySelector(`.col[data-col-id="${colId}"]`);
           if(col){ const b=col.querySelector(".col-body"); if(b) b.scrollTop=0; }
@@ -866,6 +914,11 @@ body {
           const el=document.querySelector(`[data-key="${EDIT_KEY}"]`);
           if(el){el.scrollIntoView({behavior:"smooth",block:"nearest"});const ta=el.querySelector("textarea");if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}}
         },60);
+        if (lastFocusColId) setTimeout(()=>{
+          const col=document.querySelector(`.col[data-col-id="${lastFocusColId}"]`);
+          if(col){ const fi=col.querySelector("input[placeholder='filter\u2026']"); if(fi){ fi.focus(); const l=fi.value.length; fi.setSelectionRange(l,l); } }
+          lastFocusColId=null;
+        },60);
       }
 
       function buildColEl(cd) {
@@ -875,7 +928,17 @@ body {
         const hdr=document.createElement("div"); hdr.className="col-hdr";
         const lbl=document.createElement("span"); lbl.className="col-hdr-label"; lbl.textContent=cd.label;
         hdr.appendChild(lbl);
-        // ← clear button: resets this column's selection and everything downstream
+
+        // filter input
+        const filterIn=document.createElement("input");
+        filterIn.placeholder="filter\u2026";
+        filterIn.value=colFilters[cd.id]||"";
+        filterIn.style.cssText="font-family:Courier New,monospace;font-size:10px;padding:2px 6px;background:#faf8f2;border:1px solid var(--border2);color:var(--text);border-radius:2px;width:80px;outline:none;";
+        filterIn.addEventListener("input",()=>{ colFilters[cd.id]=filterIn.value; lastFocusColId=cd.id; render(); });
+        filterIn.addEventListener("click",e=>e.stopPropagation());
+        hdr.appendChild(filterIn);
+
+        // clear button
         if(cd.clearKey&&!cd.locked){
           const clr=document.createElement("button");
           clr.style.cssText="background:none;border:none;cursor:pointer;font-family:Courier New,monospace;font-size:9px;color:var(--dim);padding:2px 4px;letter-spacing:1px;text-transform:uppercase;";
@@ -895,7 +958,6 @@ body {
         prog.appendChild(pb); el.appendChild(prog);
 
         const body=document.createElement("div"); body.className="col-body";
-        if (cd.locked&&cd.lockedNote){const n=document.createElement("div");n.className="col-locked-note";n.textContent="\u27f5 "+cd.lockedNote;body.appendChild(n);}
 
         if (cd.appendNote) {
           const an=document.createElement("div"); an.className="append-note";
@@ -909,12 +971,17 @@ body {
           body.appendChild(an);
         }
 
+        const applyFilter=(items)=>{
+          const q=(colFilters[cd.id]||"").toLowerCase().trim();
+          if(!q) return items;
+          return items.filter(x=>(x.text||"").toLowerCase().includes(q)||(x.tags||[]).some(t=>t.toLowerCase().includes(q)));
+        };
+
         const renderItems=(target,items,deckName)=>{
-          // Determine if any item in this list is selected
+          items=applyFilter(items);
           const anySelected=items.some(x=>x.selected);
           let lastScore=null;
           items.forEach(item=>{
-            // Score group dividers (only when scores are present and vary)
             if(item.score!=null&&lastScore!==null&&item.score!==lastScore){
               const dv=document.createElement("div"); dv.className="score-divider";
               if(item.score===0)  dv.textContent="\u2014 fair draw \u2014";
@@ -954,11 +1021,11 @@ body {
         if(item.isEnd){el.className="end-note";el.textContent=item.text;return el;}
         const dn=deckName||item.deckName;
 
-        // Build class list — no opacity, no dimming
         let cls="item ";
         cls+=vis(item.key)?"visited ":"unvisited ";
-        if(item.selected)        cls+="selected ";
-        else if(anySelected)     cls+="other ";   // sibling is selected: recessed but fully readable
+        if(item.selected && item.inferred)  cls+="inferred ";
+        else if(item.selected)               cls+="selected ";
+        else if(anySelected)                 cls+="other ";
         if(dn==="DECK_ANGRY_HELLO"||dn==="DECK_ANGRY_PITCH") cls+="angry ";
         if(dn==="DECK_HUNGRY_HELLO"||dn==="DECK_HUNGRY_PITCH") cls+="hungry ";
         el.className=cls.trim();
@@ -966,7 +1033,6 @@ body {
 
         if(EDIT_KEY===item.key&&dn){buildEditMode(el,item,dn);return el;}
 
-        // pencil hint — visible on hover via CSS, signals double-click to edit
         if(dn){ const eh=document.createElement("span"); eh.className="edit-hint"; eh.textContent="✎"; el.appendChild(eh); }
 
         const tt=document.createElement("div"); tt.className="item-text";
@@ -979,7 +1045,6 @@ body {
         if(item.follows){const s=document.createElement("span");s.className="tag f";s.textContent="\u2192"+item.follows;meta.appendChild(s);}
         if(meta.children.length) el.appendChild(meta);
 
-        // Score badge — only show when > 0 (position already communicates order)
         if(item.score!=null&&item.score>0){
           const lbl=item.score===4?"follows \u2713":item.score===2?"boost":"";
           if(lbl){
@@ -1020,7 +1085,9 @@ body {
             (obj.tags||[]).forEach((t,ti)=>{
               const sp=document.createElement("span");sp.className="tag-e";
               sp.innerHTML=`${esc(t)} <span class="tag-x">\xd7</span>`;
-              sp.querySelector(".tag-x").onclick=()=>{obj.tags.splice(ti,1);saveData();render();};
+              // fix: stop propagation on the chip and the x button
+              sp.onclick=(e)=>e.stopPropagation();
+              sp.querySelector(".tag-x").onclick=(e)=>{e.stopPropagation();obj.tags.splice(ti,1);saveData();render();};
               tr.appendChild(sp);
             });
             const inp=document.createElement("input");inp.className="tag-in";inp.placeholder="+tag";tr.appendChild(inp);
@@ -1030,11 +1097,17 @@ body {
               const v=inp.value.trim().toLowerCase();if(!v)return;
               const m=allTags().filter(t=>t.includes(v)&&!(obj.tags||[]).includes(t));if(!m.length)return;
               ac=document.createElement("div");ac.className="ac";el.style.position="relative";
-              m.slice(0,8).forEach(t=>{const d=document.createElement("div");d.className="ac-item";d.textContent=t;d.onmousedown=e=>{e.preventDefault();if(!obj.tags)obj.tags=[];obj.tags.push(t);inp.value="";saveData();render();if(ac){ac.remove();ac=null;}};ac.appendChild(d);});
+              m.slice(0,8).forEach(t=>{const d=document.createElement("div");d.className="ac-item";d.textContent=t;
+                // fix: save text before adding tag via autocomplete
+                d.onmousedown=e=>{e.preventDefault();obj.t=ta.value.trim();if(!obj.tags)obj.tags=[];obj.tags.push(t);inp.value="";saveData();render();if(ac){ac.remove();ac=null;}};
+                ac.appendChild(d);});
               el.appendChild(ac);
             });
             inp.addEventListener("keydown",e=>{
-              if(e.key==="Enter"||e.key===","){e.preventDefault();const v=inp.value.replace(/,$/,"").trim();if(v){if(!obj.tags)obj.tags=[];obj.tags.push(v);inp.value="";saveData();render();}}
+              if(e.key==="Enter"||e.key===","){e.preventDefault();const v=inp.value.replace(/,$/,"").trim();if(v){
+                // fix: save text before adding tag via keyboard
+                obj.t=ta.value.trim();
+                if(!obj.tags)obj.tags=[];obj.tags.push(v);inp.value="";saveData();render();}}
               if(e.key==="Escape"){EDIT_KEY=null;render();}
             });
             inp.addEventListener("blur",()=>setTimeout(()=>{if(ac){ac.remove();ac=null;}},150));
@@ -1047,7 +1120,6 @@ body {
             const fi=document.createElement("input");fi.className="follows-in";fi.value=obj.follows||"";fi.placeholder="tag\u2026";
             const saveF=()=>{obj.follows=fi.value.trim()||undefined;saveData();};
             fi.addEventListener("change",saveF);fi.addEventListener("blur",saveF);
-            // autocomplete for follows — same tag pool as tag-in
             let fac=null;
             fi.addEventListener("input",()=>{
               if(fac){fac.remove();fac=null;}
