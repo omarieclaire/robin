@@ -911,9 +911,19 @@
     renderInterFrame();
     renderBanner();
     if (interControlsHint) {
-      const hintY = Math.floor(H * 0.72);
-      grid.textCenter(interControlsHint, hintY, Math.sin(Date.now() / 600) > 0 ? C_DIM : "#555");
-      renderTapPrompt("tap to continue", hintY + 2, "#666", "#444");
+      const hintCol = Math.sin(Date.now() / 600) > 0 ? C_DIM : "#555";
+      const maxW = W - 6;
+      const words = interControlsHint.split(" ");
+      const hintLines = [];
+      let cur = "";
+      for (const w of words) {
+        if (cur.length + w.length + 1 > maxW) { hintLines.push(cur); cur = w; }
+        else cur = cur ? cur + " " + w : w;
+      }
+      if (cur) hintLines.push(cur);
+      const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
+      hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
+      renderTapPrompt("tap to continue", hintY + hintLines.length + 1, "#666", "#444");
     }
   }
 
@@ -1230,6 +1240,33 @@
           grid.set(tailX, cy, "ᐯ", convNPCColor); // Canadian syllabics down triangle
         }
       }
+    }
+  }
+
+  /* Simple one-liner popup — renders directly above a screen position, no stacking.
+     duration: how long it shows in ms. To adjust vertical offset, change the - 3. */
+  const _inlinePopups = [];
+  function popupPush(text, x, y, color, duration) {
+    _inlinePopups.push({ text, x, y: y - 3, color, life: duration || 1000, max: duration || 1000 });
+  }
+  function popupUpdate(dt) {
+    for (let i = _inlinePopups.length - 1; i >= 0; i--) {
+      _inlinePopups[i].life -= dt;
+      if (_inlinePopups[i].life <= 0) _inlinePopups.splice(i, 1);
+    }
+  }
+  function popupRender() {
+    for (const p of _inlinePopups) {
+      if (p.life < 80) continue;
+      const bw = p.text.length + 4;
+      const bx = Util.clamp(Math.round(p.x) - Math.floor(bw / 2), 0, W - bw);
+      const by = Util.clamp(Math.round(p.y), 1, H - 4);
+      // Clear background
+      for (let y = by; y <= by + 2; y++) for (let x = bx; x < bx + bw; x++) if (x >= 0 && x < W) grid.set(x, y, " ", null);
+      // Box using same style as act 2 dialog
+      grid.text(DIALOG_BOX.tl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.tr, bx, by, p.color);
+      grid.text(DIALOG_BOX.v + " " + p.text + " " + DIALOG_BOX.v, bx, by + 1, p.color);
+      grid.text(DIALOG_BOX.bl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.br, bx, by + 2, p.color);
     }
   }
 
@@ -2201,9 +2238,10 @@
     /* NPCs across all 6 lanes (skip top road - lanes 0-1 - to avoid dialogue cutoff) */
     const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
-      // density
-      // reduce npc density
-      for (let nx = from + Util.randInt(55, 80); nx < to; nx += Util.randInt(70, 110)) {
+      // First NPCs start far enough right that player has 2-3 seconds before encountering anyone
+      // Skip first ~200 world units so player has 2-3 seconds before first NPC
+      const npcStart = Math.max(from + Util.randInt(55, 80), 200);
+      for (let nx = npcStart; nx < to; nx += Util.randInt(70, 110)) {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
@@ -2301,7 +2339,7 @@
     a2TP = 0;
     a2TT = 0;
 
-    a2TalkCD = 3000;
+    a2TalkCD = 0; //basically nothing at this point
     a2MobileMoveX = 0;
     a2MobileMoveT = 0;
     a2SV = false;
@@ -2891,6 +2929,8 @@
 
         if (Math.abs(n.wx - pwx) < 3) {
           audio.play("bump");
+          spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
+
           // Snap/move player to just-before NPC so they don't overlap
           a2PX = n.wx - a2WX - 3;
           a2TN = n;
@@ -3094,7 +3134,7 @@
     const midY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     const roadH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
     const spacing = Math.max(7, Math.floor((a2bStoreX - 50) / 45));
-    for (let nx = 20; nx < a2bStoreX - 20; nx += Util.randInt(spacing, spacing + 6)) {
+    for (let nx = 60; nx < a2bStoreX - 20; nx += Util.randInt(spacing, spacing + 6)) {
       const isNarc = Math.random() < 0.15;
       const ny = Util.randInt(A2B_ROAD_Y1 + 2, A2B_ROAD_Y2 - 2);
       const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
@@ -3109,7 +3149,7 @@
         narc: isNarc,
         st: "idle",
         ch: npcArt[0],
-        art: isNarc ? ["[$]", "/!\\ "] : npcArt,
+        art: npcArt,
         col: npcCol,
         shoutT: 0,
         shoutMsg: "",
@@ -3223,9 +3263,6 @@
     if (a2bT > 1000) {
       for (const n of a2bNPCs) {
         if (n.st !== "idle") continue;
-        /* Wider trigger: 6 in X, 4 in Y. */
-        // too large on mobile — reduce NPC collision radius
-
         const hitW = Device.isMobile ? 3 : 6;
         const hitH = Device.isMobile ? 1.5 : 3;
         if (Math.abs(n.wx - pwx) < hitW && Math.abs(n.wy - a2bPY) < hitH) {
@@ -3238,16 +3275,8 @@
             spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 24);
             triggerChromatic(600);
             a2bHt++;
-            // Big dramatic float near the player — no banner needed
-            floats.unshift({
-              text: window.LANG.floatNarc,
-              color: C_DANGER,
-              life: 2200,
-              max: 2200,
-              boxed: true,
-              jx: 0,
-              jy: Math.round(a2bPY) - Math.floor(H * 0.20) - 3, // pins float just above player row
-            });
+            popupPush(window.LANG.floatNarc, Math.round(n.wx - a2bWX), n.wy, C_DANGER, 1200);
+            popupPush(Util.pick([window.LANG.floatOops, "!!", "oh no"]), Math.round(a2bPX), Math.round(a2bPY), C_PLAYER, 1200);
             if (a2bHt >= A2B_MH) {
               setTimeout(() => quickBust("busted", initAct2b), 1500);
               return;
@@ -3258,8 +3287,7 @@
             a2CrewCount++;
             audio.play("recruit");
             const _hitSX = Math.round(n.wx - a2bWX);
-            const _hitSY = n.wy;
-            burstGood(_hitSX, _hitSY, n.col, 12);
+            burstGood(_hitSX, n.wy, n.col, 12);
             triggerFlashGood();
             const newBob = Math.random() * 6;
             a2bMob.push({
@@ -3276,7 +3304,7 @@
               art: n.art,
               col: n.col,
             });
-            addFloat(
+            popupPush(
               Util.pick([
                 window.LANG.floatOui,
                 window.LANG.floatLetsGo,
@@ -3285,9 +3313,10 @@
                 window.LANG.floatYeah,
                 window.LANG.floatForReal,
               ]),
-              0,
-              0,
+              _hitSX,
+              n.wy,
               n.col,
+              1200,
             );
           }
         }
@@ -3322,7 +3351,7 @@
         () =>
           initInter(
             [
-              { t: a2CrewCount + " Robins.", c: C_DANGER, d: 2000 },
+              { t: a2CrewCount + " Robins", c: C_DANGER, d: 2000 },
               { pause: true, d: 700 }, // ← beat after the crew count lands
               { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
               { pause: true, d: 700 },
@@ -3409,12 +3438,18 @@
       ppy = Math.round(a2bPY);
     for (let i = 0; i < a2bMob.length; i++) {
       const m = a2bMob[i];
-      const mx = ppx + m.ox + Math.round(Math.sin(a2bT / 300 + m.b) * 0.8);
-      const my = ppy + m.oy + Math.round(Math.sin(a2bT / 400 + m.b + 1) * 0.5);
+      // Katamari-style: tight orbit around a rolling cluster center
+      // Each robin has its own phase so they tumble independently
+      const clusterR = 2; // tight cluster radius — increase to spread out
+      const angle = a2bT / 600 + m.b; // slow tumble — increase divisor to slow further
+      const orbitX = Math.sin(angle + i) * clusterR;
+      const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
+      const baseOX = -2 - Math.floor(i / 3) * 2;
+      const mx = Math.round(ppx + baseOX + orbitX);
+      const my = Math.round(ppy + orbitY);
       if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
         const art = m.art || [m.ch, "\u03C6"];
         let col = m.col || "#3a9a3a";
-        /* Pop animation: flash white for first 100ms, then their color */
         if (m.popT && m.popT > 100) col = "#fff";
         grid.art(art, mx, my, col);
       }
@@ -3428,7 +3463,7 @@
       const sx = Math.round(n.wx - a2bWX);
       if (sx < -2 || sx > W + 2) continue;
       if (n.st !== "idle") continue;
-      if (a2bT <= 3000) continue;
+      if (a2bT <= 800) continue;
       const dist = Math.abs(n.wx - (a2bWX + a2bPX));
       if (dist >= 15 || dist <= 4) continue;
       const maxInner = 16;
@@ -3491,6 +3526,7 @@
         }
       }
     }
+    popupRender();
 
     renderBanner();
   }
@@ -4559,7 +4595,7 @@
     }
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
       renderTapPrompt("TAP TO CONTINUE", H - 2, "#fff", C_TEAL);
-    dialogRender();
+    popupRender();
     renderBanner();
   }
 
@@ -4964,8 +5000,10 @@
     if (chromaticT > 0) chromaticT -= dt;
     if (phase === "act1") updateAct1(dt);
     else if (phase === "act2") updateAct2(dt);
-    else if (phase === "act2b") updateAct2b(dt);
-    else if (phase === "act3") updateAct3(dt);
+    else if (phase === "act2b") {
+      updateAct2b(dt);
+      popupUpdate(dt);
+    } else if (phase === "act3") updateAct3(dt);
     else if (phase === "act4") updateAct4(dt);
     else if (phase === "act5") updateAct5(dt);
     else if (phase === "end") updateEnd(dt);
@@ -4988,14 +5026,10 @@
                          Other phases = tidy vertical stack.
                          Uses thin double-line borders instead of heavy block chars. */
     const floatMaxW = W - 6;
-// Tweak these two numbers independently:
-  // act2b: 0.15 = near top, 0.4 = middle, 0.7 = near bottom
-  // act4:  same scale
-  const floatBaseY = phase === "act2b"
-    ? Math.floor(H * 0.15)
-    : phase === "act4"
-    ? Math.floor(H * 0.08)
-    : Math.floor(H * 0.25);
+    // Tweak these two numbers independently:
+    // act2b: 0.15 = near top, 0.4 = middle, 0.7 = near bottom
+    // act4:  same scale
+    const floatBaseY = phase === "act2b" ? Math.floor(H * 0.15) : phase === "act4" ? Math.floor(H * 0.08) : Math.floor(H * 0.25);
     const playful = phase === "act4" || phase === "act2b";
     const fBox = {
       tl: "┌",
@@ -5266,7 +5300,7 @@
         a2CrewCount = Math.max(a2CrewCount, 5);
         initInter(
           [
-            { t: a2CrewCount + " Robins.", c: C_DANGER, d: 1200 },
+            { t: a2CrewCount + " Robins", c: C_DANGER, d: 1200 },
             { pause: true, d: 700 },
             { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
             { pause: true, d: 700 },

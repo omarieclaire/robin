@@ -151,8 +151,7 @@ endYouAte: "(toi aussi tu as mangé)",
 muteMuted: "sourdine",
 muteMute: "son",
 act1Choices: ["j'en ai assez", "qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
-bannerOneStore: "\nUne épicerie.",
-bannerLetsEat: "\nOn mange.",
+
 neighbourMsgs: ["merci", "mes enfants mangent ce soir", "enfin", "avec amour!", "merci beaucoup", "thank you"],
 intercoms: [
   "ATTENTION CLIENTS: le spécial du jour — la dignité",
@@ -177,8 +176,8 @@ crewItems: ["AVOINE", "NOIX", "PAIN", "HUILE", "JUS", "PATATES", "SOUPE"],
 
 hudAct4Haul: (my, crew) => "Toi " + my + "$ + Équipe " + crew + "$",
 
-bannerOneStore: " Une épicerie.",
-bannerLetsEat: " On mange.",
+bannerOneStore: " une épicerie.",
+bannerLetsEat: " on mange.",
 tapToContinue: "[ appuie pour continuer ]",
 tapToEnter: "[ APPUIE POUR ENTRER ]",
 promptTap: "[ toucher ]",
