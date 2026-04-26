@@ -23,6 +23,7 @@ window.LANG_FR = {
   bannerExitOpen: "SORTIE OUVERTE \u2014 EN BAS À DROITE!",
   bannerSecurityGrabbed: "LA SÉCURITÉ A PRIS DE LA BOUFFE! -$20",
   bannerGrabEverything: "clique et prends tout ce que tu peux!",
+  bannerAvoidSecurity: "avoid security.",
   bannerFoodGloriousFood: "de la bouffe, enfin.",
   bannerShareBounty: "partageons le butin",
   bannerNarc: "\u26A0 MOUCHARD! \u26A0",
@@ -191,4 +192,7 @@ controlsAct4: "flèches pour bouger — clique pour prendre la bouffe",
 
 endGameTimedOutTitle: "POGNÉ!",
 endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite.",
+
+bannerHatsOn: "hats on.",
+    bannerPutOnHats: "let's all put on Robin Hood hats.",
 };

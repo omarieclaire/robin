@@ -45,15 +45,15 @@
     holdRight: false,
   };
 
-function _mobResolveDir(dx, dy) {
+  function _mobResolveDir(dx, dy) {
     if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
     return dy < 0 ? "up" : "down";
   }
 
-function _mobFireStep(dir) {
-    if (dir === "up")    _mob.pendingUp    = true;
-    if (dir === "down")  _mob.pendingDown  = true;
-    if (dir === "left")  _mob.pendingLeft  = true;
+  function _mobFireStep(dir) {
+    if (dir === "up") _mob.pendingUp = true;
+    if (dir === "down") _mob.pendingDown = true;
+    if (dir === "left") _mob.pendingLeft = true;
     if (dir === "right") _mob.pendingRight = true;
   }
 
@@ -77,12 +77,14 @@ function _mobFireStep(dir) {
         }
         if (phase === "act2b") {
           const pl = { x: Math.round(a2bPX), y: Math.round(a2bPY) };
-          const ddx = tapCX - pl.x, ddy = tapCY - pl.y;
+          const ddx = tapCX - pl.x,
+            ddy = tapCY - pl.y;
           if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
         }
         if (phase === "act4") {
           const pl = { x: Math.round(s4PX2), y: Math.round(s4PY2) };
-          const ddx = tapCX - pl.x, ddy = tapCY - pl.y;
+          const ddx = tapCX - pl.x,
+            ddy = tapCY - pl.y;
           console.log("act4 tap: tapCY:", Math.round(tapCY), "S4_AISLE_TOP:", S4_AISLE_TOP, "S4_AISLE_BOT:", S4_AISLE_BOT, "pl.y:", pl.y);
           // Give aisle a 5-row buffer above S4_AISLE_TOP so taps near the shelf edge still move player
           if (tapCY >= S4_AISLE_TOP && tapCY <= S4_FLOOR_Y) {
@@ -117,29 +119,34 @@ function _mobFireStep(dir) {
         _mob.tapped = false;
         _mob.holding = false;
         _mob.hopTimer = 0;
-       
-        _mob.holdLeft  = false;
-      _mob.holdRight = false;
-      _mob.dragAccX  = 0;
-      _mob.dragAccY  = 0;
-      _mob.lastX     = e.clientX;
-      _mob.lastY     = e.clientY;
-    }, { passive: true });
 
- 
-    gs.addEventListener("pointermove", (e) => {
-      if (e.pointerId !== _mob.pointerId) return;
-      _mob.currentX = e.clientX;
-      _mob.currentY = e.clientY;
-      // Engage holding as soon as finger moves half a cell
-      const fingerMovedX = Math.abs(e.clientX - _mob.startX) > 8;
-      const fingerMovedY = Math.abs(e.clientY - _mob.startY) > 8;
-      if ((fingerMovedX || fingerMovedY) && !_mob.holding) {
-        _mob.holding = true;
+        _mob.holdLeft = false;
+        _mob.holdRight = false;
+        _mob.dragAccX = 0;
+        _mob.dragAccY = 0;
         _mob.lastX = e.clientX;
         _mob.lastY = e.clientY;
-      }
-    }, { passive: true });
+      },
+      { passive: true },
+    );
+
+    gs.addEventListener(
+      "pointermove",
+      (e) => {
+        if (e.pointerId !== _mob.pointerId) return;
+        _mob.currentX = e.clientX;
+        _mob.currentY = e.clientY;
+        // Engage holding as soon as finger moves half a cell
+        const fingerMovedX = Math.abs(e.clientX - _mob.startX) > 8;
+        const fingerMovedY = Math.abs(e.clientY - _mob.startY) > 8;
+        if ((fingerMovedX || fingerMovedY) && !_mob.holding) {
+          _mob.holding = true;
+          _mob.lastX = e.clientX;
+          _mob.lastY = e.clientY;
+        }
+      },
+      { passive: true },
+    );
 
     gs.addEventListener(
       "pointerup",
@@ -156,8 +163,6 @@ function _mobFireStep(dir) {
       { passive: true },
     );
   }
-
-  
 
   function _mobUpdate(dt) {
     if (!Device.isMobile || !_mob.active) return;
@@ -658,7 +663,7 @@ function _mobFireStep(dir) {
           // Silent beat — box stays, no new text
           seq.lineTimer = entry.d || 800;
         } else {
-          if (bannerText) bannerText += "\n" + entry.t;
+          if (bannerText) bannerText += "\n\n" + entry.t;
           else bannerText = entry.t;
           if (entry.c) bannerColor = entry.c;
           seq.lineTimer = entry.d || 3000;
@@ -674,6 +679,10 @@ function _mobFireStep(dir) {
     const mxW = W - 6;
     const lines = [];
     for (const segment of bannerText.split("\n")) {
+      if (segment.trim() === "") {
+        lines.push(""); // preserve blank lines as empty rows
+        continue;
+      }
       const words = segment.split(" ");
       let cur = "";
       for (const w of words) {
@@ -788,8 +797,15 @@ function _mobFireStep(dir) {
     bannerTimer = 0;
     dialogStack = [];
     clickPending = false;
-    showBanner(interLines[0].t, interLines[0].c, 99999, true);
-    interLI = 1;
+    // skip any leading pause entries
+    let _firstReal = 0;
+    while (_firstReal < interLines.length && interLines[_firstReal].pause) _firstReal++;
+    if (_firstReal >= interLines.length) {
+      if (nextFn) nextFn();
+      return;
+    }
+    showBanner(interLines[_firstReal].t, interLines[_firstReal].c, 99999, true);
+    interLI = _firstReal + 1;
   }
 
   function updateInter(dt) {
@@ -798,12 +814,17 @@ function _mobFireStep(dir) {
 
     // append next line to existing banner box
     if (interLI < interLines.length && interT > interLines[interLI - 1].d) {
-      console.log("appending line", interLI, interLines[interLI].t, "after", interT, "ms");
-
-      bannerText += "\n" + interLines[interLI].t;
-      bannerTimer = 99999;
-      interLI++;
-      interT = 0;
+      const nextLine = interLines[interLI];
+      if (nextLine.pause) {
+        // silent beat — just wait, don't append anything
+        interLI++;
+        interT = 0;
+      } else {
+        bannerText += "\n\n" + nextLine.t;
+        bannerTimer = 99999;
+        interLI++;
+        interT = 0;
+      }
     }
     console.log("interLI", interLI, "interLines.length", interLines.length, "interT", Math.round(interT), "interDone", interDone);
     // auto-advance after last line
@@ -1665,22 +1686,22 @@ function _mobFireStep(dir) {
         a1PauseT -= dt;
         return;
       }
+
       if (bannerTimer <= 0) {
-        if (a1PI >= a1Path.length - 1) {
-          if (a1NP < NQ.length) {
-            const q = NQ[a1NP];
-            if (q.pause) {
-              a1PauseT = q.d;
-            } else {
-              showBanner(q.t, q.c, q.d, true); // silent — trumpet already played at sequence start
-            }
-            a1NP++;
-            a1ST2 = 0;
+        if (a1NP < NQ.length) {
+          const q = NQ[a1NP];
+          if (q.pause) {
+            a1PauseT = q.d;
+          } else if (q.seq) {
+            showBannerSequence(q.seq, true);
           } else {
-            a1St = "done";
-            a1ST2 = 0;
+            showBanner(q.t, q.c, q.d, true);
           }
-        } else a1St = "walk";
+          a1NP++;
+        } else {
+          a1St = "done";
+          a1ST2 = 0;
+        }
       }
     } else if (a1St === "enc") {
       /* Array-of-turns encounter engine using conv panel */
@@ -1871,19 +1892,19 @@ function _mobFireStep(dir) {
         a1PauseT -= dt;
         return;
       }
-      if (bannerTimer <= 0) {
+      if (!_bannerSeq && bannerTimer <= 0) {
         if (a1NP < NQ.length) {
           const q = NQ[a1NP];
+          a1NP++;
           if (q.pause) {
             a1PauseT = q.d;
+          } else if (q.seq) {
+            showBannerSequence(q.seq, true);
           } else {
-            showBanner(q.t, q.c, q.d, true); // silent — trumpet already played at sequence start
+            showBanner(q.t, q.c, q.d, true);
           }
-          a1NP++;
         } else {
-          // a1St = "descend";
           a1St = "done";
-
           a1ST2 = 0;
         }
       }
@@ -1971,7 +1992,8 @@ function _mobFireStep(dir) {
         initInter(
           [
             { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
-            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
+            { pause: true, d: 800 }, // ← pause before narcs warning
+            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2500 },
           ],
           initAct2,
           0,
@@ -2752,7 +2774,8 @@ function _mobFireStep(dir) {
         initInter(
           [
             { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
-            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2000 },
+            { pause: true, d: 800 },
+            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2500 },
           ],
           initAct2b,
           1,
@@ -3005,15 +3028,15 @@ function _mobFireStep(dir) {
     if (a2SD && a2SDT !== null && a2SDT > 4500)
       renderTapPrompt("tap to continue", H - 2, "#fff", C_DIM); /* Heat is shown in the HUD — no in-game overlay needed */
     // Mobile hint: shown for first 5 seconds, fades out
-    if (Device.isMobile && a2T < 5000 && !a2TN) {
-      const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
-      const hintCol = fade > 0.6 ? C_DIM : "#444";
-      // Position hints just above and below the player
-      const px = Math.round(a2PX),
-        py = Math.round(a2PY);
-      grid.textCenter("swipe ↑↓ to change lane", Math.max(1, py - 4), hintCol);
-      grid.textCenter("hold ◀ ▶ sides to move", Math.min(H - 2, py + 4), hintCol);
-    }
+    // if (Device.isMobile && a2T < 5000 && !a2TN) {
+    //   const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
+    //   const hintCol = fade > 0.6 ? C_DIM : "#444";
+    //   // Position hints just above and below the player
+    //   const px = Math.round(a2PX),
+    //     py = Math.round(a2PY);
+    //   grid.textCenter("swipe ↑↓ to change lane", Math.max(1, py - 4), hintCol);
+    //   grid.textCenter("hold ◀ ▶ sides to move", Math.min(H - 2, py + 4), hintCol);
+    // }
     renderBanner();
   }
 
@@ -3166,9 +3189,9 @@ function _mobFireStep(dir) {
     else if (input.justPressed("up")) a2bPY -= tapStep;
     if (input.isDown("down")) a2bPY += ms * dt;
     else if (input.justPressed("down")) a2bPY += tapStep;
-    if (input.isDown("left"))        a2bPX -= ms * dt;
-    else if (input.justPressed("left"))  a2bPX -= tapStep;
-    if (input.isDown("right"))       a2bPX += ms * dt;
+    if (input.isDown("left")) a2bPX -= ms * dt;
+    else if (input.justPressed("left")) a2bPX -= tapStep;
+    if (input.isDown("right")) a2bPX += ms * dt;
     else if (input.justPressed("right")) a2bPX += tapStep;
 
     if (clickPending && phase === "act2b") {
@@ -3210,15 +3233,21 @@ function _mobFireStep(dir) {
             n.st = "narc";
             audio.play("bump");
             audio.play("narc");
-            // big burst from both player AND narc position
             spark(Math.round(a2bPX), Math.round(a2bPY), C_DANGER, 36);
             spark(Math.round(n.wx - a2bWX), Math.round(n.wy), C_DANGER, 36);
-            // extra burst from center screen
             spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 24);
             triggerChromatic(600);
             a2bHt++;
-            addFloat(Util.pick([window.LANG.floatNarc, window.LANG.floatNarc, window.LANG.floatOops]), 0, 0, C_DANGER);
-            showBanner(window.LANG.bannerNarc, C_DANGER, 1800, true);
+            // Big dramatic float near the player — no banner needed
+            floats.unshift({
+              text: window.LANG.floatNarc,
+              color: C_DANGER,
+              life: 2200,
+              max: 2200,
+              boxed: true,
+              jx: 0,
+              jy: Math.round(a2bPY) - Math.floor(H * 0.20) - 3, // pins float just above player row
+            });
             if (a2bHt >= A2B_MH) {
               setTimeout(() => quickBust("busted", initAct2b), 1500);
               return;
@@ -3293,21 +3322,11 @@ function _mobFireStep(dir) {
         () =>
           initInter(
             [
-              {
-                t: a2CrewCount + " Robins.",
-                c: C_DANGER,
-                d: 2000,
-              },
-              {
-                t: window.LANG.bannerOneStore.trim(),
-                c: C_DANGER,
-                d: 2000,
-              },
-              {
-                t: window.LANG.bannerLetsEat.trim(),
-                c: C_DANGER,
-                d: 2000,
-              },
+              { t: a2CrewCount + " Robins.", c: C_DANGER, d: 2000 },
+              { pause: true, d: 700 }, // ← beat after the crew count lands
+              { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
+              { pause: true, d: 700 },
+              { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
             ],
             initAct3,
             2,
@@ -3627,7 +3646,16 @@ function _mobFireStep(dir) {
           }
           triggerFlashGood();
           setTimeout(() => {
-            initInter([{ t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 }], initAct4, 3, window.LANG.controlsAct4);
+            initInter(
+              [
+                { t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 },
+                { pause: true, d: 800 },
+                { t: window.LANG.bannerAvoidSecurity, c: C_WARN, d: 2500 },
+              ],
+              initAct4,
+              3,
+              window.LANG.controlsAct4,
+            );
           }, 1200);
         }
         return;
@@ -3714,6 +3742,7 @@ function _mobFireStep(dir) {
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
+
     if (a3T > 1500) {
       const tapFlash = Math.sin(Date.now() / 300) > 0;
       const tapY = Math.min(H - 2, ly + 5);
@@ -3721,6 +3750,10 @@ function _mobFireStep(dir) {
       const tapMsg = a3HatsOn && a3PlayerHatted ? "[ tap to enter store ]" : hatsAnimating ? "" : "[ tap to put on hats ]";
       const tapCol = a3HatsOn && a3PlayerHatted ? (tapFlash ? "#fff" : C_PLAYER) : tapFlash ? "#fff" : C_ORANGE;
       grid.textCenter(tapMsg, tapY, tapCol);
+    }
+    // Show "put on hats" banner a couple seconds after everyone arrives, before the tap hint
+    if (a3T > 2200 && a3T < 2216 && !a3HatsOn) {
+      showBanner(window.LANG.bannerPutOnHats, C_ORANGE, 2800, false);
     }
     renderBanner();
   }
@@ -4032,13 +4065,13 @@ function _mobFireStep(dir) {
     if (s4St2 > 0) s4St2 -= dt;
     if (s4St2 <= 0) {
       const s4TapStep = 2;
-      if (input.isDown("up"))              s4PY2 -= 0.02 * dt;
-      else if (input.justPressed("up"))    s4PY2 -= s4TapStep;
-      if (input.isDown("down"))            s4PY2 += 0.02 * dt;
-      else if (input.justPressed("down"))  s4PY2 += s4TapStep;
-      if (input.isDown("left"))            s4PX2 -= 0.02 * dt;
-      else if (input.justPressed("left"))  s4PX2 -= s4TapStep;
-      if (input.isDown("right"))           s4PX2 += 0.02 * dt;
+      if (input.isDown("up")) s4PY2 -= 0.02 * dt;
+      else if (input.justPressed("up")) s4PY2 -= s4TapStep;
+      if (input.isDown("down")) s4PY2 += 0.02 * dt;
+      else if (input.justPressed("down")) s4PY2 += s4TapStep;
+      if (input.isDown("left")) s4PX2 -= 0.02 * dt;
+      else if (input.justPressed("left")) s4PX2 -= s4TapStep;
+      if (input.isDown("right")) s4PX2 += 0.02 * dt;
       else if (input.justPressed("right")) s4PX2 += s4TapStep;
     }
 
@@ -4069,7 +4102,7 @@ function _mobFireStep(dir) {
               max: 400,
               col: it.color,
             });
-            addFloat(it.food.n + " +$" + it.food.p, ix + Math.floor(S4_SLOT_W / 2), aY - 1, it.color);
+            addFloat(it.food.n + " +$" + it.food.p, 0, 0, it.color);
             grabbedItem = true;
             break outer4;
           }
@@ -4886,7 +4919,6 @@ function _mobFireStep(dir) {
   /* ── FLOAT STYLE CONFIG ─────────────────────────────────
                        Used for big moments (recruit, narc, maybe-later). */
   const FLOAT_STYLE = {
-    yRatio: 0.78 /* vertical position: 0=top, 1=bottom */,
     boxed: true /* draw border box around text? */,
     life: 2000 /* ms on screen */,
     fadeStart: 0.15 /* fraction of life at which it fades */,
@@ -4894,10 +4926,8 @@ function _mobFireStep(dir) {
   };
 
   function addFloat(t, x, y, co) {
-    /* x, y: pass actual screen coords to pin float above a collision point.
-       Pass 0,0 to fall back to the centered default position.
-       To nudge floats up/down, adjust FLOAT_PIN_OFFSET_Y below. */
-    const FLOAT_PIN_OFFSET_Y = -4; // negative = higher above the hit point
+    /* x, y ignored — floats cluster near top of screen (playful overlap).
+       To move the cluster up or down, edit floatBaseY in the render function. */
     const life = phase === "act4" ? 1200 : FLOAT_STYLE.life;
     floats.push({
       text: t,
@@ -4905,9 +4935,6 @@ function _mobFireStep(dir) {
       life,
       max: life,
       boxed: FLOAT_STYLE.boxed,
-      pinX: x || 0,
-      pinY: y ? y + FLOAT_PIN_OFFSET_Y : 0,
-      pinned: !!(x || y),
     });
   }
 
@@ -4960,8 +4987,15 @@ function _mobFireStep(dir) {
     /* Floats: Act 2b + Act 4 = playful overlap with per-float position jitter.
                          Other phases = tidy vertical stack.
                          Uses thin double-line borders instead of heavy block chars. */
-    const floatBaseY = Math.floor(H * FLOAT_STYLE.yRatio);
     const floatMaxW = W - 6;
+// Tweak these two numbers independently:
+  // act2b: 0.15 = near top, 0.4 = middle, 0.7 = near bottom
+  // act4:  same scale
+  const floatBaseY = phase === "act2b"
+    ? Math.floor(H * 0.15)
+    : phase === "act4"
+    ? Math.floor(H * 0.08)
+    : Math.floor(H * 0.25);
     const playful = phase === "act4" || phase === "act2b";
     const fBox = {
       tl: "┌",
@@ -4991,12 +5025,7 @@ function _mobFireStep(dir) {
       const bw = lineW + FLOAT_STYLE.padX * 2 + (boxed ? 2 : 0);
       const bh = boxed ? lines.length + 2 : lines.length;
       let bx, by;
-      if (f.pinned && f.pinX !== undefined) {
-        // Pinned to a world collision/grab point
-        if (f.jx === undefined) f.jx = 0; // no jitter for pinned floats
-        bx = Util.clamp(Math.round(f.pinX) - Math.floor(bw / 2), 0, W - bw);
-        by = Util.clamp(Math.round(f.pinY) - bh, 1, H - bh - 1);
-      } else if (playful) {
+      if (playful) {
         /* Stable per-float position jitter — set once on first render */
         if (f.jx === undefined) {
           f.jx = Math.floor((Math.random() - 0.5) * 8);
@@ -5078,16 +5107,16 @@ function _mobFireStep(dir) {
     } else {
       bannerText = "";
       bannerTimer = 0;
-      showBanner(window.LANG.bannerIsThisALife, "#9ab0cc", 99999, true);
       initAct1();
       loop.start();
-      setTimeout(() => {
-        bannerText += "\n\n" + window.LANG.bannerWhoIsInControl;
-        bannerTimer = 99999;
-      }, 3000);
-      setTimeout(() => {
-        bannerTimer = 0;
-      }, 5500);
+      showBannerSequence(
+        [
+          { t: window.LANG.bannerIsThisALife, c: "#9ab0cc", d: 2000 },
+          { pause: true, d: 800 },
+          { t: window.LANG.bannerWhoIsInControl, c: "#9ab0cc", d: 3000 },
+        ],
+        true,
+      );
     }
     // hasPlayed is set to true when the player reaches Act 2
   }
@@ -5215,7 +5244,8 @@ function _mobFireStep(dir) {
         initInter(
           [
             { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
-            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2000 },
+            { pause: true, d: 800 },
+            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2500 },
           ],
           initAct2,
           1,
@@ -5225,7 +5255,8 @@ function _mobFireStep(dir) {
         initInter(
           [
             { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
-            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2000 },
+            { pause: true, d: 800 },
+            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2500 },
           ],
           initAct2b,
           2,
@@ -5235,21 +5266,11 @@ function _mobFireStep(dir) {
         a2CrewCount = Math.max(a2CrewCount, 5);
         initInter(
           [
-            {
-              t: a2CrewCount + " Robins.",
-              c: C_DANGER,
-              d: 1200,
-            },
-            {
-              t: window.LANG.bannerOneStore.trim(),
-              c: C_DANGER,
-              d: 2000,
-            },
-            {
-              t: window.LANG.bannerLetsEat.trim(),
-              c: C_DANGER,
-              d: 2000,
-            },
+            { t: a2CrewCount + " Robins.", c: C_DANGER, d: 1200 },
+            { pause: true, d: 700 },
+            { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
+            { pause: true, d: 700 },
+            { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
           ],
           initAct3,
           3,
@@ -5258,7 +5279,16 @@ function _mobFireStep(dir) {
       },
       5: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
-        initInter([{ t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 }], initAct4, 4, window.LANG.controlsAct4);
+        initInter(
+          [
+            { t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 },
+            { pause: true, d: 800 },
+            { t: window.LANG.bannerAvoidSecurity, c: C_WARN, d: 2500 },
+          ],
+          initAct4,
+          4,
+          window.LANG.controlsAct4,
+        );
       },
       6: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);

@@ -24,6 +24,7 @@ window.LANG_EN = {
   bannerExitOpen: "EXIT OPEN \u2014 BOTTOM RIGHT!",
   bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
   bannerGrabEverything: "click and grab everything you can!",
+  bannerAvoidSecurity: "avoid security.",
   bannerFoodGloriousFood: "food glorious food.",
   bannerShareBounty: "share the bounty?",
   bannerNarc: "\u26A0 NARC! \u26A0",
@@ -194,5 +195,8 @@ controlsAct4: "arrow keys to move — click to grab food",
 
 endGameTimedOutTitle: "BUSTED!",
 endGameTimedOutSub: "The narcs reported you. Next time work faster.",
+
+bannerHatsOn: "hats on.",
+    bannerPutOnHats: "let's all put on Robin Hood hats.",
 };
 

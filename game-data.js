@@ -3002,8 +3002,12 @@ window.GAME_DATA = {
     { pause: true, d: 1000 },
     { t: "or maybe we all had the idea", c: "#db7f30", d: 4000 },
     { pause: true, d: 1000 },
-    { t: "what if we just\n take what we need?", c: "#f26507", d: 2000 },
-    { pause: true, d: 1000 },
+
+ { seq: [
+    { t: "what if we just", c: "#f26507", d: 1200 },
+    { pause: true, d: 700 },
+    { t: "take what we need?", c: "#f26507", d: 3000 },
+]},{ pause: true, d: 1000 },
     { t: "^-^", c: "#8957ff", d: 2500 },
 ],
 narrativeQuotesFR: [
@@ -3011,7 +3015,11 @@ narrativeQuotesFR: [
     { pause: true, d: 800 },
     { t: "ou peut-être qu'on l'avait tous", c: "#db7f30", d: 2500 },
     { pause: true, d: 1000 },
-    { t: "et si on prenait\n ce dont on a besoin?", c: "#f26507", d: 3000 },
+   { seq: [
+    { t: "et si on prenait", c: "#f26507", d: 1200 },
+    { pause: true, d: 700 },
+    { t: "ce dont on a besoin?", c: "#f26507", d: 3000 },
+]},
     { pause: true, d: 600 },
     { t: "-", c: "#8957ff", d: 2500 },
 ],
