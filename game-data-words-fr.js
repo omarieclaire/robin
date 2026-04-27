@@ -642,6 +642,16 @@ const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "on va juste — laisse faire.", tags: [] },
 ]);
 
+
+
+const DECK_BAIL_RESPONSE = new DM.Deck([
+  { t: "...okay then.", tags: [] },
+  { t: "sure. whatever.", tags: [] },
+  { t: "bye I guess.", tags: [] },
+  { t: "cool. cool cool.", tags: [] },
+]);
+
+
 const D_BACK_OFF_LATE = new DM.Deck([
   { t: "complètement hypothétique. oublie ça.", tags: [] },
   { t: "fais semblant que j'ai dit quelque chose sur la météo.", tags: [] },
@@ -742,11 +752,28 @@ const D_RETURN = [
   { t: "okay. tu m'as convaincu. allons-y.", tags: [] },
 ];
 
+const D_F_INVITE = [
+  { t: "we're not waiting any more either. join us?", tags: ["robin-hood"] },
+  { t: "join us? we're taking the rest back tonight.", tags: ["shrinkflation"] },
+  { t: "it's almost like the laws...well anyways, want to join us?", tags: ["castle"] },
+  { t: "and what if we refuse to pay the price?", tags: ["we", "life"] },
+  { t: "but the idea is ready for a come back. join us?", tags: ["robin-hood"] },
+  { t: "I know how we can even things out. Join us?", tags: ["castle"] },
+  { t: "I know what we can do while they're away. Join us?", tags: ["honk"] },
+  { t: "come with us? we have a plan.", tags: ["fire", "shrinkflation", "big-fire"] },
+  { t: "we're changing things. join us?", tags: ["shrinkflation"] },
+  { t: "time to make change?", tags: ["life"] },
+  // a store full of food, thirty feet away
+  // one of us is eating tonight. I vote us
+];
+
 const D_ACK_HUNGRY_ANGRY = ["exactement,", "hein ?"];
 const D_ACK_NARC = ["ben, ", "tu sais, ", "honnêtement, ", "je veux dire, "];
 
 // Plain shuffle decks — no tag system needed
 const DECK_GREET = new DM.Deck(P_GREET);
+const DECK_F_INVITE = new DM.Deck(D_F_INVITE);
+
 const DECK_INVITE = new DM.Deck(D_INVITE);
 
 const DECK_JOIN_CONSENT = new DM.Deck(D_JOIN_CONSENT_PAIRS);
@@ -758,6 +785,7 @@ const DECK_RETURN = new DM.Deck(D_RETURN);
 const DECK_NARC_HELLO = new DM.Deck(D_NARC_HELLO);
 const DECK_NARC_REV = new DM.Deck(D_NARC_REVEAL);
 const DECK_ACK_NARC = new DM.Deck(D_ACK_NARC);
+
 
 const DECK_BACK_OFF_EARLY = D_BACK_OFF_EARLY;
 const DECK_BACK_OFF_LATE = D_BACK_OFF_LATE;

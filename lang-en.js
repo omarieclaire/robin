@@ -89,7 +89,7 @@ window.LANG_EN = {
           ],
         },
         { who: "n", text: "I use a coupon app" },
-        { who: "p", texts: ["ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
+        { who: "p", texts: ["um,|pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
       ],
     },
     {
@@ -129,7 +129,7 @@ window.LANG_EN = {
             "ESTI DE CÂLICE DE TABARNAK. someone has to do something",
           ],
         },
-        { who: "n", text: "you know, stealing from a thief isn't theft" },
+        { who: "n", text: "you know|pause|stealing from a thief isn't theft" },
         { who: "p", texts: ["what?", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
       ],
     },
@@ -187,7 +187,7 @@ window.LANG_EN = {
 
   muteMuted: "muted",
   muteMute: "mute",
-  act1Choices: ["I've had enough", "what choice do I have?"],
+  act1Choices: ["(>_<) I've had enough", "(o_O) what choice do I have?"],
   
   neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
   intercoms: [
@@ -231,4 +231,12 @@ window.LANG_EN = {
 
   bannerHatsOn: "hats on.",
   bannerPutOnHats: "let's all put on Robin Hood hats.",
+
+  choiceCommiserateAngry: "(╯°□°)╯ commiserate",
+  choiceCommiserateHungry: "(っ◔◡◔)っ commiserate",
+  choiceTalkOver: "(ಠ_ಠ) talk over them",
+  choiceRun: "[>_>] RUN",
+  choiceTryHarderAngry: "(ง'̀-'́)ง try harder",
+  choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
+  choiceWalkAway: "( ._.) walk away",
 };

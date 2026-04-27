@@ -400,6 +400,8 @@
         D_AMB_NARC:                   D_AMB_NARC,
         D_ACK_HUNGRY_ANGRY:           D_ACK_HUNGRY_ANGRY,
         D_ACK_NARC:                   D_ACK_NARC,
+        DECK_TONE_DEAF:               DECK_TONE_DEAF.src,
+        DECK_BAIL_RESPONSE:           DECK_BAIL_RESPONSE.src,
       };
 
       ["casual","concerned","direct"].forEach(tone =>
@@ -421,6 +423,7 @@
         "D_BACK_OFF_LATE","D_NARC_REVEAL","D_NOT_NOW","D_RETURN",
         "D_AMB_HUNGRY","D_AMB_ANGRY","D_AMB_NARC",
         "D_ACK_HUNGRY_ANGRY","D_ACK_NARC",
+        "DECK_TONE_DEAF","DECK_BAIL_RESPONSE",
         "PREFIX_casual_angry","PREFIX_casual_hungry","PREFIX_casual_narc",
         "PREFIX_concerned_angry","PREFIX_concerned_hungry","PREFIX_concerned_narc",
         "PREFIX_direct_angry","PREFIX_direct_hungry","PREFIX_direct_narc",
@@ -481,25 +484,18 @@
       function toggleSec(id,lbl) { SEC[`${id}::${lbl}`]=!SEC[`${id}::${lbl}`]; saveSec(); render(); }
 
       // ── scoring — exact match to DM.score() ──────────────────────────────────────
-      const TOPIC_TAGS = typeof DM !== "undefined" && DM.TOPIC_TAGS ? DM.TOPIC_TAGS : new Set([
-        "bread","weston","price-fixing","dumpsters","wasted-food","food-bank","three-co",
-        "cartel","dynamic-pricing","shrinkflation","robin-hood","boycott","points","wages",
-        "ceo-pay","audit","bailout","stat-36b","stat-47","stat-18b","stat-61b","stat-100b",
-      ]);
       const ROUTING_TAGS = new Set(["casual","concerned","direct"]);
       function tagsOf(item) { return (item.tags||[]).filter(t=>!ROUTING_TAGS.has(t)); }
 
-      function dmScore(item, followTags, convUsed, boost=false) {
+   function dmScore(item, followTags, boost=false) {
         const tags = tagsOf(item);
-        if (item.follows && followTags && followTags.includes(item.follows)) return 4;
-        if (tags.some(t=>TOPIC_TAGS.has(t)&&convUsed.has(t))) return -2;
         if (boost && tags.some(t=>followTags&&followTags.includes(t))) return 2;
         return 0;
       }
 
-      function scoreAndSort(items, followTags, convUsed, boost=false) {
+      function scoreAndSort(items, followTags, boost=false) {
         return items
-          .map(x=>({...x, score:dmScore(x,followTags,convUsed,boost)}))
+          .map(x=>({...x, score:dmScore(x,followTags,boost)}))
           .sort((a,b)=>b.score-a.score);
       }
 
@@ -529,8 +525,8 @@
         if (dn==="D_BACK_OFF_LATE")  { P.isBOLate=true;   inferredKeys.add("isBOLate"); }
         if (dn==="D_JOIN_CONSENT_PAIRS") { P.joinedEarly=true; inferredKeys.add("joinedEarly"); }
 
-        // infer pitch tags
-        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH") && D[dn] && D[dn][i]) {
+        // infer pitch tags — match or tone deaf
+        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH"||dn==="DECK_TONE_DEAF") && D[dn] && D[dn][i]) {
           if (!P.pitchTags || inferredKeys.has("pitchTags")) {
             P.pitchTags=tagsOf(D[dn][i])||[];
             inferredKeys.add("pitchTags");
@@ -690,14 +686,14 @@
         }
 
         // ── 5. PITCH ─────────────────────────────────────────────────────────────
-        const hTags=P.helloTags||[], convH=new Set(hTags.filter(t=>TOPIC_TAGS.has(t)));
+        const hTags=P.helloTags||[];
         const mkPI=(dn,x,i)=>({
           key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
           selected:P.pitchDeck===dn&&P.pitchIdx===i,
           inferred: inferredKeys.has("pitchDeck") && P.pitchDeck===dn && P.pitchIdx===i,
         });
         const sortPitch=dn=>P.helloIdx!=null
-          ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,convH,true)
+          ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,true)
           :D[dn].map((x,i)=>mkPI(dn,x,i));
 
         cols.push(col({
@@ -705,9 +701,13 @@
           clearKey:["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           appendNote:{label:"then automatically: D_F_INVITE", deckName:"D_F_INVITE", items:D.D_F_INVITE},
           sections:[
-            {label:"angry pitch",    deckName:"DECK_ANGRY_PITCH",  items:sortPitch("DECK_ANGRY_PITCH")},
-            {label:"hungry pitch",   deckName:"DECK_HUNGRY_PITCH", items:sortPitch("DECK_HUNGRY_PITCH")},
-            {label:"back off early", deckName:"D_BACK_OFF_EARLY",
+            {label:"match pitch (commiserate)", deckName:P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH",
+              items:sortPitch(P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH")},
+            {label:"tone deaf pitch (talk over them)", deckName:"DECK_TONE_DEAF",
+              items:P.helloIdx!=null
+                ?scoreAndSort(D.DECK_TONE_DEAF.map((x,i)=>({key:`DECK_TONE_DEAF:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_TONE_DEAF",selected:P.pitchDeck==="DECK_TONE_DEAF"&&P.pitchIdx===i})),hTags,true)
+                :D.DECK_TONE_DEAF.map((x,i)=>({key:`DECK_TONE_DEAF:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_TONE_DEAF",selected:P.pitchDeck==="DECK_TONE_DEAF"&&P.pitchIdx===i}))},
+            {label:"back off early (RUN)", deckName:"D_BACK_OFF_EARLY",
               items:D.D_BACK_OFF_EARLY.map((x,i)=>({key:`D_BACK_OFF_EARLY:${i}`,text:x.t,tags:[],idx:i,
                 deckName:"D_BACK_OFF_EARLY",score:0,
                 selected:P.pitchDeck==="D_BACK_OFF_EARLY"&&P.pitchIdx===i}))},
@@ -733,6 +733,13 @@
         }));
 
         if (P.isBoEarly) {
+          cols.push({
+            id:"bail_resp", label:"npc bail response", deckName:"DECK_BAIL_RESPONSE", role:"npc",
+            items:D.DECK_BAIL_RESPONSE.map((x,i)=>({
+              key:`DECK_BAIL_RESPONSE:${i}`, text:x.t, tags:x.tags||[], idx:i, selected:false,
+            })),
+            onSelect:()=>{},
+          });
           cols.push({id:"end0",label:"\u2014 end \u2014",deckName:null,locked:false,
             items:[{key:"e0",text:"conversation ends (back off early)",tags:[],isEnd:true}],onSelect:()=>{}});
           _tail(cols); return cols;
@@ -756,13 +763,11 @@
         }));
 
         // ── 7. NPC RESPONSE ───────────────────────────────────────────────────────
-        const pTags=P.pitchTags||[], convP=new Set([...Array.from(convH),...pTags.filter(t=>TOPIC_TAGS.has(t))]);
-        const isAP=P.pitchDeck==="DECK_ANGRY_PITCH";
-        const mismatch=P.fInviteIdx!=null&&
-          ((isAP&&P.npcType==="hungry")||(P.pitchDeck==="DECK_HUNGRY_PITCH"&&P.npcType==="angry"));
+        const pTags=P.pitchTags||[];
+        const mismatch=P.fInviteIdx!=null && P.pitchDeck==="DECK_TONE_DEAF";
 
         if (mismatch) {
-          const mdn=isAP?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL";
+          const mdn=P.npcType==="hungry"?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL";
           cols.push({id:"npcresp",label:"npc response (mismatch)",deckName:mdn,locked:false,
             items:D[mdn].map((x,i)=>({key:`${mdn}:${i}`,text:x.t,tags:x.tags||[],idx:i,selected:false})),
             onSelect:()=>{}});
@@ -776,8 +781,8 @@
           selected:P.smDeck===dn&&P.smIdx===i,
           inferred: inferredKeys.has(`sm:${dn}:${i}`),
         });
-        const smWarm=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,convP,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
-        const smSkep=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,convP,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
+        const smWarm=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
+        const smSkep=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
         const joinItems=D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({
           key:`D_JOIN_CONSENT_PAIRS:${i}`,
           text:`\u201c${x.join}\u201d / \u201c${x.consent}\u201d`,
@@ -812,14 +817,14 @@
         }
 
         // ── 8. STRONGER PITCH ─────────────────────────────────────────────────────
-        const fTags=P.smTags||pTags, convSM=new Set([...Array.from(convP),...fTags.filter(t=>TOPIC_TAGS.has(t))]);
+        const fTags=P.smTags||pTags;
         const mkSPI=(dn,x,i)=>({
           key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
           selected:P.strongerDeck===dn&&P.strongerIdx===i,
           inferred: inferredKeys.has(`stronger:${dn}:${i}`),
         });
         const strongerItems=P.smIdx!=null
-          ?scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i)),fTags,convSM,true)
+          ?scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i)),fTags,true)
           :D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i));
 
         cols.push(col({
@@ -1240,6 +1245,8 @@
         wArr("DECK_STRONGER_PITCH",       D.DECK_STRONGER_PITCH,       true);
         wArr("D_INVITE",                  D.D_INVITE,                  false);
         wArr("D_BACK_OFF_LATE",           D.D_BACK_OFF_LATE,           true);
+        wArr("DECK_TONE_DEAF",            D.DECK_TONE_DEAF,            true);
+        wArr("DECK_BAIL_RESPONSE",        D.DECK_BAIL_RESPONSE,        true);
         wArr("D_NARC_REVEAL",             D.D_NARC_REVEAL,             false);
         wArr("D_NOT_NOW",                 D.D_NOT_NOW,                 false);
         wArr("D_RETURN",                  D.D_RETURN,                  false);

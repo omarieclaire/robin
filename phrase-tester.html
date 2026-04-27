@@ -4,61 +4,54 @@
     <meta charset="UTF-8" />
     <title>phrase tester</title>
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
       body {
         background: #161616;
         color: #bbb;
         font-family: "Courier New", monospace;
-        font-size: 13px;
-        padding: 24px;
-        max-width: 860px;
         font-size: 1rem;
+        padding: 24px;
+        padding-top: 0;
+        max-width: 900px;
+      }
+
+      /* ── sticky controls ── */
+      .controls-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #161616;
+        padding: 18px 0 14px;
+        border-bottom: 1px solid #2a2a2a;
+        margin-bottom: 24px;
       }
       h1 {
         color: #eee;
         font-size: 15px;
         font-weight: normal;
-        margin-bottom: 20px;
+        margin-bottom: 14px;
         letter-spacing: 2px;
       }
-
       .controls {
         display: flex;
         gap: 16px;
         align-items: flex-end;
-        margin-bottom: 28px;
         flex-wrap: wrap;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #2a2a2a;
       }
-      .ctrl {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
-      .ctrl label {
-        color: #555;
-        font-size: 1rem;
-        letter-spacing: 1px;
-      }
-      select,
-      input[type="number"] {
+      .ctrl { display: flex; flex-direction: column; gap: 5px; }
+      .ctrl label { color: #555; font-size: 0.85rem; letter-spacing: 1px; }
+      select, input[type="number"] {
         background: #222;
         border: 1px solid #383838;
         color: #ccc;
-        padding: 7px 1rem;
+        padding: 7px 10px;
         font-family: inherit;
         font-size: 12px;
         border-radius: 3px;
         outline: none;
       }
-      input[type="number"] {
-        width: 64px;
-      }
+      input[type="number"] { width: 64px; }
       button {
         background: #2a3a2a;
         border: 1px solid #3a5a3a;
@@ -69,16 +62,80 @@
         border-radius: 3px;
         cursor: pointer;
         letter-spacing: 1px;
+        transition: background 0.15s;
       }
-      button:hover {
-        background: #344a34;
+      button:hover { background: #344a34; }
+      button.secondary {
+        background: #1e1e1e;
+        border: 1px solid #333;
+        color: #666;
+        padding: 6px 14px;
       }
+      button.secondary:hover { background: #252525; color: #888; }
 
-      .conversations {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+      /* ── coverage panel ── */
+      #coverage-panel {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 20px;
+        display: none;
       }
+      #coverage-panel.visible { display: block; }
+      .coverage-header {
+        font-size: 0.8rem;
+        color: #555;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+      .deck-coverage {
+        margin-bottom: 10px;
+      }
+      .deck-name {
+        font-size: 0.75rem;
+        color: #555;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+      }
+      .deck-bar {
+        height: 4px;
+        background: #252525;
+        border-radius: 2px;
+        margin-bottom: 6px;
+        overflow: hidden;
+      }
+      .deck-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.3s;
+      }
+      .unseen-lines {
+        font-size: 0.78rem;
+        color: #4a4a4a;
+        padding-left: 8px;
+        line-height: 1.6;
+      }
+      .unseen-lines span {
+        display: inline-block;
+        background: #1e1e1e;
+        border: 1px solid #2a2a2a;
+        padding: 1px 6px;
+        border-radius: 2px;
+        margin: 2px;
+        color: #555;
+        font-size: 0.75rem;
+      }
+      .coverage-toggle {
+        font-size: 0.78rem;
+        color: #3a6a3a;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .coverage-toggle:hover { color: #5a9a5a; }
+
+      /* ── conversations ── */
+      .conversations { display: flex; flex-direction: column; gap: 20px; }
 
       .conv-block {
         background: #1e1e1e;
@@ -87,115 +144,152 @@
         padding: 18px;
       }
       .conv-header {
-        font-size: 1rem;
+        font-size: 0.85rem;
         color: #c9c9c984;
         letter-spacing: 1px;
         margin-bottom: 14px;
-        padding-bottom: 1rem;
+        padding-bottom: 10px;
         border-bottom: 1px solid #252525;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
       }
+      .conv-header-left { display: flex; align-items: center; gap: 10px; }
       .badge {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         padding: 2px 8px;
         border-radius: 2px;
         letter-spacing: 1px;
       }
-      .badge.narc {
-        background: #3a1a1a;
-        color: #c77;
-      }
-      .badge.angry {
-        background: #2a2a1a;
-        color: #ba8;
-      }
-      .badge.hungry {
-        background: #1a2a2a;
-        color: #7ab;
-      }
+      .badge.narc { background: #3a1a1a; color: #c77; }
+      .badge.angry { background: #2a2a1a; color: #ba8; }
+      .badge.hungry { background: #1a2a2a; color: #7ab; }
 
+      .conv-actions { display: flex; gap: 6px; align-items: center; }
+      .reroll-btn {
+        background: none;
+        border: 1px solid #2a3a2a;
+        color: #3a5a3a;
+        padding: 3px 8px;
+        font-family: inherit;
+        font-size: 0.75rem;
+        border-radius: 2px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .reroll-btn:hover { border-color: #4a7a4a; color: #6a9a6a; background: none; }
+
+      .trace-toggle {
+        font-size: 0.72rem;
+        color: #333;
+        cursor: pointer;
+        letter-spacing: 1px;
+        user-select: none;
+        padding: 3px 6px;
+        border: 1px solid #2a2a2a;
+        border-radius: 2px;
+      }
+      .trace-toggle:hover { color: #555; border-color: #3a3a3a; }
+
+      /* ── trace panel ── */
+      .trace-panel {
+        display: none;
+        margin-bottom: 12px;
+        background: #191919;
+        border: 1px solid #252525;
+        border-radius: 3px;
+        padding: 10px 12px;
+        font-size: 0.72rem;
+        line-height: 1.7;
+      }
+      .trace-panel.open { display: block; }
+      .trace-row {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        border-bottom: 1px solid #1f1f1f;
+        padding: 3px 0;
+      }
+      .trace-row:last-child { border-bottom: none; }
+      .tr-deck { color: #3a5a3a; min-width: 160px; flex-shrink: 0; }
+      .tr-text { color: #555; flex: 1; }
+      .tr-tags { color: #2a4a5a; font-size: 0.68rem; }
+      .tr-why { color: #3a3a3a; font-size: 0.68rem; min-width: 80px; text-align: right; flex-shrink: 0; }
+      .tr-why.boost { color: #4a5a2a; }
+      .tr-why.follows { color: #2a5a4a; }
+      .tr-why.suppressed { color: #5a2a2a; }
+
+      /* ── conversation lines ── */
       .ambient {
         color: #8a9aba;
         font-style: italic;
-        font-size: 1rem;
+        font-size: 0.9rem;
         margin-bottom: 14px;
-        padding: 6px 1rem;
+        padding: 6px 10px;
         border-left: 2px solid #2a2a2a;
-        justify-content: flex-end;
         display: flex;
-      }
-      .ambient::before {
-        content: '"';
-      }
-      .ambient::after {
-        content: '"';
-      }
-
-      .line {
-        margin: 5px 0;
-        display: flex;
-      }
-      .line.player {
-        justify-content: flex-start;
-      }
-      .line.npc {
         justify-content: flex-end;
       }
+      .ambient::before { content: '"'; }
+      .ambient::after { content: '"'; }
 
+      .line { margin: 5px 0; display: flex; }
+      .line.player { justify-content: flex-start; }
+      .line.npc { justify-content: flex-end; }
       .line.choice .bubble {
         background: #1a1a1a;
         color: #555;
         border: 1px dashed #349134;
-        font-size: 1rem;
+        font-size: 0.9rem;
         max-width: 90%;
       }
-
       .bubble {
         max-width: 72%;
         padding: 7px 12px;
         border-radius: 3px;
         line-height: 1.5;
+        position: relative;
       }
-      .line.player .bubble {
-        background: #1e2e1e;
-        color: #8aba8a;
-        border: 1px solid #2a3a2a;
+      .line.player .bubble { background: #1e2e1e; color: #8aba8a; border: 1px solid #2a3a2a; }
+      .line.npc .bubble { background: #1e1e2e; color: #8a9aba; border: 1px solid #2a2a3a; }
+      .line.npc.narc-reveal .bubble { background: #2a1616; color: #c07070; border: 1px solid #4a2020; }
+
+      /* ── heatmap highlight ── */
+      .bubble.heat-1 { border-color: #3a4a1a !important; }
+      .bubble.heat-2 { border-color: #4a5a1a !important; background-color: #1e2a0e !important; }
+      .bubble.heat-3 { border-color: #6a6a1a !important; background-color: #222a0a !important; }
+      .heat-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-left: 6px;
+        vertical-align: middle;
+        opacity: 0.7;
       }
-      .line.npc .bubble {
-        background: #1e1e2e;
-        color: #8a9aba;
-        border: 1px solid #2a2a3a;
-      }
-      .line.npc.narc-reveal .bubble {
-        background: #2a1616;
-        color: #c07070;
-        border: 1px solid #4a2020;
+      .heat-1 .heat-dot { background: #5a7a2a; }
+      .heat-2 .heat-dot { background: #8a9a2a; }
+      .heat-3 .heat-dot { background: #baba2a; }
+
+      .tag-note {
+        opacity: 0.3;
+        font-size: 0.72rem;
+        margin-left: 6px;
       }
 
       .outcome {
         margin-top: 12px;
-        padding-top: 1rem;
+        padding-top: 10px;
         border-top: 1px solid #252525;
-        font-size: 1rem;
+        font-size: 0.8rem;
         letter-spacing: 1px;
       }
-      .outcome.joined {
-        color: #5a9a5a;
-      }
-      .outcome.declined {
-        color: #8a8a50;
-      }
-      .outcome.narc {
-        color: #9a4a4a;
-      }
-      .outcome.backed {
-        color: #555;
-      }
-      .outcome.deferred {
-        color: #4a7a8a;
-      }
+      .outcome.joined { color: #5a9a5a; }
+      .outcome.declined { color: #8a8a50; }
+      .outcome.narc { color: #9a4a4a; }
+      .outcome.backed { color: #555; }
+      .outcome.deferred { color: #4a7a8a; }
 
       #error-box {
         background: #2a1616;
@@ -207,31 +301,51 @@
         font-size: 11px;
         display: none;
       }
+
+      /* ── export ── */
+      .export-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+      }
     </style>
   </head>
   <body>
-    <h1>// phrase tester</h1>
     <div id="error-box"></div>
 
-    <div class="controls">
-      <div class="ctrl">
-        <label>NPC TYPE</label>
-        <select id="npcType">
-          <option value="mixed">mixed</option>
-          <option value="narc">narc only</option>
-          <option value="angry">angry only</option>
-          <option value="hungry">hungry only</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <label>COUNT</label>
-        <input type="number" id="count" value="3" min="1" max="20" />
-      </div>
-      <div class="ctrl">
-        <label>&nbsp;</label>
-        <button onclick="runSim()">run simulation</button>
+    <div class="controls-wrap">
+      <h1>// phrase tester</h1>
+      <div class="controls">
+        <div class="ctrl">
+          <label>NPC TYPE</label>
+          <select id="npcType">
+            <option value="mixed">mixed</option>
+            <option value="narc">narc only</option>
+            <option value="angry">angry only</option>
+            <option value="hungry">hungry only</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>COUNT</label>
+          <input type="number" id="count" value="3" min="1" max="20" />
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button onclick="runSim()">run simulation</button>
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="secondary" onclick="exportJSON()">export json</button>
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="secondary" onclick="toggleCoverage()">deck coverage</button>
+        </div>
       </div>
     </div>
+
+    <!-- coverage panel -->
+    <div id="coverage-panel"></div>
 
     <div class="conversations" id="output"></div>
 
@@ -240,147 +354,154 @@
     <script src="game-data-words.js"></script>
 
     <script>
-      // Stubs so game.js doesn't crash on missing DOM / audio / game infrastructure
-      window.GAME_DATA = window.GAME_DATA || {
-        buildings: [],
-        playerArt: [[" @ "], [" @ "]],
-        npcArts: [["&"]],
-        npcColors: ["#aaa"],
-        narcArt: ["%"],
-        robinArt: ["R"],
-        narrativeQuotes: [],
-      };
-      const _noop = () => {};
-      const _noopO = () => ({});
+      // ── stubs ──
+      window.GAME_DATA = window.GAME_DATA || { buildings: [], playerArt: [[" @ "],[" @ "]], npcArts: [["&"]], npcColors: ["#aaa"], narcArt: ["%"], robinArt: ["R"], narrativeQuotes: [] };
+      const _noop = () => {}, _noopO = () => ({});
       window.audio = { play: _noop };
       window.grid = { set: _noop, text: _noop, textCenter: _noop, art: _noop };
-      window.Util = window.Util || {
-        pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
-        clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
-        randInt: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
-        lerp: (a, b, t) => a + (b - a) * t,
-      };
-      window.phase = "tester";
-      window.W = 80;
-      window.H = 30;
-      window.dialogStack = [];
-      window.C_PLAYER = "#7aba7a";
-      window.C_DIM = "#555";
-      window.C_DANGER = "#c44";
-      window.C_SUCCESS = "#7aba7a";
-      window.C_TEAL = "#7ababa";
-      window.C_ORANGE = "#ba8a4a";
-      window.C_WARN = "#ba8a4a";
-      window.bannerTimer = 0;
-      window.hasPlayed = false;
-      window.showBanner = _noop;
-      window.updateBanner = _noop;
-      window.renderBanner = _noop;
-      window.dialogUpdate = _noop;
-      window.dialogRender = _noop;
-      window.addFloat = _noop;
-      window.spark = _noop;
-      window.triggerChromatic = _noop;
-      window.endGame = _noop;
-      window.initAct2b = _noop;
-      window.hudLabel = { textContent: "" };
-      window.hudScore = { textContent: "", style: {} };
+      window.Util = window.Util || { pick: (a) => a[Math.floor(Math.random()*a.length)], clamp: (v,a,b) => Math.max(a,Math.min(b,v)), randInt: (a,b) => Math.floor(Math.random()*(b-a+1))+a, lerp: (a,b,t) => a+(b-a)*t };
+      window.phase = "tester"; window.W = 80; window.H = 30;
+      window.dialogStack = []; window.C_PLAYER = "#7aba7a"; window.C_DIM = "#555";
+      window.C_DANGER = "#c44"; window.C_SUCCESS = "#7aba7a"; window.C_TEAL = "#7ababa";
+      window.C_ORANGE = "#ba8a4a"; window.C_WARN = "#ba8a4a"; window.bannerTimer = 0;
+      window.hasPlayed = false; window.showBanner = _noop; window.updateBanner = _noop;
+      window.renderBanner = _noop; window.dialogUpdate = _noop; window.dialogRender = _noop;
+      window.addFloat = _noop; window.spark = _noop; window.triggerChromatic = _noop;
+      window.endGame = _noop; window.initAct2b = _noop;
+      window.hudLabel = { textContent: "" }; window.hudScore = { textContent: "", style: {} };
       window.hudStatus = { textContent: "", style: {} };
-      if (!document.getElementById("gamescreen")) {
-        const gs = document.createElement("canvas");
-        gs.id = "gamescreen";
-        gs.style.display = "none";
-        document.body.appendChild(gs);
-      }
+      if (!document.getElementById("gamescreen")) { const gs = document.createElement("canvas"); gs.id = "gamescreen"; gs.style.display = "none"; document.body.appendChild(gs); }
       window.gs = document.getElementById("gamescreen");
       window.input = { isDown: _noop, justPressed: _noop };
       window.clickPending = false;
-      window.CONV_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
-      window.DIALOG_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
-      window.A1_LOOP_MSGS = [];
-      window.HA = [[""]];
-      window.HC = ["#fff"];
+      window.CONV_BOX = { tl:"+", tr:"+", bl:"+", br:"+", h:"-", v:"|" };
+      window.DIALOG_BOX = { tl:"+", tr:"+", bl:"+", br:"+", h:"-", v:"|" };
+      window.A1_LOOP_MSGS = []; window.HA = [[""]]; window.HC = ["#fff"];
     </script>
+
     <script>
+      // ══════════════════════════════════════════════════════
+      // SIM STATE
+      // ══════════════════════════════════════════════════════
+      let lastRunData = [];    // structured data for export
+      let drawnTexts = [];     // flat list of all drawn text this run (for heatmap)
+      let coverageVisible = false;
+
+      // Track which lines were drawn per deck (for coverage)
+      const deckRegistry = new Map(); // deckName → { src, drawn: Set<string> }
+
+      function registerDecks() {
+        deckRegistry.clear();
+        const named = {
+          "DECK_GREET": DECK_GREET,
+          "DECK_ANGRY_HELLO": DECK_ANGRY_HELLO,
+          "DECK_HUNGRY_HELLO": DECK_HUNGRY_HELLO,
+          "DECK_NARC_HELLO": DECK_NARC_HELLO,
+          "DECK_ANGRY_PITCH": DECK_ANGRY_PITCH,
+          "DECK_HUNGRY_PITCH": DECK_HUNGRY_PITCH,
+          "DECK_STRONGER_PITCH": DECK_STRONGER_PITCH,
+          "DECK_SAY_MORE_WARM": DECK_SAY_MORE_WARM,
+          "DECK_SAY_MORE_SKEPTICAL": DECK_SAY_MORE_SKEPTICAL,
+          "DECK_INVITE": DECK_INVITE,
+          "DECK_F_INVITE": typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : null,
+          "DECK_BACK_OFF_EARLY": DECK_BACK_OFF_EARLY,
+          "DECK_BACK_OFF_LATE": DECK_BACK_OFF_LATE,
+          "DECK_JOIN_CONSENT": DECK_JOIN_CONSENT,
+          "DECK_NO_BYE": DECK_NO_BYE,
+          "DECK_NOT_NOW": DECK_NOT_NOW,
+          "DECK_RETURN": DECK_RETURN,
+          "DECK_NARC_REV": DECK_NARC_REV,
+          "DECK_ACK_NARC": DECK_ACK_NARC,
+          "DECK_MISMATCH_TOO_LITERAL": DECK_MISMATCH_TOO_LITERAL,
+          "DECK_MISMATCH_TOO_STRUCTURAL": DECK_MISMATCH_TOO_STRUCTURAL,
+          "DECK_AMB_NARC": DECK_AMB_NARC,
+          "DECK_AMB_HUNGRY": DECK_AMB_HUNGRY,
+          "DECK_AMB_ANGRY": DECK_AMB_ANGRY,
+        };
+        for (const [name, deck] of Object.entries(named)) {
+          if (!deck) continue;
+          deckRegistry.set(name, { src: deck.src, drawn: new Set() });
+        }
+      }
+
+      function trackDraw(deckName, text) {
+        const entry = deckRegistry.get(deckName);
+        if (entry) entry.drawn.add(text);
+      }
+
+      // ══════════════════════════════════════════════════════
+      // SIMULATION (with trace instrumentation)
+      // ══════════════════════════════════════════════════════
+
       function simulateConversation(npcType, npcKind) {
         const lines = [];
+        const trace = [];
+
+        function addTrace(deck, deckName, text, tags, why) {
+          trace.push({ deck: deckName, text, tags: tags ?? [], why: why ?? "normal" });
+          trackDraw(deckName, text);
+          drawnTexts.push(text);
+        }
+
         const add = (speaker, text, meta = "", tags = []) =>
           lines.push({ speaker, text, meta, tags });
 
-        // ── TP 0: startConv ──
         DM.startConv();
 
         // ambient
-        const ambLine =
-          npcType === "narc"
-            ? DM.draw(DECK_AMB_NARC)
-            : npcKind === "hungry"
+        const ambLine = npcType === "narc"
+          ? DM.draw(DECK_AMB_NARC)
+          : npcKind === "hungry"
             ? DM.draw(DECK_AMB_HUNGRY)
             : DM.draw(DECK_AMB_ANGRY);
+        const ambDeckName = npcType === "narc" ? "DECK_AMB_NARC"
+          : npcKind === "hungry" ? "DECK_AMB_HUNGRY" : "DECK_AMB_ANGRY";
+        addTrace(null, ambDeckName, ambLine, [], "ambient");
         add("ambient", ambLine);
 
-        // ── TP 0: player greet — capture tone via rawTagsOf ──
-        // greet deck uses routing tags (casual/concerned/direct) for HELLO_PREFIX.
-        // drawWithTags returns { text, tags (non-routing), tone (routing) }.
-        const greetResult = DM.drawWithTags(DECK_GREET);
+        // greet
+const greetResult = DM.drawWithTags(DECK_GREET);
+a2LastGreetTone = greetResult.tone ?? "casual";
         const greetTone = greetResult.tone ?? greetResult.tags[0] ?? "casual";
+        addTrace(null, "DECK_GREET", greetResult.text, greetResult.tags, `tone:${greetTone}`);
         add("player", greetResult.text);
 
-        // ── TP 12: NPC hello ──
-        const helloDeck =
-          npcType === "narc"
-            ? DECK_NARC_HELLO
-            : npcKind === "angry"
-            ? DECK_ANGRY_HELLO
-            : DECK_HUNGRY_HELLO;
-
+        // NPC hello
+        const helloDeck = npcType === "narc" ? DECK_NARC_HELLO
+          : npcKind === "angry" ? DECK_ANGRY_HELLO : DECK_HUNGRY_HELLO;
+        const helloDeckName = npcType === "narc" ? "DECK_NARC_HELLO"
+          : npcKind === "angry" ? "DECK_ANGRY_HELLO" : "DECK_HUNGRY_HELLO";
         const { text: helloText, tags: helloTags } = DM.drawWithTags(helloDeck);
-
         const npcKindKey = npcType === "narc" ? "narc" : npcKind;
         const prefixPool = HELLO_PREFIX[greetTone]?.[npcKindKey] ?? [];
-        const helloPrefix =
-          prefixPool.length > 0
-            ? prefixPool[Math.floor(Math.random() * prefixPool.length)] + " "
-            : "";
+        const helloPrefix = prefixPool.length > 0
+          ? prefixPool[Math.floor(Math.random() * prefixPool.length)] + " " : "";
+        addTrace(null, helloDeckName, helloText, helloTags, helloTags.length ? "tagged" : "untagged");
         add("npc", helloPrefix + helloText, "", helloTags);
 
-        // ── TP 13: seed hello tags, build first pitch choices ──
-        // FIX: seed AFTER hello draw, BEFORE pitch draw — matching game TP 13.
         for (const t of helloTags) DM._seedConvTag(t);
 
-        const npcPrefix =
-          npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+        const npcPrefix = npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
 
         let angryResult, hungryResult;
-
         if (helloTags.length > 0) {
-          // FIX: hello had a topic — use drawNoRecord with follows (matches game).
-          angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, {
-            boost: true,
-            follows: helloTags,
-          });
-          hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, {
-            boost: true,
-            follows: helloTags,
-          });
+          angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, { boost: true, follows: helloTags });
+          hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, { boost: true, follows: helloTags });
         } else {
-          // FIX: hello was untagged — use drawForEmpty so pitch doesn't invent a topic.
           angryResult = DM.drawForEmpty(DECK_ANGRY_PITCH);
           hungryResult = DM.drawForEmpty(DECK_HUNGRY_PITCH);
         }
+        addTrace(null, "DECK_ANGRY_PITCH", angryResult.text, angryResult.tags,
+          helloTags.length ? (angryResult.tags.some(t => helloTags.includes(t)) ? "boost" : "normal") : "empty-fallback");
+        addTrace(null, "DECK_HUNGRY_PITCH", hungryResult.text, hungryResult.tags,
+          helloTags.length ? (hungryResult.tags.some(t => helloTags.includes(t)) ? "boost" : "normal") : "empty-fallback");
 
         const choiceTags = [angryResult.tags, hungryResult.tags, []];
-
         const bail = Math.random() < 0.1;
-        let choiceIdx = bail
-          ? 2
+        let choiceIdx = bail ? 2
           : npcKind === "angry"
-          ? Math.random() < 0.75
-            ? 0
-            : 1
-          : Math.random() < 0.75
-          ? 1
-          : 0;
+            ? (Math.random() < 0.75 ? 0 : 1)
+            : (Math.random() < 0.75 ? 1 : 0);
         if (npcType === "narc") choiceIdx = Math.random() < 0.5 ? 0 : 1;
 
         const backOffEarly = DM.draw(DECK_BACK_OFF_EARLY);
@@ -388,123 +509,132 @@
         add("choice", (choiceIdx === 1 ? "▶ " : "  ") + "h→ " + npcPrefix + hungryResult.text, "", hungryResult.tags);
         add("choice", (choiceIdx === 2 ? "▶ " : "  ") + "n→ " + backOffEarly);
 
-        // TP 25: bailed early
         if (choiceIdx === 2) {
           add("player", backOffEarly);
           DM.endConv();
-          return { lines, outcome: "backed", npcType, npcKind };
+          return { lines, trace, outcome: "backed", npcType, npcKind };
         }
 
-        // ── TP 1: player picks first pitch ──
         const pitchTags = choiceTags[choiceIdx];
-        add(
-          "player",
-          choiceIdx === 0
-            ? npcPrefix + angryResult.text
-            : npcPrefix + hungryResult.text,
-          "",
-          pitchTags
-        );
-
-        // FIX: seed chosen pitch tags AFTER choice is made (matches game TP 1).
+        const chosenPitchText = choiceIdx === 0 ? angryResult.text : hungryResult.text;
+        add("player", npcPrefix + chosenPitchText, "", pitchTags);
         for (const t of pitchTags ?? []) DM._seedConvTag(t);
 
-        // Append invite line (DECK_F_INVITE in game — use same deck name if it exists,
-        // fall back to DECK_INVITE so the tester stays runnable standalone).
-        const inviteDeckEarly =
-          typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : DECK_INVITE;
-        add("player", DM.draw(inviteDeckEarly));
+        const inviteDeckEarly = typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : DECK_INVITE;
+        const earlyInviteText = DM.draw(inviteDeckEarly);
+        addTrace(null, typeof DECK_F_INVITE !== "undefined" ? "DECK_F_INVITE" : "DECK_INVITE", earlyInviteText, [], "invite");
+        add("player", earlyInviteText);
 
-        // ── TP 14: check match, NPC reacts ──
-        const matched =
-          (choiceIdx === 0 && npcKind === "angry") ||
-          (choiceIdx === 1 && npcKind === "hungry");
-
+        const matched = (choiceIdx === 0 && npcKind === "angry") || (choiceIdx === 1 && npcKind === "hungry");
         let sayMoreTags = pitchTags;
 
         if (npcType === "narc") {
-          // Narc: always go through skeptical say-more
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, {
-            follows: pitchTags,
-            boost: false,
-          });
-          sayMoreTags =
-            skeptResult.tags.length > 0 ? skeptResult.tags : pitchTags;
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, { follows: pitchTags, boost: false });
+          sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : pitchTags;
+          addTrace(null, "DECK_SAY_MORE_SKEPTICAL", skeptResult.text, skeptResult.tags,
+            skeptResult.tags.some(t => pitchTags.includes(t)) ? "follows" : "normal");
           add("npc", skeptResult.text, "", sayMoreTags);
 
         } else if (!matched) {
-          // Mismatch: decline and exit
-          const mismatchDeck =
-            choiceIdx === 0 && npcKind === "hungry"
-              ? DECK_MISMATCH_TOO_STRUCTURAL
-              : DECK_MISMATCH_TOO_LITERAL;
-          add("npc", DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE));
+          const mismatchDeck = choiceIdx === 0 && npcKind === "hungry"
+            ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
+          const mismatchName = choiceIdx === 0 && npcKind === "hungry"
+            ? "DECK_MISMATCH_TOO_STRUCTURAL" : "DECK_MISMATCH_TOO_LITERAL";
+          const mText = DM.draw(mismatchDeck);
+          const byeText = DM.draw(DECK_NO_BYE);
+          addTrace(null, mismatchName, mText, [], "mismatch");
+          addTrace(null, "DECK_NO_BYE", byeText, [], "mismatch");
+          add("npc", mText + " " + byeText);
           DM.endConv();
-          return { lines, outcome: "declined", npcType, npcKind };
+          return { lines, trace, outcome: "declined", npcType, npcKind };
 
         } else {
-          // FIX: 80% chance to skip say-more and go straight to join (matches game).
           if (Math.random() < 0.8) {
             const pair = DM.draw(DECK_JOIN_CONSENT);
+            addTrace(null, "DECK_JOIN_CONSENT", pair.join + " / " + pair.consent, [], "join");
             add("npc", pair.join);
             add("npc", pair.consent);
             DM.endConv();
-            return { lines, outcome: "joined", npcType, npcKind };
+            return { lines, trace, outcome: "joined", npcType, npcKind };
           }
-
-          // FIX: boost: true on warm (matches game TP 14).
-          const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
-            follows: pitchTags,
-            boost: true,
-          });
-          sayMoreTags =
-            warmResult.tags.length > 0 ? warmResult.tags : pitchTags;
+          const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, { follows: pitchTags, boost: true });
+          sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : pitchTags;
+          addTrace(null, "DECK_SAY_MORE_WARM", warmResult.text, warmResult.tags,
+            warmResult.tags.some(t => pitchTags.includes(t)) ? "follows" : (warmResult.tags.some(t => pitchTags.includes(t)) ? "boost" : "normal"));
           add("npc", warmResult.text, "", sayMoreTags);
         }
 
-        // ── TP 15: second pitch choices ──
-        const pitchFollows =
-          sayMoreTags ?? pitchTags ?? helloTags ?? [];
-
-        // Game uses plain draw() here, not drawWithTags — matches TP 15.
-        const strongerLine = DM.draw(DECK_STRONGER_PITCH, {
-          boost: true,
-          follows: pitchFollows,
-        });
+        // second pitch
+        const pitchFollows = sayMoreTags ?? pitchTags ?? helloTags ?? [];
+        const strongerLine = DM.draw(DECK_STRONGER_PITCH, { boost: true, follows: pitchFollows });
+        addTrace(null, "DECK_STRONGER_PITCH", strongerLine, [], pitchFollows.length ? "boost" : "normal");
         const backOffLate = DM.draw(DECK_BACK_OFF_LATE);
         const goStronger = Math.random() < 0.8;
 
         add("choice", (goStronger ? "▶ " : "  ") + "s→ " + strongerLine);
         add("choice", (!goStronger ? "▶ " : "  ") + "n→ " + backOffLate);
 
-        // ── TP 23/24: second choice resolve ──
         if (!goStronger) {
           add("player", backOffLate);
           DM.endConv();
-          return { lines, outcome: "backed", npcType, npcKind };
+          return { lines, trace, outcome: "backed", npcType, npcKind };
         }
 
         add("player", strongerLine);
-        add("player", DM.draw(DECK_INVITE));
+        const inviteText = DM.draw(DECK_INVITE);
+        addTrace(null, "DECK_INVITE", inviteText, [], "invite");
+        add("player", inviteText);
 
         if (npcType === "narc") {
-          add("npc", DM.draw(DECK_NARC_REV), "narc-reveal");
+          const narcRevText = DM.draw(DECK_NARC_REV);
+          addTrace(null, "DECK_NARC_REV", narcRevText, [], "narc-reveal");
+          add("npc", narcRevText, "narc-reveal");
           DM.endConv();
-          return { lines, outcome: "narc", npcType, npcKind };
+          return { lines, trace, outcome: "narc", npcType, npcKind };
         } else if (Math.random() < 0.6) {
           const pair = DM.draw(DECK_JOIN_CONSENT);
+          addTrace(null, "DECK_JOIN_CONSENT", pair.join + " / " + pair.consent, [], "join");
           add("npc", pair.join);
           add("npc", pair.consent);
           DM.endConv();
-          return { lines, outcome: "joined", npcType, npcKind };
+          return { lines, trace, outcome: "joined", npcType, npcKind };
         } else {
-          add("npc", DM.draw(DECK_NOT_NOW));
+          const notNowText = DM.draw(DECK_NOT_NOW);
+          addTrace(null, "DECK_NOT_NOW", notNowText, [], "deferred");
+          add("npc", notNowText);
           DM.endConv();
-          return { lines, outcome: "deferred", npcType, npcKind };
+          return { lines, trace, outcome: "deferred", npcType, npcKind };
         }
       }
 
-      function renderConv(conv, idx) {
+      // ══════════════════════════════════════════════════════
+      // HEATMAP
+      // ══════════════════════════════════════════════════════
+
+      function buildHeatmap(allConvs) {
+        const freq = new Map();
+        for (const conv of allConvs) {
+          for (const line of conv.lines) {
+            if (!line.text || line.speaker === "ambient") continue;
+            const key = line.text.trim();
+            freq.set(key, (freq.get(key) || 0) + 1);
+          }
+        }
+        return freq;
+      }
+
+      function heatLevel(text, freq) {
+        const n = freq.get(text?.trim()) || 0;
+        if (n >= 3) return 3;
+        if (n >= 2) return 2;
+        return 0;
+      }
+
+      // ══════════════════════════════════════════════════════
+      // RENDER
+      // ══════════════════════════════════════════════════════
+
+      function renderConv(conv, idx, freq) {
         const outcomeText = {
           joined: "✓ joined",
           declined: "✗ declined",
@@ -512,15 +642,38 @@
           backed: "→ backed off",
           deferred: "~ deferred, maybe later",
         };
-        const typeLabel =
-          conv.npcType === "narc"
-            ? "narc"
-            : conv.npcKind === "angry"
-            ? "angry"
-            : "hungry";
-        let h = `<div class="conv-block">`;
-        h += `<div class="conv-header"><span>conversation ${idx + 1}</span>`;
-        h += `<span class="badge ${typeLabel}">${typeLabel}</span></div>`;
+        const typeLabel = conv.npcType === "narc" ? "narc"
+          : conv.npcKind === "angry" ? "angry" : "hungry";
+
+        let h = `<div class="conv-block" id="conv-${idx}">`;
+        h += `<div class="conv-header">`;
+        h += `<div class="conv-header-left">`;
+        h += `<span style="color:#4a4a4a">conv ${idx + 1}</span>`;
+        h += `<span class="badge ${typeLabel}">${typeLabel}</span>`;
+        h += `</div>`;
+        h += `<div class="conv-actions">`;
+        h += `<span class="trace-toggle" onclick="toggleTrace(${idx})">trace ▾</span>`;
+        h += `<button class="reroll-btn" onclick="rerollConv(${idx})">↺ reroll</button>`;
+        h += `</div>`;
+        h += `</div>`;
+
+        // trace panel
+        h += `<div class="trace-panel" id="trace-${idx}">`;
+        for (const t of conv.trace) {
+          const whyCls = t.why === "boost" ? "boost"
+            : t.why.startsWith("follows") ? "follows"
+            : (t.why === "suppressed" || t.why === "mismatch") ? "suppressed"
+            : "";
+          h += `<div class="trace-row">`;
+          h += `<span class="tr-deck">${esc(t.deck)}</span>`;
+          h += `<span class="tr-text">${esc(t.text.length > 55 ? t.text.slice(0, 55) + "…" : t.text)}</span>`;
+          if (t.tags.length) h += `<span class="tr-tags">(${t.tags.map(esc).join(", ")})</span>`;
+          h += `<span class="tr-why ${whyCls}">${esc(t.why)}</span>`;
+          h += `</div>`;
+        }
+        h += `</div>`;
+
+        // lines
         let prevSpeaker = null;
         for (const line of conv.lines) {
           if (line.speaker === "ambient") {
@@ -528,30 +681,171 @@
             prevSpeaker = null;
             continue;
           }
-          const cls = `line ${
-            line.speaker === "choice" ? "choice player" : line.speaker
-          }${line.meta ? " " + line.meta : ""}`;
+
+          const heat = heatLevel(line.text, freq);
+          const heatCls = heat ? ` heat-${heat}` : "";
+          const heatDot = heat ? `<span class="heat-dot"></span>` : "";
+          const tagNote = line.tags && line.tags.length > 0
+            ? `<span class="tag-note">(${line.tags.map(esc).join(", ")})</span>` : "";
+
+          const cls = `line ${line.speaker === "choice" ? "choice player" : line.speaker}${line.meta ? " " + line.meta : ""}`;
+
           if (line.speaker === "npc" && prevSpeaker === "npc") {
-            const tagNote2 =
-              line.tags && line.tags.length > 0
-                ? `<span style="opacity:0.35; font-size:0.75rem; margin-left:6px">(${line.tags.join(", ")})</span>`
-                : `<span style="opacity:0.2; font-size:0.75rem; margin-left:6px">(0)</span>`;
-            h = h.slice(0, h.lastIndexOf("</div></div>"));
-            h += `<br><br>${esc(line.text)}${tagNote2}</div></div>`;
+            // merge consecutive npc bubbles
+            const closeIdx = h.lastIndexOf("</div></div>");
+            h = h.slice(0, closeIdx) + `<br><br>${esc(line.text)}${tagNote}${heatDot}</div></div>`;
           } else {
-            const tagNote =
-              line.tags && line.tags.length > 0
-                ? `<span style="opacity:0.35; font-size:0.75rem; margin-left:6px">(${line.tags.join(", ")})</span>`
-                : `<span style="opacity:0.2; font-size:0.75rem; margin-left:6px">(0)</span>`;
-            h += `<div class="${cls}"><div class="bubble">${esc(line.text)}${tagNote}</div></div>`;
+            h += `<div class="${cls}"><div class="bubble${heatCls}">${esc(line.text)}${tagNote}${heatDot}</div></div>`;
           }
           prevSpeaker = line.speaker;
         }
-        h += `<div class="outcome ${conv.outcome}">${
-          outcomeText[conv.outcome] || conv.outcome
-        }</div>`;
+
+        h += `<div class="outcome ${conv.outcome}">${outcomeText[conv.outcome] || conv.outcome}</div>`;
         h += `</div>`;
         return h;
+      }
+
+      // ══════════════════════════════════════════════════════
+      // COVERAGE PANEL
+      // ══════════════════════════════════════════════════════
+
+      function renderCoverage() {
+        const panel = document.getElementById("coverage-panel");
+        if (!coverageVisible) { panel.classList.remove("visible"); return; }
+        panel.classList.add("visible");
+
+        const decksToShow = [...deckRegistry.entries()]
+          .filter(([, e]) => e.src && e.src.length > 0)
+          .sort(([,a],[,b]) => {
+            const pctA = a.drawn.size / a.src.length;
+            const pctB = b.drawn.size / b.src.length;
+            return pctA - pctB; // least coverage first
+          });
+
+        let h = `<div class="coverage-header">deck coverage — ${lastRunData.length} conversations</div>`;
+
+        for (const [name, entry] of decksToShow) {
+          const total = entry.src.length;
+          const seen = entry.drawn.size;
+          const pct = total > 0 ? Math.round((seen / total) * 100) : 0;
+          const barColor = pct >= 80 ? "#3a5a3a" : pct >= 50 ? "#4a5a2a" : "#5a3a2a";
+
+          h += `<div class="deck-coverage">`;
+          h += `<div class="deck-name">${esc(name)} — ${seen}/${total} (${pct}%)</div>`;
+          h += `<div class="deck-bar"><div class="deck-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>`;
+
+          const unseen = entry.src
+            .map(x => typeof x === "string" ? x : (x.t ?? x.join ?? ""))
+            .filter(t => !entry.drawn.has(t));
+
+          if (unseen.length > 0 && unseen.length <= 30) {
+            h += `<div class="unseen-lines">`;
+            for (const u of unseen) {
+              h += `<span>${esc(u.length > 50 ? u.slice(0, 50) + "…" : u)}</span>`;
+            }
+            h += `</div>`;
+          } else if (unseen.length > 30) {
+            h += `<div class="unseen-lines" style="color:#3a3a3a">${unseen.length} lines not yet drawn</div>`;
+          }
+          h += `</div>`;
+        }
+
+        panel.innerHTML = h;
+      }
+
+      function toggleCoverage() {
+        coverageVisible = !coverageVisible;
+        renderCoverage();
+      }
+
+      // ══════════════════════════════════════════════════════
+      // REROLL SINGLE
+      // ══════════════════════════════════════════════════════
+
+      function rerollConv(idx) {
+        const sel = document.getElementById("npcType").value;
+        let npcType, npcKind;
+        if (sel === "narc") { npcType = "narc"; npcKind = "angry"; }
+        else if (sel === "angry") { npcType = "norm"; npcKind = "angry"; }
+        else if (sel === "hungry") { npcType = "norm"; npcKind = "hungry"; }
+        else { npcType = Math.random() < 0.13 ? "narc" : "norm"; npcKind = Math.random() < 0.5 ? "angry" : "hungry"; }
+
+        const conv = simulateConversation(npcType, npcKind);
+        lastRunData[idx] = conv;
+
+        const freq = buildHeatmap(lastRunData);
+        const el = document.getElementById(`conv-${idx}`);
+        if (el) {
+          el.outerHTML = renderConv(conv, idx, freq);
+        }
+        renderCoverage();
+      }
+
+      // ══════════════════════════════════════════════════════
+      // EXPORT
+      // ══════════════════════════════════════════════════════
+
+      function exportJSON() {
+        if (!lastRunData.length) return;
+        const blob = new Blob([JSON.stringify(lastRunData, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `phrase-run-${Date.now()}.json`;
+        a.click();
+      }
+
+      // ══════════════════════════════════════════════════════
+      // TRACE TOGGLE
+      // ══════════════════════════════════════════════════════
+
+      function toggleTrace(idx) {
+        const panel = document.getElementById(`trace-${idx}`);
+        if (panel) panel.classList.toggle("open");
+      }
+
+      // ══════════════════════════════════════════════════════
+      // MAIN RUN
+      // ══════════════════════════════════════════════════════
+
+      function resetDecks() {
+        [
+          DECK_ANGRY_HELLO, DECK_HUNGRY_HELLO, DECK_NARC_HELLO,
+          DECK_ANGRY_PITCH, DECK_HUNGRY_PITCH, DECK_STRONGER_PITCH,
+          DECK_SAY_MORE_WARM, DECK_SAY_MORE_SKEPTICAL,
+          DECK_GREET, DECK_INVITE, DECK_BACK_OFF_EARLY, DECK_BACK_OFF_LATE,
+          DECK_JOIN_CONSENT, DECK_NO_BYE, DECK_NOT_NOW, DECK_RETURN,
+          DECK_NARC_REV, DECK_ACK_NARC, DECK_MISMATCH_TOO_LITERAL,
+          DECK_MISMATCH_TOO_STRUCTURAL, DECK_AMB_NARC, DECK_AMB_HUNGRY, DECK_AMB_ANGRY,
+        ].forEach(d => { if (d) d.pile = []; });
+        if (typeof DECK_F_INVITE !== "undefined" && DECK_F_INVITE) DECK_F_INVITE.pile = [];
+        DM.startConv();
+      }
+
+      function runSim() {
+        resetDecks();
+        registerDecks();
+        drawnTexts = [];
+
+        const sel = document.getElementById("npcType").value;
+        const count = Math.min(20, Math.max(1, parseInt(document.getElementById("count").value) || 3));
+
+        lastRunData = [];
+        for (let i = 0; i < count; i++) {
+          let npcType, npcKind;
+          if (sel === "narc") { npcType = "narc"; npcKind = "angry"; }
+          else if (sel === "angry") { npcType = "norm"; npcKind = "angry"; }
+          else if (sel === "hungry") { npcType = "norm"; npcKind = "hungry"; }
+          else { npcType = Math.random() < 0.13 ? "narc" : "norm"; npcKind = Math.random() < 0.5 ? "angry" : "hungry"; }
+          lastRunData.push(simulateConversation(npcType, npcKind));
+        }
+
+        const freq = buildHeatmap(lastRunData);
+        let html = "";
+        for (let i = 0; i < lastRunData.length; i++) {
+          html += renderConv(lastRunData[i], i, freq);
+        }
+        document.getElementById("output").innerHTML = html;
+        renderCoverage();
       }
 
       function esc(s) {
@@ -562,72 +856,15 @@
           .replace(/"/g, "&quot;");
       }
 
-      function runSim() {
-        [
-          DECK_ANGRY_HELLO,
-          DECK_HUNGRY_HELLO,
-          DECK_NARC_HELLO,
-          DECK_ANGRY_PITCH,
-          DECK_HUNGRY_PITCH,
-          DECK_STRONGER_PITCH,
-          DECK_SAY_MORE_WARM,
-          DECK_SAY_MORE_SKEPTICAL,
-          DECK_GREET,
-          DECK_INVITE,
-          DECK_BACK_OFF_EARLY,
-          DECK_BACK_OFF_LATE,
-          DECK_JOIN_CONSENT,
-          DECK_NO_BYE,
-          DECK_NOT_NOW,
-          DECK_RETURN,
-          DECK_NARC_REV,
-          DECK_ACK_NARC,
-          DECK_MISMATCH_TOO_LITERAL,
-          DECK_MISMATCH_TOO_STRUCTURAL,
-          DECK_AMB_NARC,
-          DECK_AMB_HUNGRY,
-          DECK_AMB_ANGRY,
-        ].forEach((d) => {
-          if (d) d.pile = [];
-        });
-        DM.startConv();
+      // Enter to run
+      document.addEventListener("keydown", e => {
+        if (e.key === "Enter" && document.activeElement.tagName !== "BUTTON") runSim();
+      });
 
-        const sel = document.getElementById("npcType").value;
-        const count = Math.min(
-          20,
-          Math.max(1, parseInt(document.getElementById("count").value) || 3)
-        );
-        let html = "";
-        for (let i = 0; i < count; i++) {
-          let npcType, npcKind;
-          if (sel === "narc") {
-            npcType = "narc";
-            npcKind = "angry";
-          } else if (sel === "angry") {
-            npcType = "norm";
-            npcKind = "angry";
-          } else if (sel === "hungry") {
-            npcType = "norm";
-            npcKind = "hungry";
-          } else {
-            npcType = Math.random() < 0.13 ? "narc" : "norm";
-            npcKind = Math.random() < 0.5 ? "angry" : "hungry";
-          }
-          html += renderConv(simulateConversation(npcType, npcKind), i);
-        }
-        document.getElementById("output").innerHTML = html;
-      }
-
-      window.addEventListener("error", (e) => {
+      window.addEventListener("error", e => {
         const box = document.getElementById("error-box");
         box.style.display = "block";
-        box.textContent =
-          "game.js error (add a stub): " +
-          e.message +
-          " — " +
-          e.filename +
-          ":" +
-          e.lineno;
+        box.textContent = "error: " + e.message + " — " + e.filename + ":" + e.lineno;
       });
 
       runSim();

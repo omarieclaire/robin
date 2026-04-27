@@ -139,24 +139,24 @@ const D_AMB_NARC = [
 // ─────────────────────────────────────────
 
 const P_GREET = [
-  { t: "hey, how's it hanging?", tags: ["casual"] },
+  { t: "hey, |pause|how's it hanging?", tags: ["casual"] },
   { t: "you good?", tags: ["casual"] },
-  { t: "salut. what's up?", tags: ["casual"] },
-  { t: "hey, you good?", tags: ["concerned"] },
-  { t: "hey neighbour. how are you?", tags: ["casual"] },
-  { t: "allô. what's up?", tags: ["casual"] },
-  { t: "hey neighbour, you ok?", tags: ["concerned"] },
-  { t: "hey, what's up?", tags: ["casual"] },
-  { t: "hey, you hungry?", tags: ["direct"] },
-  { t: "hey, I know that look. you ok?", tags: ["concerned"] },
-  { t: "real talk?", tags: ["direct"] },
-  { t: "hey, you look like you get it.", tags: ["direct"] },
-  { t: "hey, you look like someone who's had enough.", tags: ["direct"] },
-  { t: "hey, rough day?", tags: ["direct"] },
+  { t: "salut. |pause|what's up?", tags: ["casual"] },
+  { t: "hey,|pause|you good?", tags: ["concerned"] },
+  { t: "hey neighbour. |pause|how are you?", tags: ["casual"] },
+  { t: "allô. |pause|what's up?", tags: ["casual"] },
+  { t: "hey neighbour, |pause|you ok?", tags: ["concerned"] },
+  { t: "hey, |pause|what's up?", tags: ["casual"] },
+  { t: "hey, |pause|you hungry?", tags: ["direct"] },
+  { t: "hey, |pause|I know that look. you ok?", tags: ["concerned"] },
+  { t: "real |pause|talk?", tags: ["direct"] },
+  { t: "hey, |pause|you look like you get it.", tags: ["direct"] },
+  { t: "hey, |pause|you look like someone who's had enough.", tags: ["direct"] },
+  { t: "hey, |pause|rough day?", tags: ["direct"] },
   { t: "ça va?", tags: ["concerned"] },
   { t: "you okay?", tags: ["concerned"] },
-  { t: "salut, toi. ça va?", tags: ["concerned"] },
-  { t: "hold up. ça va?", tags: ["direct"] },
+  { t: "salut, |pause|toi. ça va?", tags: ["concerned"] },
+  { t: "hold up. |pause|ça va?", tags: ["direct"] },
 ];
 
 const HELLO_PREFIX = {
@@ -176,6 +176,7 @@ const HELLO_PREFIX = {
     narc: ["well —", "honestly! everything's fine! ", "real talk! all good! "],
   },
 };
+
 
 // NPC prefix before their hello line
 // PREFIX RULE:
@@ -385,6 +386,12 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "do you know the story of robin hood?", tags: ["diving"] },
 ]);
 
+const DECK_TONE_DEAF = new DM.Deck([
+  { t: "tone", tags: [""] },
+  ]);
+
+
+
 const D_SAY_MORE_WARM = new DM.Deck([
   { t: "go on.", tags: [] },
   { t: "tell me more.", tags: [] },
@@ -468,6 +475,7 @@ const D_SAY_MORE_SKEPTICAL = new DM.Deck([
   { t: "the boycott lasted a month and prices are the same. so.", tags: ["boycott"] },
   { t: "the Competition Bureau found nothing actionable. case closed.", tags: ["price-fixing"] },
 ]);
+
 
 const D_JOIN_CONSENT_PAIRS = [
   { join: "I've been waiting for someone to say that out loud.", consent: "yes!" },
@@ -611,6 +619,16 @@ const D_INVITE = [
   { t: "tonight we eat. want to join us?", tags: [] },
   { t: "just say the word. the word is now", tags: [] },
 ];
+
+const DECK_BAIL_RESPONSE = new DM.Deck([
+  { t: "...okay then.", tags: [] },
+  { t: "sure. whatever.", tags: [] },
+  { t: "okay. bye I guess.", tags: [] },
+  { t: "cool. cool cool cool.", tags: [] },
+  { t: "...alright then.", tags: [] },
+  { t: "okay. that's fine.", tags: [] },
+  { t: "right. okay.", tags: [] },
+]);
 
 const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "oh, um nevermind.", tags: [] },

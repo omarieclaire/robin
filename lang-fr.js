@@ -150,7 +150,7 @@ endYouAte: "(toi aussi tu as mangé)",
 
 muteMuted: "sourdine",
 muteMute: "son",
-act1Choices: ["j'en ai assez", "qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
+act1Choices: ["(>_<) j'en ai assez", "(o_O)  qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
 
 neighbourMsgs: ["merci", "mes enfants mangent ce soir", "enfin", "avec amour!", "merci beaucoup", "thank you"],
 intercoms: [
@@ -194,4 +194,12 @@ endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite
 
 bannerHatsOn: "hats on.",
     bannerPutOnHats: "let's all put on Robin Hood hats.",
+
+    choiceCommiserateAngry: "(╯°□°)╯ compatir",
+  choiceCommiserateHungry: "(っ◔◡◔)っ compatir",
+  choiceTalkOver: "(ಠ_ಠ) parler par-dessus",
+  choiceRun: "[>_>] FUIR",
+  choiceTryHarderAngry: "(ง'̀-'́)ง insister",
+  choiceTryHarderHungry: "(｡•́︿•̀｡) insister",
+  choiceWalkAway: "( ._.) partir",
 };

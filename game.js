@@ -750,9 +750,16 @@
     }
   }
   /* ── CONVERSATION PANEL (Act 2) ────────────────────── */
+
+  const CONV_CHUNK_PAUSE_MS = 900;
+  const CONV_INVITE_DELAY_MS = 1500;
+  const CONV_NPC_REPLY_DELAY_MS = 900;
+  let _convChunkQueue = [];
+  let _convChunkTimer = 0;
   let convLog = [];
   let convChoices = null;
   let convPlayerColor = C_PLAYER;
+
   let convNPCColor = C_DIM;
   let convVisible = false;
   let convFading = false;
@@ -777,6 +784,8 @@
     convChoiceY1 = 0;
     convChoiceY2 = 0;
     convChoiceHover = -1;
+    _convChunkQueue = [];
+    _convChunkTimer = 0;
   }
 
   let interT, interLines, interLI, interNext, interDone, interFrameIdx;
@@ -917,8 +926,10 @@
       const hintLines = [];
       let cur = "";
       for (const w of words) {
-        if (cur.length + w.length + 1 > maxW) { hintLines.push(cur); cur = w; }
-        else cur = cur ? cur + " " + w : w;
+        if (cur.length + w.length + 1 > maxW) {
+          hintLines.push(cur);
+          cur = w;
+        } else cur = cur ? cur + " " + w : w;
       }
       if (cur) hintLines.push(cur);
       const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
@@ -942,20 +953,40 @@
     }, ms);
   }
 
-  function convAddLine(text, side, color) {
-    audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
+  function _convChunkFlush() {
+    const q = _convChunkQueue[0];
+    if (!q) return;
+    const chunk = q.chunks[q.idx];
+    audio.play(q.side === "you" ? "playertxtbox" : "npctxtbox");
     const last = convLog[convLog.length - 1];
-    if (last && last.side === side) {
-      last.text = last.text + "\n\n" + text;
+    if (last && last.side === q.side) {
+      last.text = last.text + " " + chunk;
     } else {
-      convLog.push({
-        text,
-        side,
-        color,
-      });
+      convLog.push({ text: chunk, side: q.side, color: q.color });
     }
-    // console.log(">>> LINE:", text.substring(0, 30), "| side:", side, "| convLog.length:", convLog.length, "| convAnchorY:", convAnchorY);
+    q.idx++;
+    if (q.idx >= q.chunks.length) {
+      _convChunkQueue.shift();
+    }
   }
+
+  function convAddLine(text, side, color) {
+    const chunks = text.split("|pause|");
+    if (chunks.length === 1) {
+      audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
+      const last = convLog[convLog.length - 1];
+      if (last && last.side === side) {
+        last.text = last.text + "\n\n" + text;
+      } else {
+        convLog.push({ text, side, color });
+      }
+      return;
+    }
+    // Chunked path — push and let the update driver time all chunks
+    _convChunkQueue.push({ chunks, idx: 0, side, color });
+    _convChunkTimer = 0; // trigger first chunk on next frame immediately
+  }
+
   function convShowChoices(labels) {
     convChoices = labels;
   }
@@ -1780,7 +1811,8 @@
           a1ES++;
           a1ST2 = 0;
         }
-      } else if (a1ST2 > 2000) {
+        // pause after last conversational line
+      } else if (a1ST2 > 3000) {
         // All turns done, move on
         const np = a1PA[a1EI];
         a1EI++;
@@ -1837,7 +1869,6 @@
           } else {
             // "keep living like this"
             const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
-            console.log("loop #" + a1LoopCount, lm);
             showBanner(lm.t, lm.c, 2000, true);
             a1LoopCount++;
             if (a1LoopCount > 5) {
@@ -2152,6 +2183,7 @@
     a2TalkCD,
     a2Choice,
     a2ChoiceLabels,
+    a2PitchLines = [],
     a2ChoiceTags = [],
     a2LastGreetTone;
   let a2SV, a2SW, a2SD, a2SDT;
@@ -2366,7 +2398,7 @@
   }
 
   function updateAct2(dt) {
-    if (!a2TN) a2T += dt; /* freeze game clock during conversations */
+    if (!a2TN) a2T += dt;
     updateBanner(dt);
     dialogUpdate(dt);
     if (a2TalkCD > 0) a2TalkCD -= dt;
@@ -2382,18 +2414,16 @@
     }
 
     if (a2TN) {
-      a2TT += dt;
+      if (_convChunkQueue.length === 0) a2TT += dt;
       const psx = Math.round(a2PX),
         nsx = Math.round(a2TN.wx - a2WX);
       const psy = Math.round(a2PY);
 
-      // Update conv anchors
       convAnchorPX = psx;
       convAnchorNX = nsx;
       convAnchorY = psy;
 
       // ── TP 0: open conv panel, player greets ──
-
       if (a2TP === 0 && a2TT > 400) {
         dialogStack = [];
         convReset();
@@ -2404,17 +2434,16 @@
         convNPCColor = a2TN.col || "#7a8aaa";
         convVisible = true;
 
-        DM.startConv(); // ← ONLY call. Removed from TP 12.
-
+        DM.startConv();
         const greetResult = DM.drawWithTags(DECK_GREET);
-        a2LastGreetTone = greetResult.tags[0] ?? "casual";
+        a2TN.greetTone = greetResult.tone ?? "casual";
         convAddLine(greetResult.text, "you", convPlayerColor);
         a2TP = 12;
         a2TT = 0;
       }
 
       // ── TP 2: immediate join after match ──
-      else if (a2TP === 2 && a2TT > 2000) {
+      else if (a2TP === 2 && a2TT > 2000 && _convChunkQueue.length === 0) {
         const pair = DM.draw(DECK_JOIN_CONSENT);
         convAddLine(pair.join, "them", convNPCColor);
         a2TN._line2 = pair.consent;
@@ -2422,56 +2451,37 @@
         a2TT = 0;
       }
 
-      // ── TP 12: NPC replies based on type ──
-      else if (a2TP === 12 && a2TT > 2500) {
-        // DM.startConv() — REMOVED. Do not add back.
-
+      // ── TP 12: wait before NPC replies ──
+      else if (a2TP === 12 && a2TT > CONV_NPC_REPLY_DELAY_MS && _convChunkQueue.length === 0) {
         let helloDeck;
         if (a2TN.tp === "narc") helloDeck = DECK_NARC_HELLO;
         else if (a2TN.kind === "angry") helloDeck = DECK_ANGRY_HELLO;
         else helloDeck = DECK_HUNGRY_HELLO;
 
+        DM.clearLastTags(); // greet tags stop here
         const { text: line, tags } = DM.drawWithTags(helloDeck);
         a2TN.helloTags = tags;
 
-        const tone = a2LastGreetTone ?? "casual";
+        const tone = a2TN.greetTone ?? "casual";
         const npcType = a2TN.tp === "narc" ? "narc" : a2TN.kind;
         const prefixPool = HELLO_PREFIX[tone]?.[npcType] ?? [];
         const prefix = prefixPool.length > 0 ? prefixPool[Math.floor(Math.random() * prefixPool.length)] + " " : "";
-
         convAddLine(prefix + line, "them", convNPCColor);
         a2TP = 13;
         a2TT = 0;
       }
 
       // ── TP 13: show first pitch choices ──
-      else if (a2TP === 13 && a2TT > 2000) {
-        for (const t of a2TN.helloTags ?? []) {
-          DM._seedConvTag(t);
-        }
-
+      else if (a2TP === 13 && a2TT > 2000 && _convChunkQueue.length === 0) {
         const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+        const matchResult = DM.drawWithTags(a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH, a2TN.helloTags ?? []);
+        const toneDeafResult = DM.drawWithTags(DECK_TONE_DEAF, a2TN.helloTags ?? []);
+        a2ChoiceTags = [matchResult.tags, toneDeafResult.tags, []];
+        a2PitchLines = [prefix + matchResult.text, prefix + toneDeafResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
+        DM.clearLastTags(); // pitch tags stop here — don't bleed into i invite
 
-        let angryResult, hungryResult;
-
-        if (a2TN.helloTags && a2TN.helloTags.length > 0) {
-          // Hello had a topic — pitch follows it.
-          angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, {
-            boost: true,
-            follows: a2TN.helloTags,
-          });
-          hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, {
-            boost: true,
-            follows: a2TN.helloTags,
-          });
-        } else {
-          // Hello was untagged — pitch should be register-only, no new topic.
-          angryResult = DM.drawForEmpty(DECK_ANGRY_PITCH);
-          hungryResult = DM.drawForEmpty(DECK_HUNGRY_PITCH);
-        }
-
-        a2ChoiceTags = [angryResult.tags, hungryResult.tags, []];
-        a2ChoiceLabels = [prefix + angryResult.text, prefix + hungryResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
+        const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
+        a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
         convShowChoices(a2ChoiceLabels);
         a2Choice = -1;
         a2TP = 1;
@@ -2482,8 +2492,6 @@
       else if (a2TP === 1 && a2TT > 1100) {
         if (clickPending) {
           clickPending = false;
-          const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
-
           if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
             let picked = convChoices.length - 1;
             for (let ci = 0; ci < convChoiceYs.length - 1; ci++) {
@@ -2504,62 +2512,53 @@
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
-          convAddLine(a2ChoiceLabels[a2Choice], "you", convPlayerColor);
-          // record tags for chosen pitch only
-          if (a2Choice < 2) {
-            for (const t of a2ChoiceTags[a2Choice] ?? []) DM._seedConvTag(t);
-          }
+          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
+          // if (a2Choice === 0) {
+          //   for (const t of a2ChoiceTags[0] ?? []) DM._seedConvTag(t);
+          // } else if (a2Choice === 1) {
+          //   for (const t of a2ChoiceTags[1] ?? []) DM._seedConvTag(t);
+          // }
           if (a2Choice === 2) {
             a2TP = 25;
           } else {
-            // Append invite line after a short beat
-            // Append invite line after a short beat
-            setTimeout(() => {
-              if (a2TP === 14) convAddLine(DM.draw(DECK_F_INVITE), "you", convPlayerColor);
-            }, 1200);
-            a2TP = 14;
+            a2TP = 141; // wait, then fire invite
           }
           a2TT = 0;
         }
       }
+
+      // ── TP 141: pause then append invite line ──
+      else if (a2TP === 141 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
+        convAddLine(DM.draw(DECK_F_INVITE), "you", convPlayerColor);
+        a2TP = 14;
+        a2TT = 0;
+      }
+
       // ── TP 14: check match, route accordingly ──
-      else if (a2TP === 14 && a2TT > 3000) {
-        const matched = (a2Choice === 0 && a2TN.kind === "angry") || (a2Choice === 1 && a2TN.kind === "hungry");
-        if (a2TN.tp === "narc") {
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, {
-            follows: a2ChoiceTags?.[a2Choice] ?? [],
-            boost: false,
-          });
-          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
+      else if (a2TP === 14 && a2TT > 3000 && _convChunkQueue.length === 0) {
+        const matched = a2Choice === 0; // commiserate always matches, talk over them never does
+        if (!matched) {
+          // mismatch always wins — even narcs get this if player talked over them
+          const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
+          convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
+          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
+          a2TP = 7;
+        } else if (a2TN.tp === "narc") {
+          // matched but narc — they ask for more, skeptically
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.helloTags ?? []);
+          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.helloTags ?? []);
           convAddLine(skeptResult.text, "them", convNPCColor);
           a2TP = 15;
-        } else if (!matched) {
-          let mismatchDeck;
-          if (a2Choice === 0 && a2TN.kind === "hungry") {
-            mismatchDeck = DECK_MISMATCH_TOO_STRUCTURAL;
-          } else if (a2Choice === 1 && a2TN.kind === "angry") {
-            mismatchDeck = DECK_MISMATCH_TOO_LITERAL;
-          } else {
-            mismatchDeck = DECK_MISMATCH_GENERIC;
-          }
-          convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
-
-          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
-
-          a2TP = 7;
         } else {
+          // matched, not narc
           if (Math.random() < 0.8) {
-            // skip "say more" — join immediately
             const pair = DM.draw(DECK_JOIN_CONSENT);
             convAddLine(pair.join, "them", convNPCColor);
             a2TN._line2 = pair.consent;
             a2TP = 21;
           } else {
-            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, {
-              follows: a2ChoiceTags?.[a2Choice] ?? [],
-              boost: true,
-            });
-            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2ChoiceTags?.[a2Choice] ?? []);
+            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.helloTags ?? []);
+            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.helloTags ?? []);
             convAddLine(warmResult.text, "them", convNPCColor);
             a2TP = 15;
           }
@@ -2568,13 +2567,13 @@
       }
 
       // ── TP 15: show second round choices ──
-      else if (a2TP === 15 && a2TT > 1800) {
-        const pitchFollows = a2TN.sayMoreTags ?? a2ChoiceTags?.[a2Choice] ?? a2TN.helloTags ?? [];
-        const strongerLine = DM.draw(DECK_STRONGER_PITCH, {
-          boost: true,
-          follows: pitchFollows,
-        });
-        a2ChoiceLabels = [strongerLine, DM.draw(DECK_BACK_OFF_LATE)];
+      else if (a2TP === 15 && a2TT > 1800 && _convChunkQueue.length === 0) {
+        const pitchTags = a2TN.sayMoreTags ?? a2ChoiceTags?.[a2Choice] ?? a2TN.helloTags ?? [];
+        const strongerLine = DM.draw(DECK_STRONGER_PITCH, pitchTags);
+        DM.clearLastTags(); // stronger pitch tags stop here
+        a2PitchLines = [strongerLine, DM.draw(DECK_BACK_OFF_LATE)];
+        const tryHarderLabel = a2TN.kind === "angry" ? window.LANG.choiceTryHarderAngry : window.LANG.choiceTryHarderHungry;
+        a2ChoiceLabels = [tryHarderLabel, window.LANG.choiceWalkAway];
         convShowChoices(a2ChoiceLabels);
         a2Choice = -1;
         a2TP = 23;
@@ -2582,7 +2581,7 @@
       }
 
       // ── TP 21: immediate join — jp first, now add cp ──
-      else if (a2TP === 21 && a2TT > 1800) {
+      else if (a2TP === 21 && a2TT > 1800 && _convChunkQueue.length === 0) {
         convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
@@ -2603,21 +2602,26 @@
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
-          convAddLine(a2ChoiceLabels[a2Choice], "you", convPlayerColor);
+          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
           if (a2Choice === 0) {
-            setTimeout(() => {
-              if (a2TP === 24) convAddLine(DM.draw(DECK_INVITE), "you", convPlayerColor);
-            }, 1500);
+            a2TP = 241; // wait, then fire invite
+          } else {
+            a2TP = 24;
           }
-          a2TP = 24;
           a2TT = 0;
         }
       }
 
+      // ── TP 241: pause then append invite line ──
+      else if (a2TP === 241 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
+        convAddLine(DM.draw(DECK_INVITE), "you", convPlayerColor);
+        a2TP = 24;
+        a2TT = 0;
+      }
+
       // ── TP 24: resolve second choice ──
-      else if (a2TP === 24 && a2TT > 2000) {
+      else if (a2TP === 24 && a2TT > 2000 && _convChunkQueue.length === 0) {
         if (a2Choice === 1) {
-          // Backed off late
           DM.endConv();
           const wasNarc = a2TN.tp === "narc";
           a2TN.st = "done";
@@ -2652,7 +2656,15 @@
       }
 
       // ── TP 25: player bailed at first round ──
-      else if (a2TP === 25 && a2TT > 1100) {
+      // ── TP 25: player bailed at first round — NPC responds then conv ends ──
+      else if (a2TP === 25 && a2TT > 1100 && _convChunkQueue.length === 0) {
+        convAddLine(DM.draw(DECK_BAIL_RESPONSE), "them", convNPCColor);
+        a2TP = 251;
+        a2TT = 0;
+      }
+
+      // ── TP 251: close conv after bail response ──
+      else if (a2TP === 251 && a2TT > 2000 && _convChunkQueue.length === 0) {
         DM.endConv();
         const wasNarc = a2TN.tp === "narc";
         a2TN.st = "done";
@@ -2660,7 +2672,6 @@
         a2TN = null;
         a2TalkCD = 500;
         if (wasNarc) {
-          // showBanner("good call. that was a narc.", C_SUCCESS, 3000);
           addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
         } else {
           addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
@@ -2670,17 +2681,10 @@
           convStartFade();
         }, 800);
       }
-      // ── TP 30: mismatch — NPC adds noBye then leaves ──
-      // else if (a2TP === 30 && a2TT > 1100) {
-      //   convAddLine(Util.pick(D_NO_BYE), "them", convNPCColor);
-      //   a2TP = 7;
-      //   a2TT = 0;
-      // }
 
       // ── TP 7: NPC declined, close conv ──
-      else if (a2TP === 7 && a2TT > 3000) {
+      else if (a2TP === 7 && a2TT > 3000 && _convChunkQueue.length === 0) {
         DM.endConv();
-
         a2TN.st = "done";
         a2TN.cd = 9999;
         a2TN = null;
@@ -2692,19 +2696,14 @@
       }
 
       // ── TP 8: recruit ──
-      else if (a2TP === 8 && a2TT > 2500) {
+      else if (a2TP === 8 && a2TT > 2500 && _convChunkQueue.length === 0) {
         DM.endConv();
         const n = a2TN;
         n.st = "rec";
         a2CrewCount++;
         audio.play("recruit");
         spark(Math.round(a2PX), Math.round(a2PY), C_TEAL, 10);
-        a2Crew.push({
-          b: Math.random() * 6,
-          ru: n.ru,
-          art: n.art,
-          col: n.col,
-        });
+        a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
         addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
         a2TN.cd = 1000;
         a2TN = null;
@@ -2716,9 +2715,8 @@
       }
 
       // ── TP 9: narc reveal consequence ──
-      else if (a2TP === 9 && a2TT > 3000) {
+      else if (a2TP === 9 && a2TT > 3000 && _convChunkQueue.length === 0) {
         DM.endConv();
-
         const n = a2TN;
         n.st = "angry";
         n.col = C_DANGER;
@@ -2726,17 +2724,8 @@
         audio.play("narc");
         spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
         triggerChromatic(500);
-        // Higher float for narc reveal — negative jy so it renders above center
-        // const narcFloat = { text: "⚠ NARC ALERT ⚠", color: C_DANGER, life: 2400, max: 2400, boxed: true, jx: 0, jy: -6 };
-        // floats.push(narcFloat);
-        // spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 18); // big red burst
-        // spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 12);
-
-        // try banner instead to see if it's more visible <-- this seemed to do nothing diff than above? look into it later
-        // showBanner(window.LANG.bannerNarc, C_DANGER, 2200, true);
         for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
         spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
-
         if (a2Ht >= A2_MH) setTimeout(() => quickBust("busted", initAct2), 2000);
         a2TN.cd = 1000;
         a2TN = null;
@@ -2748,9 +2737,8 @@
       }
 
       // ── TP 10: NPC defers — maybe returns later ──
-      else if (a2TP === 10 && a2TT > 3000) {
+      else if (a2TP === 10 && a2TT > 3000 && _convChunkQueue.length === 0) {
         DM.endConv();
-
         const n = a2TN;
         n.st = "maybe";
         n.cd = 9999;
@@ -2761,19 +2749,13 @@
           dialogStack = [];
           convStartFade();
         }, 1000);
-        // Return of the mack — only fires if player isn't in conversation
         setTimeout(
           () => {
             if (n.st === "maybe" && !a2TN) {
               n.st = "rec";
               a2CrewCount++;
               audio.play("recruit");
-              a2Crew.push({
-                b: Math.random() * 6,
-                ru: n.ru,
-                art: n.art,
-                col: n.col,
-              });
+              a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
               convReset();
               convAnchorPX = Math.round(a2PX);
               convAnchorNX = Math.round(n.wx - a2WX);
@@ -2796,7 +2778,6 @@
       hudScore.textContent = a2CrewCount;
       return;
     }
-    // Slow down the SD banners
 
     if (a2SD) {
       if (a2SDT === null) {
@@ -2831,12 +2812,10 @@
       }, 1800);
     }
 
-    // Scroll
     a2Spd = 0.004 + a2T * 0.00000015;
     a2WX += a2Spd * dt;
     while (a2Gen < a2WX + W + 150) a2GenChunk(a2Gen, a2Gen + 80);
 
-    /* Hop between lanes — queued, executes at gaps */
     if (input.justPressed("up")) {
       a2HopIntent = -1;
       a2HopTimer = 500;
@@ -2859,7 +2838,7 @@
         }
       }
     }
-    // Mobile left/right continuous movement from hold — no mobileMoveX needed
+
     if (a2HopTimer > 0) a2HopTimer -= dt;
     if (a2HopTimer <= 0) a2HopIntent = 0;
 
@@ -2867,8 +2846,7 @@
       const pwx = Math.round(a2WX + a2PX);
       const newRu = Util.clamp(a2PRu + a2HopIntent, 0, A2_NUM_LANES - 1);
       const sameRoad = Math.floor(a2PRu / 2) === Math.floor(newRu / 2);
-
-      let atGap = sameRoad; // always allow within same road
+      let atGap = sameRoad;
       if (!atGap) {
         for (const rd of a2Roads) {
           if (pwx >= rd.wx - 2 && pwx <= rd.wx + A2_VRW + 2) {
@@ -2888,13 +2866,13 @@
       if (atGap && newRu !== a2PRu) {
         a2PRu = newRu;
         a2PY = a2RuY(a2PRu) + 0;
-
         a2Hopping = false;
         a2HopIntent = 0;
         a2HopTimer = 0;
         a2TalkCD = Math.max(a2TalkCD, 300);
       }
     }
+
     const a2TapStep = 2;
     if (input.isDown("left")) a2PX -= 0.02 * dt;
     else if (input.justPressed("left")) a2PX -= a2TapStep;
@@ -2902,17 +2880,14 @@
     else if (input.justPressed("right")) a2PX += a2TapStep;
     a2PX = Util.clamp(a2PX, 4, W - 6);
 
-    // Cleanup
     a2Blocks = a2Blocks.filter((b) => b.wx + b.w > a2WX - W);
     a2Roads = a2Roads.filter((r) => r.wx + A2_VRW > a2WX - W - 10);
     a2NPCs = a2NPCs.filter((n) => n.wx > a2WX - 20);
     a2Clouds = a2Clouds.filter((c) => c.wx + 10 > a2WX - W);
 
-    // Show ambient mutters for nearby NPCs (suppress first 3s)
     const pwx2 = a2WX + a2PX;
     for (const n of a2NPCs) {
       if (n.st !== "idle") continue;
-      // if (n.ru !== a2PRu) continue;
       const dist = Math.abs(n.wx - pwx2);
       if (dist < 18 && dist > 3 && a2T > 3000) {
         n.ambShow = true;
@@ -2920,19 +2895,16 @@
         n.ambShow = false;
       }
     }
-    // Collision with NPCs — 1s grace period at start
+
     if (a2TalkCD <= 0 && a2T > 1000 && !convVisible) {
       const pwx = a2WX + a2PX;
       for (const n of a2NPCs) {
         if (n.st !== "idle") continue;
         if (n.cd > 0) continue;
         if (n.ru !== a2PRu) continue;
-
         if (Math.abs(n.wx - pwx) < 3) {
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
-
-          // Snap/move player to just-before NPC so they don't overlap
           a2PX = n.wx - a2WX - 3;
           a2TN = n;
           a2TP = 0;
@@ -2943,7 +2915,6 @@
       }
     }
 
-    /* Time-based lose: only applies if you haven't yet reached the store transition */
     if (!a2SV) {
       if (!a2TimeWarned && a2T > A2_TIME_WARN_MS) {
         a2TimeWarned = true;
@@ -2955,7 +2926,7 @@
       }
     }
 
-    hudLabel.textContent = window.LANG.hudCrewLabel; /* Flash HUD on recruit */
+    hudLabel.textContent = window.LANG.hudCrewLabel;
     if (a2HudFlashT > 0) {
       hudScore.textContent = a2HudFlashMsg;
       hudScore.style.color = C_SUCCESS;
@@ -4974,9 +4945,18 @@
       boxed: FLOAT_STYLE.boxed,
     });
   }
-
   function update(dt) {
     _mobUpdate(dt);
+    // Drive chunked dialogue queue
+    if (_convChunkQueue.length > 0) {
+      _convChunkTimer -= dt;
+      if (_convChunkTimer <= 0) {
+        _convChunkTimer = CONV_CHUNK_PAUSE_MS;
+        _convChunkFlush();
+      }
+    } else {
+      _convChunkTimer = CONV_CHUNK_PAUSE_MS;
+    }
     // Update conversation fade timer
     if (convFading) {
       convFadeTimer += dt;
@@ -5144,14 +5124,19 @@
       bannerTimer = 0;
       initAct1();
       loop.start();
-      showBannerSequence(
-        [
-          { t: window.LANG.bannerIsThisALife, c: "#9ab0cc", d: 2000 },
-          { pause: true, d: 800 },
-          { t: window.LANG.bannerWhoIsInControl, c: "#9ab0cc", d: 3000 },
-        ],
-        true,
-      );
+      // showBannerSequence(
+      //   [
+      //     { t: window.LANG.bannerIsThisALife, c: "#9ab0cc", d: 2000 },
+      //     { pause: true, d: 800 },
+      //     { t: window.LANG.bannerWhoIsInControl, c: "#9ab0cc", d: 3000 },
+      //   ],
+      //   true,
+      // );
+
+      showBanner(window.LANG.bannerIsThisALife, "#9ab0cc", 2000, true);
+      setTimeout(() => {
+        if (phase === "act1") showBanner(window.LANG.bannerWhoIsInControl, "#9ab0cc", 3000, true);
+      }, 2800);
     }
     // hasPlayed is set to true when the player reaches Act 2
   }
@@ -5309,7 +5294,7 @@
           ],
           initAct3,
           3,
-          3,
+          null,
         );
       },
       5: () => {
