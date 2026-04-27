@@ -400,7 +400,7 @@
         D_AMB_NARC:                   D_AMB_NARC,
         D_ACK_HUNGRY_ANGRY:           D_ACK_HUNGRY_ANGRY,
         D_ACK_NARC:                   D_ACK_NARC,
-        DECK_TONE_DEAF:               DECK_TONE_DEAF.src,
+        DECK_BAD_READ:               DECK_BAD_READ.src,
         DECK_BAIL_RESPONSE:           DECK_BAIL_RESPONSE.src,
       };
 
@@ -423,7 +423,7 @@
         "D_BACK_OFF_LATE","D_NARC_REVEAL","D_NOT_NOW","D_RETURN",
         "D_AMB_HUNGRY","D_AMB_ANGRY","D_AMB_NARC",
         "D_ACK_HUNGRY_ANGRY","D_ACK_NARC",
-        "DECK_TONE_DEAF","DECK_BAIL_RESPONSE",
+        "DECK_BAD_READ","DECK_BAIL_RESPONSE",
         "PREFIX_casual_angry","PREFIX_casual_hungry","PREFIX_casual_narc",
         "PREFIX_concerned_angry","PREFIX_concerned_hungry","PREFIX_concerned_narc",
         "PREFIX_direct_angry","PREFIX_direct_hungry","PREFIX_direct_narc",
@@ -525,8 +525,8 @@
         if (dn==="D_BACK_OFF_LATE")  { P.isBOLate=true;   inferredKeys.add("isBOLate"); }
         if (dn==="D_JOIN_CONSENT_PAIRS") { P.joinedEarly=true; inferredKeys.add("joinedEarly"); }
 
-        // infer pitch tags — match or tone deaf
-        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH"||dn==="DECK_TONE_DEAF") && D[dn] && D[dn][i]) {
+        // infer pitch tags — match or bad read
+        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH"||dn==="DECK_BAD_READ") && D[dn] && D[dn][i]) {
           if (!P.pitchTags || inferredKeys.has("pitchTags")) {
             P.pitchTags=tagsOf(D[dn][i])||[];
             inferredKeys.add("pitchTags");
@@ -703,10 +703,10 @@
           sections:[
             {label:"match pitch (commiserate)", deckName:P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH",
               items:sortPitch(P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH")},
-            {label:"tone deaf pitch (talk over them)", deckName:"DECK_TONE_DEAF",
+            {label:"bad read pitch (talk over them)", deckName:"DECK_BAD_READ",
               items:P.helloIdx!=null
-                ?scoreAndSort(D.DECK_TONE_DEAF.map((x,i)=>({key:`DECK_TONE_DEAF:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_TONE_DEAF",selected:P.pitchDeck==="DECK_TONE_DEAF"&&P.pitchIdx===i})),hTags,true)
-                :D.DECK_TONE_DEAF.map((x,i)=>({key:`DECK_TONE_DEAF:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_TONE_DEAF",selected:P.pitchDeck==="DECK_TONE_DEAF"&&P.pitchIdx===i}))},
+                ?scoreAndSort(D.DECK_BAD_READ.map((x,i)=>({key:`DECK_BAD_READ:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_BAD_READ",selected:P.pitchDeck==="DECK_BAD_READ"&&P.pitchIdx===i})),hTags,true)
+                :D.DECK_BAD_READ.map((x,i)=>({key:`DECK_BAD_READ:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_BAD_READ",selected:P.pitchDeck==="DECK_BAD_READ"&&P.pitchIdx===i}))},
             {label:"back off early (RUN)", deckName:"D_BACK_OFF_EARLY",
               items:D.D_BACK_OFF_EARLY.map((x,i)=>({key:`D_BACK_OFF_EARLY:${i}`,text:x.t,tags:[],idx:i,
                 deckName:"D_BACK_OFF_EARLY",score:0,
@@ -764,7 +764,7 @@
 
         // ── 7. NPC RESPONSE ───────────────────────────────────────────────────────
         const pTags=P.pitchTags||[];
-        const mismatch=P.fInviteIdx!=null && P.pitchDeck==="DECK_TONE_DEAF";
+        const mismatch=P.fInviteIdx!=null && P.pitchDeck==="DECK_BAD_READ";
 
         if (mismatch) {
           const mdn=P.npcType==="hungry"?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL";
@@ -1245,7 +1245,7 @@
         wArr("DECK_STRONGER_PITCH",       D.DECK_STRONGER_PITCH,       true);
         wArr("D_INVITE",                  D.D_INVITE,                  false);
         wArr("D_BACK_OFF_LATE",           D.D_BACK_OFF_LATE,           true);
-        wArr("DECK_TONE_DEAF",            D.DECK_TONE_DEAF,            true);
+        wArr("DECK_BAD_READ",            D.DECK_BAD_READ,            true);
         wArr("DECK_BAIL_RESPONSE",        D.DECK_BAIL_RESPONSE,        true);
         wArr("D_NARC_REVEAL",             D.D_NARC_REVEAL,             false);
         wArr("D_NOT_NOW",                 D.D_NOT_NOW,                 false);

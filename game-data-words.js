@@ -386,7 +386,7 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "do you know the story of robin hood?", tags: ["diving"] },
 ]);
 
-const DECK_TONE_DEAF = new DM.Deck([
+const DECK_BAD_READ = new DM.Deck([
   { t: "tone", tags: [""] },
   ]);
 

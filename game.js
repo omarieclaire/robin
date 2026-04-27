@@ -2475,9 +2475,9 @@
       else if (a2TP === 13 && a2TT > 2000 && _convChunkQueue.length === 0) {
         const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
         const matchResult = DM.drawWithTags(a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH, a2TN.helloTags ?? []);
-        const toneDeafResult = DM.drawWithTags(DECK_TONE_DEAF, a2TN.helloTags ?? []);
-        a2ChoiceTags = [matchResult.tags, toneDeafResult.tags, []];
-        a2PitchLines = [prefix + matchResult.text, prefix + toneDeafResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
+        const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
+        a2ChoiceTags = [matchResult.tags, badReadResult.tags, []];
+        a2PitchLines = [prefix + matchResult.text, prefix + badReadResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
         DM.clearLastTags(); // pitch tags stop here — don't bleed into i invite
 
         const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
