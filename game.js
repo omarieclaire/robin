@@ -752,8 +752,13 @@
   /* ── CONVERSATION PANEL (Act 2) ────────────────────── */
 
   const CONV_CHUNK_PAUSE_MS = 900;
-  const CONV_INVITE_DELAY_MS = 1500;
-  const CONV_NPC_REPLY_DELAY_MS = 900;
+  const CONV_INVITE_DELAY_MS = 2500;
+  const CONV_NPC_REPLY_DELAY_MS = 1800;
+  const CONV_TYPING_ENABLED = false;
+
+  const CONV_TYPE_MS = 65; // ms per character
+  const CONV_TYPE_PUNCT_MS = 120; // ms extra pause after . ? !
+  const CONV_TYPE_COMMA_MS = 60; // ms extra pause after ,
   let _convChunkQueue = [];
   let _convChunkTimer = 0;
   let convLog = [];
@@ -775,6 +780,9 @@
     convChoiceBW = 0,
     convChoiceHover = -1,
     convChoiceYs = []; // start row of each choice
+  let convReveal = [];
+  let _convTypeTimer = 0;
+
   function convReset() {
     convLog = [];
     convChoices = null;
@@ -786,6 +794,8 @@
     convChoiceHover = -1;
     _convChunkQueue = [];
     _convChunkTimer = 0;
+    convReveal = [];
+    _convTypeTimer = 0;
   }
 
   let interT, interLines, interLI, interNext, interDone, interFrameIdx;
@@ -944,6 +954,33 @@
     convFadeTimer = 0;
   }
 
+  function convStartFadeWhenDone(extraMs) {
+    const extra = extraMs || 1200;
+    const check = setInterval(() => {
+      if (_convChunkQueue.length > 0) return; // still chunks pending
+      const li = convLog.length - 1;
+      if (li < 0 || convReveal[li] >= convLog[li].text.length) {
+        clearInterval(check);
+        setTimeout(() => convStartFade(), extra);
+      }
+    }, 50);
+  }
+
+  function convEndWhenDone(extraMs, thenFn) {
+    // waits for typing AND chunks to finish, holds extraMs, then calls thenFn
+    const extra = extraMs || 1200;
+    const check = setInterval(() => {
+      if (_convChunkQueue.length > 0) return;
+      const li = convLog.length - 1;
+      if (li < 0 || convReveal[li] >= convLog[li].text.length) {
+        clearInterval(check);
+        setTimeout(() => {
+          thenFn();
+        }, extra);
+      }
+    }, 50);
+  }
+
   function convResetLater(ms) {
     const p = phase;
     setTimeout(() => {
@@ -961,8 +998,10 @@
     const last = convLog[convLog.length - 1];
     if (last && last.side === q.side) {
       last.text = last.text + " " + chunk;
+      // reveal counter already exists for this entry, no change needed
     } else {
       convLog.push({ text: chunk, side: q.side, color: q.color });
+      convReveal.push(0);
     }
     q.idx++;
     if (q.idx >= q.chunks.length) {
@@ -977,8 +1016,10 @@
       const last = convLog[convLog.length - 1];
       if (last && last.side === side) {
         last.text = last.text + "\n\n" + text;
+        // reveal counter already exists for this entry
       } else {
         convLog.push({ text, side, color });
+        convReveal.push(0);
       }
       return;
     }
@@ -1051,10 +1092,28 @@
         if (cur) lines.push(cur);
       }
       const age = convLog.length - 1 - i;
-      const dimmed = age > 1; // Keep the last 2 boxes vivid
+      const dimmed = age > 1;
       const baseColor = dimmed ? "#444" : entry.color;
+      const revealed = age === 0 ? (convReveal[i] !== undefined ? entry.text.substring(0, convReveal[i]) : entry.text) : entry.text; // older boxes always fully shown
+      // re-wrap using revealed text
+      const revealedLines = [];
+      for (const segment of revealed.split("\n")) {
+        if (segment.trim() === "") {
+          revealedLines.push("");
+          continue;
+        }
+        const words = segment.split(" ");
+        let cur = "";
+        for (const w of words) {
+          if (cur.length + w.length + 1 > innerW) {
+            revealedLines.push(cur);
+            cur = w;
+          } else cur = cur ? cur + " " + w : w;
+        }
+        if (cur) revealedLines.push(cur);
+      }
       allBoxes.push({
-        lines,
+        lines: revealedLines,
         color: baseColor,
         side: entry.side,
         isChoice: false,
@@ -1199,13 +1258,14 @@
 
       // Draw top border only if visible
       if (cy >= 0 && isVisible) {
-        grid.text(CONV_BOX.tl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.tr, xPos, cy, applyBoxOpacity(box.color));
+        const _boxStyle = box.isChoice ? DIALOG_BOX : CONV_BOX;
+      grid.text(_boxStyle.tl + _boxStyle.h.repeat(boxW - 2) + _boxStyle.tr, xPos, cy, applyBoxOpacity(box.color));
       }
       cy++;
 
       for (let li = 0; li < box.lines.length; li++) {
         if (cy >= 0 && isVisible) {
-          grid.text(CONV_BOX.v + " ".repeat(boxW - 2) + CONV_BOX.v, xPos, cy, applyBoxOpacity(box.color));
+          grid.text((box.isChoice ? DIALOG_BOX.v : CONV_BOX.v) + " ".repeat(boxW - 2) + (box.isChoice ? DIALOG_BOX.v : CONV_BOX.v), xPos, cy, applyBoxOpacity(box.color));
           if (box.lines[li] !== "") {
             /* Choices: left-aligned with two shades + hover. Regular: centered. */
             const pad = box.isChoice ? 0 : Math.floor((innerW - box.lines[li].length) / 2);
@@ -1232,7 +1292,18 @@
                 linesCount += cLines.length + 1;
               }
               lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convPlayerColor;
-              if (convChoiceHover === choiceIdx) lineCol = "#fff";
+              if (convChoiceHover === choiceIdx) {
+                // hovered — bright fill
+                for (let fx = xPos + 1; fx < xPos + boxW - 1; fx++) {
+                  grid.set(fx, cy, "\u2591", "#3a3020");
+                }
+                lineCol = "#fff";
+              } else {
+                // unhovered — very subtle dark fill to distinguish from dialogue
+                for (let fx = xPos + 1; fx < xPos + boxW - 1; fx++) {
+                  grid.set(fx, cy, "\u2592", "#4b4b4b");
+                }
+              }
             }
             grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, applyTextOpacity(lineCol));
           }
@@ -2121,8 +2192,9 @@
     }
     renderBanner();
   }
-
+/////////////////////
   // act 2
+  /////////////////////
 
   const A2_MIN = 3,
     A2_MH = 3;
@@ -2414,7 +2486,8 @@
     }
 
     if (a2TN) {
-      if (_convChunkQueue.length === 0) a2TT += dt;
+      const _lastFullyTyped = convLog.length === 0 || convReveal[convLog.length - 1] >= convLog[convLog.length - 1].text.length;
+      if (_convChunkQueue.length === 0 && _lastFullyTyped) a2TT += dt;
       const psx = Math.round(a2PX),
         nsx = Math.round(a2TN.wx - a2WX);
       const psy = Math.round(a2PY);
@@ -2423,7 +2496,7 @@
       convAnchorNX = nsx;
       convAnchorY = psy;
 
-      // ── TP 0: open conv panel, player greets ──
+      // ── TP 0: open conv panel, show hello/walk away choices ──
       if (a2TP === 0 && a2TT > 400) {
         dialogStack = [];
         convReset();
@@ -2433,18 +2506,60 @@
         convPlayerColor = C_PLAYER;
         convNPCColor = a2TN.col || "#7a8aaa";
         convVisible = true;
-
         DM.startConv();
-        const greetResult = DM.drawWithTags(DECK_GREET);
-        a2TN.greetTone = greetResult.tone ?? "casual";
-        convAddLine(greetResult.text, "you", convPlayerColor);
-        a2TP = 12;
+        a2ChoiceLabels = ["*-* say hello", "o.0 walk away"];
+        a2PitchLines = [null, null]; // no pitch text for hello choices
+        convShowChoices(a2ChoiceLabels);
+        a2Choice = -1;
+        a2TP = -1;
         a2TT = 0;
       }
 
+      // ── TP -1: wait for hello/walk away choice ──
+      else if (a2TP === -1 && a2TT > 300) {
+        if (clickPending) {
+          clickPending = false;
+          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+            a2Choice = clickSY < half ? 0 : 1;
+          }
+        }
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+        if (a2Choice >= 0) {
+          audio.play("click");
+          convHideChoices();
+          if (a2Choice === 1) {
+            // walk away — NPC reacts, then end encounter
+            convAddLine(DM.draw(DECK_NPC_WALK_AWAY_REACTION), "them", convNPCColor);
+            a2TP = 26; // new: close conv after reaction
+          } else {
+            // say hello — fire greet line
+            const greetResult = DM.drawWithTags(DECK_GREET);
+            a2LastGreetTone = greetResult.tags[0] ?? "casual";
+            convAddLine(greetResult.text, "you", convPlayerColor);
+            a2TP = 12;
+          }
+          a2TT = 0;
+        }
+      }
+
+      // ── TP 26: player walked away at hello, close after NPC reaction ──
+      else if (a2TP === 26 && a2TT > 2000 && _convChunkQueue.length === 0) {
+        DM.endConv();
+        a2TN.st = "done";
+        a2TN.cd = 9999;
+        a2TN = null;
+        a2TalkCD = 500;
+        setTimeout(() => {
+          dialogStack = [];
+          convStartFade();
+        }, 800);
+      }
+
       // ── TP 2: immediate join after match ──
-      else if (a2TP === 2 && a2TT > 2000 && _convChunkQueue.length === 0) {
-        const pair = DM.draw(DECK_JOIN_CONSENT);
+else if (a2TP === 2 && a2TT > 3500 && _convChunkQueue.length === 0) {        const pair = DM.draw(DECK_JOIN_CONSENT);
         convAddLine(pair.join, "them", convNPCColor);
         a2TN._line2 = pair.consent;
         a2TP = 21;
@@ -2472,8 +2587,7 @@
       }
 
       // ── TP 13: show first pitch choices ──
-      else if (a2TP === 13 && a2TT > 2000 && _convChunkQueue.length === 0) {
-        const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+else if (a2TP === 13 && a2TT > 3500 && _convChunkQueue.length === 0) {        const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
         const matchResult = DM.drawWithTags(a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH, a2TN.helloTags ?? []);
         const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
         a2ChoiceTags = [matchResult.tags, badReadResult.tags, []];
@@ -2520,35 +2634,78 @@
           // }
           if (a2Choice === 2) {
             a2TP = 25;
+          } else if (a2Choice === 1 && a2TN.tp !== "narc") {
+            a2TP = 14; // tone deaf — skip filler, go straight to mismatch check
           } else {
-            a2TP = 141; // wait, then fire invite
+            a2TP = 141; // good read or narc — wait, then filler, then invite
           }
           a2TT = 0;
         }
       }
 
-      // ── TP 141: pause then append invite line ──
+      // ── TP 141: route based on first pitch choice ──
       else if (a2TP === 141 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_F_INVITE), "you", convPlayerColor);
-        a2TP = 14;
+        const matched = a2Choice === 0;
+        if (matched) {
+          // good read — filler then invite
+          convAddLine(DM.draw(DECK_FILLER), "them", convNPCColor);
+          a2TP = 142;
+        } else {
+          // tone deaf — go straight to mismatch check in TP 14
+          a2TP = 14;
+        }
+        a2TT = 0;
+      }
+      // ── TP 142: wait for invite/walk away choice ──
+      else if (a2TP === 142 && a2TT > 1200 && _convChunkQueue.length === 0) {
+        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง invite them" : "(•‿•) invite them";
+        a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
+        a2PitchLines = [DM.draw(DECK_F_INVITE), DM.draw(DECK_BACK_OFF_EARLY)];
+        convShowChoices(a2ChoiceLabels);
+        a2Choice = -1;
+        a2TP = 143;
         a2TT = 0;
       }
 
+      // ── TP 143: wait for player invite/walk away input ──
+      else if (a2TP === 143 && a2TT > 600) {
+        if (clickPending) {
+          clickPending = false;
+          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+            a2Choice = clickSY < half ? 0 : 1;
+          }
+        }
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+        if (a2Choice >= 0) {
+          audio.play("click");
+          convHideChoices();
+          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
+          if (a2Choice === 1) {
+            a2TP = 25; // bail — same as before
+          } else {
+            a2TP = 14; // proceed to match check
+          }
+          a2TT = 0;
+        }
+      }
+
       // ── TP 14: check match, route accordingly ──
-      else if (a2TP === 14 && a2TT > 3000 && _convChunkQueue.length === 0) {
-        const matched = a2Choice === 0; // commiserate always matches, talk over them never does
-        if (!matched) {
-          // mismatch always wins — even narcs get this if player talked over them
-          const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
-          convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
-          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
-          a2TP = 7;
-        } else if (a2TN.tp === "narc") {
-          // matched but narc — they ask for more, skeptically
+else if (a2TP === 14 && a2TT > 4500 && _convChunkQueue.length === 0) {        const matched = a2Choice === 0;
+        if (a2TN.tp === "narc") {
+          // narcs always probe deeper regardless of what player said
           const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.helloTags ?? []);
           a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.helloTags ?? []);
           convAddLine(skeptResult.text, "them", convNPCColor);
           a2TP = 15;
+        } else if (!matched) {
+          // tone deaf — mismatch and leave
+          const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
+          convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
+          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
+          a2TP = 7;
         } else {
           // matched, not narc
           if (Math.random() < 0.8) {
@@ -2581,8 +2738,8 @@
       }
 
       // ── TP 21: immediate join — jp first, now add cp ──
-      else if (a2TP === 21 && a2TT > 1800 && _convChunkQueue.length === 0) {
-        convAddLine(a2TN._line2, "them", convNPCColor);
+else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
+      convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
       }
@@ -2612,11 +2769,47 @@
         }
       }
 
-      // ── TP 241: pause then append invite line ──
+      // ── TP 241: NPC filler, then show invite/walk away choices ──
       else if (a2TP === 241 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_INVITE), "you", convPlayerColor);
-        a2TP = 24;
+        convAddLine(DM.draw(DECK_FILLER), "them", convNPCColor);
+        a2TP = 242;
         a2TT = 0;
+      }
+
+      // ── TP 242: show invite/walk away choices ──
+      else if (a2TP === 242 && a2TT > 1200 && _convChunkQueue.length === 0) {
+        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง invite them" : "(•‿•) invite them";
+        a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
+        a2PitchLines = [DM.draw(DECK_INVITE), DM.draw(DECK_BACK_OFF_LATE)];
+        convShowChoices(a2ChoiceLabels);
+        a2Choice = -1;
+        a2TP = 243;
+        a2TT = 0;
+      }
+
+      // ── TP 243: wait for player invite/walk away input ──
+      else if (a2TP === 243 && a2TT > 600) {
+        if (clickPending) {
+          clickPending = false;
+          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+            a2Choice = clickSY < half ? 0 : 1;
+          }
+        }
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+        if (a2Choice >= 0) {
+          audio.play("click");
+          convHideChoices();
+          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
+          if (a2Choice === 1) {
+            a2TP = 25; // bail
+          } else {
+            a2TP = 24; // proceed to resolve
+          }
+          a2TT = 0;
+        }
       }
 
       // ── TP 24: resolve second choice ──
@@ -2633,10 +2826,10 @@
           } else {
             addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
           }
-          setTimeout(() => {
+          convEndWhenDone(1200, () => {
             dialogStack = [];
             convStartFade();
-          }, 800);
+          });
         } else if (a2TN.tp === "narc") {
           convAddLine(DM.draw(DECK_NARC_REV), "them", C_DANGER);
           a2TP = 9;
@@ -2676,28 +2869,29 @@
         } else {
           addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
         }
-        setTimeout(() => {
+        convEndWhenDone(1200, () => {
           dialogStack = [];
           convStartFade();
-        }, 800);
+        });
       }
 
       // ── TP 7: NPC declined, close conv ──
-      else if (a2TP === 7 && a2TT > 3000 && _convChunkQueue.length === 0) {
-        DM.endConv();
+else if (a2TP === 7 && a2TT > 4500 && _convChunkQueue.length === 0) {
+      DM.endConv();
         a2TN.st = "done";
         a2TN.cd = 9999;
         a2TN = null;
         a2TalkCD = 500;
-        setTimeout(() => {
+        convEndWhenDone(1200, () => {
           dialogStack = [];
           convStartFade();
-        }, 1000);
+        });
       }
 
       // ── TP 8: recruit ──
-      else if (a2TP === 8 && a2TT > 2500 && _convChunkQueue.length === 0) {
-        DM.endConv();
+else if (a2TP === 8 && a2TT > 4000 && _convChunkQueue.length === 0) {
+
+      DM.endConv();
         const n = a2TN;
         n.st = "rec";
         a2CrewCount++;
@@ -2708,15 +2902,15 @@
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
-        setTimeout(() => {
+        convEndWhenDone(1200, () => {
           dialogStack = [];
           convStartFade();
-        }, 1000);
+        });
       }
 
       // ── TP 9: narc reveal consequence ──
-      else if (a2TP === 9 && a2TT > 3000 && _convChunkQueue.length === 0) {
-        DM.endConv();
+else if (a2TP === 9 && a2TT > 4500 && _convChunkQueue.length === 0) {
+      DM.endConv();
         const n = a2TN;
         n.st = "angry";
         n.col = C_DANGER;
@@ -2730,25 +2924,26 @@
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
-        setTimeout(() => {
+        convEndWhenDone(1200, () => {
           dialogStack = [];
           convReset();
-        }, 1500);
+        });
       }
 
       // ── TP 10: NPC defers — maybe returns later ──
-      else if (a2TP === 10 && a2TT > 3000 && _convChunkQueue.length === 0) {
-        DM.endConv();
+else if (a2TP === 10 && a2TT > 4500 && _convChunkQueue.length === 0) {
+
+      DM.endConv();
         const n = a2TN;
         n.st = "maybe";
         n.cd = 9999;
         addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, "#a80");
         a2TN = null;
         a2TalkCD = 500;
-        setTimeout(() => {
+        convEndWhenDone(1200, () => {
           dialogStack = [];
           convStartFade();
-        }, 1000);
+        });
         setTimeout(
           () => {
             if (n.st === "maybe" && !a2TN) {
@@ -2764,10 +2959,10 @@
               convNPCColor = n.col;
               convVisible = true;
               convAddLine(DM.draw(DECK_RETURN), "them", n.col);
-              setTimeout(() => {
+              convEndWhenDone(1200, () => {
                 dialogStack = [];
-                convReset();
-              }, 3000);
+                convStartFade();
+              });
               hudScore.textContent = a2CrewCount;
             }
           },
@@ -4956,6 +5151,23 @@
       }
     } else {
       _convChunkTimer = CONV_CHUNK_PAUSE_MS;
+    }
+    // Typing reveal driver — only advances the last (active) box
+    if (convLog.length > 0) {
+      const li = convLog.length - 1;
+      const full = convLog[li].text;
+      if (convReveal[li] === undefined) convReveal[li] = 0;
+      if (!CONV_TYPING_ENABLED) convReveal[li] = full.length; // instant reveal
+      if (convReveal[li] < full.length) {
+        _convTypeTimer += dt;
+        const ch = full[convReveal[li]];
+        const delay =
+          ch === "." || ch === "?" || ch === "!" ? CONV_TYPE_MS + CONV_TYPE_PUNCT_MS : ch === "," ? CONV_TYPE_MS + CONV_TYPE_COMMA_MS : CONV_TYPE_MS;
+        if (_convTypeTimer >= delay) {
+          _convTypeTimer = 0;
+          convReveal[li]++;
+        }
+      }
     }
     // Update conversation fade timer
     if (convFading) {

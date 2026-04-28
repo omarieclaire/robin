@@ -276,7 +276,7 @@ const DECK_ANGRY_PITCH = new DM.Deck([
   { t: "yes, Galen Weston owns a castle. And we own points cards.", tags: ["castle"] },
   { t: "now they know everything about you and gave you a coupon for beans.", tags: ["points-card"] },
   { t: "moving further east every year. eventually I will be in the river.", tags: ["plat-hoch"] },
-  { t: "yes. I bought nothing. i do that every day but this time it counted.", tags: ["april"] },
+  { t: "yes. I bought nothing. i do that every day|pause| but this time it counted.", tags: ["april"] },
   { t: "it's probably fine, right? it's a controlled burn.", tags: ["big-fire"] },
   { t: "and we're all standing around it going \"is this nice?\"", tags: ["big-fire"] },
   { t: "they were going to fix the other thing next but then they got tired.", tags: [] },
@@ -387,9 +387,17 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
 ]);
 
 const DECK_BAD_READ = new DM.Deck([
-  { t: "tone", tags: [""] },
-  ]);
-
+  { t: "anyway, let's talk about me.", tags: [] },
+  // { t: "so I've been thinking a lot about systemic change lately", tags: [] },
+  // { t: "that's rough. so listen, I have this idea—", tags: [] },
+  // { t: "yeah totally. so are you coming to the meeting or what", tags: [] },
+  // { t: "mmhm. anyway. the fridge.", tags: [] },
+  // { t: "right, right. so here's the thing though—", tags: [] },
+  { t: "have you tried just... not being stressed about it?", tags: [] },
+  // { t: "I feel like this is actually a great opportunity", tags: [] },
+  // { t: "okay but what if I told you there was a solution", tags: [] },
+  // { t: "sounds like you need a community fridge honestly", tags: [] },
+]);
 
 
 const D_SAY_MORE_WARM = new DM.Deck([
@@ -642,6 +650,7 @@ const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "let's just — never mind.", tags: [] },
 ]);
 
+
 const D_BACK_OFF_LATE = new DM.Deck([
   { t: "completely hypothetical. forget it.", tags: [] },
   { t: "anyway, how about this fake spring?", tags: [] },
@@ -801,3 +810,23 @@ function drawAmb(deck) {
 const DECK_AMB_NARC = new DM.Deck(D_AMB_NARC);
 const DECK_AMB_HUNGRY = new DM.Deck(D_AMB_HUNGRY);
 const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
+
+const D_FILLER = [
+  { t: "hmm...", tags: [] },
+  { t: "go on...", tags: [] },
+  { t: "uh huh...", tags: [] },
+  { t: "...right", tags: [] },
+  { t: "okay...", tags: [] },
+  { t: "right, right...", tags: [] },
+];
+
+const D_NPC_WALK_AWAY_REACTION = [
+  { t: "?", tags: [] },
+  // { t: "...okay", tags: [] },
+  // { t: "um.", tags: [] },
+  // { t: "...?", tags: [] },
+  // { t: "alright then", tags: [] },
+];
+
+const DECK_FILLER = new DM.Deck(D_FILLER);
+const DECK_NPC_WALK_AWAY_REACTION = new DM.Deck(D_NPC_WALK_AWAY_REACTION);

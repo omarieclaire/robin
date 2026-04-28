@@ -819,3 +819,22 @@ function drawAmb(deck) {
 const DECK_AMB_NARC = new DM.Deck(D_AMB_NARC);
 const DECK_AMB_HUNGRY = new DM.Deck(D_AMB_HUNGRY);
 const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
+
+const D_FILLER = [
+  { t: "hmm...", tags: [] },
+  { t: "go on...", tags: [] },
+  { t: "uh huh...", tags: [] },
+  { t: "...right", tags: [] },
+  { t: "okay...", tags: [] },
+  { t: "right, right...", tags: [] },
+];
+
+const D_NPC_WALK_AWAY_REACTION = [
+  { t: "?", tags: [] },
+  // { t: "um.", tags: [] },
+  // { t: "...?", tags: [] },
+  // { t: "alright then", tags: [] },
+];
+
+const DECK_FILLER = new DM.Deck(D_FILLER);
+const DECK_NPC_WALK_AWAY_REACTION = new DM.Deck(D_NPC_WALK_AWAY_REACTION);
