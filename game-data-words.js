@@ -813,11 +813,7 @@ const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
 
 const D_FILLER = [
   { t: "hmm...", tags: [] },
-  { t: "go on...", tags: [] },
-  { t: "uh huh...", tags: [] },
-  { t: "...right", tags: [] },
-  { t: "okay...", tags: [] },
-  { t: "right, right...", tags: [] },
+  { t: "yeah...", tags: [] },
 ];
 
 const D_NPC_WALK_AWAY_REACTION = [

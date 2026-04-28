@@ -752,8 +752,12 @@
   /* ── CONVERSATION PANEL (Act 2) ────────────────────── */
 
   const CONV_CHUNK_PAUSE_MS = 900;
-  const CONV_INVITE_DELAY_MS = 2500;
-  const CONV_NPC_REPLY_DELAY_MS = 1800;
+  const CONV_NPC_REPLY_DELAY_MS = 2200; // delay before NPC first replies
+  const CONV_INVITE_DELAY_MS = 3000; // delay before invite/filler beat
+  const CONV_READ_MIN_MS = 3500; // minimum read time for NPC lines
+  const CONV_READ_MS_PER_WORD = 220; // ms per word for dynamic read delay
+  const CONV_CLOSE_MS = 2500; // delay before conv closes after final line
+  const CONV_BAIL_MS = 2200; // delay after bail/walk away responses
   const CONV_TYPING_ENABLED = false;
 
   const CONV_TYPE_MS = 65; // ms per character
@@ -1071,12 +1075,14 @@
     }
 
     //dialogue box conversation box
-    const boxW = Math.min(W - 12, 36);
+    const boxW = Math.min(W - 16, 30);
     const innerW = boxW - 4;
     // Measure total height first so we can anchor from the bottom
     const allBoxes = [];
-    for (let i = 0; i < convLog.length; i++) {
-      const entry = convLog[i];
+    const visibleLog = convLog.slice(-2);
+    const visibleOffset = Math.max(0, convLog.length - 2);
+    for (let i = 0; i < visibleLog.length; i++) {
+      const entry = visibleLog[i];
       const paragraphs = entry.text.split("\n\n");
       const lines = [];
       for (let p = 0; p < paragraphs.length; p++) {
@@ -1091,10 +1097,11 @@
         }
         if (cur) lines.push(cur);
       }
-      const age = convLog.length - 1 - i;
+      const age = visibleLog.length - 1 - i;
       const dimmed = age > 1;
       const baseColor = dimmed ? "#444" : entry.color;
-      const revealed = age === 0 ? (convReveal[i] !== undefined ? entry.text.substring(0, convReveal[i]) : entry.text) : entry.text; // older boxes always fully shown
+      const revealed =
+        age === 0 ? (convReveal[i + visibleOffset] !== undefined ? entry.text.substring(0, convReveal[i + visibleOffset]) : entry.text) : entry.text; // older boxes always fully shown
       // re-wrap using revealed text
       const revealedLines = [];
       for (const segment of revealed.split("\n")) {
@@ -1193,7 +1200,7 @@
     const bx = Util.clamp(Math.floor(centerX - boxW / 2), 0, W - boxW);
 
     // Draw boxes top to bottom, offset by speaker
-    const offset = Math.min(3, Math.floor(boxW / 6));
+    const offset = Math.min(5, Math.floor(boxW / 5));
     const bxL = Util.clamp(bx - offset, 0, W - boxW);
     const bxR = Util.clamp(bx + offset, 0, W - boxW);
     /* Clear each box's rectangle + 1 cell of padding on all sides.
@@ -1259,25 +1266,29 @@
       // Draw top border only if visible
       if (cy >= 0 && isVisible) {
         const _boxStyle = box.isChoice ? DIALOG_BOX : CONV_BOX;
-      grid.text(_boxStyle.tl + _boxStyle.h.repeat(boxW - 2) + _boxStyle.tr, xPos, cy, applyBoxOpacity(box.color));
+        const borderCol = box.isChoice ? applyBoxOpacity(C_PLAYER) : applyBoxOpacity(box.color);
+        grid.text(_boxStyle.tl + _boxStyle.h.repeat(boxW - 2) + _boxStyle.tr, xPos, cy, borderCol);
       }
       cy++;
 
       for (let li = 0; li < box.lines.length; li++) {
         if (cy >= 0 && isVisible) {
-          grid.text((box.isChoice ? DIALOG_BOX.v : CONV_BOX.v) + " ".repeat(boxW - 2) + (box.isChoice ? DIALOG_BOX.v : CONV_BOX.v), xPos, cy, applyBoxOpacity(box.color));
+          const sideBorderCol = box.isChoice ? applyBoxOpacity(C_PLAYER) : applyBoxOpacity(box.color);
+          grid.text(box.isChoice ? DIALOG_BOX.v : CONV_BOX.v, xPos, cy, sideBorderCol);
+          grid.text(box.isChoice ? DIALOG_BOX.v : CONV_BOX.v, xPos + boxW - 1, cy, sideBorderCol);
+
           if (box.lines[li] !== "") {
-            /* Choices: left-aligned with two shades + hover. Regular: centered. */
             const pad = box.isChoice ? 0 : Math.floor((innerW - box.lines[li].length) / 2);
             let lineCol = box.color;
             if (box.isChoice) {
+              const choiceMutedColors = ["#607898", "#6a8a60", "#886070", "#7a6a98"];
               /* Figure out which choice this line belongs to */
               let choiceIdx = 0,
                 linesCount = 0;
               for (let ci = 0; ci < (convChoices || []).length; ci++) {
                 const cWords = ("\u25B6 " + convChoices[ci]).split(" ");
-                let cLines = [];
-                let cc = "";
+                let cLines = [],
+                  cc = "";
                 for (const w of cWords) {
                   if (cc.length + w.length + 1 > innerW) {
                     cLines.push(cc);
@@ -1291,21 +1302,19 @@
                 }
                 linesCount += cLines.length + 1;
               }
-              lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convPlayerColor;
-              if (convChoiceHover === choiceIdx) {
-                // hovered — bright fill
-                for (let fx = xPos + 1; fx < xPos + boxW - 1; fx++) {
-                  grid.set(fx, cy, "\u2591", "#3a3020");
-                }
-                lineCol = "#fff";
+              lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convChoiceHover === choiceIdx ? "#fff" : "#888";
+              const bulletCol = choiceMutedColors[choiceIdx % choiceMutedColors.length];
+              const rendered = box.lines[li];
+              const bulletIdx = rendered.indexOf("\u25B6");
+              if (bulletIdx !== -1) {
+                grid.set(xPos + 2 + bulletIdx, cy, "\u25B6", applyTextOpacity(bulletCol));
+                grid.text(rendered.substring(bulletIdx + 1), xPos + 3 + bulletIdx, cy, applyTextOpacity(lineCol));
               } else {
-                // unhovered — very subtle dark fill to distinguish from dialogue
-                for (let fx = xPos + 1; fx < xPos + boxW - 1; fx++) {
-                  grid.set(fx, cy, "\u2592", "#4b4b4b");
-                }
+                grid.text(rendered, xPos + 2, cy, applyTextOpacity(lineCol));
               }
+            } else {
+              grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, applyTextOpacity(lineCol));
             }
-            grid.text(box.lines[li], xPos + 2 + Math.max(0, pad), cy, applyTextOpacity(lineCol));
           }
         }
         cy++;
@@ -1313,7 +1322,15 @@
 
       // Draw bottom border only if visible
       if (cy >= 0 && isVisible) {
-        grid.text(CONV_BOX.bl + CONV_BOX.h.repeat(boxW - 2) + CONV_BOX.br, xPos, cy, applyBoxOpacity(box.color));
+        const bottomBorderCol = box.isChoice ? applyBoxOpacity(C_PLAYER) : applyBoxOpacity(box.color);
+        grid.text(
+          (box.isChoice ? DIALOG_BOX.bl : CONV_BOX.bl) +
+            (box.isChoice ? DIALOG_BOX.h : CONV_BOX.h).repeat(boxW - 2) +
+            (box.isChoice ? DIALOG_BOX.br : CONV_BOX.br),
+          xPos,
+          cy,
+          bottomBorderCol,
+        );
       }
       if (box.isChoice && isVisible) {
         convChoiceY2 = Math.max(0, cy);
@@ -2192,7 +2209,7 @@
     }
     renderBanner();
   }
-/////////////////////
+  /////////////////////
   // act 2
   /////////////////////
 
@@ -2340,13 +2357,15 @@
       }
     }
     /* NPCs across all 6 lanes (skip top road - lanes 0-1 - to avoid dialogue cutoff) */
-    const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
+   const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
+    // Smarter spacing: enforce a minimum gap between any two NPCs across all lanes
+    // so the player never gets swamped or has long dead stretches
+    const MIN_NPC_GAP = 55;
+    const MAX_NPC_GAP = 90;
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
-      // First NPCs start far enough right that player has 2-3 seconds before encountering anyone
-      // // Skip first ~200 world units so player has 2-3 seconds before first NPC
-      // const npcStart = Math.max(from + Util.randInt(55, 80), 200);
-      // for (let nx = npcStart; nx < to; nx += Util.randInt(70, 110)) {
-      for (let nx = from + Util.randInt(55, 80); nx < to; nx += Util.randInt(70, 110)) {
+      // Stagger start per lane so encounters feel varied not simultaneous
+      const laneOffset = (ri - mobileMinLane) * 18;
+      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
@@ -2469,6 +2488,11 @@
     // }, 1800);
   }
 
+  function readDelay(text, minMs) {
+    const words = (text || "").split(" ").length;
+    return Math.max(minMs ?? CONV_READ_MIN_MS, words * CONV_READ_MS_PER_WORD);
+  }
+
   function updateAct2(dt) {
     if (!a2TN) a2T += dt;
     updateBanner(dt);
@@ -2496,7 +2520,7 @@
       convAnchorNX = nsx;
       convAnchorY = psy;
 
-      // ── TP 0: open conv panel, show hello/walk away choices ──
+      // ── TP 0: open conv panel, fire greet immediately ──
       if (a2TP === 0 && a2TT > 400) {
         dialogStack = [];
         convReset();
@@ -2507,59 +2531,16 @@
         convNPCColor = a2TN.col || "#7a8aaa";
         convVisible = true;
         DM.startConv();
-        a2ChoiceLabels = ["*-* say hello", "o.0 walk away"];
-        a2PitchLines = [null, null]; // no pitch text for hello choices
-        convShowChoices(a2ChoiceLabels);
-        a2Choice = -1;
-        a2TP = -1;
+        const greetResult = DM.drawWithTags(DECK_GREET);
+        a2LastGreetTone = greetResult.tags[0] ?? "casual";
+        convAddLine(greetResult.text, "you", convPlayerColor);
+        a2TP = 12;
         a2TT = 0;
       }
 
-      // ── TP -1: wait for hello/walk away choice ──
-      else if (a2TP === -1 && a2TT > 300) {
-        if (clickPending) {
-          clickPending = false;
-          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
-            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
-            a2Choice = clickSY < half ? 0 : 1;
-          }
-        }
-        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
-        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
-        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
-        if (a2Choice >= 0) {
-          audio.play("click");
-          convHideChoices();
-          if (a2Choice === 1) {
-            // walk away — NPC reacts, then end encounter
-            convAddLine(DM.draw(DECK_NPC_WALK_AWAY_REACTION), "them", convNPCColor);
-            a2TP = 26; // new: close conv after reaction
-          } else {
-            // say hello — fire greet line
-            const greetResult = DM.drawWithTags(DECK_GREET);
-            a2LastGreetTone = greetResult.tags[0] ?? "casual";
-            convAddLine(greetResult.text, "you", convPlayerColor);
-            a2TP = 12;
-          }
-          a2TT = 0;
-        }
-      }
-
-      // ── TP 26: player walked away at hello, close after NPC reaction ──
-      else if (a2TP === 26 && a2TT > 2000 && _convChunkQueue.length === 0) {
-        DM.endConv();
-        a2TN.st = "done";
-        a2TN.cd = 9999;
-        a2TN = null;
-        a2TalkCD = 500;
-        setTimeout(() => {
-          dialogStack = [];
-          convStartFade();
-        }, 800);
-      }
-
       // ── TP 2: immediate join after match ──
-else if (a2TP === 2 && a2TT > 3500 && _convChunkQueue.length === 0) {        const pair = DM.draw(DECK_JOIN_CONSENT);
+      else if (a2TP === 2 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        const pair = DM.draw(DECK_JOIN_CONSENT);
         convAddLine(pair.join, "them", convNPCColor);
         a2TN._line2 = pair.consent;
         a2TP = 21;
@@ -2587,7 +2568,8 @@ else if (a2TP === 2 && a2TT > 3500 && _convChunkQueue.length === 0) {        con
       }
 
       // ── TP 13: show first pitch choices ──
-else if (a2TP === 13 && a2TT > 3500 && _convChunkQueue.length === 0) {        const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+      else if (a2TP === 13 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
         const matchResult = DM.drawWithTags(a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH, a2TN.helloTags ?? []);
         const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
         a2ChoiceTags = [matchResult.tags, badReadResult.tags, []];
@@ -2658,7 +2640,7 @@ else if (a2TP === 13 && a2TT > 3500 && _convChunkQueue.length === 0) {        co
       }
       // ── TP 142: wait for invite/walk away choice ──
       else if (a2TP === 142 && a2TT > 1200 && _convChunkQueue.length === 0) {
-        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง invite them" : "(•‿•) invite them";
+        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง recruit them" : "(•‿•) recruit them";
         a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
         a2PitchLines = [DM.draw(DECK_F_INVITE), DM.draw(DECK_BACK_OFF_EARLY)];
         convShowChoices(a2ChoiceLabels);
@@ -2693,7 +2675,8 @@ else if (a2TP === 13 && a2TT > 3500 && _convChunkQueue.length === 0) {        co
       }
 
       // ── TP 14: check match, route accordingly ──
-else if (a2TP === 14 && a2TT > 4500 && _convChunkQueue.length === 0) {        const matched = a2Choice === 0;
+      else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        const matched = a2Choice === 0;
         if (a2TN.tp === "narc") {
           // narcs always probe deeper regardless of what player said
           const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.helloTags ?? []);
@@ -2738,8 +2721,8 @@ else if (a2TP === 14 && a2TT > 4500 && _convChunkQueue.length === 0) {        co
       }
 
       // ── TP 21: immediate join — jp first, now add cp ──
-else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
-      convAddLine(a2TN._line2, "them", convNPCColor);
+      else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
+        convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
       }
@@ -2761,59 +2744,16 @@ else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
           convHideChoices();
           convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
           if (a2Choice === 0) {
-            a2TP = 241; // wait, then fire invite
+            a2TP = 24; // second pitch resolves directly — no second invite
           } else {
-            a2TP = 24;
+            a2TP = 24; // walked away — also resolves in TP 24
           }
           a2TT = 0;
         }
       }
 
-      // ── TP 241: NPC filler, then show invite/walk away choices ──
-      else if (a2TP === 241 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_FILLER), "them", convNPCColor);
-        a2TP = 242;
-        a2TT = 0;
-      }
-
-      // ── TP 242: show invite/walk away choices ──
-      else if (a2TP === 242 && a2TT > 1200 && _convChunkQueue.length === 0) {
-        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง invite them" : "(•‿•) invite them";
-        a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
-        a2PitchLines = [DM.draw(DECK_INVITE), DM.draw(DECK_BACK_OFF_LATE)];
-        convShowChoices(a2ChoiceLabels);
-        a2Choice = -1;
-        a2TP = 243;
-        a2TT = 0;
-      }
-
-      // ── TP 243: wait for player invite/walk away input ──
-      else if (a2TP === 243 && a2TT > 600) {
-        if (clickPending) {
-          clickPending = false;
-          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
-            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
-            a2Choice = clickSY < half ? 0 : 1;
-          }
-        }
-        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
-        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
-        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
-        if (a2Choice >= 0) {
-          audio.play("click");
-          convHideChoices();
-          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          if (a2Choice === 1) {
-            a2TP = 25; // bail
-          } else {
-            a2TP = 24; // proceed to resolve
-          }
-          a2TT = 0;
-        }
-      }
-
-      // ── TP 24: resolve second choice ──
-      else if (a2TP === 24 && a2TT > 2000 && _convChunkQueue.length === 0) {
+      // ── TP 24: resolve second choice — narc reveals here, or join/defer for regulars ──
+      else if (a2TP === 24 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
         if (a2Choice === 1) {
           DM.endConv();
           const wasNarc = a2TN.tp === "narc";
@@ -2857,7 +2797,7 @@ else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
       }
 
       // ── TP 251: close conv after bail response ──
-      else if (a2TP === 251 && a2TT > 2000 && _convChunkQueue.length === 0) {
+      else if (a2TP === 251 && a2TT > readDelay(convLog[convLog.length - 1]?.text, CONV_BAIL_MS) && _convChunkQueue.length === 0) {
         DM.endConv();
         const wasNarc = a2TN.tp === "narc";
         a2TN.st = "done";
@@ -2876,8 +2816,8 @@ else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
       }
 
       // ── TP 7: NPC declined, close conv ──
-else if (a2TP === 7 && a2TT > 4500 && _convChunkQueue.length === 0) {
-      DM.endConv();
+      else if (a2TP === 7 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        DM.endConv();
         a2TN.st = "done";
         a2TN.cd = 9999;
         a2TN = null;
@@ -2889,9 +2829,8 @@ else if (a2TP === 7 && a2TT > 4500 && _convChunkQueue.length === 0) {
       }
 
       // ── TP 8: recruit ──
-else if (a2TP === 8 && a2TT > 4000 && _convChunkQueue.length === 0) {
-
-      DM.endConv();
+      else if (a2TP === 8 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        DM.endConv();
         const n = a2TN;
         n.st = "rec";
         a2CrewCount++;
@@ -2909,8 +2848,8 @@ else if (a2TP === 8 && a2TT > 4000 && _convChunkQueue.length === 0) {
       }
 
       // ── TP 9: narc reveal consequence ──
-else if (a2TP === 9 && a2TT > 4500 && _convChunkQueue.length === 0) {
-      DM.endConv();
+      else if (a2TP === 9 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        DM.endConv();
         const n = a2TN;
         n.st = "angry";
         n.col = C_DANGER;
@@ -2931,9 +2870,8 @@ else if (a2TP === 9 && a2TT > 4500 && _convChunkQueue.length === 0) {
       }
 
       // ── TP 10: NPC defers — maybe returns later ──
-else if (a2TP === 10 && a2TT > 4500 && _convChunkQueue.length === 0) {
-
-      DM.endConv();
+      else if (a2TP === 10 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+        DM.endConv();
         const n = a2TN;
         n.st = "maybe";
         n.cd = 9999;
@@ -5222,7 +5160,14 @@ else if (a2TP === 10 && a2TT > 4500 && _convChunkQueue.length === 0) {
     // Tweak these two numbers independently:
     // act2b: 0.15 = near top, 0.4 = middle, 0.7 = near bottom
     // act4:  same scale
-    const floatBaseY = phase === "act2b" ? Math.floor(H * 0.15) : phase === "act4" ? Math.floor(H * 0.08) : Math.floor(H * 0.25);
+    const floatBaseY =
+      phase === "act2b"
+        ? Math.floor(H * 0.15)
+        : phase === "act4"
+          ? Math.floor(H * 0.08)
+          : phase === "act2"
+            ? Math.floor(H * 0.82)
+            : Math.floor(H * 0.25);
     const playful = phase === "act4" || phase === "act2b";
     const fBox = {
       tl: "┌",
