@@ -126,13 +126,6 @@
         color: #555;
         font-size: 0.75rem;
       }
-      .coverage-toggle {
-        font-size: 0.78rem;
-        color: #3a6a3a;
-        cursor: pointer;
-        letter-spacing: 1px;
-      }
-      .coverage-toggle:hover { color: #5a9a5a; }
 
       /* ── conversations ── */
       .conversations { display: flex; flex-direction: column; gap: 20px; }
@@ -216,8 +209,7 @@
       .tr-text { color: #555; flex: 1; }
       .tr-tags { color: #2a4a5a; font-size: 0.68rem; }
       .tr-why { color: #3a3a3a; font-size: 0.68rem; min-width: 80px; text-align: right; flex-shrink: 0; }
-      .tr-why.boost { color: #4a5a2a; }
-      .tr-why.follows { color: #2a5a4a; }
+      .tr-why.match { color: #4a5a2a; }
       .tr-why.suppressed { color: #5a2a2a; }
 
       /* ── conversation lines ── */
@@ -254,6 +246,7 @@
       .line.player .bubble { background: #1e2e1e; color: #8aba8a; border: 1px solid #2a3a2a; }
       .line.npc .bubble { background: #1e1e2e; color: #8a9aba; border: 1px solid #2a2a3a; }
       .line.npc.narc-reveal .bubble { background: #2a1616; color: #c07070; border: 1px solid #4a2020; }
+      .line.npc.filler .bubble { background: #1e1e26; color: #7a8aaa; border: 1px solid #2a2a36; font-style: italic; opacity: 0.8; }
 
       /* ── heatmap highlight ── */
       .bubble.heat-1 { border-color: #3a4a1a !important; }
@@ -300,13 +293,6 @@
         margin-bottom: 20px;
         font-size: 11px;
         display: none;
-      }
-
-      /* ── export ── */
-      .export-row {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 12px;
       }
     </style>
   </head>
@@ -383,40 +369,42 @@
       // ══════════════════════════════════════════════════════
       // SIM STATE
       // ══════════════════════════════════════════════════════
-      let lastRunData = [];    // structured data for export
-      let drawnTexts = [];     // flat list of all drawn text this run (for heatmap)
+      let lastRunData = [];
+      let drawnTexts = [];
       let coverageVisible = false;
 
-      // Track which lines were drawn per deck (for coverage)
       const deckRegistry = new Map(); // deckName → { src, drawn: Set<string> }
 
       function registerDecks() {
         deckRegistry.clear();
         const named = {
-          "DECK_GREET": DECK_GREET,
-          "DECK_ANGRY_HELLO": DECK_ANGRY_HELLO,
-          "DECK_HUNGRY_HELLO": DECK_HUNGRY_HELLO,
-          "DECK_NARC_HELLO": DECK_NARC_HELLO,
-          "DECK_ANGRY_PITCH": DECK_ANGRY_PITCH,
-          "DECK_HUNGRY_PITCH": DECK_HUNGRY_PITCH,
-          "DECK_STRONGER_PITCH": DECK_STRONGER_PITCH,
-          "DECK_SAY_MORE_WARM": DECK_SAY_MORE_WARM,
-          "DECK_SAY_MORE_SKEPTICAL": DECK_SAY_MORE_SKEPTICAL,
-          "DECK_INVITE": DECK_INVITE,
-          "DECK_F_INVITE": typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : null,
-          "DECK_BACK_OFF_EARLY": DECK_BACK_OFF_EARLY,
-          "DECK_BACK_OFF_LATE": DECK_BACK_OFF_LATE,
-          "DECK_JOIN_CONSENT": DECK_JOIN_CONSENT,
-          "DECK_NO_BYE": DECK_NO_BYE,
-          "DECK_NOT_NOW": DECK_NOT_NOW,
-          "DECK_RETURN": DECK_RETURN,
-          "DECK_NARC_REV": DECK_NARC_REV,
-          "DECK_ACK_NARC": DECK_ACK_NARC,
-          "DECK_MISMATCH_TOO_LITERAL": DECK_MISMATCH_TOO_LITERAL,
-          "DECK_MISMATCH_TOO_STRUCTURAL": DECK_MISMATCH_TOO_STRUCTURAL,
-          "DECK_AMB_NARC": DECK_AMB_NARC,
-          "DECK_AMB_HUNGRY": DECK_AMB_HUNGRY,
-          "DECK_AMB_ANGRY": DECK_AMB_ANGRY,
+          "DECK_GREET":                  DECK_GREET,
+          "DECK_ANGRY_HELLO":            DECK_ANGRY_HELLO,
+          "DECK_HUNGRY_HELLO":           DECK_HUNGRY_HELLO,
+          "DECK_NARC_HELLO":             DECK_NARC_HELLO,
+          "DECK_ANGRY_PITCH":            DECK_ANGRY_PITCH,
+          "DECK_HUNGRY_PITCH":           DECK_HUNGRY_PITCH,
+          "DECK_BAD_READ":               typeof DECK_BAD_READ !== "undefined" ? DECK_BAD_READ : null,
+          "DECK_FILLER":                 typeof DECK_FILLER !== "undefined" ? DECK_FILLER : null,
+          "DECK_F_INVITE":               typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : null,
+          "DECK_STRONGER_PITCH":         DECK_STRONGER_PITCH,
+          "DECK_INVITE":                 DECK_INVITE,
+          "DECK_SAY_MORE_WARM":          DECK_SAY_MORE_WARM,
+          "DECK_SAY_MORE_SKEPTICAL":     DECK_SAY_MORE_SKEPTICAL,
+          "DECK_BACK_OFF_EARLY":         DECK_BACK_OFF_EARLY,
+          "DECK_BAIL_RESPONSE":          typeof DECK_BAIL_RESPONSE !== "undefined" ? DECK_BAIL_RESPONSE : null,
+          "DECK_BACK_OFF_LATE":          DECK_BACK_OFF_LATE,
+          "DECK_JOIN_CONSENT":           DECK_JOIN_CONSENT,
+          "DECK_NO_BYE":                 DECK_NO_BYE,
+          "DECK_NOT_NOW":                DECK_NOT_NOW,
+          "DECK_RETURN":                 DECK_RETURN,
+          "DECK_NARC_REV":               DECK_NARC_REV,
+          "DECK_ACK_NARC":               DECK_ACK_NARC,
+          "DECK_MISMATCH_TOO_LITERAL":   DECK_MISMATCH_TOO_LITERAL,
+          "DECK_MISMATCH_TOO_STRUCTURAL":DECK_MISMATCH_TOO_STRUCTURAL,
+          "DECK_AMB_NARC":               DECK_AMB_NARC,
+          "DECK_AMB_HUNGRY":             DECK_AMB_HUNGRY,
+          "DECK_AMB_ANGRY":              DECK_AMB_ANGRY,
         };
         for (const [name, deck] of Object.entries(named)) {
           if (!deck) continue;
@@ -430,7 +418,7 @@
       }
 
       // ══════════════════════════════════════════════════════
-      // SIMULATION (with trace instrumentation)
+      // SIMULATION
       // ══════════════════════════════════════════════════════
 
       function simulateConversation(npcType, npcKind) {
@@ -448,25 +436,22 @@
 
         DM.startConv();
 
-        // ambient
-        const ambLine = npcType === "narc"
-          ? DM.draw(DECK_AMB_NARC)
-          : npcKind === "hungry"
-            ? DM.draw(DECK_AMB_HUNGRY)
-            : DM.draw(DECK_AMB_ANGRY);
+        // ── ambient ──
         const ambDeckName = npcType === "narc" ? "DECK_AMB_NARC"
           : npcKind === "hungry" ? "DECK_AMB_HUNGRY" : "DECK_AMB_ANGRY";
+        const ambDeck = npcType === "narc" ? DECK_AMB_NARC
+          : npcKind === "hungry" ? DECK_AMB_HUNGRY : DECK_AMB_ANGRY;
+        const ambLine = DM.draw(ambDeck);
         addTrace(null, ambDeckName, ambLine, [], "ambient");
         add("ambient", ambLine);
 
-        // greet
-const greetResult = DM.drawWithTags(DECK_GREET);
-a2LastGreetTone = greetResult.tone ?? "casual";
-        const greetTone = greetResult.tone ?? greetResult.tags[0] ?? "casual";
+        // ── player greet ──
+        const greetResult = DM.drawWithTags(DECK_GREET);
+        const greetTone = greetResult.tags[0] ?? "casual";
         addTrace(null, "DECK_GREET", greetResult.text, greetResult.tags, `tone:${greetTone}`);
         add("player", greetResult.text);
 
-        // NPC hello
+        // ── NPC hello (with prefix) ──
         const helloDeck = npcType === "narc" ? DECK_NARC_HELLO
           : npcKind === "angry" ? DECK_ANGRY_HELLO : DECK_HUNGRY_HELLO;
         const helloDeckName = npcType === "narc" ? "DECK_NARC_HELLO"
@@ -479,119 +464,180 @@ a2LastGreetTone = greetResult.tone ?? "casual";
         addTrace(null, helloDeckName, helloText, helloTags, helloTags.length ? "tagged" : "untagged");
         add("npc", helloPrefix + helloText, "", helloTags);
 
-        for (const t of helloTags) DM._seedConvTag(t);
-
+        // ── build pitch choices ──
+        // Choice A: tag-matched pitch for this NPC's kind (correct read)
+        // Choice B: DECK_BAD_READ (tone-deaf, wrong energy)
+        // Choice C: DECK_BACK_OFF_EARLY (bail)
+        const matchPitchDeck = npcKind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH;
+        const matchPitchDeckName = npcKind === "angry" ? "DECK_ANGRY_PITCH" : "DECK_HUNGRY_PITCH";
         const npcPrefix = npcType === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
 
-        let angryResult, hungryResult;
-        if (helloTags.length > 0) {
-          angryResult = DM.drawNoRecord(DECK_ANGRY_PITCH, { boost: true, follows: helloTags });
-          hungryResult = DM.drawNoRecord(DECK_HUNGRY_PITCH, { boost: true, follows: helloTags });
-        } else {
-          angryResult = DM.drawForEmpty(DECK_ANGRY_PITCH);
-          hungryResult = DM.drawForEmpty(DECK_HUNGRY_PITCH);
-        }
-        addTrace(null, "DECK_ANGRY_PITCH", angryResult.text, angryResult.tags,
-          helloTags.length ? (angryResult.tags.some(t => helloTags.includes(t)) ? "boost" : "normal") : "empty-fallback");
-        addTrace(null, "DECK_HUNGRY_PITCH", hungryResult.text, hungryResult.tags,
-          helloTags.length ? (hungryResult.tags.some(t => helloTags.includes(t)) ? "boost" : "normal") : "empty-fallback");
+        const matchResult   = DM.drawWithTags(matchPitchDeck, helloTags);
+        const badReadResult = DM.drawWithTags(DECK_BAD_READ,  helloTags);
+        addTrace(null, matchPitchDeckName, matchResult.text, matchResult.tags,
+          matchResult.tags.some(t => helloTags.includes(t)) ? "match" : "normal");
+        addTrace(null, "DECK_BAD_READ", badReadResult.text, badReadResult.tags,
+          badReadResult.tags.some(t => helloTags.includes(t)) ? "match" : "normal");
 
-        const choiceTags = [angryResult.tags, hungryResult.tags, []];
+        const backOffEarlyText = DM.draw(DECK_BACK_OFF_EARLY);
+
+        // Simulate player choice:
+        // 10% bail, otherwise: 75% correct read, 25% bad read (narc: 50/50 match vs bad)
         const bail = Math.random() < 0.1;
-        let choiceIdx = bail ? 2
-          : npcKind === "angry"
-            ? (Math.random() < 0.75 ? 0 : 1)
-            : (Math.random() < 0.75 ? 1 : 0);
-        if (npcType === "narc") choiceIdx = Math.random() < 0.5 ? 0 : 1;
+        let choiceIdx; // 0=match, 1=bad read, 2=bail
+        if (bail) {
+          choiceIdx = 2;
+        } else if (npcType === "narc") {
+          choiceIdx = Math.random() < 0.5 ? 0 : 1;
+        } else {
+          choiceIdx = Math.random() < 0.75 ? 0 : 1;
+        }
 
-        const backOffEarly = DM.draw(DECK_BACK_OFF_EARLY);
-        add("choice", (choiceIdx === 0 ? "▶ " : "  ") + "a→ " + npcPrefix + angryResult.text, "", angryResult.tags);
-        add("choice", (choiceIdx === 1 ? "▶ " : "  ") + "h→ " + npcPrefix + hungryResult.text, "", hungryResult.tags);
-        add("choice", (choiceIdx === 2 ? "▶ " : "  ") + "n→ " + backOffEarly);
+        add("choice", (choiceIdx === 0 ? "▶ " : "  ") + "a→ [match] " + npcPrefix + matchResult.text, "", matchResult.tags);
+        add("choice", (choiceIdx === 1 ? "▶ " : "  ") + "b→ [bad read] " + npcPrefix + badReadResult.text, "", badReadResult.tags);
+        add("choice", (choiceIdx === 2 ? "▶ " : "  ") + "c→ [bail] " + backOffEarlyText);
 
+        // ── choice C: bail early ──
         if (choiceIdx === 2) {
-          add("player", backOffEarly);
+          add("player", backOffEarlyText);
+          // NPC responds with bail response
+          if (typeof DECK_BAIL_RESPONSE !== "undefined") {
+            const bailResp = DM.draw(DECK_BAIL_RESPONSE);
+            addTrace(null, "DECK_BAIL_RESPONSE", bailResp, [], "bail-response");
+            add("npc", bailResp);
+          }
           DM.endConv();
           return { lines, trace, outcome: "backed", npcType, npcKind };
         }
 
-        const pitchTags = choiceTags[choiceIdx];
-        const chosenPitchText = choiceIdx === 0 ? angryResult.text : hungryResult.text;
+        const isMatchPitch = choiceIdx === 0;
+        const chosenPitchText = isMatchPitch ? matchResult.text : badReadResult.text;
+        const pitchTags = isMatchPitch ? matchResult.tags : badReadResult.tags;
         add("player", npcPrefix + chosenPitchText, "", pitchTags);
-        for (const t of pitchTags ?? []) DM._seedConvTag(t);
+        
 
-        const inviteDeckEarly = typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : DECK_INVITE;
-        const earlyInviteText = DM.draw(inviteDeckEarly);
-        addTrace(null, typeof DECK_F_INVITE !== "undefined" ? "DECK_F_INVITE" : "DECK_INVITE", earlyInviteText, [], "invite");
-        add("player", earlyInviteText);
+        // ── good read path: filler then recruit-or-walk-away prompt ──
+        // bad read path: goes straight to mismatch check (no filler, no invite prompt)
+        if (isMatchPitch) {
+          // filler (NPC auto-plays after good read)
+          if (typeof DECK_FILLER !== "undefined") {
+            const fillerText = DM.draw(DECK_FILLER);
+            addTrace(null, "DECK_FILLER", fillerText, [], "filler");
+            add("npc", fillerText, "filler");
+          }
 
-        const matched = (choiceIdx === 0 && npcKind === "angry") || (choiceIdx === 1 && npcKind === "hungry");
-        let sayMoreTags = pitchTags;
+          // recruit-or-walk-away prompt (D_F_INVITE / DECK_F_INVITE)
+          const fInviteDeck = typeof DECK_F_INVITE !== "undefined" ? DECK_F_INVITE : DECK_INVITE;
+          const fInviteDeckName = typeof DECK_F_INVITE !== "undefined" ? "DECK_F_INVITE" : "DECK_INVITE";
+          const fInviteText = DM.draw(fInviteDeck);
+          addTrace(null, fInviteDeckName, fInviteText, [], "first-invite");
+          const walkAwayText = DM.draw(DECK_BACK_OFF_EARLY); // reuses same deck for walk away label
+
+          // 85% recruit, 15% walk away at this stage
+          const walkAway = Math.random() < 0.15;
+          add("choice", (!walkAway ? "▶ " : "  ") + "recruit→ " + fInviteText);
+          add("choice", (walkAway  ? "▶ " : "  ") + "walk away→ " + walkAwayText);
+
+          if (walkAway) {
+            add("player", walkAwayText);
+            if (typeof DECK_BAIL_RESPONSE !== "undefined") {
+              const bailResp = DM.draw(DECK_BAIL_RESPONSE);
+              addTrace(null, "DECK_BAIL_RESPONSE", bailResp, [], "bail-response");
+              add("npc", bailResp);
+            }
+            DM.endConv();
+            return { lines, trace, outcome: "backed", npcType, npcKind };
+          }
+
+          add("player", fInviteText);
+        }
+
+        // ── NPC response after pitch ──
+        // matched (choice A) + not narc → 80% join immediately, 20% say more warm
+        // bad read (choice B) + not narc → mismatch + bye
+        // narc (either choice) → say more skeptical
+
+        const matched = isMatchPitch && npcType !== "narc";
 
         if (npcType === "narc") {
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, { follows: pitchTags, boost: false });
-          sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : pitchTags;
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, pitchTags);
+          const sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : pitchTags;
           addTrace(null, "DECK_SAY_MORE_SKEPTICAL", skeptResult.text, skeptResult.tags,
-            skeptResult.tags.some(t => pitchTags.includes(t)) ? "follows" : "normal");
+            skeptResult.tags.some(t => pitchTags.includes(t)) ? "match" : "normal");
           add("npc", skeptResult.text, "", sayMoreTags);
+          return resolveSecondRound(lines, trace, add, addTrace, npcType, npcKind, sayMoreTags);
 
         } else if (!matched) {
-          const mismatchDeck = choiceIdx === 0 && npcKind === "hungry"
+          // bad read → mismatch
+          // hungry NPC got angry pitch → DECK_MISMATCH_TOO_STRUCTURAL
+          // angry NPC got hungry pitch → DECK_MISMATCH_TOO_LITERAL
+          const mismatchDeck = npcKind === "hungry"
             ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
-          const mismatchName = choiceIdx === 0 && npcKind === "hungry"
+          const mismatchDeckName = npcKind === "hungry"
             ? "DECK_MISMATCH_TOO_STRUCTURAL" : "DECK_MISMATCH_TOO_LITERAL";
           const mText = DM.draw(mismatchDeck);
           const byeText = DM.draw(DECK_NO_BYE);
-          addTrace(null, mismatchName, mText, [], "mismatch");
+          addTrace(null, mismatchDeckName, mText, [], "mismatch");
           addTrace(null, "DECK_NO_BYE", byeText, [], "mismatch");
           add("npc", mText + " " + byeText);
           DM.endConv();
           return { lines, trace, outcome: "declined", npcType, npcKind };
 
         } else {
+          // matched + not narc
           if (Math.random() < 0.8) {
+            // 80%: join immediately
             const pair = DM.draw(DECK_JOIN_CONSENT);
             addTrace(null, "DECK_JOIN_CONSENT", pair.join + " / " + pair.consent, [], "join");
             add("npc", pair.join);
             add("npc", pair.consent);
             DM.endConv();
             return { lines, trace, outcome: "joined", npcType, npcKind };
+          } else {
+            // 20%: say more warm → second round
+            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, pitchTags);
+            const sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : pitchTags;
+            addTrace(null, "DECK_SAY_MORE_WARM", warmResult.text, warmResult.tags,
+              warmResult.tags.some(t => pitchTags.includes(t)) ? "match" : "normal");
+            add("npc", warmResult.text, "", sayMoreTags);
+            return resolveSecondRound(lines, trace, add, addTrace, npcType, npcKind, sayMoreTags);
           }
-          const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, { follows: pitchTags, boost: true });
-          sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : pitchTags;
-          addTrace(null, "DECK_SAY_MORE_WARM", warmResult.text, warmResult.tags,
-            warmResult.tags.some(t => pitchTags.includes(t)) ? "follows" : (warmResult.tags.some(t => pitchTags.includes(t)) ? "boost" : "normal"));
-          add("npc", warmResult.text, "", sayMoreTags);
         }
+      }
 
-        // second pitch
-        const pitchFollows = sayMoreTags ?? pitchTags ?? helloTags ?? [];
-        const strongerLine = DM.draw(DECK_STRONGER_PITCH, { boost: true, follows: pitchFollows });
-        addTrace(null, "DECK_STRONGER_PITCH", strongerLine, [], pitchFollows.length ? "boost" : "normal");
-        const backOffLate = DM.draw(DECK_BACK_OFF_LATE);
+      // ── second round: stronger pitch or back off late ──
+      function resolveSecondRound(lines, trace, add, addTrace, npcType, npcKind, sayMoreTags) {
+        const strongerResult = DM.draw(DECK_STRONGER_PITCH, sayMoreTags);
+        addTrace(null, "DECK_STRONGER_PITCH", strongerResult, [], sayMoreTags.length ? "match" : "normal");
+        const backOffLateText = DM.draw(DECK_BACK_OFF_LATE);
+
         const goStronger = Math.random() < 0.8;
-
-        add("choice", (goStronger ? "▶ " : "  ") + "s→ " + strongerLine);
-        add("choice", (!goStronger ? "▶ " : "  ") + "n→ " + backOffLate);
+        add("choice", (goStronger  ? "▶ " : "  ") + "stronger→ " + strongerResult);
+        add("choice", (!goStronger ? "▶ " : "  ") + "walk away→ " + backOffLateText);
 
         if (!goStronger) {
-          add("player", backOffLate);
+          add("player", backOffLateText);
+          // narc: silent win; non-narc: cautious float (no extra NPC line)
           DM.endConv();
           return { lines, trace, outcome: "backed", npcType, npcKind };
         }
 
-        add("player", strongerLine);
+        add("player", strongerResult);
+
+        // append DECK_INVITE after stronger pitch
         const inviteText = DM.draw(DECK_INVITE);
         addTrace(null, "DECK_INVITE", inviteText, [], "invite");
         add("player", inviteText);
 
         if (npcType === "narc") {
+          // narc reveal
           const narcRevText = DM.draw(DECK_NARC_REV);
           addTrace(null, "DECK_NARC_REV", narcRevText, [], "narc-reveal");
           add("npc", narcRevText, "narc-reveal");
           DM.endConv();
           return { lines, trace, outcome: "narc", npcType, npcKind };
         } else if (Math.random() < 0.6) {
+          // 60%: join
           const pair = DM.draw(DECK_JOIN_CONSENT);
           addTrace(null, "DECK_JOIN_CONSENT", pair.join + " / " + pair.consent, [], "join");
           add("npc", pair.join);
@@ -599,6 +645,7 @@ a2LastGreetTone = greetResult.tone ?? "casual";
           DM.endConv();
           return { lines, trace, outcome: "joined", npcType, npcKind };
         } else {
+          // 40%: not now, but they'll return
           const notNowText = DM.draw(DECK_NOT_NOW);
           addTrace(null, "DECK_NOT_NOW", notNowText, [], "deferred");
           add("npc", notNowText);
@@ -636,10 +683,10 @@ a2LastGreetTone = greetResult.tone ?? "casual";
 
       function renderConv(conv, idx, freq) {
         const outcomeText = {
-          joined: "✓ joined",
+          joined:   "✓ joined",
           declined: "✗ declined",
-          narc: "⚠ narc revealed",
-          backed: "→ backed off",
+          narc:     "⚠ narc revealed",
+          backed:   "→ backed off",
           deferred: "~ deferred, maybe later",
         };
         const typeLabel = conv.npcType === "narc" ? "narc"
@@ -660,8 +707,7 @@ a2LastGreetTone = greetResult.tone ?? "casual";
         // trace panel
         h += `<div class="trace-panel" id="trace-${idx}">`;
         for (const t of conv.trace) {
-          const whyCls = t.why === "boost" ? "boost"
-            : t.why.startsWith("follows") ? "follows"
+          const whyCls = t.why === "match" ? "match"
             : (t.why === "suppressed" || t.why === "mismatch") ? "suppressed"
             : "";
           h += `<div class="trace-row">`;
@@ -690,8 +736,8 @@ a2LastGreetTone = greetResult.tone ?? "casual";
 
           const cls = `line ${line.speaker === "choice" ? "choice player" : line.speaker}${line.meta ? " " + line.meta : ""}`;
 
-          if (line.speaker === "npc" && prevSpeaker === "npc") {
-            // merge consecutive npc bubbles
+          if (line.speaker === "npc" && prevSpeaker === "npc" && !line.meta) {
+            // merge consecutive npc bubbles (but not filler — it gets its own style)
             const closeIdx = h.lastIndexOf("</div></div>");
             h = h.slice(0, closeIdx) + `<br><br>${esc(line.text)}${tagNote}${heatDot}</div></div>`;
           } else {
@@ -716,11 +762,7 @@ a2LastGreetTone = greetResult.tone ?? "casual";
 
         const decksToShow = [...deckRegistry.entries()]
           .filter(([, e]) => e.src && e.src.length > 0)
-          .sort(([,a],[,b]) => {
-            const pctA = a.drawn.size / a.src.length;
-            const pctB = b.drawn.size / b.src.length;
-            return pctA - pctB; // least coverage first
-          });
+          .sort(([,a],[,b]) => (a.drawn.size / a.src.length) - (b.drawn.size / b.src.length));
 
         let h = `<div class="coverage-header">deck coverage — ${lastRunData.length} conversations</div>`;
 
@@ -765,8 +807,8 @@ a2LastGreetTone = greetResult.tone ?? "casual";
       function rerollConv(idx) {
         const sel = document.getElementById("npcType").value;
         let npcType, npcKind;
-        if (sel === "narc") { npcType = "narc"; npcKind = "angry"; }
-        else if (sel === "angry") { npcType = "norm"; npcKind = "angry"; }
+        if (sel === "narc")   { npcType = "narc"; npcKind = "angry"; }
+        else if (sel === "angry")  { npcType = "norm"; npcKind = "angry"; }
         else if (sel === "hungry") { npcType = "norm"; npcKind = "hungry"; }
         else { npcType = Math.random() < 0.13 ? "narc" : "norm"; npcKind = Math.random() < 0.5 ? "angry" : "hungry"; }
 
@@ -775,9 +817,7 @@ a2LastGreetTone = greetResult.tone ?? "casual";
 
         const freq = buildHeatmap(lastRunData);
         const el = document.getElementById(`conv-${idx}`);
-        if (el) {
-          el.outerHTML = renderConv(conv, idx, freq);
-        }
+        if (el) el.outerHTML = renderConv(conv, idx, freq);
         renderCoverage();
       }
 
@@ -817,7 +857,10 @@ a2LastGreetTone = greetResult.tone ?? "casual";
           DECK_NARC_REV, DECK_ACK_NARC, DECK_MISMATCH_TOO_LITERAL,
           DECK_MISMATCH_TOO_STRUCTURAL, DECK_AMB_NARC, DECK_AMB_HUNGRY, DECK_AMB_ANGRY,
         ].forEach(d => { if (d) d.pile = []; });
-        if (typeof DECK_F_INVITE !== "undefined" && DECK_F_INVITE) DECK_F_INVITE.pile = [];
+        if (typeof DECK_BAD_READ    !== "undefined" && DECK_BAD_READ)    DECK_BAD_READ.pile    = [];
+        if (typeof DECK_FILLER      !== "undefined" && DECK_FILLER)      DECK_FILLER.pile      = [];
+        if (typeof DECK_F_INVITE    !== "undefined" && DECK_F_INVITE)    DECK_F_INVITE.pile    = [];
+        if (typeof DECK_BAIL_RESPONSE !== "undefined" && DECK_BAIL_RESPONSE) DECK_BAIL_RESPONSE.pile = [];
         DM.startConv();
       }
 
@@ -832,8 +875,8 @@ a2LastGreetTone = greetResult.tone ?? "casual";
         lastRunData = [];
         for (let i = 0; i < count; i++) {
           let npcType, npcKind;
-          if (sel === "narc") { npcType = "narc"; npcKind = "angry"; }
-          else if (sel === "angry") { npcType = "norm"; npcKind = "angry"; }
+          if (sel === "narc")        { npcType = "narc"; npcKind = "angry"; }
+          else if (sel === "angry")  { npcType = "norm"; npcKind = "angry"; }
           else if (sel === "hungry") { npcType = "norm"; npcKind = "hungry"; }
           else { npcType = Math.random() < 0.13 ? "narc" : "norm"; npcKind = Math.random() < 0.5 ? "angry" : "hungry"; }
           lastRunData.push(simulateConversation(npcType, npcKind));
@@ -841,9 +884,7 @@ a2LastGreetTone = greetResult.tone ?? "casual";
 
         const freq = buildHeatmap(lastRunData);
         let html = "";
-        for (let i = 0; i < lastRunData.length; i++) {
-          html += renderConv(lastRunData[i], i, freq);
-        }
+        for (let i = 0; i < lastRunData.length; i++) html += renderConv(lastRunData[i], i, freq);
         document.getElementById("output").innerHTML = html;
         renderCoverage();
       }
@@ -856,7 +897,6 @@ a2LastGreetTone = greetResult.tone ?? "casual";
           .replace(/"/g, "&quot;");
       }
 
-      // Enter to run
       document.addEventListener("keydown", e => {
         if (e.key === "Enter" && document.activeElement.tagName !== "BUTTON") runSim();
       });

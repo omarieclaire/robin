@@ -401,9 +401,9 @@
         D_ACK_HUNGRY_ANGRY:           D_ACK_HUNGRY_ANGRY,
         D_ACK_NARC:                   D_ACK_NARC,
         DECK_BAD_READ:               DECK_BAD_READ.src,
-        DECK_BAIL_RESPONSE:           DECK_BAIL_RESPONSE.src,
+  DECK_BAIL_RESPONSE:           DECK_BAIL_RESPONSE.src,
+        D_FILLER:                     DECK_FILLER.src,
       };
-
       ["casual","concerned","direct"].forEach(tone =>
         ["angry","hungry","narc"].forEach(kind =>
           D[`PREFIX_${tone}_${kind}`] = HELLO_PREFIX[tone][kind]
@@ -423,8 +423,7 @@
         "D_BACK_OFF_LATE","D_NARC_REVEAL","D_NOT_NOW","D_RETURN",
         "D_AMB_HUNGRY","D_AMB_ANGRY","D_AMB_NARC",
         "D_ACK_HUNGRY_ANGRY","D_ACK_NARC",
-        "DECK_BAD_READ","DECK_BAIL_RESPONSE",
-        "PREFIX_casual_angry","PREFIX_casual_hungry","PREFIX_casual_narc",
+"DECK_BAD_READ","DECK_BAIL_RESPONSE","D_FILLER",        "PREFIX_casual_angry","PREFIX_casual_hungry","PREFIX_casual_narc",
         "PREFIX_concerned_angry","PREFIX_concerned_hungry","PREFIX_concerned_narc",
         "PREFIX_direct_angry","PREFIX_direct_hungry","PREFIX_direct_narc",
       ];
@@ -699,7 +698,6 @@
         cols.push(col({
           id:"pitch", label:"pitch (player)", deckName:null, role:"player",
           clearKey:["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          appendNote:{label:"then automatically: D_F_INVITE", deckName:"D_F_INVITE", items:D.D_F_INVITE},
           sections:[
             {label:"match pitch (commiserate)", deckName:P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH",
               items:sortPitch(P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH")},
@@ -745,9 +743,17 @@
           _tail(cols); return cols;
         }
 
-        // ── 6. D_F_INVITE ─────────────────────────────────────────────────────────
+        // ── 6. FILLER + FIRST INVITE ──────────────────────────────────────────────
         cols.push(col({
-          id:"f_invite", label:"first invite (player)", deckName:"D_F_INVITE", role:"player",
+          id:"filler", label:"filler (npc, good read only)", deckName:"D_FILLER", role:"npc",
+          items:D.D_FILLER.map((x,i)=>({
+            key:`D_FILLER:${i}`, text:x.t, tags:x.tags||[], idx:i, selected:false,
+          })),
+          onSelect:()=>{},
+        }));
+
+        cols.push(col({
+          id:"f_invite", label:"recruit or walk away (player)", deckName:"D_F_INVITE", role:"player",
           clearKey:["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
           items:D.D_F_INVITE.map((x,i)=>({
             key:`D_F_INVITE:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
@@ -1247,6 +1253,7 @@
         wArr("D_BACK_OFF_LATE",           D.D_BACK_OFF_LATE,           true);
         wArr("DECK_BAD_READ",            D.DECK_BAD_READ,            true);
         wArr("DECK_BAIL_RESPONSE",        D.DECK_BAIL_RESPONSE,        true);
+        wArr("D_FILLER",                  D.D_FILLER,                  true);
         wArr("D_NARC_REVEAL",             D.D_NARC_REVEAL,             false);
         wArr("D_NOT_NOW",                 D.D_NOT_NOW,                 false);
         wArr("D_RETURN",                  D.D_RETURN,                  false);

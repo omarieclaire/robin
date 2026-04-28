@@ -2626,7 +2626,7 @@
       }
 
       // ── TP 141: route based on first pitch choice ──
-      else if (a2TP === 141 && a2TT > CONV_INVITE_DELAY_MS && _convChunkQueue.length === 0) {
+      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, CONV_INVITE_DELAY_MS) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (matched) {
           // good read — filler then invite
@@ -2639,7 +2639,7 @@
         a2TT = 0;
       }
       // ── TP 142: wait for invite/walk away choice ──
-      else if (a2TP === 142 && a2TT > 1200 && _convChunkQueue.length === 0) {
+      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 1400) && _convChunkQueue.length === 0) {
         const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง recruit them" : "(•‿•) recruit them";
         a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
         a2PitchLines = [DM.draw(DECK_F_INVITE), DM.draw(DECK_BACK_OFF_EARLY)];
@@ -2687,7 +2687,7 @@
           // tone deaf — mismatch and leave
           const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
           convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
-          addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN);
+          setTimeout(() => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN), convFadeDuration + 800);
           a2TP = 7;
         } else {
           // matched, not narc
@@ -2707,7 +2707,7 @@
       }
 
       // ── TP 15: show second round choices ──
-      else if (a2TP === 15 && a2TT > 1800 && _convChunkQueue.length === 0) {
+      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 1800) && _convChunkQueue.length === 0) {
         const pitchTags = a2TN.sayMoreTags ?? a2ChoiceTags?.[a2Choice] ?? a2TN.helloTags ?? [];
         const strongerLine = DM.draw(DECK_STRONGER_PITCH, pitchTags);
         DM.clearLastTags(); // stronger pitch tags stop here
@@ -2837,7 +2837,7 @@
         audio.play("recruit");
         spark(Math.round(a2PX), Math.round(a2PY), C_TEAL, 10);
         a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
+        setTimeout(() => addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL), convFadeDuration + 400);
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
@@ -3006,12 +3006,14 @@
       }
     }
 
-    const a2TapStep = 2;
-    if (input.isDown("left")) a2PX -= 0.02 * dt;
-    else if (input.justPressed("left")) a2PX -= a2TapStep;
-    if (input.isDown("right")) a2PX += 0.02 * dt;
-    else if (input.justPressed("right")) a2PX += a2TapStep;
-    a2PX = Util.clamp(a2PX, 4, W - 6);
+    if (!convVisible) {
+      const a2TapStep = 2;
+      if (input.isDown("left")) a2PX -= 0.02 * dt;
+      else if (input.justPressed("left")) a2PX -= a2TapStep;
+      if (input.isDown("right")) a2PX += 0.02 * dt;
+      else if (input.justPressed("right")) a2PX += a2TapStep;
+      a2PX = Util.clamp(a2PX, 4, W - 6);
+    }
 
     a2Blocks = a2Blocks.filter((b) => b.wx + b.w > a2WX - W);
     a2Roads = a2Roads.filter((r) => r.wx + A2_VRW > a2WX - W - 10);
