@@ -1,41 +1,22 @@
-// 1. We talk to an NPC (player greets from DECK_GREET)
-// 2. The NPC talks back (from DECK_HUNGRY_HELLO, DECK_ANGRY_HELLO, or DECK_NARC_HELLO depending on NPC type)
-//    — this gives us a clue about them (their tags feed the next step)
-// 3. The player chooses how to reply from two pitched options + a bail option:
-//    — Option A: a line from DECK_ANGRY_PITCH (if chosen, DECK_F_INVITE appends after ~1.2s)
-//    — Option B: a line from DECK_HUNGRY_PITCH (if chosen, DECK_F_INVITE appends after ~1.2s)
-//    — Option C: a line from DECK_BACK_OFF_EARLY → conversation ends immediately
-// 4. If the player chose A or B, the NPC responds:
-//    a. If the NPC feels misunderstood (angry NPC got a hungry pitch or vice versa):
-//       — they say a line from DECK_MISMATCH_TOO_STRUCTURAL (hungry NPC got angry pitch)
-//         or DECK_MISMATCH_TOO_LITERAL (angry NPC got hungry pitch), followed by DECK_NO_BYE
-//       — conversation ends
-//    b. If the pitch matched the NPC's energy AND the NPC is not a narc:
-//       — 80% chance: they join immediately — DECK_JOIN_CONSENT delivers a join phrase,
-//         then a consent phrase a beat later (same object, two fields, timed separately) → conv ends
-//       — 20% chance: they ask for more with a line from DECK_SAY_MORE_WARM → go to step 5
-//    c. If the NPC IS a narc (regardless of pitch match):
-//       — they respond with DECK_SAY_MORE_SKEPTICAL → go to step 5
-// 5. The player now chooses between:
-//    — DECK_STRONGER_PITCH (if chosen, DECK_INVITE appends after ~1.5s)
-//    — DECK_BACK_OFF_LATE → conversation ends (narc: silent win; non-narc: cautious float)
-//    If the player chose DECK_STRONGER_PITCH:
-//    a. If it's a narc → DECK_NARC_REV plays, heat increases, conversation ends
-//    b. If it's not a narc:
-//       — 60% chance: they join — DECK_JOIN_CONSENT delivers join + consent phrases timed separately → conv ends
-//       — 40% chance: NPC says DECK_NOT_NOW, conversation ends,
-//         but after 4–7s they return with a line from DECK_RETURN and join anyway
+// Player greets [DECK_GREET]
+// NPC replies [HELLO_PREFIX + DECK_HUNGRY_HELLO / DECK_ANGRY_HELLO / DECK_NARC_HELLO]
+// Player chooses:
 
-// Ambient chatter from hungry/sad NPCs while they wander —
-// short, no context needed, player probably won't read most of these
+// Bail → shown as [DECK_BACK_OFF_EARLY] → NPC replies [DECK_BAIL_RESPONSE] → end
+// Tone deaf → shown as [DECK_ANGRY_PITCH / DECK_HUNGRY_PITCH (wrong type)] → NPC replies [DECK_MISMATCH_TOO_STRUCTURAL / DECK_MISMATCH_TOO_LITERAL] + [DECK_NO_BYE] → end
+// Match → shown as [DECK_HUNGRY_PITCH / DECK_ANGRY_PITCH (correct type)] (narcs also get [DECK_ACK_NARC] prefix) → NPC replies [DECK_FILLER] → player chooses:
 
-// How the line selection system works:
-// 1. If the previous line and a candidate line share tags, that candidate scores higher and is more likely to be drawn
-// 2. A set of designated "topic tags" (bread, wages, cartel, etc.) go on cooldown once used —
-//    lines with those tags are suppressed for COOLDOWN(3) conversations, then become eligible again
-// 3. Within a single conversation, topic tags that have already fired are fully suppressed (no repeats)
-// 4. Some lines have a `follows` field — if it matches a tag from the previous line, it scores highest of all (score 4),
-//    making it the preferred transition for specific tag-to-tag handoffs
+// Walk away → shown as [DECK_BACK_OFF_EARLY] → end
+// Recruit → shown as [DECK_F_INVITE] → TP24 resolves:
+
+// 80%: NPC joins → [DECK_JOIN_CONSENT] (join line, then consent line timed separately) → end
+// 20%: NPC asks for more → [DECK_SAY_MORE_WARM] (narc always goes here via [DECK_SAY_MORE_SKEPTICAL]) → player does stronger pitch [DECK_STRONGER_PITCH] or walks [DECK_BACK_OFF_LATE] → end
+
+// Stronger pitch chosen → resolves directly:
+
+// Narc → [DECK_NARC_REV] → heat +1 → end
+// Non-narc 60% → [DECK_JOIN_CONSENT] (join line, then consent line) → end
+// Non-narc 40% → [DECK_NOT_NOW] → wanders off → rejoins 4–7s later → [DECK_RETURN] → end
 
 // ─────────────────────────────────────────
 // AMBIENT — HUNGRY
@@ -139,36 +120,36 @@ const D_AMB_NARC = [
 // ─────────────────────────────────────────
 
 const P_GREET = [
-  { t: "hey, |pause|how's it hanging?", tags: ["casual"] },
-  { t: "you good?", tags: ["casual"] },
-  { t: "salut. |pause|what's up?", tags: ["casual"] },
-  { t: "hey,|pause|you good?", tags: ["concerned"] },
-  { t: "hey neighbour. |pause|how are you?", tags: ["casual"] },
-  { t: "allô. |pause|what's up?", tags: ["casual"] },
-  { t: "hey neighbour, |pause|you ok?", tags: ["concerned"] },
-  { t: "hey, |pause|what's up?", tags: ["casual"] },
-  { t: "hey, |pause|you hungry?", tags: ["direct"] },
-  { t: "hey, |pause|I know that look. you ok?", tags: ["concerned"] },
-  { t: "real |pause|talk?", tags: ["direct"] },
-  { t: "hey, |pause|you look like you get it.", tags: ["direct"] },
-  { t: "hey, |pause|you look like someone who's had enough.", tags: ["direct"] },
-  { t: "hey, |pause|rough day?", tags: ["direct"] },
-  { t: "ça va?", tags: ["concerned"] },
-  { t: "you okay?", tags: ["concerned"] },
-  { t: "salut, |pause|toi. ça va?", tags: ["concerned"] },
-  { t: "hold up. |pause|ça va?", tags: ["direct"] },
+  { t: "hey, how's it hanging?", tags: ["casual", "hows-it-hang"] },
+  { t: "hi there. you good?", tags: ["casual", "you-good"] },
+  { t: "salut. what's up?", tags: ["casual", "sup"] },
+  { t: "hey, you good?", tags: ["concerned", "you-good"] },
+  { t: "hey neighbour. how are you?", tags: ["casual", "how-are-you"] },
+  { t: "allô. what's up?", tags: ["casual", "sup"] },
+  { t: "hey neighbour, you ok?", tags: ["concerned", "you-ok"] },
+  { t: "hey, what's up?", tags: ["casual", "sup"] },
+  { t: "hey, you hungry?", tags: ["direct", "you-hungry"] },
+  { t: "hey, I know that look. you ok?", tags: ["concerned", "you-ok"] },
+  { t: "real talk?", tags: ["direct", "real-talk"] },
+  { t: "hey, you look like you get it.", tags: ["direct", "get-it"] },
+  { t: "hey, you look like someone who's had enough.", tags: ["direct", "had-enough"] },
+  { t: "hey, rough day?", tags: ["direct", "rough-day"] },
+  { t: "ça va?", tags: ["concerned", "ca-va"] },
+  { t: "you okay?", tags: ["concerned", "you-ok"] },
+  { t: "salut, toi. ça va?", tags: ["concerned", "ca-va"] },
+  { t: "hold up. ça va?", tags: ["direct", "ca-va"] },
 ];
 
 const HELLO_PREFIX = {
   casual: {
-    angry: ["yeah well —", "ha. ha.", "okay, honestly?"],
+    angry: ["yeah well —", "ha.", "okay, honestly?"],
     hungry: ["honestly —", "ugh.", "not great, actually —"],
     narc: ["great, thanks!", "not much!", "doing great!"],
   },
   concerned: {
-    angry: ["well.", "honestly? ", "rough doesn't cover it."],
-    hungry: ["no.", "I'm not okay.", "you can tell? "],
-    narc: ["yes! fine!", "totally fine!", "never better!"],
+    angry: ["no, not really. ", "honestly? ", "rough doesn't cover it. "],
+    hungry: ["no. ", "I'm not okay. ", "you can tell? "],
+    narc: ["yes! fine! ", "totally fine! ", "never better! "],
   },
   direct: {
     angry: ["real talk? ", "since you're asking —", "okay, real talk —", "you really want to know? "],
@@ -177,58 +158,52 @@ const HELLO_PREFIX = {
   },
 };
 
-
 // NPC prefix before their hello line
 // PREFIX RULE:
 // casual  = NPC responds as if continuing their own train of thought. No interrogatives.
 // concerned = NPC acknowledges the check-in, then pivots to their thing.
 // direct  = NPC treats the greeting as an invitation. Interrogatives ("you really want to know?") are fine here only.
 const D_NARC_HELLO = [
-  { t: "on my way to lunch at the Ritz-Carlton", tags: ["rich", "food", "montreal"] },
-  { t: "the system works and I work within it.", tags: ["system", "capitalism"] },
-  { t: "no problems here! none! at all!", tags: ["denial", "system"] },
-  { t: "the free market is working as intended.", tags: ["capitalism", "market"] },
-  { t: "everyone just needs to budget better.", tags: ["budget", "classism"] },
-  { t: "the economy is doing great.", tags: ["economy", "denial"] },
-  { t: "some people need to stop buying avocados.", tags: ["avocado", "classism", "food"] },
-  { t: "everything's fine.", tags: ["denial"] },
-  { t: "money is just a mindset issue.", tags: ["classism", "denial"] },
-  { t: "the market self-corrects. it always does.", tags: ["market", "capitalism"] },
-  { t: "I love the market economy.", tags: ["market", "capitalism"] },
-  { t: "if people stopped doing drugs they could afford food.", tags: ["classism", "food", "drugs"] },
-  { t: "the invisible hand will sort it out.", tags: ["invisible-hand", "market", "capitalism"] },
-  { t: "when you use a points card food is basically free.", tags: ["points-card", "food", "classism"] },
-  { t: "competition keeps prices down. I read that somewhere.", tags: ["market", "capitalism", "prices"] },
-  { t: "have you tried the PC Optimum app?", tags: ["points-card", "loblaws", "classism"] },
+  { t: "on my way to lunch at the Ritz-Carlton", tags: ["ritz"] },
+  { t: "the system works and I work within it.", tags: ["system"] },
+  { t: "no problems here! none! at all!", tags: ["no-prob"] },
+  { t: "the free market is working as intended.", tags: ["intended"] },
+  { t: "everyone just needs to budget better.", tags: ["budget"] },
+  { t: "the economy is doing great.", tags: ["great-econ"] },
+  { t: "some people need to stop buying avocados.", tags: ["avocado"] },
+  { t: "everything's fine.", tags: ["fine"] },
+  { t: "money is just a mindset issue.", tags: ["mindset"] },
+  { t: "the market self-corrects. it always does.", tags: ["self-corrects"] },
+  { t: "I love the market economy.", tags: ["market-econ"] },
+  { t: "if people stopped doing drugs they could afford food.", tags: ["drugs"] },
+  { t: "the invisible hand will sort it out.", tags: ["invisible-hand-sort"] },
+  { t: "when you use a points card food is basically free.", tags: ["free-points-card"] },
+  { t: "competition keeps prices down. I read that somewhere.", tags: ["competition"] },
+  { t: "have you tried the PC Optimum app?", tags: ["optimum"] },
 ];
 
-
 const DECK_ANGRY_HELLO = new DM.Deck([
-  { t: "I work in a grocery store but I can't afford to shop there.", tags: ["work"] },
-  { t: "i just found out about \"dynamic pricing\".", tags: ["dynamic-pricing"] },
-  { t: "fruit prices feel like a practical joke.", tags: ["joke"] },
-  { t: "I didn't have breakfast.", tags: ["no-breaky"] },
-  { t: "I've been thinking about dumpster-diving.", tags: ["diving"] },
+  { t: "I googled 'is capitalism fair' at 3am. |pause||pause| now i'm on a list. also: no.", tags: ["fair-cap"] },
+  { t: "the shareholders are migrating south for winter, |pause||pause|honking contentedly.", tags: ["honk", "shareholders"] },
+  { t: "the economy is a dumpster fire", tags: ["fire"] },
+  { t: "we got priced out of life", tags: ["life"] },
+  { t: "did you know that Galen Weston owns a CASTLE?", tags: ["castle"] },
+  { t: "robin hood had the right idea: steal from the rich. give to the poor.", tags: ["robin-hood"] },
+  { t: "food bank lineups are so long now", tags: ["food-lines"] },
+  { t: "the market's been about to fix itself for 800 years.", tags: ["market"] },
+  { t: "a billion dollars of food tossed out.", tags: ["wasted-food", "dumpsters"] },
+  { t: "no-name? no shame!", tags: ["price-fixing"] },
+  { t: "everything is getting smaller but the price keeps going up.", tags: ["pigs"] },
+  { t: "were you at the April boycott?", tags: ["boycott", "loblaws", "anger", "solidarity"] },
+  { t: "I pay plateau prices with hochelaga wages", tags: ["plat-hoch"] },
+  { t: "my loyalty card is not feeling very mutual", tags: ["points-card"] },
+  { t: 'i just found out about "dynamic pricing".', tags: ["dynamic-pricing"] },
   { t: "what happened with that bread pricing scandal?", tags: ["bread-scandal"] },
   { t: "when is the invisible hand going lift us up where we belong?", tags: ["invisible-hand"] },
-  { t: "the shareholders are migrating south for winter, honking contentedly", tags: ["honk"] },
-  { t: "the economy is a dumpster fire", tags: ["big-fire"] },
-  { t: "I got priced out of life", tags: ["priced-out"] },
-  { t: "did you know that Galen Weston owns a CASTLE?", tags: ["castle"] },
-  { t: "shrinkflation, those pigs!", tags: ["shrinkflation"] },
-  { t: "robin hood had the right idea!", tags: ["robin-hood"] },
-  { t: "food bank lineups are so long now", tags: ["lineups"] },
-  { t: "the market's been about to fix itself for 800 years.", tags: ["fix"] },
-  { t: "a billion dollars of food tossed out.", tags: ["thriving"] },
-  { t: "no-name? no shame!", tags: ["no-name"] },
-  { t: "everything is getting smaller but the price keeps going up.", tags: ["smaller"] },
-  { t: "were you at the April boycott?", tags: ["april"] },
-  { t: "plateau prices, hochelaga wages", tags: ["plat-hoch"] },
-  { t: "my loyalty card is not feeling very mutual.", tags: ["points-card"] },
-  { t: "have you heard about 'shrinkflation'?", tags: ["shrinkflation"] },
 ]);
 
 const DECK_HUNGRY_HELLO = new DM.Deck([
+  { t: "I work in a grocery store but I can't afford to shop there.", tags: ["work"] },
   { t: "my therapist says focus on what I can control.", tags: ["therapy"] },
   { t: "I tried to save a banana.", tags: ["banana"] },
   { t: "my stomach sounds like an aids wolf concert.", tags: ["aids-wolf"] },
@@ -262,70 +237,54 @@ const DECK_HUNGRY_HELLO = new DM.Deck([
   { t: "I ate my cereal with water this morning.", tags: ["cereal-water"] },
   { t: "I went to PA for cheap potatoes today.", tags: ["potato"] },
   { t: "Hochelaga doesn't have a PA. we have a Metro and a prayer.", tags: ["hochelaga"] },
+  { t: "fruit prices feel like a practical joke.", tags: ["joke"] },
+  { t: "I didn't have breakfast.", tags: ["no-breaky"] },
+  { t: "I've been thinking about dumpster-diving.", tags: ["diving"] },
 ]);
 
 const DECK_ANGRY_PITCH = new DM.Deck([
-  { t: "are they taking the 401k route or just following the dividends?", tags: ["honk"] },
-  { t: "steal from the rich. give to the poor. the rich have since lobbied against this.", tags: ["robin-hood"] },
-  { t: "5 chips, alone in the bag, wondering where everyone went.", tags: ["shrinkflation", "smaller"] },
-  { t: "I googled 'is capitalism fair' at 3am. now I'm on a list. also: no.", tags: ["capitalism"] },
-  { t: "the numbers are doing excellent. but the numbers measure the numbers.", tags: ["fix", "big-fire"] },
-  { t: "they say the chips are the same. the bag has simply grown around them.", tags: ["shrinkflation"] },
-  { t: "and yet somehow he is not the villain in this story, legally.", tags: ["weston"] },
-  { t: "yeah the bag got smaller. the price didn't hear about it.", tags: ["shrinkflation"] },
-  { t: "yes, Galen Weston owns a castle. And we own points cards.", tags: ["castle"] },
-  { t: "now they know everything about you and gave you a coupon for beans.", tags: ["points-card"] },
-  { t: "moving further east every year. eventually I will be in the river.", tags: ["plat-hoch"] },
-  { t: "yes. I bought nothing. i do that every day|pause| but this time it counted.", tags: ["april"] },
-  { t: "it's probably fine, right? it's a controlled burn.", tags: ["big-fire"] },
-  { t: "and we're all standing around it going \"is this nice?\"", tags: ["big-fire"] },
+  { t: "following the dividends of course", tags: ["honk", "shareholders"] },
+  { t: "5 doritos, alone in the bag, wondering where everyone went.", tags: ["pigs"] },
+  { t: "the numbers are doing excellent. the numbers measure the numbers.", tags: ["economy", "numbers"] },
+  { t: "Yes, he owns a castle. and you own a points card.", tags: ["castle"] },
+  { t: "now they know everything about you and gave you a coupon for beans", tags: ["points-card"] },
+  { t: "yeah I'm moving further east every year. eventually we'll be in the river.", tags: ["plat-hoch"] },
+  { t: "I was at the boycott yes. I bought nothing. i do that every day but this time it counted", tags: ["boycott"] },
+  { t: 'and we\'re all standing around it going "is this nice?"', tags: ["fire"] },
   { t: "they were going to fix the other thing next but then they got tired.", tags: [] },
-  { t: "the trash has never looked so good. the trash is thriving.", tags: ["thriving"] },
-  { t: "and the garbage bins are locked.", tags: ["wasted-food", "dumpsters", "thriving"] },
-  { t: "it is fixing itself. this is the fixing.", tags: ["fix"] },
-  { t: "Me either, the invisible hand stole it.", tags: ["lunch", "no-breaky"] },
-  { t: "yeah longer than waiting for a park ex bus in january.", tags: ["lineups"] },
-  { t: "it won't. and there will be no fingerprints.", tags: ["invisible-hand"] },
-  { t: "the chip bag is now 60% air and the air is also smaller", tags: ["shrinkflation"] },
-  { t: "life moved to saguenay to live on wild blueberries", tags: ["priced-out"] },
-  { t: "he better get a moat or get ready for some hangry guests.", tags: ["castle"] },
-  { t: "Loblaws fixed bread prices for fourteen years.", tags: ["price-fixing", "bread"] },
-  { t: "the fine was $500k. they made that back before lunch.", tags: ["price-fixing", "stat-36b"] },
-  { t: "five hearings. one report. bread is still six dollars.", tags: ["bread-scandal"] },
-  { t: "$18 billion. that's the bread tab. not an estimate.", tags: ["stat-18b"] },
-  { t: "Galen testified before parliament. got a raise the same quarter.", tags: ["weston", "ceo-pay", "no-name"] },
-  { t: "CEO: $8 million. cashier: $32k. same store.", tags: ["wages", "ceo-pay"] },
-  { t: "Weston's fine was less than his wine budget. probably.", tags: ["weston", "price-fixing"] },
-  { t: "empire, metro, loblaws — one cartel, three logos.", tags: ["bread-scandal"] },
-  { t: "makes sense. oligopoly is just monopoly with better branding.", tags: ["priced-out"] },
-  { t: "they bought all the competition. then cited competition.", tags: ["bread-scandal"] },
-  { t: "free market. captive customers.", tags: ["big-fire"] },
-  { t: "$3.6 billion profit. bread is six dollars.", tags: ["stat-36b", "bread-scandal"] },
-  { t: "yeah with 47% markup. it's a crime.", tags: ["stat-47", "shrinkflation", "smaller"] },
-  { t: "prices up 27%. wages didn't get the memo.", tags: ["wages", "plat-hoch", "priced-out"] },
+  { t: "and the garbage bins are locked.", tags: ["wasted-food", "dumpsters"] },
+  { t: "it is fixing itself. this is the fixing.", tags: ["market"] },
+  { t: "Me either, the invisible hand stole it.", tags: ["invisible-hand", "lunch"] },
+  { t: "yeah longer than waiting for a park ex bus in january", tags: ["food-lines", "food-lines"] },
+  { t: "life got priced out of life. |pause||pause|life moved to saguenay to live on wild blueberries", tags: ["priced-out"] },
+  { t: "loblaws fixed bread prices for fourteen years. the fine was $500k. they made that back before lunch.", tags: ["price-fixing"] },
+  { t: "Galen testified before parliament. got a raise the same quarter.", tags: ["weston", "ceo-pay"] },
+  { t: "empire, metro, loblaws — one cartel, three logos.", tags: ["three-co", "cartel"] },
+  { t: "oligopoly is just monopoly with better branding.", tags: ["fair-cap"] },
+  { t: "no-name brand is still Loblaws.", tags: ["three-co"] },
+  { t: "they bought all the competition. then cited competition.", tags: ["three-co", "cartel"] },
+  { t: "free market. captive customers.", tags: ["cartel"] },
+  { t: "$3.6 billion profit. bread is six dollars.", tags: ["stat-36b", "bread"] },
+  { t: "47% markup. the flyer is theatre.", tags: ["stat-47"] },
+  { t: "prices up 27%. wages didn't get the memo.", tags: ["wages"] },
   { t: "a third of Canadians are skipping meals. the quarterly report looks great.", tags: [] },
-  { t: "food banks have waiting lists now. waiting lists.", tags: ["food-bank"] },
-  { t: "loblaws donates to food banks. they also cause them.", tags: ["no-name"] },
-  { t: "the food bank used to be a last resort. now it's just tuesday.", tags: ["lineups"] },
+  { t: "food banks have waiting lists now. waiting lists.", tags: [] },
   { t: "the algorithm knows when you're desperate. charges accordingly.", tags: ["dynamic-pricing"] },
-  { t: "Loblaws tested dynamic pricing on groceries. on groceries.", tags: ["dynamic-pricing", "no-name", "flex"] },
+  { t: "Loblaws tested dynamic pricing on groceries. on groceries.", tags: ["dynamic-pricing"] },
   { t: "price freeze. twelve items. three months.", tags: [] },
   { t: "that glorious bandit didn't wait for the market to correct itself.", tags: ["robin-hood"] },
-  { t: "one month of boycott. prices didn't move.", tags: ["boycott", "april"] },
   { t: "there are two Galen Westons. both doing fine.", tags: ["weston"] },
   { t: "the Competition Bureau found a cartel. recommended a study.", tags: ["audit", "three-co"] },
-  { t: "Hochelaga lost its store. Westmount got a renovation.", tags: ["three-co"] },
-  { t: "the government bailed out the supply chain. Galen kept the money.", tags: ["big-fire"] },
-  { t: "yeah, the bread fine was $500k. found it in a coat pocket, probably.", tags: ["bread-scandal"] },
-  { t: "fourteen years. $500k fine. bread is still six dollars.", tags: ["bread-scandal"], follows: "price-fixing" },
+  { t: "the government bailed out the supply chain. Galen kept the money.", tags: ["bailout"] },
+  { t: "the audit found nothing. the auditors bill them $400/hr.", tags: ["audit"] },
   { t: "record profits the same quarter. they know we have nowhere else to go.", tags: ["stat-36b", "three-co"], follows: "boycott" },
-  { t: "record profits, record food bank lines. they and they call it a supply chain issue.", tags: ["lineups", "flex"] },
-  { t: "$15/hr to ring through $3.6 billion in groceries.", tags: ["work"], follows: "stat-36b" },
-  { t: "good luck with that, they lock the bins now.", tags: ["diving"] },
-  { t: "well, they had record profits and the CEO got a raise.", tags: ["bread-scandal"], follows: "audit" },
-  { t: "well, they got a subsidy. we got a coupon.", tags: ["bread-scandal"], follows: "bailout" },
-  { t: "good one! it's has been picking our pockets the whole time.", tags: ["invisible-hand"], follows: "invisible-hand" },
-  { t: "yeah, food bank waiting lists and billions in locked dumpsters.", tags: ["lineups", "robin-hood"] },
+  { t: "PC Optimum points are a refund they owe you, repackaged as a gift.", tags: ["points"], follows: "points" },
+  { t: "clean audit. record profits. CEO got a raise.", tags: ["ceo-pay"], follows: "audit" },
+  { t: "they got a subsidy. we got a coupon.", tags: ["bailout"], follows: "bailout" },
+  { t: "that hand has been picking our pockets the whole time.", tags: ["invisible-hand"], follows: "invisible-hand" },
+  { t: "margins go up when we eat less. bonus is tied to margins.", tags: ["ceo-pay"], follows: "ceo-pay" },
+  { t: "same three companies, same wage floor, same ceiling.", tags: ["three-co", "cartel"], follows: "wages" },
+  { t: "it won't. and there will be no fingerprints.", tags: ["invisible-hand"] },
 ]);
 
 const DECK_HUNGRY_PITCH = new DM.Deck([
@@ -333,20 +292,41 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "you're calculating price-per-bite. they're calculating price-per-yacht. someone's math is wrong.", tags: ["bite"] },
   { t: "you've automated the sadness. that's efficient.", tags: ["bite"] },
   { t: "you deserve better. they deserve a yacht. funny how deserving works out.", tags: ["diving"] },
-  { t: "when a grocery purchase is self-care, either avocados have gotten too expensive or you have gotten too sad. either way someone in a boardroom is very pleased.", tags: ["avocado"] },
-  { t: "The vendors know. They've always known. But they keep putting the samples a little closer to the edge of the tray, and neither of you has ever said a word about it.", tags: ["samples"] },
+  {
+    t: "when a grocery purchase is self-care, either avocados have gotten too expensive or you have gotten too sad. either way someone in a boardroom is very pleased.",
+    tags: ["avocado"],
+  },
+  {
+    t: "The vendors know. They've always known. But they keep putting the samples a little closer to the edge of the tray, and neither of you has ever said a word about it.",
+    tags: ["samples"],
+  },
   { t: "the soup has been thinned to the point of philosophy. we are eating an idea of soup. the idea is also running low.", tags: ["snap"] },
   { t: "they call it a living wage because the alternative is too on the nose.", tags: ["3-jobs"] },
   { t: "the stomach has sent three formal letters. they have gone unanswered. it is now making calls.", tags: ["clean"] },
-  { t: "there is a version of this that is a choice and a version that is not a choice and the somehow the sandwich tastes the same either way", tags: ["condiment"] },
+  {
+    t: "there is a version of this that is a choice and a version that is not a choice and the somehow the sandwich tastes the same either way",
+    tags: ["condiment"],
+  },
   { t: "traffic cones are shaped like a piece of pizza which I think is cruel under the circumstances.", tags: ["traffic-cone"] },
-  { t: "they made it illegal to steal bread and then made it impossible to afford bread and then built a museum about Les Misérables.", tags: ["sandwich"] },
+  {
+    t: "they made it illegal to steal bread and then made it impossible to afford bread and then built a museum about Les Misérables.",
+    tags: ["sandwich"],
+  },
   { t: "he knew your name. he has always known your name. he will not use it but he knows it.", tags: ["racoon"] },
-  { t: "the raccoon has no mortgage, no boss, no credit score, and he's been eating better than you for a decade. what you felt was recognition. what he felt was pity.", tags: ["racoon"] },
-  { t: "every 2am dep decision is just proof that somewhere between midnight and morning you briefly see the truth and the truth is terrible.", tags: ["dep"] },
+  {
+    t: "the raccoon has no mortgage, no boss, no credit score, and he's been eating better than you for a decade. what you felt was recognition. what he felt was pity.",
+    tags: ["racoon"],
+  },
+  {
+    t: "every 2am dep decision is just proof that somewhere between midnight and morning you briefly see the truth and the truth is terrible.",
+    tags: ["dep"],
+  },
   { t: "the dumpster recognized you. this has happened before. the dumpster does not forget.", tags: ["peace"] },
   { t: "noted. not asking.", tags: ["peace"] },
-  { t: "they've been saying that since the seventies. funny how \"focus on what you can control\" never turns into \"so let's talk about who controls everything else.\"", tags: ["therapy"] },
+  {
+    t: 'they\'ve been saying that since the seventies. funny how "focus on what you can control" never turns into "so let\'s talk about who controls everything else."',
+    tags: ["therapy"],
+  },
   { t: "the Metro is doing its best. its best at at arranging the food so the one that expires today is in the front, smiling", tags: ["hochelaga"] },
   { t: "Somewhere there's a CEO who saved $4 billion and he only had to go to one meeting.", tags: ["saver"] },
   { t: "sounds very french.", tags: ["coffee"] },
@@ -399,15 +379,14 @@ const DECK_BAD_READ = new DM.Deck([
   // { t: "sounds like you need a community fridge honestly", tags: [] },
 ]);
 
-
 const D_SAY_MORE_WARM = new DM.Deck([
-  { t: "go on.", tags: [] },
+  { t: "go on.", tags: ["market"] },
   { t: "tell me more.", tags: [] },
   { t: "keep talking.", tags: [] },
   { t: "wait — tell me more?", tags: [] },
-  { t: "okay. I'm listening.", tags: [] },
+  { t: "okay. I'm listening.", tags: ["fire"] },
   { t: "that's intense. say more.", tags: [] },
-  { t: "what are you saying?", tags: [] },
+  { t: "what are you saying?", tags: ["honk", "life", "castle"] },
   { t: "hmm. continue.", tags: [] },
   { t: "I want to hear this.", tags: [] },
   { t: "that got my attention.", tags: [] },
@@ -455,11 +434,11 @@ const D_SAY_MORE_WARM = new DM.Deck([
 ]);
 
 const D_SAY_MORE_SKEPTICAL = new DM.Deck([
+  { t: "the chips are the same. the bag has simply grown around them.", tags: ["pigs"] },
+  { t: "new line", tags: [] },
+  { t: "a castle has enormous upkeep. i actually feel bad for him.", tags: ["castle"] },
   { t: "before you criticize the dumpster fire, ask yourself — is it not, in its own way, providing warmth?", tags: ["dumpsters", "fire"] },
-  { t: "elaborate please?", tags: [] },
-
-    { t: "the invisible hand is working on it. it's a big job. give it time.", tags: [] },
- 
+  { t: "elaborate please?", tags: ["robin-hood"] },
   { t: "I'm going to need specifics.", tags: [] },
   { t: "define 'do something'.", tags: [] },
   { t: "what exactly are you proposing.", tags: [] },
@@ -483,7 +462,6 @@ const D_SAY_MORE_SKEPTICAL = new DM.Deck([
   { t: "the boycott lasted a month and prices are the same. so.", tags: ["boycott"] },
   { t: "the Competition Bureau found nothing actionable. case closed.", tags: ["price-fixing"] },
 ]);
-
 
 const D_JOIN_CONSENT_PAIRS = [
   { join: "I've been waiting for someone to say that out loud.", consent: "yes!" },
@@ -569,50 +547,58 @@ const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
 ]);
 
 const DECK_STRONGER_PITCH = new DM.Deck([
+  { t: "five hearings. one report. bread is still six dollars.", tags: ["price-fixing"] },
+  { t: "a billion in wasted food. dumpster diving is illegal. food destruction is just business.", tags: ["wasted-food"] },
+  { t: "record profits, record food bank lines. they call it a supply chain issue.", tags: ["food-lines"] },
+  { t: "shareholders got a dividend. we got a smaller bag of chips.", tags: ["pigs"] },
+  { t: "I'm saying he better get a moat or get ready for some *hungry* dinner guests", tags: ["castle"] },
+  { t: "I'm saying they're not the only ones who can bite. we're taking what we need|pause||pause| tonight.", tags: ["honk"] },
   { t: "one in four canadians is food insecure.", tags: [] },
   { t: "they were never going to fix anything.", tags: [] },
-  { t: "Robin Hood wasn't a criminal. he was just early.", tags: ["robin-hood"] },
   { t: "we're robins. not robbers.", tags: ["robin-hood"] },
-  { t: "I used to think one person couldn't make a difference. then I learned how few people are making all the decisions.", tags: [] },
-  { t: "they're not worried about what you'll do. they should be about we'll do together.", tags: [] },
+  { t: "they're not worried about what you'll do. they're worried about what we'll do together.", tags: [] },
+  { t: "the food exists. it's just not ours yet.", tags: [] },
   { t: "it's not theft if they stole it first.", tags: [] },
+  { t: "$15/hr doesn't cover dinner anymore.", tags: ["wages"], follows: "wages" },
   { t: "the food bank has a waitlist. the castle has a moat. these facts are related.", tags: ["weston", "food-bank"], follows: "food-bank" },
-  { t: "a billion dollars of food thrown out daily. not lost. THROWN. OUT.", tags: ["dumpsters"], follows: "dumpsters" },
-  { t: "somewhere there is a room where they decided this was fine. we were not in that room.", tags: [] },
+  { t: "a billion dollars of food thrown out. not lost. thrown. out.", tags: ["dumpsters"], follows: "dumpsters" },
+  { t: "somewhere there is a room where they decided this was fine. we were not in that room.", tags: ["fire"] },
   { t: "I looked into doing nothing. the waitlist was full.", tags: [] },
-  { t: "they own the store. we own what happens next.", tags: [] },
   { t: "if not us, someone hungrier. I'd rather it be us.", tags: [] },
   { t: "the ones at the top are not smarter. they're just higher.", tags: [] },
-  { t: "they keep moving the finish line. we need to stop running towards it and start running towards them.", tags: [] },
+  { t: "they keep moving the finish line. at some point you stop running toward it and start running toward them.", tags: ["fire"] },
   { t: "somewhere in a very tall building someone is genuinely surprised this is happening.", tags: [] },
   { t: "someone in a fleece vest is about to explain this using a whiteboard.", tags: [] },
   { t: "they named it the system so we'd think it ran on its own.", tags: [] },
   { t: "we keep asking if it's the right time. the right time is wondering where we are.", tags: [] },
   { t: "the emergency exit has always been unlocked. that's what emergency means.", tags: [] },
-  { t: "we are waiting for permission from the people who benefit from the waiting.", tags: [] },
+  { t: "I'm saying that we are waiting for permission from the people who benefit from the waiting.", tags: ["life"] },
   { t: "the rules were written by the people the rules were written to protect.", tags: [] },
+  { t: "this is the moment. someone should probably start it though.", tags: [] },
   { t: "the door is open. it has been open. we are standing in the rain asking if it is open.", tags: [] },
-  { t: "look at what we have and look at what they have. the math isn't complicated. we've just been told we're bad at math.", tags: [] },
+  { t: "look at what we have and look at what they have. the math isn't complicated. we've just been told we're bad at math.", tags: ["market"] },
   { t: "the invisible hand has been in our pockets for years. tonight we reach back.", tags: ["invisible-hand"], follows: "invisible-hand" },
-  // --- main cards ---
+  { t: "they fixed bread prices for fourteen years. we're taking some bread.", tags: ["bread", "price-fixing"] },
   { t: "CEO: $8 million. us: groceries. I think the math works.", tags: ["weston", "ceo-pay"] },
   { t: "empire, metro, loblaws — between them they'll survive one bad night.", tags: ["three-co"] },
   { t: "Loblaws made $3.6 billion last year. they can absorb a lasagna.", tags: ["stat-36b"] },
+  { t: "47% markup. we're taking some of it back.", tags: ["stat-47"] },
   { t: "prices up 27% since 2020. consider this a partial refund.", tags: [] },
   { t: "they locked the dumpsters. they didn't lock the front door.", tags: ["dumpsters"] },
   { t: "the Competition Bureau recommended a task force. we're the task force.", tags: ["audit"] },
+  { t: "one store, one night, the whole block eats.", tags: [] },
   { t: "everybody eats or nobody does. I say everybody.", tags: [] },
-  { t: "we're not stealing. we're correcting a long-running error.", tags: [] },
-  // --- follows cards ---
   { t: "a person in a castle won't notice a little spillage.", tags: ["weston"], follows: "weston" },
-  { t: "$3.6 billion. they can absorb one bad night.", tags: ["stat-36b"], follows: "stat-36b" },
+  { t: "$3.6 billion. they absorb one bad night. we can't absorb one more.", tags: ["stat-36b"], follows: "stat-36b" },
+  { t: "$15/hr doesn't cover dinner anymore.", tags: ["wages"], follows: "wages" },
+  { t: "the Competition Bureau shrugged. we don't have to.", tags: ["three-co"], follows: "audit" },
 ]);
 
 const D_INVITE = [
   { t: "come with us, we're taking it back?", tags: [] },
   { t: "so. you in? we're taking what's ours.", tags: [] },
   { t: "want in?", tags: [] },
-    { t: "tonight we eat. all of us. you in?", tags: [] },
+  { t: "tonight we eat. all of us. you in?", tags: [] },
   { t: "you with us?", tags: [] },
   { t: "tonight. you free?", tags: [] },
   { t: "we could use someone like you.", tags: [] },
@@ -649,7 +635,6 @@ const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "anyway.", tags: [] },
   { t: "let's just — never mind.", tags: [] },
 ]);
-
 
 const D_BACK_OFF_LATE = new DM.Deck([
   { t: "completely hypothetical. forget it.", tags: [] },
@@ -750,16 +735,31 @@ const D_RETURN = [
 ];
 
 const D_F_INVITE = [
-  { t: "we're not waiting any more either. join us?", tags: ["robin-hood"] },
-  { t: "join us? we're taking the rest back tonight.", tags: ["shrinkflation"] },
-  { t: "it's almost like the laws...well anyways, want to join us?", tags: ["castle"] },
-  { t: "and what if we refuse to pay the price?", tags: ["we", "life"] },
-  { t: "but the idea is ready for a come back. join us?", tags: ["robin-hood"] },
-  { t: "I know how we can even things out. Join us?", tags: ["castle"] },
-  { t: "I know what we can do while they're away. Join us?", tags: ["honk"] },
-  { t: "come with us? we have a plan.", tags: ["fire", "shrinkflation", "big-fire"] },
-  { t: "we're changing things. join us?", tags: ["shrinkflation"] },
-  { t: "time to make change?", tags: ["life"] },
+  { t: "I used to think one person couldn't make a difference. then I learned how few people are making all the decisions.", tags: ["points-card"] },
+  { t: "CEO: $8 million. cashier: $32k. same store.", tags: ["plat-hoch"] },
+  { t: "they own the store. we own what happens next.", tags: ["boycott"] },
+  { t: "$18 billion. that's the bread tab. not an estimate.", tags: ["price-fixing"] },
+  { t: "we're not stealing. we're correcting a long-running error.", tags: ["market"] },
+  { t: "loblaws donates to food banks. they also cause them.", tags: ["food-lines"] },
+  { t: "robin hood wasn't a criminal. he was just early.", tags: ["robin-hood"] },
+  { t: "yeah the chip bag is now 80% air and even the air is somehow also smaller?", tags: ["pigs"] },
+  { t: "maybe? but what if we refuse to pay the price?", tags: ["life"] },
+  { t: "sure, but the wrong things are burning. join us? we change things tonight.", tags: ["fire"] },
+  { t: "while they're gone, |pause||pause|we're going to get some bread", tags: ["honk"] },
+  { t: "new line", tags: [] },
+  { t: "we're changing things. join us?", tags: [] },
+  { t: "time to make change?", tags: [] },
+
+  // { t: "we're not waiting any more either. join us?", tags: ["robin-hood"] },
+  // { t: "join us? we're taking the rest back tonight.", tags: ["shrinkflation"] },
+  // { t: "it's almost like the laws...well anyways, want to join us?", tags: ["castle"] },
+  // { t: "and what if we refuse to pay the price?", tags: ["we", "life"] },
+  // { t: "but the idea is ready for a come back. join us?", tags: ["robin-hood"] },
+  // { t: "I know how we can even things out. Join us?", tags: ["castle"] },
+  // { t: "I know what we can do while they're away. Join us?", tags: ["honk"] },
+  // { t: "come with us? we have a plan.", tags: ["fire", "shrinkflation", "big-fire"] },
+  // { t: "we're changing things. join us?", tags: ["shrinkflation"] },
+  // { t: "time to make change?", tags: ["life"] },
   // a store full of food, thirty feet away
   // one of us is eating tonight. I vote us
 ];
@@ -812,6 +812,22 @@ const DECK_AMB_HUNGRY = new DM.Deck(D_AMB_HUNGRY);
 const DECK_AMB_ANGRY = new DM.Deck(D_AMB_ANGRY);
 
 const D_FILLER = [
+  { t: "don't get me started about beans", tags: ["points-card"] },
+  { t: "yeah I get paid $15/hr to ring through $3.6 billion in groceries. do the math.", tags: [] },
+  { t: "one month of boycott. the algorithm just waited us out.", tags: ["boycott"] },
+  { t: "yeah, found it in a coat pocket, probably.", tags: ["price-fixing"] },
+  { t: "new line", tags: [] },
+  { t: "no fingerprints. classic.", tags: ["no-name"] },
+  { t: "the trash has never eaten so well. the trash is thriving.", tags: ["wasted-food"] },
+  { t: "right. of course. almost there.", tags: ["market"] },
+  { t: "the food bank used to be a last resort. now it's just tuesday.", tags: ["food-lines"] },
+  { t: "of course the rich have since lobbied against this.", tags: ["robin-hood"] },
+  { t: "the bag got smaller. the price didn't hear about it.", tags: ["pigs"] },
+  { t: "and yet|pause| somehow, he is not the villain in this story, legally.", tags: ["castle"] },
+  { t: "so we just keep moving?", tags: ["life"] },
+  { t: "it's probably fine, right? it's a controlled burn.", tags: ["fire"] },
+  { t: "and biting anyone who gets in the way!", tags: ["honk"] },
+  { t: "lol", tags: ["controlled-burn"] },
   { t: "hmm...", tags: [] },
   { t: "yeah...", tags: [] },
 ];

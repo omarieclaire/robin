@@ -89,7 +89,7 @@ window.LANG_EN = {
           ],
         },
         { who: "n", text: "I use a coupon app" },
-        { who: "p", texts: ["um,|pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
+        { who: "p", texts: ["um,|pause||pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
       ],
     },
     {

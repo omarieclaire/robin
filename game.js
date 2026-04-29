@@ -763,6 +763,10 @@
   const CONV_TYPE_MS = 65; // ms per character
   const CONV_TYPE_PUNCT_MS = 120; // ms extra pause after . ? !
   const CONV_TYPE_COMMA_MS = 60; // ms extra pause after ,
+
+
+
+  
   let _convChunkQueue = [];
   let _convChunkTimer = 0;
   let convLog = [];

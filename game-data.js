@@ -3005,7 +3005,7 @@ window.GAME_DATA = {
 
  { seq: [
     { t: "what if we just", c: "#f26507", d: 1200 },
-    { pause: true, d: 700 },
+    { pause: true, d: 1200 },
     { t: "take what we need?", c: "#f26507", d: 3000 },
 ]},{ pause: true, d: 1000 },
     { t: "^-^", c: "#8957ff", d: 2500 },
