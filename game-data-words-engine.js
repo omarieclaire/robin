@@ -1,30 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════
-// DM — Dialogue Manager
-//
-// TAG VOCABULARY — three kinds, three jobs:
-//
-//   TOPIC_TAGS   — subjects the game actively manages via cooldown.
-//                  If a conversation is "about" bread, bread cools down
-//                  and won't lead another conversation for COOLDOWN turns.
-//                  Declare new topics here intentionally.
-//
-//   ROUTING_TAGS — tone/presentation tags (casual, concerned, direct).
-//                  Used only for HELLO_PREFIX selection. Invisible to
-//                  both coolmap and follows scoring.
-//
-//   link tags    — everything else. Not declared anywhere. They exist
-//                  only to wire one line to the next via `follows`.
-//                  The coolmap never touches them. Add as many as you
-//                  want without registering them anywhere.
-//
-// FLOW PER CONVERSATION:
-//   greet  → sets tone (routing tag) → ignored by coolmap + follows
-//   hello  → sets lastDrawnTags → topic tags enter coolmap
-//   pitch  → follows lastDrawnTags → sets lastDrawnTags
-//   warm   → follows lastDrawnTags → sets lastDrawnTags
-//   strong → follows lastDrawnTags → done
-//   endConv → ages coolmap (topic tags only)
-// ═══════════════════════════════════════════════════════════════════════
+
 
 const DM = (() => {
 
@@ -152,6 +126,16 @@ const DM = (() => {
     return { text: textOf(item), tags, tone: tags[0] ?? null };
   }
 
+
+
+function drawChained(deck) {
+  const result = draw(deck, lastTags);
+  // lastTags is already updated inside draw() for tagged decks
+  // For untagged decks, clear so next draw doesn't carry stale tags
+  if (!isTagged(deck)) lastTags = [];
+  return result;
+}
+
   // ─────────────────────────────────────────
   // getLastTags — read lastTags without drawing
   // ─────────────────────────────────────────
@@ -182,6 +166,8 @@ const DM = (() => {
     Deck,
     draw,
     drawWithTags,
+        drawChained,
+
     getLastTags,
     clearLastTags,
     startConv,

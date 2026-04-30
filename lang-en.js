@@ -88,8 +88,14 @@ window.LANG_EN = {
             "CÂLICE. when did food get this expensive??",
           ],
         },
-        { who: "n", text: "I use a coupon app" },
-        { who: "p", texts: ["um,|pause||pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
+        { who: "n", text: "idk I use a coupon app." },
+        { who: "n", text: "I've saved sixty dollars this year." },
+        { who: "n", text: "prices went up eighty." },
+
+        {
+          who: "p",
+          texts: ["um,|pause||pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],
+        },
       ],
     },
     {
@@ -97,24 +103,28 @@ window.LANG_EN = {
         {
           who: "p",
           texts: [
-            "$2 for an apple?",
+            "metro is charging $2 for an apple",
             "2 piasses for a freaking apple??",
             "ostie de... $2 for ONE apple?",
             "esti de marde, 2 PIASSES for ONE apple",
             "CÂLICE. 2 for an apple??!",
           ],
         },
+
         { who: "n", text: "and?" },
         {
           who: "p",
           texts: [
-            "and...we can't survive like this",
+            "and...I had to put it back",
             "viarge, we can't keep living like this",
             "câline, we just CAN'T survive like this",
             "CRISSE. nobody can survive like this",
             "TABARNAK. nobody should have to survive like this",
           ],
         },
+        { who: "p", text: "everyone was staring at me" },
+
+        { who: "p", text: "so humiliating" },
       ],
     },
     {
@@ -129,8 +139,14 @@ window.LANG_EN = {
             "ESTI DE CÂLICE DE TABARNAK. someone has to do something",
           ],
         },
-        { who: "n", text: "you know,|pause|stealing from a thief |pause|isn't theft" },
-        { who: "p", texts: ["what?|pause|", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"], delay: 2800 },
+        { who: "n", text: "you know," },
+        { who: "n", text: "stealing from a thief|pause||pause|isn't theft" },
+
+        {
+          who: "p",
+          texts: ["what?|pause|", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"],
+          delay: 2800,
+        },
       ],
     },
   ],
@@ -188,7 +204,7 @@ window.LANG_EN = {
   muteMuted: "muted",
   muteMute: "mute",
   act1Choices: ["(>_<) I've had enough", "(o_O) what choice do I have?"],
-  
+
   neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
   intercoms: [
     "ATTENTION SHOPPERS: today's special — dignity",
@@ -239,4 +255,49 @@ window.LANG_EN = {
   choiceTryHarderAngry: "(ง'̀-'́)ง try harder",
   choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
   choiceWalkAway: "( ._.) walk away",
+
+  // EN
+  recruitProgress1: "DOWN — ",
+  recruitProgressRemaining: " to go!",
+  recruitProgressComplete: "★ CREW COMPLETE ★",
+  choiceRecruitAngry: "(ง'̀-'́)ง recruit them",
+  choiceRecruitHungry: "(•‿•) recruit them",
+  choiceWalkAwayShort: "( ._.) walk away",
+  act3TapHat: "▶ tap to give everyone a hat ◀",
+  act3HattingInProgress: "putting on hats...",
+  act3HattingWait: "...",
+  act3TapEnter: "▶ tap to enter the store ◀",
+  act3HatsOnEnter: "hats on. time to go.",
+  act4ExitLabel: "EXIT",
+  act5TapFood: "TAP TO PLACE FOOD",
+  act5TapContinue: "TAP TO CONTINUE",
+  ctaChoiceYes: "yes — tell me how",
+  ctaChoiceMaybe: "maybe someday",
+  ctaEndYes: "then it starts with you.",
+  ctaEndMaybe: "the neighbourhood will wait.",
+  ctaPlayAgain: "PLAY AGAIN",
+  ctaGameTitle: "ROBINS DES RUELLES",
+  ctaFinalSub: "The neighbourhood remembers.<br><br>Will you join them?",
+  loopGiveUpTitle: "no",
+  loopGiveUpSub: "you kept living like this\nuntil you couldn't anymore",
+  loopTryAgain: "try again?",
+
+  floatOhNo: "oh no",
+floatExclaim: "!!",
+recruitOrdinals: ["one", "two", "three", "four", "five"],
+endGameCaughtHad: "You had ${tot}.",
+tapToContinue: "tap to continue",
+
+hudRecruit: "RECRUIT",
+hudTime: "TIME",
+hudNarcs: "NARCS",
+hudRally: "RALLY",
+hudMob: "MOB",
+
+hudCops: "COPS",
+hudHaul: "HAUL",
+
+hudAvoidNarcs: "avoid narcs",
+muteMute: "mute",
+muteMuted: "muted",
 };

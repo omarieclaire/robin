@@ -1,33 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-
     <!-- <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" /> -->
     <title>Robins des Ruelles</title>
     <meta name="title" content="Robins des Ruelles" />
-    <meta
-      name="description"
-      content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
+    <meta name="description" content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://omarieclaire.github.io/loserlanemontreal/" />
     <meta property="og:title" content="Robins des Ruelles" />
-    <meta
-      property="og:description"
-      content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
+    <meta property="og:description" content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
     <meta property="og:image" content="https://omarieclaire.github.io/loserlanemontreal/img/ride.png" />
 
     <!-- Terrifying creature from the depths Card Tags  -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Robins des Ruelles - Let's eat together" />
-    <meta
-      name="twitter:description"
-      content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
+    <meta name="twitter:description" content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
     <meta name="twitter:image" content="https://omarieclaire.github.io/loserlanemontreal/img/ride.png" />
 
     <link rel="me" href="https://mastodon.social/@omarieclaire" />
@@ -35,15 +28,11 @@
     <!-- Bluesky/AT Protocol -->
     <!--  currently use OpenGraph tags, but add these for future compatibility -->
     <meta property="bsky:title" content="Robins des Ruelles - Let's eat together" />
-    <meta
-      property="bsky:description"
-      content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
+    <meta property="bsky:description" content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
     <meta property="bsky:image" content="https://omarieclaire.github.io/loserlanemontreal/img/ride.png" />
 
     <!-- General SEO Meta Tags -->
-    <meta
-      name="description"
-      content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
+    <meta name="description" content="Tired of being hungry? Join the Robins des Ruelles and take what you need!" />
     <meta name="theme-color" content="#000000" />
 
     <!-- Image Specifications -->
@@ -154,8 +143,7 @@
         background: #0d0d0d;
         border-bottom: 1px solid #1a1a1a;
         flex-shrink: 0;
-                display: none;
-
+        display: none;
       }
       #scene-nav button {
         flex: 1;
@@ -396,14 +384,14 @@
     <script src="game-data-food.js"></script>
     <script src="game-data-words-engine.js"></script>
     <script id="words-script"></script>
-    <script>      
+    <script>
       document.getElementById("words-script").src = window.LANG === window.LANG_FR ? "game-data-words-fr.js" : "game-data-words.js";
     </script>
     <script src="game.js"></script>
     <script>
-      if (/[?&]debug/.test(location.search) || location.hash === '#debug') {
-  document.getElementById('scene-nav').style.display = 'flex';
-}
+      if (/[?&]debug/.test(location.search) || location.hash === "#debug") {
+        document.getElementById("scene-nav").style.display = "flex";
+      }
     </script>
   </body>
 </html>

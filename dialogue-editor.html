@@ -4,34 +4,58 @@
     <meta charset="UTF-8" />
     <title>dialogue editor</title>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
       :root {
-        --bg:      #f2efe8;
-        --bg2:     #e8e4da;
-        --bg3:     #dedad0;
-        --bg4:     #cec9be;
-        --border:  #b8b3a6;
+        --bg: #f2efe8;
+        --bg2: #e8e4da;
+        --bg3: #dedad0;
+        --bg4: #cec9be;
+        --border: #b8b3a6;
         --border2: #9e9990;
-        --text:    #1c1a14;
-        --muted:   #5a5648;
-        --dim:     #9e9888;
-        --accent:  #7a5c10;
+        --text: #1c1a14;
+        --muted: #5a5648;
+        --dim: #9e9888;
+        --accent: #7a5c10;
         --accent2: #1e5c30;
-        --danger:  #7a1c1c;
-        --hdr-bg:  #1c2818;
-        --hdr-text:#e8dfc0;
-        --col:     300px;
+        --danger: #7a1c1c;
+        --hdr-bg: #1c2818;
+        --hdr-text: #e8dfc0;
+        --col: 300px;
 
-        /* selection system */
-        --sel-bg:        #fffbe8;
-        --sel-border:    #c8a020;
-        --sel-bar:       #c8a020;
-        --unsel-bg:      #faf8f2;
-        --unsel-border:  #b8b3a6;
-        --other-bg:      #f5f2ea;
-        --other-border:  #ccc8bc;
-        --other-bar:     #ccc8bc;
+        --sel-bg: #fffbe8;
+        --sel-border: #c8a020;
+        --sel-bar: #c8a020;
+        --unsel-bg: #faf8f2;
+        --unsel-border: #b8b3a6;
+        --other-bg: #f5f2ea;
+        --other-border: #ccc8bc;
+        --other-bar: #ccc8bc;
+
+        /* ── thread colours ── */
+        --tc-greet: #2a9d8f; /* teal   — greet → hello */
+        --tc-hello: #e9a820; /* amber  — hello → pitch */
+        --tc-pitch: #3a86c8; /* blue   — pitch → filler */
+        --tc-filler: #8b5cf6; /* purple — filler → recruit */
+        --tc-recruit: #2e9e58; /* green  — recruit → npc response */
+        --tc-saymore: #e07b30; /* orange — say-more → stronger */
+        --tc-stronger: #6a3fc0; /* indigo — recruit → npc response */
+        --tc-outcome: #c0458a; /* pink   — stronger → outcome */
+        --tc-terminal: #a32020; /* red    — terminal items */
+
+        /* header tint backgrounds (very light) */
+        --th-greet: #e0f5f3;
+        --th-hello: #fdf3d8;
+        --th-pitch: #deeaf8;
+        --th-filler: #ede8ff;
+        --th-recruit: #daf2e4;
+        --th-saymore: #fdebd8;
+        --th-stronger: #ede8ff;
+        --th-outcome: #fce8f3;
       }
 
       body {
@@ -40,7 +64,7 @@
         background: var(--bg);
         color: var(--text);
         font-family: "Georgia", "Times New Roman", serif;
-        font-size: 13px;
+        font-size: 2rem;
         height: 100vh;
         display: flex;
         flex-direction: column;
@@ -61,14 +85,14 @@
         color: #c8b870;
         letter-spacing: 4px;
         text-transform: uppercase;
-        font-size: 10px;
+        font-size: 2rem;
         font-family: "Courier New", monospace;
         font-weight: bold;
         white-space: nowrap;
       }
       #breadcrumb {
         flex: 1;
-        font-size: 11px;
+        font-size: 2rem;
         font-family: "Courier New", monospace;
         color: #8a9e7a;
         overflow: hidden;
@@ -83,14 +107,79 @@
         padding: 5px 13px;
         cursor: pointer;
         font-family: "Courier New", monospace;
-        font-size: 10px;
+        font-size: 1rem;
         letter-spacing: 1px;
         text-transform: uppercase;
         white-space: nowrap;
       }
-      .hbtn:hover { border-color: #c8b870; color: #c8b870; }
-      .hbtn.primary { border-color: #c8b870; color: #c8b870; }
-      .hbtn.danger  { border-color: #c07070; color: #c07070; }
+      .hbtn:hover {
+        border-color: #c8b870;
+        color: #c8b870;
+      }
+      .hbtn.primary {
+        border-color: #c8b870;
+        color: #c8b870;
+      }
+      .hbtn.danger {
+        border-color: #c07070;
+        color: #c07070;
+      }
+
+      /* ── flow legend bar ── */
+      #flow-bar {
+        display: flex;
+        align-items: stretch;
+        flex-shrink: 0;
+        height: 28px;
+        background: #141e10;
+        border-bottom: 1px solid #3a4a30;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 0;
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      #flow-bar::-webkit-scrollbar {
+        height: 3px;
+      }
+      #flow-bar::-webkit-scrollbar-thumb {
+        background: #3a4a30;
+      }
+      .fb-step {
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        white-space: nowrap;
+        border-right: 1px solid #2a3820;
+        color: #8aaa70;
+        gap: 5px;
+      }
+      .fb-step.active {
+        color: #e8d060;
+        background: #1e2c18;
+      }
+      .fb-step.done {
+        color: #9acc78;
+      }
+      .fb-step.end-good {
+        color: #6acc88;
+        background: #0e1e10;
+      }
+      .fb-step.end-bad {
+        color: #cc8888;
+        background: #1e1010;
+      }
+      .fb-step .fb-n {
+        font-size: 1rem;
+        opacity: 0.6;
+        margin-right: 2px;
+      }
+      .fb-arr {
+        color: #5a7850;
+        padding: 0 2px;
+      }
 
       #cols-scroll {
         flex: 1;
@@ -99,11 +188,23 @@
         cursor: grab;
         user-select: none;
       }
-      #cols-scroll.dragging { cursor: grabbing; }
-      #cols-scroll::-webkit-scrollbar { height: 5px; }
-      #cols-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+      #cols-scroll.dragging {
+        cursor: grabbing;
+      }
+      #cols-scroll::-webkit-scrollbar {
+        height: 5px;
+      }
+      #cols-scroll::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 3px;
+      }
 
-      #cols { display: flex; height: 100%; width: max-content; min-width: 100%; }
+      #cols {
+        display: flex;
+        height: 100%;
+        width: max-content;
+        min-width: 100%;
+      }
 
       .col {
         flex-shrink: 0;
@@ -115,58 +216,224 @@
         position: relative;
       }
 
-      .col.browse .col-hdr    { background: #2a3420; border-bottom-color: #3a4830; }
-      .col.browse .col-hdr-label { color: #7a9860; letter-spacing: 2px; }
+      /* ── column header thread-colour tints ── */
+      .col.player .col-hdr {
+        background: #f0ead8;
+        border-bottom-color: #d0c8a8;
+      }
+      .col.player .col-hdr-label {
+        color: #6a4e10;
+      }
+      .col.npc .col-hdr {
+        background: #dce8d8;
+        border-bottom-color: #b8ccb0;
+      }
+      .col.npc .col-hdr-label {
+        color: #2a4a20;
+      }
+      .col.end-col .col-hdr {
+        background: #1e1a14;
+        border-bottom-color: #3a3020;
+      }
+      .col.end-col .col-hdr-label {
+        color: #7a6840;
+      }
+      .col.browse .col-hdr {
+        background: #2a3420;
+        border-bottom-color: #3a4830;
+      }
+      .col.browse .col-hdr-label {
+        color: #7a9860;
+        letter-spacing: 2px;
+      }
+
+      /* thread-colour column header overrides */
+      .col.tc-greet .col-hdr {
+        background: var(--th-greet);
+        border-bottom: 3px solid var(--tc-greet);
+      }
+      .col.tc-hello .col-hdr {
+        background: var(--th-hello);
+        border-bottom: 3px solid var(--tc-hello);
+      }
+      .col.tc-pitch .col-hdr {
+        background: var(--th-pitch);
+        border-bottom: 3px solid var(--tc-pitch);
+      }
+      .col.tc-filler .col-hdr {
+        background: var(--th-filler);
+        border-bottom: 3px solid var(--tc-filler);
+      }
+      .col.tc-recruit .col-hdr {
+        background: var(--th-recruit);
+        border-bottom: 3px solid var(--tc-recruit);
+      }
+      .col.tc-saymore .col-hdr {
+        background: var(--th-saymore);
+        border-bottom: 3px solid var(--tc-saymore);
+      }
+      .col.tc-stronger .col-hdr {
+        background: var(--th-stronger);
+        border-bottom: 3px solid var(--tc-stronger);
+      }
+      .col.tc-outcome .col-hdr {
+        background: var(--th-outcome);
+        border-bottom: 3px solid var(--tc-outcome);
+      }
 
       .col-hdr {
-        display: flex; align-items: center;
-        padding: 7px 10px;
+        display: flex;
+        align-items: center;
+        padding: 7px 1rem;
         background: var(--bg2);
         border-bottom: 1px solid var(--border);
-        flex-shrink: 0; min-height: 34px; gap: 6px;
+        flex-shrink: 0;
+        min-height: 38px;
+        gap: 6px;
       }
       .col-hdr-label {
-        font-size: 9px; font-family: "Courier New", monospace;
-        text-transform: uppercase; letter-spacing: 1.5px;
-        color: var(--muted); flex: 1;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        flex: 1;
         font-weight: bold;
       }
 
-      .col-prog { height: 2px; background: var(--border); flex-shrink: 0; }
-      .col-prog-bar { height: 100%; background: var(--accent2); transition: width 0.3s; }
-
-      .col-body { flex: 1; overflow-y: auto; padding: 6px; }
-      .col-body::-webkit-scrollbar { width: 3px; }
-      .col-body::-webkit-scrollbar-thumb { background: var(--border2); }
-
-      .col-locked-note {
-        font-size: 9px; font-family: "Courier New", monospace;
-        color: var(--dim); font-style: italic; padding: 8px 6px 4px;
+      .col-path-note {
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        color: var(--dim);
+        font-style: italic;
+        padding: 4px 1rem 4px;
+        background: #f8f5ee;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .col-path-note.good {
+        background: #eef6e8;
+        color: #2a6020;
+        border-bottom-color: #c0d8b0;
+      }
+      .col-path-note.bad {
+        background: #f8eeee;
+        color: #7a2020;
+        border-bottom-color: #d0b0b0;
+      }
+      .col-path-note.narc {
+        background: #f0e8f8;
+        color: #5a1888;
+        border-bottom-color: #c0a0d8;
       }
 
-      .append-note {
-        margin-bottom: 6px; padding: 6px 8px;
-        background: #eaf2e2; border: 1px dashed #7aaa58; border-radius: 2px;
-        font-size: 10px; font-family: "Courier New", monospace; color: #2a5a18;
+      .col-prog {
+        height: 2px;
+        background: var(--border);
+        flex-shrink: 0;
       }
-      .append-note strong {
-        display: block; font-size: 8px; letter-spacing: 1px;
-        text-transform: uppercase; color: #4a8030; margin-bottom: 3px;
+      .col-prog-bar {
+        height: 100%;
+        background: var(--accent2);
+        transition: width 0.3s;
       }
 
+      .col-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px;
+      }
+      .col-body::-webkit-scrollbar {
+        width: 3px;
+      }
+      .col-body::-webkit-scrollbar-thumb {
+        background: var(--border2);
+      }
+
+      /* ── section separators ── */
       .section-sep {
-        font-size: 9px; font-family: "Courier New", monospace;
-        text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
-        padding: 7px 4px 4px;
-        border-top: 1px solid var(--border); margin-top: 4px;
-        display: flex; align-items: center; justify-content: space-between;
-        cursor: pointer; user-select: none; font-weight: bold;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        padding: 8px 8px 6px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+        font-weight: bold;
+        background: #f5f0e4;
       }
-      .section-sep:first-child { border-top: none; margin-top: 0; padding-top: 4px; }
-      .section-sep:hover { color: var(--accent); }
-      .section-sep .sec-tog { font-size: 11px; color: var(--muted); margin-left: 6px; flex-shrink: 0; }
-      .section-items.collapsed-sec { display: none; }
+      .section-sep:first-child {
+        border-top: none;
+        margin-top: 0;
+        padding-top: 6px;
+      }
+      .section-sep:hover {
+        color: var(--accent);
+      }
+      .section-sep .sec-tog {
+        font-size: 1rem;
+        color: var(--muted);
+        margin-left: 6px;
+        flex-shrink: 0;
+      }
+      .section-items.collapsed-sec {
+        display: none;
+      }
 
+      /* section header colour by thread */
+      .section-sep.tc-greet {
+        background: var(--th-greet);
+        border-left: 3px solid var(--tc-greet);
+        color: #1a6060;
+      }
+      .section-sep.tc-hello {
+        background: var(--th-hello);
+        border-left: 3px solid var(--tc-hello);
+        color: #7a5010;
+      }
+      .section-sep.tc-pitch {
+        background: var(--th-pitch);
+        border-left: 3px solid var(--tc-pitch);
+        color: #1a4878;
+      }
+      .section-sep.tc-filler {
+        background: var(--th-filler);
+        border-left: 3px solid var(--tc-filler);
+        color: #4a2a98;
+      }
+      .section-sep.tc-recruit {
+        background: var(--th-recruit);
+        border-left: 3px solid var(--tc-recruit);
+        color: #1a6038;
+      }
+      .section-sep.tc-saymore {
+        background: var(--th-saymore);
+        border-left: 3px solid var(--tc-saymore);
+        color: #8a4018;
+      }
+      .section-sep.tc-stronger {
+        background: var(--th-stronger);
+        border-left: 3px solid var(--tc-stronger);
+        color: #3a1888;
+      }
+      .section-sep.tc-outcome {
+        background: var(--th-outcome);
+        border-left: 3px solid var(--tc-outcome);
+        color: #782060;
+      }
+      .section-sep.tc-terminal {
+        background: #fdf0f0;
+        border-left: 3px solid var(--tc-terminal);
+        color: #7a1c1c;
+      }
+
+      /* ── items ── */
       .item {
         padding: 9px 11px 9px 13px;
         margin-bottom: 4px;
@@ -176,164 +443,575 @@
         cursor: pointer;
         border-radius: 2px;
         position: relative;
-        transition: border-color 0.1s, background 0.1s;
+        transition:
+          border-color 0.1s,
+          background 0.1s;
       }
       .item:hover:not(.editing):not(.selected):not(.inferred) {
         border-color: var(--border2);
         border-left-color: var(--border2);
         background: #f0ede4;
       }
-
-      /* SELECTED: thick gold bar + strong warm bg */
       .item.selected {
         border-color: var(--sel-border);
         border-left: 6px solid var(--sel-bar);
         background: #fff8d6;
       }
-
-      /* INFERRED: system auto-selected, green dotted border + green bar */
+      .item.selected.thread-greet {
+        border-right: 2px dashed var(--tc-greet);
+      }
+      .item.selected.thread-hello {
+        border-right: 2px dashed var(--tc-hello);
+      }
+      .item.selected.thread-pitch {
+        border-right: 2px dashed var(--tc-pitch);
+      }
+      .item.selected.thread-filler {
+        border-right: 2px dashed var(--tc-filler);
+      }
+      .item.selected.thread-recruit {
+        border-right: 2px dashed var(--tc-recruit);
+      }
+      .item.selected.thread-saymore {
+        border-right: 2px dashed var(--tc-saymore);
+      }
+      .item.selected.thread-stronger {
+        border-right: 2px dashed var(--tc-stronger);
+      }
+      .item.selected.thread-outcome {
+        border-right: 2px dashed var(--tc-outcome);
+      }
+      .item.selected.thread-terminal {
+        border-right: 3px solid var(--tc-terminal);
+      }
       .item.inferred {
         border: 1px dotted #7aaa58;
         border-left: 6px solid #7aaa58;
         background: #eef6e8;
       }
-
-      /* OTHER: when a sibling IS selected */
       .item.other {
         border-color: var(--other-border);
         border-left-color: var(--other-bar);
         background: var(--other-bg);
       }
+      .item.angry {
+        border-left-color: #b05050;
+      }
+      .item.hungry {
+        border-left-color: #b08820;
+      }
+      .item.selected.angry {
+        border-left-color: var(--sel-bar);
+      }
+      .item.selected.hungry {
+        border-left-color: var(--sel-bar);
+      }
+      .item.inferred.angry {
+        border-left-color: #7aaa58;
+      }
+      .item.inferred.hungry {
+        border-left-color: #7aaa58;
+      }
 
-      .item.angry  { border-left-color: #b05050; }
-      .item.hungry { border-left-color: #b08820; }
-      .item.selected.angry  { border-left-color: var(--sel-bar); }
-      .item.selected.hungry { border-left-color: var(--sel-bar); }
-      .item.inferred.angry  { border-left-color: #7aaa58; }
-      .item.inferred.hungry { border-left-color: #7aaa58; }
+      /* ── thread right-border on items ── */
+      /* continuing items get a dashed right border in the thread colour of the NEXT column */
+      .item.thread-greet {
+        border-right: 2px dashed var(--tc-greet);
+      }
+      .item.thread-hello {
+        border-right: 2px dashed var(--tc-hello);
+      }
+      .item.thread-pitch {
+        border-right: 2px dashed var(--tc-pitch);
+      }
+      .item.thread-filler {
+        border-right: 2px dashed var(--tc-filler);
+      }
+      .item.thread-recruit {
+        border-right: 2px dashed var(--tc-recruit);
+      }
+      .item.thread-saymore {
+        border-right: 2px dashed var(--tc-saymore);
+      }
+      .item.thread-stronger {
+        border-right: 2px dashed var(--tc-stronger);
+      }
+      .item.thread-outcome {
+        border-right: 2px dashed var(--tc-outcome);
+      }
+      /* terminal items get solid red right border */
+      .item.thread-terminal {
+        border-right: 3px solid var(--tc-terminal);
+      }
 
-      .item-text  { line-height: 1.6; font-size: 13px; color: var(--text); }
-      .item.other .item-text { color: var(--text); }
-
-      .item.unvisited .item-text { font-weight: bold; }
-      .item.visited   .item-text { font-weight: normal; }
-
-      .item-meta  { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+      .item-text {
+        line-height: 1.6;
+        font-size: 1.2rem;
+        color: var(--text);
+      }
+      .item.unvisited .item-text {
+        font-weight: bold;
+      }
+      .item.visited .item-text {
+        font-weight: normal;
+      }
+      .item-meta {
+        margin-top: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        align-items: center;
+      }
 
       .tag {
-        font-size: 9px; padding: 1px 5px; font-family: "Courier New", monospace;
-        background: var(--bg4); color: var(--muted);
-        border: 1px solid var(--border2); border-radius: 2px; letter-spacing: 0.5px;
+        font-size: 1rem;
+        padding: 1px 5px;
+        font-family: "Courier New", monospace;
+        background: var(--bg4);
+        color: var(--muted);
+        border: 1px solid var(--border2);
+        border-radius: 2px;
+        letter-spacing: 0.5px;
       }
-      .tag.f { background: #d0eccc; color: #1a5218; border-color: #8acc88; }
+      .tag.f {
+        background: #d0eccc;
+        color: #1a5218;
+        border-color: #8acc88;
+      }
 
       .badge {
-        font-size: 9px; padding: 1px 6px; font-family: "Courier New", monospace;
-        border-radius: 2px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid;
+        font-size: 1rem;
+        padding: 1px 6px;
+        font-family: "Courier New", monospace;
+        border-radius: 2px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border: 1px solid;
       }
-      .b-angry  { background: #fdf0e0; color: #804010; border-color: #d0a070; }
-      .b-hungry { background: #e0eef8; color: #104080; border-color: #80a8d0; }
-      .b-narc   { background: #f0e0f8; color: #500888; border-color: #b878d8; }
+      .b-angry {
+        background: #fdf0e0;
+        color: #804010;
+        border-color: #d0a070;
+      }
+      .b-hungry {
+        background: #e0eef8;
+        color: #104080;
+        border-color: #80a8d0;
+      }
+      .b-narc {
+        background: #f0e0f8;
+        color: #500888;
+        border-color: #b878d8;
+      }
 
       .score-badge {
-        font-size: 9px; padding: 1px 5px; font-family: "Courier New", monospace;
-        border-radius: 2px; border: 1px solid; letter-spacing: 0.5px;
+        font-size: 1rem;
+        padding: 1px 5px;
+        font-family: "Courier New", monospace;
+        border-radius: 2px;
+        border: 1px solid;
+        letter-spacing: 0.5px;
       }
-      .score-4  { background: #d0eccc; color: #1a5218; border-color: #8acc88; }
-      .score-2  { background: #f0e8c0; color: #504010; border-color: #c8b860; }
-      .score-0  { background: var(--bg4); color: var(--muted); border-color: var(--border2); }
-      .score-n2 { background: #f0e0c8; color: #805028; border-color: #c8a878; }
+      .score-4 {
+        background: #d0eccc;
+        color: #1a5218;
+        border-color: #8acc88;
+      }
+      .score-2 {
+        background: #f0e8c0;
+        color: #504010;
+        border-color: #c8b860;
+      }
+      .score-0 {
+        background: var(--bg4);
+        color: var(--muted);
+        border-color: var(--border2);
+      }
 
       .score-divider {
-        font-size: 8px; font-family: "Courier New", monospace;
-        text-transform: uppercase; letter-spacing: 1.5px;
-        padding: 6px 6px 3px; color: var(--accent2);
-        border-top: 2px solid #c8dcc0; margin-top: 4px; margin-bottom: 2px;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        padding: 6px 6px 3px;
+        color: var(--accent2);
+        border-top: 2px solid #c8dcc0;
+        margin-top: 4px;
+        margin-bottom: 2px;
         background: #eef6e8;
       }
 
-      .col.player .col-hdr { background: #f0ead8; border-bottom-color: #d0c8a8; }
-      .col.player .col-hdr-label { color: #6a4e10; }
-
-      .col.npc .col-hdr { background: #dce8d8; border-bottom-color: #b8ccb0; }
-      .col.npc .col-hdr-label { color: #2a4a20; }
+      /* ── unmatched toggle ── */
+      .unmatched-toggle {
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        color: var(--dim);
+        padding: 5px 8px;
+        cursor: pointer;
+        border: 1px dashed var(--border);
+        margin: 4px 0;
+        background: var(--bg3);
+        border-radius: 2px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .unmatched-toggle:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .unmatched-items.hidden {
+        display: none;
+      }
 
       .item:not(.editing) .edit-hint {
         display: none;
-        position: absolute; top: 7px; right: 8px;
-        font-size: 10px; color: var(--dim); opacity: 0.6;
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        font-size: 1rem;
+        color: var(--dim);
+        opacity: 0.6;
       }
-      .item:not(.editing):hover .edit-hint { display: block; }
+      .item:not(.editing):hover .edit-hint {
+        display: block;
+      }
 
       .end-note {
-        padding: 9px; font-size: 11px; font-family: "Courier New", monospace;
-        color: var(--muted); font-style: italic;
-        border: 1px dashed var(--border2); margin-bottom: 4px; border-radius: 2px;
+        padding: 9px;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        color: var(--muted);
+        font-style: italic;
+        border: 1px dashed var(--border2);
+        border-right: 2px solid var(--tc-terminal);
+        margin-bottom: 4px;
+        border-radius: 2px;
+      }
+      .end-note.good {
+        background: #eef6e8;
+        border-color: #7aaa58;
+        border-right-color: var(--tc-recruit);
+        color: #2a6020;
+      }
+      .end-note.bad {
+        background: #f8eeee;
+        border-color: #d09090;
+        border-right-color: var(--tc-terminal);
+        color: #7a2020;
       }
 
-      .item.editing { border-color: var(--accent2); background: #eaf4e8; }
+      .item.editing {
+        border-color: var(--accent2);
+        background: #eaf4e8;
+      }
       .edit-ta {
-        width: 100%; background: #faf8f2; border: 1px solid var(--border2);
-        color: var(--text); font-family: "Georgia", serif; font-size: 13px;
-        resize: vertical; min-height: 52px; padding: 5px; outline: none;
-        line-height: 1.6; border-radius: 2px;
+        width: 100%;
+        background: #faf8f2;
+        border: 1px solid var(--border2);
+        color: var(--text);
+        font-family: "Georgia", serif;
+        font-size: 1rem;
+        resize: vertical;
+        min-height: 52px;
+        padding: 5px;
+        outline: none;
+        line-height: 1.6;
+        border-radius: 2px;
       }
-      .edit-ta:focus { border-color: var(--accent2); }
-      .tag-row { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; align-items: center; }
+      .edit-ta:focus {
+        border-color: var(--accent2);
+      }
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        margin-top: 5px;
+        align-items: center;
+      }
       .tag-e {
-        font-size: 9px; padding: 1px 5px; font-family: "Courier New", monospace;
-        background: #fdf5d8; color: var(--accent); border: 1px solid var(--accent);
-        border-radius: 2px; cursor: pointer; display: flex; align-items: center; gap: 3px;
+        font-size: 1rem;
+        padding: 1px 5px;
+        font-family: "Courier New", monospace;
+        background: #fdf5d8;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 2px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 3px;
       }
-      .tag-e:hover { background: #f8e8a0; }
-      .tag-x { color: var(--danger); font-size: 11px; line-height: 1; cursor: pointer; }
+      .tag-e:hover {
+        background: #f8e8a0;
+      }
+      .tag-x {
+        color: var(--danger);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+      }
       .tag-in {
-        font-size: 10px; padding: 2px 6px; font-family: "Courier New", monospace;
-        background: #faf8f2; color: var(--text); border: 1px solid var(--border2);
-        border-radius: 2px; width: 90px; outline: none;
+        font-size: 1rem;
+        padding: 2px 6px;
+        font-family: "Courier New", monospace;
+        background: #faf8f2;
+        color: var(--text);
+        border: 1px solid var(--border2);
+        border-radius: 2px;
+        width: 90px;
+        outline: none;
       }
-      .tag-in:focus { border-color: var(--accent2); }
+      .tag-in:focus {
+        border-color: var(--accent2);
+      }
       .follows-row {
-        display: flex; align-items: center; gap: 5px; margin-top: 5px;
-        font-size: 10px; color: var(--muted); font-family: "Courier New", monospace;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+        font-size: 1rem;
+        color: var(--muted);
+        font-family: "Courier New", monospace;
       }
       .follows-in {
-        font-size: 10px; padding: 2px 6px; font-family: "Courier New", monospace;
-        background: #faf8f2; color: #1e5c30; border: 1px solid #8acc88;
-        border-radius: 2px; width: 110px; outline: none;
+        font-size: 1rem;
+        padding: 2px 6px;
+        font-family: "Courier New", monospace;
+        background: #faf8f2;
+        color: #1e5c30;
+        border: 1px solid #8acc88;
+        border-radius: 2px;
+        width: 11rem;
+        outline: none;
       }
-      .follows-in:focus { border-color: var(--accent2); }
-      .edit-acts { display: flex; gap: 4px; margin-top: 6px; }
+      .follows-in:focus {
+        border-color: var(--accent2);
+      }
+      .edit-acts {
+        display: flex;
+        gap: 4px;
+        margin-top: 6px;
+      }
       .ebtn {
-        font-size: 9px; padding: 3px 10px; font-family: "Courier New", monospace;
-        background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-        cursor: pointer; letter-spacing: 1px; text-transform: uppercase; border-radius: 2px;
+        font-size: 1rem;
+        padding: 3px 1rem;
+        font-family: "Courier New", monospace;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        cursor: pointer;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-radius: 2px;
       }
-      .ebtn.save   { border-color: var(--accent2); color: var(--accent2); background: #eaf4e8; }
-      .ebtn.cancel { color: var(--muted); }
-      .ebtn.del    { border-color: var(--danger); color: var(--danger); margin-left: auto; background: #f8eeee; }
+      .ebtn.save {
+        border-color: var(--accent2);
+        color: var(--accent2);
+        background: #eaf4e8;
+      }
+      .ebtn.cancel {
+        color: var(--muted);
+      }
+      .ebtn.del {
+        border-color: var(--danger);
+        color: var(--danger);
+        margin-left: auto;
+        background: #f8eeee;
+      }
 
       .add-btn {
-        width: 100%; padding: 6px; margin-bottom: 4px;
-        background: none; border: 1px dashed var(--border2); color: var(--muted);
-        cursor: pointer; font-family: "Courier New", monospace; font-size: 10px;
-        text-align: center; letter-spacing: 1px; border-radius: 2px;
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 4px;
+        background: none;
+        border: 1px dashed var(--border2);
+        color: var(--muted);
+        cursor: pointer;
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        text-align: center;
+        letter-spacing: 1px;
+        border-radius: 2px;
       }
-      .add-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+      .add-btn:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
 
       .ac {
-        position: absolute; z-index: 200; background: #faf8f2;
-        border: 1px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,.15);
-        max-height: 110px; overflow-y: auto;
-        font-size: 10px; font-family: "Courier New", monospace; min-width: 130px;
+        position: absolute;
+        z-index: 200;
+        background: #faf8f2;
+        border: 1px solid var(--accent);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        max-height: 11rem;
+        overflow-y: auto;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+        min-width: 130px;
       }
-      .ac-item { padding: 3px 10px; cursor: pointer; color: var(--text); }
-      .ac-item:hover { background: #fdf5d8; color: var(--accent); }
+      .ac-item {
+        padding: 3px 1rem;
+        cursor: pointer;
+        color: var(--text);
+      }
+      .ac-item:hover {
+        background: #fdf5d8;
+        color: var(--accent);
+      }
 
-      #error-box {
-        background: #f8eeee; border: 1px solid #d09090; color: #7a1c1c;
-        padding: 10px 16px; font-size: 11px;
-        font-family: "Courier New", monospace; display: none; flex-shrink: 0;
+      /* ── script panel ── */
+      #script-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 340px;
+        height: 100vh;
+        background: #0e1208;
+        border-left: 2px solid #3a4a30;
+        display: flex;
+        flex-direction: column;
+        z-index: 500;
+        transform: translateX(100%);
+        transition: transform 0.2s ease;
+        font-family: "Courier New", monospace;
+      }
+      #script-panel.open {
+        transform: translateX(0);
+      }
+      #script-panel-hdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        height: 44px;
+        background: #1c2818;
+        border-bottom: 2px solid #3a4a30;
+        flex-shrink: 0;
+      }
+      #script-panel-title {
+        font-size: 1rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #c8b870;
+        font-weight: bold;
+      }
+      #script-panel-close {
+        background: none;
+        border: 1px solid #4a6040;
+        color: #8a9e7a;
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        padding: 3px 1rem;
+        cursor: pointer;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      #script-panel-close:hover {
+        border-color: #c8b870;
+        color: #c8b870;
+      }
+      #script-panel-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 14px;
+      }
+      #script-panel-body::-webkit-scrollbar {
+        width: 3px;
+      }
+      #script-panel-body::-webkit-scrollbar-thumb {
+        background: #3a4a30;
+      }
+      .sp-line {
+        margin-bottom: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .sp-speaker {
+        font-size: 1rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #5a7050;
+      }
+      .sp-speaker.player {
+        color: #7aba7a;
+      }
+      .sp-speaker.npc {
+        color: #7ababa;
+      }
+      .sp-text {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #d8d0b8;
+      }
+      .sp-text.placeholder {
+        color: #4a5a40;
+        font-style: italic;
+      }
+      .sp-text.missing {
+        color: #8a3030;
+        font-style: italic;
+      }
+      .sp-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        margin-top: 2px;
+      }
+      .sp-tag {
+        font-size: 1rem;
+        padding: 1px 5px;
+        border-radius: 2px;
+        letter-spacing: 0.5px;
+      }
+      .sp-tag.match {
+        background: #1a3a18;
+        color: #7acc68;
+        border: 1px solid #3a6a30;
+      }
+      .sp-tag.miss {
+        background: #3a1818;
+        color: #cc7868;
+        border: 1px solid #6a3028;
+      }
+      .sp-tag.fwd {
+        background: #1a2a3a;
+        color: #688acc;
+        border: 1px solid #304060;
+      }
+      .sp-divider {
+        height: 1px;
+        background: #2a3820;
+        margin: 8px 0;
+      }
+      .sp-empty {
+        font-size: 1rem;
+        color: #3a5030;
+        font-style: italic;
+        padding-top: 8px;
+      }
+      #script-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 600;
+        background: #1c2818;
+        border: 1px solid #c8b870;
+        color: #c8b870;
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        padding: 7px 14px;
+        cursor: pointer;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      }
+      #script-toggle:hover {
+        background: #2a3820;
       }
     </style>
   </head>
@@ -345,937 +1023,2417 @@
       <button class="hbtn danger" onclick="hardRefresh()">reload file</button>
       <button class="hbtn primary" onclick="exportJS()">export js</button>
     </div>
+    <div id="flow-bar"></div>
     <div id="error-box"></div>
     <div id="cols-scroll"><div id="cols"></div></div>
+
+    <!-- script panel -->
+    <div id="script-panel">
+      <div id="script-panel-hdr">
+        <span id="script-panel-title">script</span>
+        <button id="script-panel-close" onclick="toggleScriptPanel()">close ✕</button>
+      </div>
+      <div id="script-panel-body"></div>
+    </div>
+    <button id="script-toggle" onclick="toggleScriptPanel()">script ▲</button>
 
     <script src="game-data.js"></script>
     <script src="game-data-words-engine.js"></script>
     <script src="game-data-words.js"></script>
 
     <script>
-      window.GAME_DATA = window.GAME_DATA || { buildings:[], playerArt:[[" @ "],[" @ "]], npcArts:[["&"]], npcColors:["#aaa"], narcArt:["%"], robinArt:["R"], narrativeQuotes:[] };
+      window.GAME_DATA = window.GAME_DATA || {
+        buildings: [],
+        playerArt: [[" @ "], [" @ "]],
+        npcArts: [["&"]],
+        npcColors: ["#aaa"],
+        narcArt: ["%"],
+        robinArt: ["R"],
+        narrativeQuotes: [],
+      };
       const _noop = () => {};
-      window.audio={play:_noop}; window.grid={set:_noop,text:_noop,textCenter:_noop,art:_noop};
-      window.Util=window.Util||{pick:a=>a[Math.floor(Math.random()*a.length)],clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),randInt:(a,b)=>Math.floor(Math.random()*(b-a+1))+a,lerp:(a,b,t)=>a+(b-a)*t};
-      window.phase="editor"; window.W=80; window.H=30; window.dialogStack=[];
-      window.C_PLAYER="#7aba7a"; window.C_DIM="#555"; window.C_DANGER="#c44";
-      window.C_SUCCESS="#7aba7a"; window.C_TEAL="#7ababa"; window.C_ORANGE="#ba8a4a"; window.C_WARN="#ba8a4a";
-      window.bannerTimer=0; window.hasPlayed=false;
-      window.showBanner=_noop; window.updateBanner=_noop; window.renderBanner=_noop;
-      window.dialogUpdate=_noop; window.dialogRender=_noop; window.addFloat=_noop;
-      window.spark=_noop; window.triggerChromatic=_noop; window.endGame=_noop; window.initAct2b=_noop;
-      window.hudLabel={textContent:""}; window.hudScore={textContent:"",style:{}}; window.hudStatus={textContent:"",style:{}};
-      if (!document.getElementById("gamescreen")){const gs=document.createElement("canvas");gs.id="gamescreen";gs.style.display="none";document.body.appendChild(gs);}
-      window.gs=document.getElementById("gamescreen");
-      window.input={isDown:_noop,justPressed:_noop}; window.clickPending=false;
-      window.CONV_BOX={tl:"+",tr:"+",bl:"+",br:"+",h:"-",v:"|"};
-      window.DIALOG_BOX={tl:"+",tr:"+",bl:"+",br:"+",h:"-",v:"|"};
-      window.A1_LOOP_MSGS=[]; window.HA=[[""]]; window.HC=["#fff"];
+      window.audio = { play: _noop };
+      window.grid = { set: _noop, text: _noop, textCenter: _noop, art: _noop };
+      window.Util = window.Util || {
+        pick: (a) => a[Math.floor(Math.random() * a.length)],
+        clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+        randInt: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
+        lerp: (a, b, t) => a + (b - a) * t,
+      };
+      window.phase = "editor";
+      window.W = 80;
+      window.H = 30;
+      window.dialogStack = [];
+      window.C_PLAYER = "#7aba7a";
+      window.C_DIM = "#555";
+      window.C_DANGER = "#c44";
+      window.C_SUCCESS = "#7aba7a";
+      window.C_TEAL = "#7ababa";
+      window.C_ORANGE = "#ba8a4a";
+      window.C_WARN = "#ba8a4a";
+      window.bannerTimer = 0;
+      window.hasPlayed = false;
+      window.showBanner = _noop;
+      window.updateBanner = _noop;
+      window.renderBanner = _noop;
+      window.dialogUpdate = _noop;
+      window.dialogRender = _noop;
+      window.addFloat = _noop;
+      window.spark = _noop;
+      window.triggerChromatic = _noop;
+      window.endGame = _noop;
+      window.initAct2b = _noop;
+      window.hudLabel = { textContent: "" };
+      window.hudScore = { textContent: "", style: {} };
+      window.hudStatus = { textContent: "", style: {} };
+      if (!document.getElementById("gamescreen")) {
+        const gs = document.createElement("canvas");
+        gs.id = "gamescreen";
+        gs.style.display = "none";
+        document.body.appendChild(gs);
+      }
+      window.gs = document.getElementById("gamescreen");
+      window.input = { isDown: _noop, justPressed: _noop };
+      window.clickPending = false;
+      window.CONV_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+      window.DIALOG_BOX = { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+      window.A1_LOOP_MSGS = [];
+      window.HA = [[""]];
+      window.HC = ["#fff"];
     </script>
 
     <script>
       const D = {
-        P_GREET:                      P_GREET,
-        D_NARC_HELLO:                 D_NARC_HELLO,
-        DECK_ANGRY_HELLO:             DECK_ANGRY_HELLO.src,
-        DECK_HUNGRY_HELLO:            DECK_HUNGRY_HELLO.src,
-        DECK_ANGRY_PITCH:             DECK_ANGRY_PITCH.src,
-        DECK_HUNGRY_PITCH:            DECK_HUNGRY_PITCH.src,
-        D_F_INVITE:                   D_F_INVITE,
-        D_NO_BYE:                     D_NO_BYE,
-        D_SAY_MORE_WARM:              D_SAY_MORE_WARM.src,
-        D_SAY_MORE_SKEPTICAL:         D_SAY_MORE_SKEPTICAL.src,
-        D_JOIN_CONSENT_PAIRS:         D_JOIN_CONSENT_PAIRS,
-        DECK_MISMATCH_TOO_LITERAL:    DECK_MISMATCH_TOO_LITERAL.src,
+        P_GREET: P_GREET,
+        D_NARC_HELLO: D_NARC_HELLO,
+        DECK_ANGRY_HELLO: DECK_ANGRY_HELLO.src,
+        DECK_HUNGRY_HELLO: DECK_HUNGRY_HELLO.src,
+        DECK_ANGRY_PITCH: DECK_ANGRY_PITCH.src,
+        DECK_HUNGRY_PITCH: DECK_HUNGRY_PITCH.src,
+        DECK_NARC_AGREE: DECK_NARC_AGREE.src,
+        DECK_BAD_READ: DECK_BAD_READ.src,
+        D_F_INVITE: D_F_INVITE,
+        D_NO_BYE: D_NO_BYE,
+        D_SAY_MORE_WARM: D_SAY_MORE_WARM.src,
+        D_SAY_MORE_SKEPTICAL: D_SAY_MORE_SKEPTICAL.src,
+        D_JOIN_CONSENT_PAIRS: D_JOIN_CONSENT_PAIRS,
+        DECK_MISMATCH_TOO_LITERAL: DECK_MISMATCH_TOO_LITERAL.src,
         DECK_MISMATCH_TOO_STRUCTURAL: DECK_MISMATCH_TOO_STRUCTURAL.src,
-        D_BACK_OFF_EARLY:             DECK_BACK_OFF_EARLY.src,
-        DECK_STRONGER_PITCH:          DECK_STRONGER_PITCH.src,
-        D_INVITE:                     D_INVITE,
-        D_BACK_OFF_LATE:              DECK_BACK_OFF_LATE.src,
-        D_NARC_REVEAL:                D_NARC_REVEAL,
-        D_NOT_NOW:                    D_NOT_NOW,
-        D_RETURN:                     D_RETURN,
-        D_AMB_HUNGRY:                 D_AMB_HUNGRY,
-        D_AMB_ANGRY:                  D_AMB_ANGRY,
-        D_AMB_NARC:                   D_AMB_NARC,
-        D_ACK_HUNGRY_ANGRY:           D_ACK_HUNGRY_ANGRY,
-        D_ACK_NARC:                   D_ACK_NARC,
-        DECK_BAD_READ:               DECK_BAD_READ.src,
-  DECK_BAIL_RESPONSE:           DECK_BAIL_RESPONSE.src,
-        D_FILLER:                     DECK_FILLER.src,
+        D_BACK_OFF_EARLY: DECK_BACK_OFF_EARLY.src,
+        DECK_BAIL_RESPONSE: DECK_BAIL_RESPONSE.src,
+        DECK_STRONGER_PITCH: DECK_STRONGER_PITCH.src,
+        D_BACK_OFF_LATE: DECK_BACK_OFF_LATE.src,
+        D_NARC_REVEAL: D_NARC_REVEAL,
+        D_NOT_NOW: D_NOT_NOW,
+        D_RETURN: D_RETURN,
+        D_AMB_HUNGRY: D_AMB_HUNGRY,
+        D_AMB_ANGRY: D_AMB_ANGRY,
+        D_AMB_NARC: D_AMB_NARC,
+        D_ACK_HUNGRY_ANGRY: D_ACK_HUNGRY_ANGRY,
+        D_ACK_NARC: D_ACK_NARC,
+        D_FILLER: DECK_FILLER.src,
       };
-      ["casual","concerned","direct"].forEach(tone =>
-        ["angry","hungry","narc"].forEach(kind =>
-          D[`PREFIX_${tone}_${kind}`] = HELLO_PREFIX[tone][kind]
-        )
+      ["casual", "concerned", "direct"].forEach((tone) =>
+        ["angry", "hungry", "narc"].forEach((kind) => (D[`PREFIX_${tone}_${kind}`] = HELLO_PREFIX[tone][kind])),
       );
 
-      const SK      = "dlg_ed_v5";
-      const SK_DATA = "dlg_ed_data_v5";
-      const SK_SEC  = "dlg_ed_sec_v5";
-
+      const SK = "dlg_ed_v5",
+        SK_DATA = "dlg_ed_data_v5",
+        SK_SEC = "dlg_ed_sec_v5";
       const SAVEABLE = [
-        "P_GREET","D_NARC_HELLO","DECK_ANGRY_HELLO","DECK_HUNGRY_HELLO",
-        "DECK_ANGRY_PITCH","DECK_HUNGRY_PITCH","D_F_INVITE","D_NO_BYE",
-        "D_SAY_MORE_WARM","D_SAY_MORE_SKEPTICAL","D_JOIN_CONSENT_PAIRS",
-        "DECK_MISMATCH_TOO_LITERAL","DECK_MISMATCH_TOO_STRUCTURAL",
-        "D_BACK_OFF_EARLY","DECK_STRONGER_PITCH","D_INVITE",
-        "D_BACK_OFF_LATE","D_NARC_REVEAL","D_NOT_NOW","D_RETURN",
-        "D_AMB_HUNGRY","D_AMB_ANGRY","D_AMB_NARC",
-        "D_ACK_HUNGRY_ANGRY","D_ACK_NARC",
-"DECK_BAD_READ","DECK_BAIL_RESPONSE","D_FILLER",        "PREFIX_casual_angry","PREFIX_casual_hungry","PREFIX_casual_narc",
-        "PREFIX_concerned_angry","PREFIX_concerned_hungry","PREFIX_concerned_narc",
-        "PREFIX_direct_angry","PREFIX_direct_hungry","PREFIX_direct_narc",
+        "P_GREET",
+        "D_NARC_HELLO",
+        "DECK_ANGRY_HELLO",
+        "DECK_HUNGRY_HELLO",
+        "DECK_ANGRY_PITCH",
+        "DECK_HUNGRY_PITCH",
+        "DECK_BAD_READ",
+        "D_F_INVITE",
+        "D_NO_BYE",
+        "D_SAY_MORE_WARM",
+        "D_SAY_MORE_SKEPTICAL",
+        "D_JOIN_CONSENT_PAIRS",
+        "DECK_MISMATCH_TOO_LITERAL",
+        "DECK_MISMATCH_TOO_STRUCTURAL",
+        "D_BACK_OFF_EARLY",
+        "DECK_BAIL_RESPONSE",
+        "DECK_STRONGER_PITCH",
+        "D_BACK_OFF_LATE",
+        "D_NARC_REVEAL",
+        "D_NOT_NOW",
+        "D_RETURN",
+        "D_AMB_HUNGRY",
+        "D_AMB_ANGRY",
+        "D_AMB_NARC",
+        "D_ACK_HUNGRY_ANGRY",
+        "D_ACK_NARC",
+        "D_FILLER",
+        "PREFIX_casual_angry",
+        "PREFIX_casual_hungry",
+        "PREFIX_casual_narc",
+        "PREFIX_concerned_angry",
+        "PREFIX_concerned_hungry",
+        "PREFIX_concerned_narc",
+        "PREFIX_direct_angry",
+        "PREFIX_direct_hungry",
+        "PREFIX_direct_narc",
       ];
 
       function saveData() {
         try {
           const snap = {};
-          SAVEABLE.forEach(k => { if (D[k]) snap[k] = JSON.parse(JSON.stringify(D[k])); });
+          SAVEABLE.forEach((k) => {
+            if (D[k]) snap[k] = JSON.parse(JSON.stringify(D[k]));
+          });
           localStorage.setItem(SK_DATA, JSON.stringify(snap));
-        } catch(e) { console.warn("saveData failed", e); }
+        } catch (e) {
+          console.warn("saveData failed", e);
+        }
       }
-
       function loadData() {
         try {
-          const s = localStorage.getItem(SK_DATA); if (!s) return;
+          const s = localStorage.getItem(SK_DATA);
+          if (!s) return;
           const snap = JSON.parse(s);
-          Object.entries(snap).forEach(([k,v]) => {
-            if (D[k] && Array.isArray(v)) { D[k].length=0; v.forEach(x=>D[k].push(x)); }
+          Object.entries(snap).forEach(([k, v]) => {
+            if (D[k] && Array.isArray(v)) {
+              D[k].length = 0;
+              v.forEach((x) => D[k].push(x));
+            }
           });
-        } catch(e) { console.warn("loadData failed", e); }
+        } catch (e) {
+          console.warn("loadData failed", e);
+        }
       }
 
       function hardRefresh() {
-        const ov=document.createElement("div");
-        ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Courier New,monospace";
-        const bx=document.createElement("div");
-        bx.style.cssText="background:#1c2818;border:1px solid #c07070;padding:28px 32px;max-width:400px;display:flex;flex-direction:column;gap:14px";
-        bx.innerHTML=`
-          <div style="font-size:11px;color:#c07070;letter-spacing:2px;text-transform:uppercase;font-family:Courier New,monospace">reload file</div>
-          <div style="font-size:12px;line-height:1.7;color:#c8d8b0;font-family:Georgia,serif">
-            Step 1: download your current edits.<br>
-            Step 2: wipe localStorage and reload from source.<br><br>
-            <strong style="color:#e8dfc0">Do step 1 first &mdash; step 2 is permanent.</strong>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="dlbtn"  style="font-family:Courier New,monospace;font-size:10px;padding:5px 14px;background:transparent;border:1px solid #6aaa48;color:#8acc68;cursor:pointer;letter-spacing:1px;text-transform:uppercase">1. download edits</button>
-            <button id="rlbtn"  style="font-family:Courier New,monospace;font-size:10px;padding:5px 14px;background:transparent;border:1px solid #c07070;color:#e08080;cursor:pointer;letter-spacing:1px;text-transform:uppercase">2. reload file</button>
-            <button id="cancelbtn" style="font-family:Courier New,monospace;font-size:10px;padding:5px 14px;background:transparent;border:1px solid #4a6040;color:#8a9e7a;cursor:pointer;letter-spacing:1px;text-transform:uppercase">cancel</button>
-          </div>`;
-        ov.appendChild(bx); document.body.appendChild(ov);
-        bx.querySelector("#dlbtn").onclick=()=>{ doExport(); bx.querySelector("#dlbtn").textContent="1. downloaded \u2713"; bx.querySelector("#dlbtn").style.opacity="0.5"; };
-        bx.querySelector("#rlbtn").onclick=()=>{ document.body.removeChild(ov); localStorage.removeItem(SK_DATA); location.reload(true); };
-        bx.querySelector("#cancelbtn").onclick=()=>document.body.removeChild(ov);
+        const ov = document.createElement("div");
+        ov.style.cssText =
+          "position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Courier New,monospace";
+        const bx = document.createElement("div");
+        bx.style.cssText =
+          "background:#1c2818;border:1px solid #c07070;padding:28px 32px;max-width:400px;display:flex;flex-direction:column;gap:14px";
+        bx.innerHTML = `<div style="font-size:11px;color:#c07070;letter-spacing:2px;text-transform:uppercase;font-family:Courier New,monospace">reload file</div><div style="font-size:12px;line-height:1.7;color:#c8d8b0;font-family:Georgia,serif">Step 1: download your current edits.<br>Step 2: wipe localStorage and reload from source.<br><br><strong style="color:#e8dfc0">Do step 1 first &mdash; step 2 is permanent.</strong></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="dlbtn" style="font-family:Courier New,monospace;font-size:1rem;padding:5px 14px;background:transparent;border:1px solid #6aaa48;color:#8acc68;cursor:pointer;letter-spacing:1px;text-transform:uppercase">1. download edits</button><button id="rlbtn" style="font-family:Courier New,monospace;font-size:1rem;padding:5px 14px;background:transparent;border:1px solid #c07070;color:#e08080;cursor:pointer;letter-spacing:1px;text-transform:uppercase">2. reload file</button><button id="cancelbtn" style="font-family:Courier New,monospace;font-size:1rem;padding:5px 14px;background:transparent;border:1px solid #4a6040;color:#8a9e7a;cursor:pointer;letter-spacing:1px;text-transform:uppercase">cancel</button></div>`;
+        ov.appendChild(bx);
+        document.body.appendChild(ov);
+        bx.querySelector("#dlbtn").onclick = () => {
+          doExport();
+          bx.querySelector("#dlbtn").textContent = "1. downloaded ✓";
+          bx.querySelector("#dlbtn").style.opacity = "0.5";
+        };
+        bx.querySelector("#rlbtn").onclick = () => {
+          document.body.removeChild(ov);
+          localStorage.removeItem(SK_DATA);
+          location.reload(true);
+        };
+        bx.querySelector("#cancelbtn").onclick = () => document.body.removeChild(ov);
       }
 
-      let VIS={};
-      function loadV()  { try{const s=localStorage.getItem(SK);if(s)VIS=JSON.parse(s);}catch(e){} }
-      function saveV()  { try{localStorage.setItem(SK,JSON.stringify(VIS));}catch(e){} }
-      function vis(k)   { return !!VIS[k]; }
-      function markV(k) { VIS[k]=true; saveV(); }
-      function resetVisited() { if(!confirm("Reset all visited markers?"))return; VIS={}; saveV(); render(); }
+      let VIS = {};
+      function loadV() {
+        try {
+          const s = localStorage.getItem(SK);
+          if (s) VIS = JSON.parse(s);
+        } catch (e) {}
+      }
+      function saveV() {
+        try {
+          localStorage.setItem(SK, JSON.stringify(VIS));
+        } catch (e) {}
+      }
+      function vis(k) {
+        return !!VIS[k];
+      }
+      function markV(k) {
+        VIS[k] = true;
+        saveV();
+      }
+      function resetVisited() {
+        if (!confirm("Reset all visited markers?")) return;
+        VIS = {};
+        saveV();
+        render();
+      }
 
-      let SEC={};
-      function loadSec()         { try{const s=localStorage.getItem(SK_SEC);if(s)SEC=JSON.parse(s);}catch(e){} }
-      function saveSec()         { try{localStorage.setItem(SK_SEC,JSON.stringify(SEC));}catch(e){} }
-      function isSec(id,lbl)     { return !!SEC[`${id}::${lbl}`]; }
-      function toggleSec(id,lbl) { SEC[`${id}::${lbl}`]=!SEC[`${id}::${lbl}`]; saveSec(); render(); }
+      let SEC = {};
+      function loadSec() {
+        try {
+          const s = localStorage.getItem(SK_SEC);
+          if (s) SEC = JSON.parse(s);
+        } catch (e) {}
+      }
+      function saveSec() {
+        try {
+          localStorage.setItem(SK_SEC, JSON.stringify(SEC));
+        } catch (e) {}
+      }
+      function isSec(id, lbl) {
+        return !!SEC[`${id}::${lbl}`];
+      }
+      function toggleSec(id, lbl) {
+        SEC[`${id}::${lbl}`] = !SEC[`${id}::${lbl}`];
+        saveSec();
+        render();
+      }
 
-      // ── scoring — exact match to DM.score() ──────────────────────────────────────
-      const ROUTING_TAGS = new Set(["casual","concerned","direct"]);
-      function tagsOf(item) { return (item.tags||[]).filter(t=>!ROUTING_TAGS.has(t)); }
+      // unmatched-open state — resets on hello pick
+      let UNMATCHED_OPEN = {};
+      function resetUnmatched() {
+        UNMATCHED_OPEN = {};
+      }
+      function isUnmatchedOpen(key) {
+        return !!UNMATCHED_OPEN[key];
+      }
+      function toggleUnmatched(key) {
+        UNMATCHED_OPEN[key] = !UNMATCHED_OPEN[key];
+        render();
+      }
 
-   function dmScore(item, followTags, boost=false) {
+      const ROUTING_TAGS = new Set(["casual", "concerned", "direct"]);
+      function tagsOf(item) {
+        return (item.tags || []).filter((t) => !ROUTING_TAGS.has(t));
+      }
+
+      function dmScore(item, followTags) {
         const tags = tagsOf(item);
-        if (boost && tags.some(t=>followTags&&followTags.includes(t))) return 2;
+        if (tags.some((t) => followTags && followTags.includes(t))) return 2;
         return 0;
       }
-
-      function scoreAndSort(items, followTags, boost=false) {
-        return items
-          .map(x=>({...x, score:dmScore(x,followTags,boost)}))
-          .sort((a,b)=>b.score-a.score);
+      function scoreAndSort(items, followTags) {
+        return items.map((x) => ({ ...x, score: dmScore(x, followTags) })).sort((a, b) => b.score - a.score);
       }
 
       function allTags() {
-        const s=new Set();
-        Object.values(D).forEach(v=>{
+        const s = new Set();
+        Object.values(D).forEach((v) => {
           if (!Array.isArray(v)) return;
-          v.forEach(x=>{ if(x&&x.tags) x.tags.forEach(t=>s.add(t)); if(x&&x.follows) s.add(x.follows); });
+          v.forEach((x) => {
+            if (x && x.tags) x.tags.forEach((t) => s.add(t));
+            if (x && x.follows) s.add(x.follows);
+          });
         });
         return [...s].sort();
       }
 
-      let P={}, EDIT_KEY=null, colFilters={}, lastFocusColId=null, inferredKeys=new Set();
-
-      // ── leftward inference ────────────────────────────────────────────────────────
-      function inferLeft(dn, i) {
-        // infer npcType from hello deck
-        if (dn==="DECK_ANGRY_HELLO")  { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="angry";  inferredKeys.add("npcType"); inferredKeys.add("npctype:0"); } }
-        if (dn==="DECK_HUNGRY_HELLO") { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="hungry"; inferredKeys.add("npcType"); inferredKeys.add("npctype:1"); } }
-        if (dn==="D_NARC_HELLO")      { if(!P.npcType||inferredKeys.has("npcType")) { P.npcType="narc";   inferredKeys.add("npcType"); inferredKeys.add("npctype:2"); } }
-
-        // infer tone from greet if not manually set
-        if (!P.tone || inferredKeys.has("tone")) { P.tone="casual"; inferredKeys.add("tone"); }
-
-        // infer pitch/back-off flags
-        if (dn==="D_BACK_OFF_EARLY") { P.isBoEarly=true;  inferredKeys.add("isBoEarly"); }
-        if (dn==="D_BACK_OFF_LATE")  { P.isBOLate=true;   inferredKeys.add("isBOLate"); }
-        if (dn==="D_JOIN_CONSENT_PAIRS") { P.joinedEarly=true; inferredKeys.add("joinedEarly"); }
-
-        // infer pitch tags — match or bad read
-        if ((dn==="DECK_ANGRY_PITCH"||dn==="DECK_HUNGRY_PITCH"||dn==="DECK_BAD_READ") && D[dn] && D[dn][i]) {
-          if (!P.pitchTags || inferredKeys.has("pitchTags")) {
-            P.pitchTags=tagsOf(D[dn][i])||[];
-            inferredKeys.add("pitchTags");
-          }
-          if (!P.pitchDeck || inferredKeys.has("pitchDeck")) {
-            P.pitchDeck=dn; P.pitchIdx=i;
-            inferredKeys.add("pitchDeck");
-          }
-        }
-
-        // infer hello tags
-        if ((dn==="DECK_ANGRY_HELLO"||dn==="DECK_HUNGRY_HELLO"||dn==="D_NARC_HELLO") && D[dn] && D[dn][i]) {
-          if (!P.helloTags || inferredKeys.has("helloTags")) {
-            P.helloTags=tagsOf(D[dn][i])||[];
-            P.helloDN=dn; P.helloIdx=i;
-            inferredKeys.add("helloTags");
-          }
-        }
-      }
+      // ── state ──
+      let P = {},
+        EDIT_KEY = null,
+        colFilters = {},
+        lastFocusColId = null;
 
       function wrapPlain(arr, dn) {
-        return arr.map((x,i)=>({
-          key:`${dn}:${i}`,
-          text: typeof x==="string" ? x : (x.t||x),
-          tags: typeof x==="string" ? [] : (x.tags||[]),
-          idx:i, selected:false,
+        return arr.map((x, i) => ({
+          key: `${dn}:${i}`,
+          text: typeof x === "string" ? x : x.t || x,
+          tags: typeof x === "string" ? [] : x.tags || [],
+          idx: i,
+          selected: false,
         }));
       }
 
-      function buildCols() {
-        const cols=[];
-        function col(def){ return {...def,locked:false}; }
-
-        // ── AMBIENT ──────────────────────────────────────────────────────────────
-        cols.push({
-          id:"ambient", label:"ambient", deckName:null, locked:false,
-          sections:[
-            {label:"hungry",   deckName:"D_AMB_HUNGRY",      items:wrapPlain(D.D_AMB_HUNGRY,"D_AMB_HUNGRY")},
-            {label:"angry",    deckName:"D_AMB_ANGRY",        items:wrapPlain(D.D_AMB_ANGRY,"D_AMB_ANGRY")},
-            {label:"narc",     deckName:"D_AMB_NARC",         items:wrapPlain(D.D_AMB_NARC,"D_AMB_NARC")},
-            {label:"ack hungry/angry", deckName:"D_ACK_HUNGRY_ANGRY", items:wrapPlain(D.D_ACK_HUNGRY_ANGRY,"D_ACK_HUNGRY_ANGRY")},
-            {label:"ack narc", deckName:"D_ACK_NARC",         items:wrapPlain(D.D_ACK_NARC,"D_ACK_NARC")},
-          ],
-          onSelect:()=>{},
-        });
-
-        // ── 1. GREETING ───────────────────────────────────────────────────────────
-        cols.push(col({
-          id:"greet", label:"greeting (player)", deckName:"P_GREET", role:"player",
-          clearKey:["greetIdx","tone","npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          items:D.P_GREET.map((x,i)=>({
-            key:`P_GREET:${i}`, text:x.t, tags:x.tags, idx:i,
-            selected:P.greetIdx===i,
-            inferred: inferredKeys.has(`P_GREET:${i}`),
-          })),
-          onSelect:(_dn,i)=>{
-            const same=P.greetIdx===i;
-            if(same){
-              ["greetIdx","tone","npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-              inferredKeys.clear(); render(); return;
-            }
-            P.greetIdx=i; P.tone=D.P_GREET[i].tags[0]||"casual";
-            inferredKeys.delete("tone");
-            ["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("npctype"); render();
-          },
-        }));
-
-        // ── 2. NPC TYPE ───────────────────────────────────────────────────────────
-        const NPC=["angry","hungry","narc"];
-        cols.push(col({
-          id:"npctype", label:"npc type", deckName:null, role:"npc",
-          clearKey:["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          items:NPC.map((t,i)=>({
-            key:`npctype:${t}`, text:t, tags:[], idx:i, badge:t,
-            selected:P.npcType===t,
-            inferred: inferredKeys.has(`npctype:${i}`),
-          })),
-          onSelect:(_dn,i)=>{
-            const same=P.npcType===NPC[i];
-            if(same){
-              ["npcType","prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-              inferredKeys.delete("npcType"); inferredKeys.delete(`npctype:${i}`);
-              render(); return;
-            }
-            P.npcType=NPC[i];
-            inferredKeys.delete("npcType"); inferredKeys.delete("npctype:0"); inferredKeys.delete("npctype:1"); inferredKeys.delete("npctype:2");
-            ["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags",
-             "isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("prefix"); render();
-          },
-        }));
-
-        // ── 3. HELLO PREFIX ───────────────────────────────────────────────────────
-        const tone=P.tone||"casual", kind=(!P.npcType||P.npcType==="narc")?"narc":P.npcType;
-        const prefixDN=`PREFIX_${tone}_${kind}`;
-        const prefixArr=D[prefixDN]||[];
-        prefixArr.forEach((p,i)=>{ if(typeof p==="string") prefixArr[i]={t:p,tags:[]}; });
-        cols.push(col({
-          id:"prefix", label:"hello prefix", deckName:prefixDN, role:"player",
-          clearKey:["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          items:prefixArr.map((p,i)=>({
-            key:`${prefixDN}:${i}`, text:p.t||p, tags:p.tags||[], idx:i, italic:true,
-            selected:P.prefixIdx===i,
-            inferred: inferredKeys.has(`${prefixDN}:${i}`),
-          })),
-          onSelect:(dn,i)=>{
-            const same=P.prefixIdx===i;
-            if(same){
-              ["prefixIdx","helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-              render(); return;
-            }
-            P.prefixIdx=i;
-            ["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags",
-             "isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("hello"); render();
-          },
-        }));
-
-        // ── 4. HELLO ──────────────────────────────────────────────────────────────
-        const mkHI=(dn,x,i)=>({
-          key:`${dn}:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
-          selected:P.helloIdx===i&&P.helloDN===dn,
-          inferred: inferredKeys.has(`${dn}:${i}`) && P.helloDN===dn,
-        });
-        const helloSel=(dn,i)=>{
-          const same=P.helloIdx===i&&P.helloDN===dn;
-          if(same){
-            ["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            inferredKeys.delete("helloTags");
-            render(); return;
-          }
-          P.helloIdx=i; P.helloDN=dn; P.helloTags=tagsOf(D[dn][i])||[];
-          inferredKeys.delete("helloTags");
-          inferLeft(dn, i);
-          ["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags",
-           "joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-          scrollColTop("pitch"); render();
-        };
-        if (!P.npcType||P.npcType!=="narc") {
-          cols.push(col({
-            id:"hello", label:"hello", deckName:null, role:"npc",
-            clearKey:["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-            sections:[
-              {label:"angry hello",  deckName:"DECK_ANGRY_HELLO",  items:D.DECK_ANGRY_HELLO.map((x,i)=>mkHI("DECK_ANGRY_HELLO",x,i))},
-              {label:"hungry hello", deckName:"DECK_HUNGRY_HELLO", items:D.DECK_HUNGRY_HELLO.map((x,i)=>mkHI("DECK_HUNGRY_HELLO",x,i))},
-            ],
-            onSelect:helloSel,
-          }));
-        } else {
-          cols.push(col({
-            id:"hello", label:"narc hello", deckName:"D_NARC_HELLO", role:"npc",
-            clearKey:["helloIdx","helloDN","helloTags","pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-            items:D.D_NARC_HELLO.map((x,i)=>mkHI("D_NARC_HELLO",x,i)),
-            onSelect:helloSel,
-          }));
-        }
-
-        // ── 5. PITCH ─────────────────────────────────────────────────────────────
-        const hTags=P.helloTags||[];
-        const mkPI=(dn,x,i)=>({
-          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
-          selected:P.pitchDeck===dn&&P.pitchIdx===i,
-          inferred: inferredKeys.has("pitchDeck") && P.pitchDeck===dn && P.pitchIdx===i,
-        });
-        const sortPitch=dn=>P.helloIdx!=null
-          ?scoreAndSort(D[dn].map((x,i)=>mkPI(dn,x,i)),hTags,true)
-          :D[dn].map((x,i)=>mkPI(dn,x,i));
-
-        cols.push(col({
-          id:"pitch", label:"pitch (player)", deckName:null, role:"player",
-          clearKey:["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          sections:[
-            {label:"match pitch (commiserate)", deckName:P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH",
-              items:sortPitch(P.npcType==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH")},
-            {label:"bad read pitch (talk over them)", deckName:"DECK_BAD_READ",
-              items:P.helloIdx!=null
-                ?scoreAndSort(D.DECK_BAD_READ.map((x,i)=>({key:`DECK_BAD_READ:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_BAD_READ",selected:P.pitchDeck==="DECK_BAD_READ"&&P.pitchIdx===i})),hTags,true)
-                :D.DECK_BAD_READ.map((x,i)=>({key:`DECK_BAD_READ:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:"DECK_BAD_READ",selected:P.pitchDeck==="DECK_BAD_READ"&&P.pitchIdx===i}))},
-            {label:"back off early (RUN)", deckName:"D_BACK_OFF_EARLY",
-              items:D.D_BACK_OFF_EARLY.map((x,i)=>({key:`D_BACK_OFF_EARLY:${i}`,text:x.t,tags:[],idx:i,
-                deckName:"D_BACK_OFF_EARLY",score:0,
-                selected:P.pitchDeck==="D_BACK_OFF_EARLY"&&P.pitchIdx===i}))},
-            {label:"no / bye", deckName:"D_NO_BYE",
-              items:D.D_NO_BYE.map((x,i)=>({key:`D_NO_BYE:${i}`,text:x.t||x,tags:x.tags||[],idx:i,
-                selected:false}))},
-          ],
-          onSelect:(dn,i)=>{
-            const same=P.pitchDeck===dn&&P.pitchIdx===i;
-            if(same){
-              ["pitchDeck","pitchIdx","pitchTags","isBoEarly","fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-              inferredKeys.delete("pitchDeck"); inferredKeys.delete("pitchTags");
-              render(); return;
-            }
-            P.pitchDeck=dn; P.pitchIdx=i;
-            P.pitchTags=tagsOf(D[dn][i])||[];
-            P.isBoEarly=dn==="D_BACK_OFF_EARLY";
-            inferredKeys.delete("pitchDeck"); inferredKeys.delete("pitchTags");
-            inferLeft(dn, i);
-            ["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("f_invite"); render();
-          },
-        }));
-
+      // ── flow bar ──
+      function getFlowSteps() {
+        const steps = [
+          { label: "greet", colId: "greet" },
+          { label: "prefix", colId: "prefix" },
+          { label: "hello", colId: "hello" },
+          { label: "pitch", colId: "pitch" },
+        ];
         if (P.isBoEarly) {
-          cols.push({
-            id:"bail_resp", label:"npc bail response", deckName:"DECK_BAIL_RESPONSE", role:"npc",
-            items:D.DECK_BAIL_RESPONSE.map((x,i)=>({
-              key:`DECK_BAIL_RESPONSE:${i}`, text:x.t, tags:x.tags||[], idx:i, selected:false,
-            })),
-            onSelect:()=>{},
-          });
-          cols.push({id:"end0",label:"\u2014 end \u2014",deckName:null,locked:false,
-            items:[{key:"e0",text:"conversation ends (back off early)",tags:[],isEnd:true}],onSelect:()=>{}});
-          _tail(cols); return cols;
+          steps.push({ label: "bail response", colId: "bail_resp", endBad: true });
+          steps.push({ label: "END", colId: null, endBad: true });
+          return steps;
         }
-
-        // ── 6. FILLER + FIRST INVITE ──────────────────────────────────────────────
-        cols.push(col({
-          id:"filler", label:"filler (npc, good read only)", deckName:"D_FILLER", role:"npc",
-          items:D.D_FILLER.map((x,i)=>({
-            key:`D_FILLER:${i}`, text:x.t, tags:x.tags||[], idx:i, selected:false,
-          })),
-          onSelect:()=>{},
-        }));
-
-        cols.push(col({
-          id:"f_invite", label:"recruit or walk away (player)", deckName:"D_F_INVITE", role:"player",
-          clearKey:["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          items:D.D_F_INVITE.map((x,i)=>({
-            key:`D_F_INVITE:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
-            selected:P.fInviteIdx===i,
-          })),
-          onSelect:(_dn,i)=>{
-            const same=P.fInviteIdx===i;
-            if(same){ ["fInviteIdx","smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
-            P.fInviteIdx=i;
-            ["smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("npcresp"); render();
-          },
-        }));
-
-        // ── 7. NPC RESPONSE ───────────────────────────────────────────────────────
-        const pTags=P.pitchTags||[];
-        const mismatch=P.fInviteIdx!=null && P.pitchDeck==="DECK_BAD_READ";
-
-        if (mismatch) {
-          const mdn=P.npcType==="hungry"?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL";
-          cols.push({id:"npcresp",label:"npc response (mismatch)",deckName:mdn,locked:false,
-            items:D[mdn].map((x,i)=>({key:`${mdn}:${i}`,text:x.t,tags:x.tags||[],idx:i,selected:false})),
-            onSelect:()=>{}});
-          cols.push({id:"end1",label:"\u2014 end \u2014",deckName:null,locked:false,
-            items:[{key:"e1",text:"conversation ends (mismatch)",tags:[],isEnd:true}],onSelect:()=>{}});
-          _tail(cols); return cols;
+        if (P.pitchDeck === "DECK_BAD_READ") {
+          steps.push({ label: "mismatch", colId: "mismatch", endBad: true });
+          steps.push({ label: "END", colId: null, endBad: true });
+          return steps;
         }
-
-        const mkSM=(dn,x,i)=>({
-          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,
-          selected:P.smDeck===dn&&P.smIdx===i,
-          inferred: inferredKeys.has(`sm:${dn}:${i}`),
-        });
-        const smWarm=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i)),pTags,true):D.D_SAY_MORE_WARM.map((x,i)=>mkSM("D_SAY_MORE_WARM",x,i));
-        const smSkep=P.fInviteIdx!=null?scoreAndSort(D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i)),pTags,true):D.D_SAY_MORE_SKEPTICAL.map((x,i)=>mkSM("D_SAY_MORE_SKEPTICAL",x,i));
-        const joinItems=D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({
-          key:`D_JOIN_CONSENT_PAIRS:${i}`,
-          text:`\u201c${x.join}\u201d / \u201c${x.consent}\u201d`,
-          tags:x.tags||[],idx:i,
-          selected:P.smDeck==="D_JOIN_CONSENT_PAIRS"&&P.smIdx===i,
-        }));
-
-        cols.push(col({
-          id:"npcresp", label:"npc response", deckName:null, role:"npc",
-          clearKey:["smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"],
-          sections:[
-            {label:"say more \u2014 warm (non-narc)",      deckName:"D_SAY_MORE_WARM",      items:smWarm},
-            {label:"say more \u2014 skeptical (narc)",     deckName:"D_SAY_MORE_SKEPTICAL", items:smSkep},
-            {label:"join immediately \u2014 end",          deckName:"D_JOIN_CONSENT_PAIRS", items:joinItems},
-          ],
-          onSelect:(dn,i)=>{
-            const same=P.smDeck===dn&&P.smIdx===i;
-            if(same){ ["smDeck","smIdx","smTags","joinedEarly","strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
-            P.smDeck=dn; P.smIdx=i;
-            P.joinedEarly=dn==="D_JOIN_CONSENT_PAIRS";
-            if (!P.joinedEarly) P.smTags=tagsOf(D[dn][i])||pTags;
-            inferLeft(dn, i);
-            ["strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]);
-            scrollColTop("stronger"); render();
-          },
-        }));
-
+        steps.push({ label: "filler", colId: "filler" });
+        steps.push({ label: "recruit / walk?", colId: "f_invite" });
+        if (P.walkedAway) {
+          steps.push({ label: "END", colId: null, endBad: true });
+          return steps;
+        }
+        steps.push({ label: "npc response", colId: "npcresp" });
         if (P.joinedEarly) {
-          cols.push({id:"end2",label:"\u2014 end \u2014",deckName:null,locked:false,
-            items:[{key:"e2",text:"NPC joins immediately \u2014 conversation ends",tags:[],isEnd:true}],onSelect:()=>{}});
-          _tail(cols); return cols;
+          steps.push({ label: "✓ recruited", colId: null, endGood: true });
+          return steps;
         }
+        steps.push({ label: "stronger pitch / walk?", colId: "stronger" });
+        if (P.isBOLate) {
+          steps.push({ label: "END", colId: null, endBad: true });
+          return steps;
+        }
+        if (P.strongerDeck) {
+          if (P.npcType === "narc") steps.push({ label: "narc reveal → heat+1", colId: "outcome", endBad: true });
+          else steps.push({ label: "outcome", colId: "outcome" });
+        }
+        return steps;
+      }
 
-        // ── 8. STRONGER PITCH ─────────────────────────────────────────────────────
-        const fTags=P.smTags||pTags;
-        const mkSPI=(dn,x,i)=>({
-          key:`${dn}:${i}`,text:x.t,tags:x.tags||[],follows:x.follows,idx:i,deckName:dn,
-          selected:P.strongerDeck===dn&&P.strongerIdx===i,
-          inferred: inferredKeys.has(`stronger:${dn}:${i}`),
+      function renderFlowBar() {
+        const bar = document.getElementById("flow-bar");
+        bar.innerHTML = "";
+        const steps = getFlowSteps();
+        const doneIds = new Set();
+        if (P.greetIdx != null) doneIds.add("greet");
+        if (P.prefixIdx != null) doneIds.add("prefix");
+        if (P.helloIdx != null) doneIds.add("hello");
+        if (P.pitchDeck != null) doneIds.add("pitch");
+        if (P.isBoEarly) doneIds.add("bail_resp");
+        if (P.pitchDeck === "DECK_BAD_READ" && P.pitchIdx != null) doneIds.add("mismatch");
+        if (P.fillerSeen) doneIds.add("filler");
+        if (P.fInviteIdx != null) doneIds.add("f_invite");
+        if (P.smDeck != null) doneIds.add("npcresp");
+        if (P.strongerDeck != null) doneIds.add("stronger");
+        if (P.outcomeSeen) doneIds.add("outcome");
+        steps.forEach((step, i) => {
+          if (i > 0) {
+            const arr = document.createElement("span");
+            arr.className = "fb-arr";
+            arr.textContent = "›";
+            bar.appendChild(arr);
+          }
+          const el = document.createElement("span");
+          el.className = "fb-step";
+          if (step.endGood) el.classList.add("end-good");
+          else if (step.endBad) el.classList.add("end-bad");
+          else if (step.colId && doneIds.has(step.colId)) el.classList.add("done");
+          el.innerHTML = `<span class="fb-n">${i + 1}</span>${step.label}`;
+          bar.appendChild(el);
         });
-        const strongerItems=P.smIdx!=null
-          ?scoreAndSort(D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i)),fTags,true)
-          :D.DECK_STRONGER_PITCH.map((x,i)=>mkSPI("DECK_STRONGER_PITCH",x,i));
+      }
 
-        cols.push(col({
-          id:"stronger", label:"stronger pitch (player)", deckName:null, role:"player",
-          clearKey:["strongerDeck","strongerIdx","isBOLate"],
-          sections:[
-            {label:"stronger pitch", deckName:"DECK_STRONGER_PITCH", items:strongerItems},
-            {label:"back off late",  deckName:"D_BACK_OFF_LATE",
-              items:D.D_BACK_OFF_LATE.map((x,i)=>({key:`D_BACK_OFF_LATE:${i}`,text:x.t,tags:[],idx:i,
-                deckName:"D_BACK_OFF_LATE",score:0,
-                selected:P.strongerDeck==="D_BACK_OFF_LATE"&&P.strongerIdx===i}))},
+      // ── column builder ──
+      function buildCols() {
+        const cols = [];
+
+        // AMBIENT
+        cols.push({
+          id: "ambient",
+          label: "ambient / ack lines",
+          deckName: null,
+          locked: false,
+          isBrowse: true,
+          sections: [
+            { label: "hungry ambient", deckName: "D_AMB_HUNGRY", items: wrapPlain(D.D_AMB_HUNGRY, "D_AMB_HUNGRY") },
+            { label: "angry ambient", deckName: "D_AMB_ANGRY", items: wrapPlain(D.D_AMB_ANGRY, "D_AMB_ANGRY") },
+            { label: "narc ambient", deckName: "D_AMB_NARC", items: wrapPlain(D.D_AMB_NARC, "D_AMB_NARC") },
+            { label: "ack hungry/angry", deckName: "D_ACK_HUNGRY_ANGRY", items: wrapPlain(D.D_ACK_HUNGRY_ANGRY, "D_ACK_HUNGRY_ANGRY") },
+            { label: "ack narc", deckName: "D_ACK_NARC", items: wrapPlain(D.D_ACK_NARC, "D_ACK_NARC") },
           ],
-          onSelect:(dn,i)=>{
-            const same=P.strongerDeck===dn&&P.strongerIdx===i;
-            if(same){ ["strongerDeck","strongerIdx","isBOLate"].forEach(k=>delete P[k]); render(); return; }
-            P.strongerDeck=dn; P.strongerIdx=i; P.isBOLate=dn==="D_BACK_OFF_LATE";
-            inferLeft(dn, i);
+          onSelect: () => {},
+        });
+
+        // STEP 1: PLAYER GREETS
+        cols.push({
+          id: "greet",
+          label: "1 · player greets",
+          deckName: "P_GREET",
+          role: "player",
+          tc: "greet",
+          stepNote: "DECK_GREET · draws freely · tone tag → prefix only",
+          clearKey: [
+            "greetIdx",
+            "tone",
+            "prefixIdx",
+            "helloIdx",
+            "helloDN",
+            "helloTags",
+            "npcType",
+            "pitchDeck",
+            "pitchIdx",
+            "pitchTags",
+            "isBoEarly",
+            "walkedAway",
+            "fillerSeen",
+            "fInviteIdx",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          items: D.P_GREET.map((x, i) => ({
+            key: `P_GREET:${i}`,
+            text: x.t,
+            tags: x.tags,
+            idx: i,
+            selected: P.greetIdx === i,
+            threadClass: "thread-hello",
+          })),
+          onSelect: (_dn, i) => {
+            const same = P.greetIdx === i;
+            if (same) {
+              _clearFrom("greetIdx");
+              render();
+              return;
+            }
+            P.greetIdx = i;
+            P.tone = D.P_GREET[i].tags[0] || "casual";
+            _clearFrom("prefixIdx");
+            scrollColTop("prefix");
             render();
           },
-        }));
+        });
 
-        if (P.isBOLate) {
-          cols.push({id:"end3",label:"\u2014 end \u2014",deckName:null,locked:false,
-            items:[{key:"e3",text:"conversation ends (back off late)",tags:[],isEnd:true}],onSelect:()=>{}});
-          _tail(cols); return cols;
+        // STEP 2: HELLO PREFIX
+        const tone = P.tone || "casual";
+        const kind = !P.npcType || P.npcType === "narc" ? "narc" : P.npcType;
+        const prefixDN = `PREFIX_${tone}_${kind}`;
+        const prefixArr = D[prefixDN] || [];
+        prefixArr.forEach((p, i) => {
+          if (typeof p === "string") prefixArr[i] = { t: p, tags: [] };
+        });
+        cols.push({
+          id: "prefix",
+          label: "2 · hello prefix",
+          deckName: prefixDN,
+          role: "npc",
+          tc: "hello",
+          stepNote: `HELLO_PREFIX[${tone}][${kind}] · matched to greet tone tag only`,
+          clearKey: [
+            "prefixIdx",
+            "helloIdx",
+            "helloDN",
+            "helloTags",
+            "npcType",
+            "pitchDeck",
+            "pitchIdx",
+            "pitchTags",
+            "isBoEarly",
+            "walkedAway",
+            "fillerSeen",
+            "fInviteIdx",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          items: prefixArr.map((p, i) => ({
+            key: `${prefixDN}:${i}`,
+            text: p.t || p,
+            tags: p.tags || [],
+            idx: i,
+            italic: true,
+            selected: P.prefixIdx === i,
+            threadClass: "thread-pitch",
+          })),
+          onSelect: (dn, i) => {
+            const same = P.prefixIdx === i;
+            if (same) {
+              _clearFrom("prefixIdx");
+              render();
+              return;
+            }
+            P.prefixIdx = i;
+            _clearFrom("helloIdx");
+            scrollColTop("hello");
+            render();
+          },
+        });
+
+        // STEP 3: NPC HELLO
+        const mkHI = (dn, x, i) => ({
+          key: `${dn}:${i}`,
+          text: x.t || x,
+          tags: x.tags || [],
+          idx: i,
+          selected: P.helloIdx === i && P.helloDN === dn,
+          threadClass: "thread-filler",
+        });
+        const helloSel = (dn, i) => {
+          const same = P.helloIdx === i && P.helloDN === dn;
+          if (same) {
+            _clearFrom("helloIdx");
+            render();
+            return;
+          }
+          P.helloIdx = i;
+          P.helloDN = dn;
+          P.helloTags = tagsOf(D[dn][i]) || [];
+          if (dn === "DECK_ANGRY_HELLO") P.npcType = "angry";
+          else if (dn === "DECK_HUNGRY_HELLO") P.npcType = "hungry";
+          else if (dn === "D_NARC_HELLO") P.npcType = "narc";
+          _clearFrom("pitchDeck");
+          resetUnmatched();
+          scrollColTop("pitch");
+          render();
+        };
+        cols.push({
+          id: "hello",
+          label: "3 · npc hello",
+          deckName: null,
+          role: "npc",
+          tc: "pitch",
+          stepNote: "draws freely · which section sets npc type · hello tags feed pitch & say-more",
+          clearKey: [
+            "helloIdx",
+            "helloDN",
+            "helloTags",
+            "npcType",
+            "pitchDeck",
+            "pitchIdx",
+            "pitchTags",
+            "isBoEarly",
+            "walkedAway",
+            "fillerSeen",
+            "fInviteIdx",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          sections: [
+            {
+              label: "angry hello  [npc type: angry]",
+              secTc: "tc-hello",
+              deckName: "DECK_ANGRY_HELLO",
+              items: D.DECK_ANGRY_HELLO.map((x, i) => mkHI("DECK_ANGRY_HELLO", x, i)),
+              threadClass: "thread-filler",
+            },
+            {
+              label: "hungry hello  [npc type: hungry]",
+              secTc: "tc-hello",
+              deckName: "DECK_HUNGRY_HELLO",
+              items: D.DECK_HUNGRY_HELLO.map((x, i) => mkHI("DECK_HUNGRY_HELLO", x, i)),
+              threadClass: "thread-filler",
+            },
+            {
+              label: "narc hello  [npc type: narc]",
+              secTc: "tc-hello",
+              deckName: "D_NARC_HELLO",
+              items: D.D_NARC_HELLO.map((x, i) => mkHI("D_NARC_HELLO", x, i)),
+              threadClass: "thread-filler",
+            },
+          ],
+          onSelect: helloSel,
+        });
+
+        // STEP 4: PLAYER PITCH
+        const hTags = P.helloTags || [];
+        const mkPI = (dn, x, i) => ({
+          key: `${dn}:${i}`,
+          text: x.t,
+          tags: x.tags || [],
+          follows: x.follows,
+          idx: i,
+          deckName: dn,
+          selected: P.pitchDeck === dn && P.pitchIdx === i,
+        });
+        const sortPitch = (dn) =>
+          P.helloIdx != null
+            ? scoreAndSort(
+                D[dn].map((x, i) => mkPI(dn, x, i)),
+                hTags,
+              )
+            : D[dn].map((x, i) => mkPI(dn, x, i));
+        const matchDN = P.npcType === "narc" ? "DECK_NARC_AGREE" : P.npcType === "angry" ? "DECK_ANGRY_PITCH" : "DECK_HUNGRY_PITCH";
+        const narcNote = P.npcType === "narc" ? " · narc gets DECK_ACK_NARC prefix on all options" : "";
+
+        cols.push({
+          id: "pitch",
+          label: "4 · player pitch",
+          deckName: null,
+          role: "player",
+          tc: "filler",
+          stepNote: `A/B/C choice · A&B tag-matched to hello tags · C unmatched${narcNote}`,
+          clearKey: [
+            "pitchDeck",
+            "pitchIdx",
+            "pitchTags",
+            "isBoEarly",
+            "walkedAway",
+            "fillerSeen",
+            "fInviteIdx",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          sections: [
+            {
+              label: P.npcType === "narc" ? "A · play along (DECK_NARC_AGREE)" : "A · match their energy (commiserate)",
+              secTc: "tc-filler",
+              deckName: matchDN,
+              items: sortPitch(matchDN),
+              threadClass: "thread-recruit",
+              splitByScore: true,
+            },
+            {
+              label: "B · bad read / talk over them (tone deaf)",
+              secTc: "tc-terminal",
+              deckName: "DECK_BAD_READ",
+              items:
+                P.helloIdx != null
+                  ? scoreAndSort(
+                      D.DECK_BAD_READ.map((x, i) => mkPI("DECK_BAD_READ", x, i)),
+                      hTags,
+                    )
+                  : D.DECK_BAD_READ.map((x, i) => mkPI("DECK_BAD_READ", x, i)),
+              threadClass: "thread-terminal",
+              splitByScore: true,
+            },
+            {
+              label: "C · bail early (run away)",
+              secTc: "tc-terminal",
+              deckName: "D_BACK_OFF_EARLY",
+              items: scoreAndSort(
+                D.D_BACK_OFF_EARLY.map((x, i) => ({
+                  key: `D_BACK_OFF_EARLY:${i}`,
+                  text: x.t,
+                  tags: x.tags || [],
+                  idx: i,
+                  deckName: "D_BACK_OFF_EARLY",
+                  selected: P.pitchDeck === "D_BACK_OFF_EARLY" && P.pitchIdx === i,
+                })),
+                hTags,
+              ),
+              threadClass: "thread-terminal",
+              splitByScore: true,
+            },
+          ],
+          onSelect: (dn, i) => {
+            const same = P.pitchDeck === dn && P.pitchIdx === i;
+            if (same) {
+              _clearFrom("pitchDeck");
+              render();
+              return;
+            }
+            P.pitchDeck = dn;
+            P.pitchIdx = i;
+            P.pitchTags = tagsOf(D[dn][i]) || [];
+            P.isBoEarly = dn === "D_BACK_OFF_EARLY";
+            _clearFrom("walkedAway");
+            scrollColTop(P.isBoEarly ? "bail_resp" : P.pitchDeck === "DECK_BAD_READ" ? "mismatch" : "filler");
+            render();
+          },
+        });
+
+        // PATH C: bail early
+        if (P.isBoEarly) {
+          cols.push({
+            id: "bail_resp",
+            label: "5c · npc bail response",
+            deckName: "DECK_BAIL_RESPONSE",
+            role: "npc",
+            tc: null,
+            stepNote: "DECK_BAIL_RESPONSE · draws freely · path C only",
+            pathNote: "bad",
+            pathNoteText: "path C: bail early",
+            items: scoreAndSort(
+              D.DECK_BAIL_RESPONSE.map((x, i) => ({
+                key: `DECK_BAIL_RESPONSE:${i}`,
+                text: x.t,
+                tags: x.tags || [],
+                idx: i,
+                selected: false,
+                threadClass: "thread-terminal",
+              })),
+              P.pitchTags || [],
+            ),
+            splitByScore: true,
+            onSelect: () => {},
+          });
+          cols.push({
+            id: "end_bail",
+            label: "— conversation ends —",
+            deckName: null,
+            role: null,
+            isEndCol: true,
+            items: [
+              { key: "end_bail", text: "player bailed · narc: good-call float · non-narc: cautious float", tags: [], isEnd: true, endBad: true },
+            ],
+            onSelect: () => {},
+          });
+          return cols;
         }
 
-        // ── 9. D_INVITE ───────────────────────────────────────────────────────────
-        cols.push(col({
-          id:"invite", label:"D_INVITE (appended)", deckName:"D_INVITE",
-          items:D.D_INVITE.map((x,i)=>({
-            key:`D_INVITE:${i}`, text:x.t||x, tags:x.tags||[], idx:i,
-            selected:false,
-          })),
-          onSelect:()=>{},
-        }));
+        // PATH B: bad read
+        if (P.pitchDeck === "DECK_BAD_READ") {
+          const mdn = P.npcType === "hungry" ? "DECK_MISMATCH_TOO_STRUCTURAL" : "DECK_MISMATCH_TOO_LITERAL";
+          const mLabel =
+            P.npcType === "hungry"
+              ? "DECK_MISMATCH_TOO_STRUCTURAL (hungry npc got structural pitch)"
+              : "DECK_MISMATCH_TOO_LITERAL (angry npc got literal pitch)";
+          cols.push({
+            id: "mismatch",
+            label: "5b · npc mismatch response",
+            deckName: mdn,
+            role: "npc",
+            tc: null,
+            stepNote: `${mLabel} · then DECK_NO_BYE appended`,
+            pathNote: "bad",
+            pathNoteText: "path B: bad read · draws freely",
+            items: scoreAndSort(
+              D[mdn].map((x, i) => ({ key: `${mdn}:${i}`, text: x.t, tags: x.tags || [], idx: i, selected: false, threadClass: "thread-terminal" })),
+              hTags,
+            ),
+            splitByScore: true,
+            onSelect: () => {},
+          });
+          cols.push({
+            id: "no_bye",
+            label: "+ no/bye appended",
+            deckName: "D_NO_BYE",
+            role: "npc",
+            tc: null,
+            stepNote: "D_NO_BYE · appended immediately after mismatch line",
+            pathNote: "bad",
+            items: scoreAndSort(
+              D.D_NO_BYE.map((x, i) => ({
+                key: `D_NO_BYE:${i}`,
+                text: x.t || x,
+                tags: x.tags || [],
+                idx: i,
+                selected: false,
+                threadClass: "thread-terminal",
+              })),
+              hTags,
+            ),
+            splitByScore: true,
+            onSelect: () => {},
+          });
+          cols.push({
+            id: "end_mismatch",
+            label: "— conversation ends —",
+            deckName: null,
+            role: null,
+            isEndCol: true,
+            items: [{ key: "end_mismatch", text: "tone deaf · NPC walks away", tags: [], isEnd: true, endBad: true }],
+            onSelect: () => {},
+          });
+          return cols;
+        }
 
-        // ── 10. OUTCOME ───────────────────────────────────────────────────────────
-        if (!P.npcType||P.npcType==="narc") {
-          cols.push(col({
-            id:"outcome", label:"narc reveal \u2192 end", deckName:"D_NARC_REVEAL",
-            items:D.D_NARC_REVEAL.map((x,i)=>({key:`D_NARC_REVEAL:${i}`,text:x.t||x,tags:x.tags||[],idx:i,selected:false})),
-            onSelect:()=>{},
-          }));
-        } else {
-          cols.push(col({
-            id:"outcome", label:"outcome", deckName:null,
-            sections:[
-              {label:"join (end)", deckName:"D_JOIN_CONSENT_PAIRS",
-                items:D.D_JOIN_CONSENT_PAIRS.map((x,i)=>({key:`D_JOIN_CONSENT_PAIRS:out:${i}`,text:`\u201c${x.join}\u201d / \u201c${x.consent}\u201d`,tags:x.tags||[],idx:i,selected:false}))},
-              {label:"not now", deckName:"D_NOT_NOW",
-                items:D.D_NOT_NOW.map((x,i)=>({key:`D_NOT_NOW:${i}`,text:x.t||x,tags:x.tags||[],idx:i,selected:false}))},
-              {label:"return (later convo)", deckName:"D_RETURN",
-                items:D.D_RETURN.map((x,i)=>({key:`D_RETURN:${i}`,text:x.t||x,tags:x.tags||[],idx:i,selected:false}))},
+        // PATH A: good read — FILLER
+        cols.push({
+          id: "filler",
+          label: "5a · npc filler line",
+          deckName: "D_FILLER",
+          role: "npc",
+          tc: "recruit",
+          stepNote: "DECK_FILLER · tag-matched to hello tags · path A only",
+          pathNote: "good",
+          pathNoteText: "path A: matched pitch",
+          clearKey: [
+            "fillerIdx",
+            "fInviteIdx",
+            "walkedAway",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          items: scoreAndSort(
+            D.D_FILLER.map((x, i) => ({
+              key: `D_FILLER:${i}`,
+              text: x.t,
+              tags: x.tags || [],
+              idx: i,
+              deckName: "D_FILLER",
+              selected: P.fillerIdx === i,
+              threadClass: "thread-saymore",
+            })),
+            hTags,
+          ),
+          splitByScore: true,
+          onSelect: (dn, i) => {
+            P.fillerIdx = i;
+            P.fillerSeen = true;
+            render();
+          },
+        });
+
+        // STEP 6: RECRUIT OR WALK
+        cols.push({
+          id: "f_invite",
+          label: "6 · recruit or walk away?",
+          deckName: null,
+          role: "player",
+          tc: "saymore",
+          stepNote: "player's second choice · recruit → step 8 · walk → end",
+          clearKey: [
+            "fInviteIdx",
+            "walkedAway",
+            "smDeck",
+            "smIdx",
+            "smTags",
+            "joinedEarly",
+            "strongerDeck",
+            "strongerIdx",
+            "isBOLate",
+            "outcomeSeen",
+          ],
+          sections: [
+            {
+              label: "recruit them (D_F_INVITE)",
+              secTc: "tc-saymore",
+              deckName: "D_F_INVITE",
+              items: scoreAndSort(
+                D.D_F_INVITE.map((x, i) => ({
+                  key: `D_F_INVITE:${i}`,
+                  text: x.t || x,
+                  tags: x.tags || [],
+                  idx: i,
+                  selected: P.fInviteIdx === i && !P.walkedAway,
+                })),
+                P.pitchTags || [],
+              ),
+              threadClass: "thread-stronger",
+              splitByScore: true,
+            },
+            {
+              label: "walk away (DECK_BACK_OFF_EARLY)",
+              secTc: "tc-terminal",
+              deckName: "D_BACK_OFF_EARLY",
+              items: scoreAndSort(
+                D.D_BACK_OFF_EARLY.map((x, i) => ({
+                  key: `D_BACK_OFF_EARLY:walk:${i}`,
+                  text: x.t,
+                  tags: x.tags || [],
+                  idx: i,
+                  deckName: "D_BACK_OFF_EARLY",
+                  selected: P.walkedAway && P.fInviteIdx === i,
+                })),
+                P.pitchTags || [],
+              ),
+              threadClass: "thread-terminal",
+              splitByScore: true,
+            },
+          ],
+          onSelect: (dn, i) => {
+            P.fInviteIdx = i;
+            P.walkedAway = dn === "D_BACK_OFF_EARLY";
+            _clearFrom("smDeck");
+            if (!P.walkedAway) scrollColTop("npcresp");
+            render();
+          },
+        });
+
+        if (P.walkedAway) {
+          cols.push({
+            id: "end_walk",
+            label: "— conversation ends —",
+            deckName: null,
+            role: null,
+            isEndCol: true,
+            items: [{ key: "end_walk", text: "player walked away after filler", tags: [], isEnd: true, endBad: true }],
+            onSelect: () => {},
+          });
+          return cols;
+        }
+
+        // STEP 7: NPC RESPONSE
+        const mkSM = (dn, x, i) => ({
+          key: `${dn}:${i}`,
+          text: x.t,
+          tags: x.tags || [],
+          follows: x.follows,
+          idx: i,
+          selected: P.smDeck === dn && P.smIdx === i,
+        });
+        const smWarm =
+          P.fInviteIdx != null
+            ? scoreAndSort(
+                D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i)),
+                hTags,
+              )
+            : D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i));
+        const smSkep =
+          P.fInviteIdx != null
+            ? scoreAndSort(
+                D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i)),
+                hTags,
+              )
+            : D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i));
+        const joinItems = scoreAndSort(
+          D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
+            key: `D_JOIN_CONSENT_PAIRS:${i}`,
+            text: `"${x.join}"  /  "${x.consent}"`,
+            tags: x.tags || [],
+            idx: i,
+            selected: P.smDeck === "D_JOIN_CONSENT_PAIRS" && P.smIdx === i,
+          })),
+          P.pitchTags || [],
+        );
+
+        cols.push({
+          id: "npcresp",
+          label: "7 · npc response",
+          deckName: null,
+          role: "npc",
+          tc: "stronger",
+          stepNote: "80% join now · 20% say more warm · narc always skeptical · say-more matched to hello tags",
+          clearKey: ["smDeck", "smIdx", "smTags", "joinedEarly", "strongerDeck", "strongerIdx", "isBOLate", "outcomeSeen"],
+          sections: [
+            {
+              label: "80% · join immediately → two consent lines → end",
+              secTc: "tc-recruit",
+              deckName: "D_JOIN_CONSENT_PAIRS",
+              items: joinItems,
+              threadClass: "thread-terminal",
+              splitByScore: true,
+            },
+            {
+              label: "20% · say more warm (non-narc) → step 9",
+              secTc: "tc-saymore",
+              deckName: "D_SAY_MORE_WARM",
+              items: smWarm,
+              threadClass: "thread-outcome",
+              splitByScore: true,
+            },
+            {
+              label: "narc · say more skeptical → step 9",
+              secTc: "tc-saymore",
+              deckName: "D_SAY_MORE_SKEPTICAL",
+              items: smSkep,
+              threadClass: "thread-outcome",
+              splitByScore: true,
+            },
+          ],
+          onSelect: (dn, i) => {
+            const same = P.smDeck === dn && P.smIdx === i;
+            if (same) {
+              _clearFrom("smDeck");
+              render();
+              return;
+            }
+            P.smDeck = dn;
+            P.smIdx = i;
+            P.joinedEarly = dn === "D_JOIN_CONSENT_PAIRS";
+            if (!P.joinedEarly) P.smTags = tagsOf(D[dn][i]) || hTags;
+            _clearFrom("strongerDeck");
+            if (!P.joinedEarly) scrollColTop("stronger");
+            render();
+          },
+        });
+
+        if (P.joinedEarly) {
+          cols.push({
+            id: "end_join_early",
+            label: "— recruited —",
+            deckName: null,
+            role: null,
+            isEndCol: true,
+            items: [
+              {
+                key: "end_je",
+                text: "NPC joins · join line plays · consent line plays ~3s later · conversation ends",
+                tags: [],
+                isEnd: true,
+                endGood: true,
+              },
             ],
-            onSelect:()=>{},
-          }));
+            onSelect: () => {},
+          });
+          return cols;
+        }
+
+        // STEP 8: STRONGER PITCH OR WALK
+        const fTags = P.smTags || hTags;
+        const mkSPI = (dn, x, i) => ({
+          key: `${dn}:${i}`,
+          text: x.t,
+          tags: x.tags || [],
+          follows: x.follows,
+          idx: i,
+          deckName: dn,
+          selected: P.strongerDeck === dn && P.strongerIdx === i,
+        });
+        const strongerItems =
+          P.smIdx != null
+            ? scoreAndSort(
+                D.DECK_STRONGER_PITCH.map((x, i) => mkSPI("DECK_STRONGER_PITCH", x, i)),
+                fTags,
+              )
+            : D.DECK_STRONGER_PITCH.map((x, i) => mkSPI("DECK_STRONGER_PITCH", x, i));
+
+        cols.push({
+          id: "stronger",
+          label: "8 · stronger pitch or walk?",
+          deckName: null,
+          role: "player",
+          tc: "outcome",
+          stepNote: "stronger pitch matched to say-more tags · walk away unmatched · no invite step",
+          clearKey: ["strongerDeck", "strongerIdx", "isBOLate", "outcomeSeen"],
+          sections: [
+            {
+              label: "go harder (DECK_STRONGER_PITCH) → resolves in step 10",
+              secTc: "tc-outcome",
+              deckName: "DECK_STRONGER_PITCH",
+              items: strongerItems,
+              threadClass: "thread-outcome",
+              splitByScore: true,
+            },
+            {
+              label: "walk away (DECK_BACK_OFF_LATE) → end",
+              secTc: "tc-terminal",
+              deckName: "D_BACK_OFF_LATE",
+              items: scoreAndSort(
+                D.D_BACK_OFF_LATE.map((x, i) => ({
+                  key: `D_BACK_OFF_LATE:${i}`,
+                  text: x.t,
+                  tags: x.tags || [],
+                  idx: i,
+                  deckName: "D_BACK_OFF_LATE",
+                  selected: P.strongerDeck === "D_BACK_OFF_LATE" && P.strongerIdx === i,
+                })),
+                fTags,
+              ),
+              threadClass: "thread-terminal",
+              splitByScore: true,
+            },
+          ],
+          onSelect: (dn, i) => {
+            const same = P.strongerDeck === dn && P.strongerIdx === i;
+            if (same) {
+              _clearFrom("strongerDeck");
+              render();
+              return;
+            }
+            P.strongerDeck = dn;
+            P.strongerIdx = i;
+            P.isBOLate = dn === "D_BACK_OFF_LATE";
+            render();
+          },
+        });
+
+        if (P.isBOLate) {
+          cols.push({
+            id: "end_bolate",
+            label: "— conversation ends —",
+            deckName: null,
+            role: null,
+            isEndCol: true,
+            items: [{ key: "end_bl", text: "walked away · narc: silent win · non-narc: cautious float", tags: [], isEnd: true, endBad: true }],
+            onSelect: () => {},
+          });
+          return cols;
+        }
+
+        // STEP 9: OUTCOME
+        if (P.strongerDeck && P.strongerDeck !== "D_BACK_OFF_LATE") {
+          if (P.npcType === "narc") {
+            cols.push({
+              id: "outcome",
+              label: "9 · narc reveal",
+              deckName: "D_NARC_REVEAL",
+              role: "npc",
+              tc: null,
+              stepNote: "DECK_NARC_REV · draws freely · heat +1 · conversation ends",
+              pathNote: "narc",
+              pathNoteText: "narc: always reveals here",
+              items: scoreAndSort(
+                D.D_NARC_REVEAL.map((x, i) => ({
+                  key: `D_NARC_REVEAL:${i}`,
+                  text: x.t || x,
+                  tags: x.tags || [],
+                  idx: i,
+                  selected: false,
+                  threadClass: "thread-terminal",
+                })),
+                fTags,
+              ),
+              splitByScore: true,
+              onSelect: () => {
+                P.outcomeSeen = true;
+                render();
+              },
+            });
+            cols.push({
+              id: "end_narc",
+              label: "— heat +1 —",
+              deckName: null,
+              role: null,
+              isEndCol: true,
+              items: [{ key: "end_narc", text: "narc revealed · heat +1 · 3+ heat = bust", tags: [], isEnd: true, endBad: true }],
+              onSelect: () => {},
+            });
+          } else {
+            // 60% path: join immediately
+            cols.push({
+              id: "outcome_join",
+              label: "9a · 60% · join immediately",
+              deckName: "D_JOIN_CONSENT_PAIRS",
+              role: "npc",
+              tc: null,
+              stepNote: "DECK_JOIN_CONSENT · join line, then consent line ~3s later · end",
+              pathNote: "good",
+              pathNoteText: "60%: recruited",
+              clearKey: ["outcomeJoinIdx"],
+              items: scoreAndSort(
+                D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
+                  key: `D_JOIN_CONSENT_PAIRS:out:${i}`,
+                  text: `"${x.join}"  /  "${x.consent}"`,
+                  tags: x.tags || [],
+                  idx: i,
+                  selected: P.outcomeJoinIdx === i,
+                  threadClass: "thread-terminal",
+                })),
+                fTags,
+              ),
+              splitByScore: true,
+              onSelect: (dn, i) => {
+                P.outcomeJoinIdx = P.outcomeJoinIdx === i ? (delete P.outcomeJoinIdx, undefined) : i;
+                P.outcomeSeen = true;
+                render();
+              },
+            });
+            // 40% path: not now
+            cols.push({
+              id: "outcome_notnow",
+              label: "9b · 40% · not now",
+              deckName: "D_NOT_NOW",
+              role: "npc",
+              tc: "recruit",
+              stepNote: "DECK_NOT_NOW · NPC wanders off · returns 4-7s later via DECK_RETURN",
+              pathNote: "bad",
+              pathNoteText: "40%: not yet — returns shortly",
+              clearKey: ["outcomeNotNowIdx", "outcomeReturnIdx"],
+              items: scoreAndSort(
+                D.D_NOT_NOW.map((x, i) => ({
+                  key: `D_NOT_NOW:${i}`,
+                  text: x.t || x,
+                  tags: x.tags || [],
+                  idx: i,
+                  selected: P.outcomeNotNowIdx === i,
+                  threadClass: "thread-recruit",
+                })),
+                fTags,
+              ),
+              splitByScore: true,
+              onSelect: (dn, i) => {
+                P.outcomeNotNowIdx = P.outcomeNotNowIdx === i ? (delete P.outcomeNotNowIdx, undefined) : i;
+                P.outcomeSeen = true;
+                render();
+              },
+            });
+            // return after not-now
+            cols.push({
+              id: "outcome_return",
+              label: "→ npc returns (4-7s later)",
+              deckName: "D_RETURN",
+              role: "npc",
+              tc: null,
+              stepNote: "DECK_RETURN · NPC rejoins · recruited · end",
+              pathNote: "good",
+              pathNoteText: "returns → recruited",
+              items: scoreAndSort(
+                D.D_RETURN.map((x, i) => ({
+                  key: `D_RETURN:${i}`,
+                  text: x.t || x,
+                  tags: x.tags || [],
+                  idx: i,
+                  selected: P.outcomeReturnIdx === i,
+                  threadClass: "thread-terminal",
+                })),
+                fTags,
+              ),
+              splitByScore: true,
+              onSelect: (dn, i) => {
+                P.outcomeReturnIdx = P.outcomeReturnIdx === i ? (delete P.outcomeReturnIdx, undefined) : i;
+                render();
+              },
+            });
+          }
         }
 
         return cols;
       }
 
-      function _tail(cols) {
-        const have=new Set(cols.map(c=>c.id));
-        ["f_invite","stronger","invite","outcome"].forEach(id=>{
-          if (!have.has(id))
-            cols.push({id,label:id,deckName:null,locked:false,lockedNote:"not reached on this path",items:[],onSelect:()=>{}});
-        });
+      // ── clear helpers ──
+      const CLEAR_ORDER = [
+        "greetIdx",
+        "tone",
+        "npcType",
+        "prefixIdx",
+        "helloIdx",
+        "helloDN",
+        "helloTags",
+        "pitchDeck",
+        "pitchIdx",
+        "pitchTags",
+        "isBoEarly",
+        "walkedAway",
+        "fillerIdx",
+        "fillerSeen",
+        "fInviteIdx",
+        "smDeck",
+        "smIdx",
+        "smTags",
+        "joinedEarly",
+        "strongerDeck",
+        "strongerIdx",
+        "isBOLate",
+        "outcomeSeen",
+        "outcomeJoinIdx",
+        "outcomeNotNowIdx",
+        "outcomeReturnIdx",
+      ];
+      function _clearFrom(key) {
+        const idx = CLEAR_ORDER.indexOf(key);
+        if (idx === -1) return;
+        CLEAR_ORDER.slice(idx).forEach((k) => delete P[k]);
       }
 
       function scrollColTop(colId) {
-        setTimeout(()=>{
-          const col=document.querySelector(`.col[data-col-id="${colId}"]`);
-          if(col){ const b=col.querySelector(".col-body"); if(b) b.scrollTop=0; }
-        },30);
+        setTimeout(() => {
+          const col = document.querySelector(`.col[data-col-id="${colId}"]`);
+          if (col) {
+            const b = col.querySelector(".col-body");
+            if (b) b.scrollTop = 0;
+          }
+        }, 30);
       }
 
       function render() {
+        renderFlowBar();
         updateBC();
-        const wrap=document.getElementById("cols");
-        const sc=document.getElementById("cols-scroll");
-        const scrolls={};
-        wrap.querySelectorAll(".col").forEach(c=>{const b=c.querySelector(".col-body");if(b)scrolls[c.dataset.colId]=b.scrollTop;});
-        const hx=sc.scrollLeft;
-        wrap.innerHTML="";
-        buildCols().forEach(cd=>{
-          const el=buildColEl(cd); el.dataset.colId=cd.id; wrap.appendChild(el);
+        const wrap = document.getElementById("cols");
+        const sc = document.getElementById("cols-scroll");
+        const scrolls = {};
+        wrap.querySelectorAll(".col").forEach((c) => {
+          const b = c.querySelector(".col-body");
+          if (b) scrolls[c.dataset.colId] = b.scrollTop;
         });
-        sc.scrollLeft=hx;
-        wrap.querySelectorAll(".col").forEach(c=>{const b=c.querySelector(".col-body");if(b&&scrolls[c.dataset.colId])b.scrollTop=scrolls[c.dataset.colId];});
-        if (EDIT_KEY) setTimeout(()=>{
-          const el=document.querySelector(`[data-key="${EDIT_KEY}"]`);
-          if(el){el.scrollIntoView({behavior:"smooth",block:"nearest"});const ta=el.querySelector("textarea");if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}}
-        },60);
-        if (lastFocusColId) setTimeout(()=>{
-          const col=document.querySelector(`.col[data-col-id="${lastFocusColId}"]`);
-          if(col){ const fi=col.querySelector("input[placeholder='filter\u2026']"); if(fi){ fi.focus(); const l=fi.value.length; fi.setSelectionRange(l,l); } }
-          lastFocusColId=null;
-        },60);
+        const hx = sc.scrollLeft;
+        wrap.innerHTML = "";
+        buildCols().forEach((cd) => {
+          const el = buildColEl(cd);
+          el.dataset.colId = cd.id;
+          wrap.appendChild(el);
+        });
+        sc.scrollLeft = hx;
+        wrap.querySelectorAll(".col").forEach((c) => {
+          const b = c.querySelector(".col-body");
+          if (b && scrolls[c.dataset.colId]) b.scrollTop = scrolls[c.dataset.colId];
+        });
+        if (EDIT_KEY)
+          setTimeout(() => {
+            const el = document.querySelector(`[data-key="${EDIT_KEY}"]`);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              const ta = el.querySelector("textarea");
+              if (ta) {
+                ta.focus();
+                ta.setSelectionRange(ta.value.length, ta.value.length);
+              }
+            }
+          }, 60);
+        if (lastFocusColId)
+          setTimeout(() => {
+            const col = document.querySelector(`.col[data-col-id="${lastFocusColId}"]`);
+            if (col) {
+              const fi = col.querySelector("input[placeholder='filter…']");
+              if (fi) {
+                fi.focus();
+                const l = fi.value.length;
+                fi.setSelectionRange(l, l);
+              }
+            }
+            lastFocusColId = null;
+          }, 60);
+        renderScriptPanel();
+      }
+
+      // ── script panel ──────────────────────────────────────────────────────────
+      let scriptPanelOpen = false;
+
+      function toggleScriptPanel() {
+        scriptPanelOpen = !scriptPanelOpen;
+        document.getElementById("script-panel").classList.toggle("open", scriptPanelOpen);
+        document.getElementById("script-toggle").textContent = scriptPanelOpen ? "script ▼" : "script ▲";
+        if (scriptPanelOpen) renderScriptPanel();
+      }
+
+      // keyboard shortcut: S toggles panel
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "s" && !e.metaKey && !e.ctrlKey && !e.target.matches("input,textarea")) toggleScriptPanel();
+      });
+
+      function spLine(speaker, text, cls, tags, prevTags) {
+        // speaker: "player" | "npc"
+        // text: string
+        // cls: "" | "placeholder" | "missing"
+        // tags: tags on this item (forwarded to next)
+        // prevTags: tags from previous item (used to check if this matched)
+        const wrap = document.createElement("div");
+        wrap.className = "sp-line";
+
+        const sp = document.createElement("div");
+        sp.className = `sp-speaker ${speaker}`;
+        sp.textContent = speaker === "player" ? "PLAYER" : "NPC";
+        wrap.appendChild(sp);
+
+        const tx = document.createElement("div");
+        tx.className = `sp-text ${cls}`;
+        tx.textContent = text;
+        wrap.appendChild(tx);
+
+        // tag row: show match status against prevTags, then forward tags
+        if ((prevTags && prevTags.length) || (tags && tags.length)) {
+          const tr = document.createElement("div");
+          tr.className = "sp-tags";
+
+          // did this line match any of the previous tags?
+          if (prevTags && prevTags.length && tags && tags.length && cls === "") {
+            const matched = tags.some((t) => prevTags.includes(t));
+            const sharedTags = tags.filter((t) => prevTags.includes(t));
+            const missTags = prevTags.filter((t) => !tags.includes(t));
+            if (matched) {
+              sharedTags.forEach((t) => {
+                const s = document.createElement("span");
+                s.className = "sp-tag match";
+                s.textContent = "✓ " + t;
+                tr.appendChild(s);
+              });
+            } else {
+              // show what we were looking for vs what we got
+              prevTags.slice(0, 3).forEach((t) => {
+                const s = document.createElement("span");
+                s.className = "sp-tag miss";
+                s.textContent = "✗ " + t;
+                tr.appendChild(s);
+              });
+            }
+          }
+
+          // forward tags (what the next line should match)
+          if (tags && tags.length && cls === "") {
+            const fwdTags = tags.filter((t) => !(prevTags || []).includes(t));
+            fwdTags.slice(0, 3).forEach((t) => {
+              const s = document.createElement("span");
+              s.className = "sp-tag fwd";
+              s.textContent = "→ " + t;
+              tr.appendChild(s);
+            });
+          }
+
+          if (tr.children.length) wrap.appendChild(tr);
+        }
+
+        return wrap;
+      }
+
+      function spPlaceholder(speaker, label) {
+        return spLine(speaker, "[ " + label + " ]", "placeholder", [], []);
+      }
+
+      function spMissing(speaker, label) {
+        return spLine(speaker, "✗ " + label, "missing", [], []);
+      }
+
+      function spDivider() {
+        const d = document.createElement("div");
+        d.className = "sp-divider";
+        return d;
+      }
+
+      function renderScriptPanel() {
+        const body = document.getElementById("script-panel-body");
+        if (!body) return;
+        body.innerHTML = "";
+
+        // nothing selected yet
+        if (P.greetIdx == null) {
+          const e = document.createElement("div");
+          e.className = "sp-empty";
+          e.textContent = "select a greeting to begin.";
+          body.appendChild(e);
+          return;
+        }
+
+        // helper: get item text and tags from a deck by index
+        function itemAt(dn, idx) {
+          if (idx == null || !D[dn]) return null;
+          const x = D[dn][idx];
+          if (!x) return null;
+          const text = typeof x === "string" ? x : x.t || (x.join ? `"${x.join}" / "${x.consent}"` : "");
+          const tags = (typeof x === "object" ? x.tags : null) || [];
+          return { text, tags };
+        }
+
+        let prevTags = [];
+
+        // ── PLAYER GREET ──
+        const greet = D.P_GREET[P.greetIdx];
+        const greetTags = greet.tags || [];
+        body.appendChild(spLine("player", greet.t, "", greetTags, []));
+        prevTags = greetTags.filter((t) => !["casual", "concerned", "direct"].includes(t));
+
+        // ── NPC PREFIX + HELLO ──
+        if (P.helloIdx == null) {
+          body.appendChild(spPlaceholder("npc", "hello — not chosen"));
+        } else {
+          const helloDN = P.helloDN;
+          const helloItem = D[helloDN][P.helloIdx];
+          const helloText = helloItem.t || helloItem;
+          const helloTags = helloItem.tags || [];
+          // prefix
+          const tone = P.tone || "casual";
+          const kind = P.npcType === "narc" ? "narc" : P.npcType || "hungry";
+          const prefixPool = D[`PREFIX_${tone}_${kind}`] || [];
+          const prefixText = prefixPool.length ? (prefixPool[0].t || prefixPool[0]) + " — " : "";
+          body.appendChild(spLine("npc", prefixText + helloText, "", helloTags, prevTags));
+          prevTags = helloTags;
+        }
+
+        body.appendChild(spDivider());
+
+        // ── PLAYER PITCH ──
+        if (P.pitchDeck == null) {
+          body.appendChild(spPlaceholder("player", "pitch — not chosen"));
+        } else if (P.pitchDeck === "D_BACK_OFF_EARLY") {
+          const item = itemAt("D_BACK_OFF_EARLY", P.pitchIdx);
+          body.appendChild(spLine("player", item ? item.text : "[ bail ]", "", [], prevTags));
+          body.appendChild(spDivider());
+          // bail path
+          body.appendChild(spPlaceholder("npc", "bail response"));
+          const end = document.createElement("div");
+          end.className = "sp-text missing";
+          end.textContent = "— end —";
+          body.appendChild(end);
+          return;
+        } else if (P.pitchDeck === "DECK_BAD_READ") {
+          const item = itemAt("DECK_BAD_READ", P.pitchIdx);
+          body.appendChild(spLine("player", item ? item.text : "[ bad read ]", "", item ? item.tags : [], prevTags));
+          body.appendChild(spDivider());
+          const mdn = P.npcType === "hungry" ? "DECK_MISMATCH_TOO_STRUCTURAL" : "DECK_MISMATCH_TOO_LITERAL";
+          body.appendChild(spMissing("npc", "mismatch + no/bye → end"));
+          return;
+        } else {
+          const item = itemAt(P.pitchDeck, P.pitchIdx);
+          if (item) {
+            body.appendChild(spLine("player", item.text, "", item.tags, prevTags));
+            prevTags = item.tags;
+          } else {
+            body.appendChild(spPlaceholder("player", "pitch — not chosen"));
+          }
+        }
+
+        body.appendChild(spDivider());
+
+        // ── NPC FILLER ──
+        if (P.fillerIdx == null) {
+          body.appendChild(spPlaceholder("npc", `filler — needs tag: ${prevTags[0] || "?"}`));
+        } else {
+          const item = itemAt("D_FILLER", P.fillerIdx);
+          if (item) {
+            body.appendChild(spLine("npc", item.text, "", item.tags, prevTags));
+            prevTags = item.tags;
+          }
+        }
+
+        // ── PLAYER RECRUIT / WALK ──
+        if (P.fInviteIdx == null) {
+          body.appendChild(spPlaceholder("player", "recruit or walk — not chosen"));
+        } else if (P.walkedAway) {
+          const item = itemAt("D_BACK_OFF_EARLY", P.fInviteIdx);
+          body.appendChild(spLine("player", item ? item.text : "[ walk away ]", "", [], prevTags));
+          const end = document.createElement("div");
+          end.className = "sp-text missing";
+          end.textContent = "— end —";
+          body.appendChild(end);
+          return;
+        } else {
+          const item = itemAt("D_F_INVITE", P.fInviteIdx);
+          if (item) {
+            body.appendChild(spLine("player", item.text, "", item.tags, prevTags));
+            prevTags = item.tags;
+          }
+        }
+
+        body.appendChild(spDivider());
+
+        // ── NPC RESPONSE ──
+        if (P.smDeck == null) {
+          body.appendChild(spPlaceholder("npc", `response — needs tag: ${prevTags[0] || "?"}`));
+          return;
+        }
+
+        if (P.smDeck === "D_JOIN_CONSENT_PAIRS") {
+          const item = D.D_JOIN_CONSENT_PAIRS[P.smIdx];
+          if (item) {
+            body.appendChild(spLine("npc", `"${item.join}"`, "", item.tags || [], prevTags));
+            body.appendChild(spLine("npc", `"${item.consent}"`, "", [], []));
+          }
+          const end = document.createElement("div");
+          end.className = "sp-text";
+          end.style.color = "#4a9a68";
+          end.style.marginTop = "8px";
+          end.textContent = "✓ recruited";
+          body.appendChild(end);
+          return;
+        }
+
+        const smItem = itemAt(P.smDeck, P.smIdx);
+        if (smItem) {
+          const label = P.smDeck === "D_SAY_MORE_SKEPTICAL" ? "[skeptical] " : "[say more] ";
+          body.appendChild(spLine("npc", label + smItem.text, "", smItem.tags, prevTags));
+          prevTags = smItem.tags.length ? smItem.tags : prevTags;
+        }
+
+        body.appendChild(spDivider());
+
+        // ── PLAYER STRONGER PITCH ──
+        if (P.strongerDeck == null) {
+          body.appendChild(spPlaceholder("player", `stronger pitch — needs tag: ${prevTags[0] || "?"}`));
+          return;
+        }
+
+        if (P.strongerDeck === "D_BACK_OFF_LATE") {
+          const item = itemAt("D_BACK_OFF_LATE", P.strongerIdx);
+          body.appendChild(spLine("player", item ? item.text : "[ walk late ]", "", [], prevTags));
+          const end = document.createElement("div");
+          end.className = "sp-text missing";
+          end.textContent = "— end —";
+          body.appendChild(end);
+          return;
+        }
+
+        const strongerItem = itemAt("DECK_STRONGER_PITCH", P.strongerIdx);
+        if (strongerItem) {
+          body.appendChild(spLine("player", strongerItem.text, "", strongerItem.tags, prevTags));
+          prevTags = strongerItem.tags;
+        }
+
+        body.appendChild(spDivider());
+
+        // ── OUTCOME ──
+        if (P.npcType === "narc") {
+          body.appendChild(spPlaceholder("npc", "narc reveal → heat +1"));
+        } else {
+          // 60% join path
+          const joinLabel = document.createElement("div");
+          joinLabel.className = "sp-speaker npc";
+          joinLabel.textContent = "NPC  60% · join";
+          body.appendChild(joinLabel);
+          if (P.outcomeJoinIdx != null) {
+            const jItem = D.D_JOIN_CONSENT_PAIRS[P.outcomeJoinIdx];
+            if (jItem) {
+              body.appendChild(spLine("npc", `"${jItem.join}"`, "", jItem.tags || [], prevTags));
+              body.appendChild(spLine("npc", `"${jItem.consent}"`, "", [], []));
+              const rec = document.createElement("div");
+              rec.className = "sp-text";
+              rec.style.color = "#4a9a68";
+              rec.style.marginTop = "4px";
+              rec.textContent = "✓ recruited";
+              body.appendChild(rec);
+            }
+          } else {
+            body.appendChild(spPlaceholder("npc", `join — needs tag: ${prevTags[0] || "?"}`));
+          }
+
+          // 40% not-now path
+          const notNowLabel = document.createElement("div");
+          notNowLabel.className = "sp-speaker npc";
+          notNowLabel.style.marginTop = "12px";
+          notNowLabel.textContent = "NPC  40% · not now → returns";
+          body.appendChild(notNowLabel);
+          if (P.outcomeNotNowIdx != null) {
+            const nnItem = D.D_NOT_NOW[P.outcomeNotNowIdx];
+            if (nnItem) {
+              body.appendChild(spLine("npc", nnItem.t || nnItem, "", nnItem.tags || [], prevTags));
+            }
+          } else {
+            body.appendChild(spPlaceholder("npc", `not now — needs tag: ${prevTags[0] || "?"}`));
+          }
+          if (P.outcomeReturnIdx != null) {
+            const retItem = D.D_RETURN[P.outcomeReturnIdx];
+            if (retItem) {
+              body.appendChild(spLine("npc", retItem.t || retItem, "", retItem.tags || [], []));
+              const rec2 = document.createElement("div");
+              rec2.className = "sp-text";
+              rec2.style.color = "#4a9a68";
+              rec2.style.marginTop = "4px";
+              rec2.textContent = "✓ recruited";
+              body.appendChild(rec2);
+            }
+          } else if (P.outcomeNotNowIdx != null) {
+            body.appendChild(spPlaceholder("npc", "return line — not chosen"));
+          }
+        }
       }
 
       function buildColEl(cd) {
-        const el=document.createElement("div");
-        el.className="col"+(cd.locked?" locked":"")+(cd.isBrowse?" browse":"")+(cd.role?" "+cd.role:"");
+        const el = document.createElement("div");
+        let cls = "col";
+        if (cd.isBrowse) cls += " browse";
+        if (cd.role) cls += " " + cd.role;
+        if (cd.isEndCol) cls += " end-col";
+        if (cd.tc) cls += ` tc-${cd.tc}`;
+        el.className = cls;
 
-        const hdr=document.createElement("div"); hdr.className="col-hdr";
-        const lbl=document.createElement("span"); lbl.className="col-hdr-label"; lbl.textContent=cd.label;
+        const hdr = document.createElement("div");
+        hdr.className = "col-hdr";
+        const lbl = document.createElement("span");
+        lbl.className = "col-hdr-label";
+        lbl.textContent = cd.label;
         hdr.appendChild(lbl);
 
-        // filter input
-        const filterIn=document.createElement("input");
-        filterIn.placeholder="filter\u2026";
-        filterIn.value=colFilters[cd.id]||"";
-        filterIn.style.cssText="font-family:Courier New,monospace;font-size:10px;padding:2px 6px;background:#faf8f2;border:1px solid var(--border2);color:var(--text);border-radius:2px;width:80px;outline:none;";
-        filterIn.addEventListener("input",()=>{ colFilters[cd.id]=filterIn.value; lastFocusColId=cd.id; render(); });
-        filterIn.addEventListener("click",e=>e.stopPropagation());
+        const filterIn = document.createElement("input");
+        filterIn.placeholder = "filter…";
+        filterIn.value = colFilters[cd.id] || "";
+        filterIn.style.cssText =
+          "font-family:Courier New,monospace;font-size:1rem;padding:2px 6px;background:#faf8f2;border:1px solid var(--border2);color:var(--text);border-radius:2px;width:80px;outline:none;";
+        filterIn.addEventListener("input", () => {
+          colFilters[cd.id] = filterIn.value;
+          lastFocusColId = cd.id;
+          render();
+        });
+        filterIn.addEventListener("click", (e) => e.stopPropagation());
         hdr.appendChild(filterIn);
 
-        // clear button
-        if(cd.clearKey&&!cd.locked){
-          const clr=document.createElement("button");
-          clr.style.cssText="background:none;border:none;cursor:pointer;font-family:Courier New,monospace;font-size:9px;color:var(--dim);padding:2px 4px;letter-spacing:1px;text-transform:uppercase;";
-          clr.textContent="\u2715 clear";
-          clr.title="clear this selection and all downstream";
-          clr.onmouseenter=()=>clr.style.color="var(--danger)";
-          clr.onmouseleave=()=>clr.style.color="var(--dim)";
-          clr.onclick=e=>{ e.stopPropagation(); cd.clearKey.forEach(k=>delete P[k]); render(); };
+        if (cd.clearKey && !cd.locked) {
+          const clr = document.createElement("button");
+          clr.style.cssText =
+            "background:none;border:none;cursor:pointer;font-family:Courier New,monospace;font-size:9px;color:var(--dim);padding:2px 4px;letter-spacing:1px;text-transform:uppercase;";
+          clr.textContent = "✕ clear";
+          clr.title = "clear this selection and all downstream";
+          clr.onmouseenter = () => (clr.style.color = "var(--danger)");
+          clr.onmouseleave = () => (clr.style.color = "var(--dim)");
+          clr.onclick = (e) => {
+            e.stopPropagation();
+            (cd.clearKey || []).forEach((k) => delete P[k]);
+            render();
+          };
           hdr.appendChild(clr);
         }
         el.appendChild(hdr);
 
-        const prog=document.createElement("div"); prog.className="col-prog";
-        const pb=document.createElement("div"); pb.className="col-prog-bar";
-        const all=cd.items?cd.items:(cd.sections||[]).flatMap(s=>s.items);
-        pb.style.width=all.length?`${(all.filter(x=>vis(x.key)).length/all.length)*100}%`:"0%";
-        prog.appendChild(pb); el.appendChild(prog);
-
-        const body=document.createElement("div"); body.className="col-body";
-
-        if (cd.appendNote) {
-          const an=document.createElement("div"); an.className="append-note";
-          const anl=document.createElement("strong"); anl.textContent=cd.appendNote.label; an.appendChild(anl);
-          cd.appendNote.items.forEach(x=>{
-            const ln=document.createElement("div");
-            ln.style.cssText="padding:1px 0;font-size:11px;font-family:Georgia,serif;color:#2a5a18";
-            ln.textContent="\u201c"+(x.t||x)+"\u201d";
-            an.appendChild(ln);
-          });
-          body.appendChild(an);
+        if (cd.stepNote) {
+          const sn = document.createElement("div");
+          sn.className = "col-path-note";
+          sn.textContent = cd.stepNote;
+          el.appendChild(sn);
+        }
+        if (cd.pathNote) {
+          const pn = document.createElement("div");
+          pn.className = `col-path-note ${cd.pathNote}`;
+          pn.textContent = cd.pathNoteText || "";
+          el.appendChild(pn);
         }
 
-        const applyFilter=(items)=>{
-          const q=(colFilters[cd.id]||"").toLowerCase().trim();
-          if(!q) return items;
-          return items.filter(x=>(x.text||"").toLowerCase().includes(q)||(x.tags||[]).some(t=>t.toLowerCase().includes(q)));
+        const prog = document.createElement("div");
+        prog.className = "col-prog";
+        const pb = document.createElement("div");
+        pb.className = "col-prog-bar";
+        const all = cd.items ? cd.items : (cd.sections || []).flatMap((s) => s.items);
+        pb.style.width = all.length ? `${(all.filter((x) => x.key && vis(x.key)).length / all.length) * 100}%` : "0%";
+        prog.appendChild(pb);
+        el.appendChild(prog);
+
+        const body = document.createElement("div");
+        body.className = "col-body";
+
+        const applyFilter = (items) => {
+          const q = (colFilters[cd.id] || "").toLowerCase().trim();
+          if (!q) return items;
+          return items.filter((x) => (x.text || "").toLowerCase().includes(q) || (x.tags || []).some((t) => t.toLowerCase().includes(q)));
         };
 
-        const renderItems=(target,items,deckName)=>{
-          items=applyFilter(items);
-          const anySelected=items.some(x=>x.selected);
-          let lastScore=null;
-          items.forEach(item=>{
-            if(item.score!=null&&lastScore!==null&&item.score!==lastScore){
-              const dv=document.createElement("div"); dv.className="score-divider";
-              if(item.score===0)  dv.textContent="\u2014 fair draw \u2014";
-              if(item.score===-1) dv.textContent="\u2014 cooled \u2014";
-              if(item.score===-2) dv.textContent="\u2014 suppressed \u2014";
-              if(dv.textContent) target.appendChild(dv);
+        // render items with optional score-split (matched / unmatched toggle)
+        const renderItems = (target, items, deckName, opts = {}) => {
+          items = applyFilter(items);
+          const anySelected = items.some((x) => x.selected);
+          const tc = opts.threadClass;
+          const splitByScore = opts.splitByScore;
+
+          if (splitByScore && items.length) {
+            const matched = items.filter((x) => x.score > 0);
+            const unmatched = items.filter((x) => !x.score || x.score === 0);
+            matched.forEach((item) => target.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
+            if (unmatched.length) {
+              const ukKey = `${cd.id}::${deckName}::unmatched`;
+              const open = isUnmatchedOpen(ukKey);
+              const tog = document.createElement("div");
+              tog.className = "unmatched-toggle";
+              tog.innerHTML = `<span>${open ? "▾" : "▸"}</span><span>${open ? "hide" : "show"} ${unmatched.length} unmatched</span>`;
+              tog.onclick = (e) => {
+                e.stopPropagation();
+                toggleUnmatched(ukKey);
+              };
+              target.appendChild(tog);
+              const uw = document.createElement("div");
+              uw.className = "unmatched-items" + (open ? "" : " hidden");
+              unmatched.forEach((item) => uw.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
+              target.appendChild(uw);
             }
-            target.appendChild(makeItemEl(item,deckName,cd.onSelect,anySelected));
-            if(item.score!=null) lastScore=item.score;
-          });
+          } else {
+            items.forEach((item) => target.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
+          }
         };
 
         if (cd.sections) {
-          cd.sections.forEach(sec=>{
-            const collapsed=isSec(cd.id,sec.label);
-            const sep=document.createElement("div"); sep.className="section-sep";
-            const sl=document.createElement("span"); sl.textContent=sec.label;
-            const st=document.createElement("span"); st.className="sec-tog"; st.textContent=collapsed?"\u25b8":"\u25be";
-            sep.appendChild(sl); sep.appendChild(st);
-            sep.onclick=()=>toggleSec(cd.id,sec.label);
+          cd.sections.forEach((sec) => {
+            const collapsed = isSec(cd.id, sec.label);
+            const sep = document.createElement("div");
+            sep.className = "section-sep" + (sec.secTc ? " " + sec.secTc : "");
+            const sl = document.createElement("span");
+            sl.textContent = sec.label;
+            const st = document.createElement("span");
+            st.className = "sec-tog";
+            st.textContent = collapsed ? "▸" : "▾";
+            sep.appendChild(sl);
+            sep.appendChild(st);
+            sep.onclick = () => toggleSec(cd.id, sec.label);
             body.appendChild(sep);
-            const sw=document.createElement("div"); sw.className="section-items"+(collapsed?" collapsed-sec":"");
-            if(sec.deckName) sw.appendChild(makeAddBtn(sec.deckName));
-            renderItems(sw,sec.items,sec.deckName);
+            const sw = document.createElement("div");
+            sw.className = "section-items" + (collapsed ? " collapsed-sec" : "");
+            if (sec.deckName) sw.appendChild(makeAddBtn(sec.deckName));
+            renderItems(sw, sec.items, sec.deckName, { threadClass: sec.threadClass, splitByScore: sec.splitByScore });
             body.appendChild(sw);
           });
         } else if (cd.items) {
-          if(cd.deckName) body.appendChild(makeAddBtn(cd.deckName));
-          renderItems(body,cd.items,cd.deckName);
+          if (cd.deckName && !cd.isEndCol) body.appendChild(makeAddBtn(cd.deckName));
+          renderItems(body, cd.items, cd.deckName, { threadClass: cd.items[0] && cd.items[0].threadClass, splitByScore: cd.splitByScore });
         }
         el.appendChild(body);
         return el;
       }
 
-      function makeItemEl(item, deckName, onSelect, anySelected) {
-        const el=document.createElement("div");
-        if(item.isEnd){el.className="end-note";el.textContent=item.text;return el;}
-        const dn=deckName||item.deckName;
+      function makeItemEl(item, deckName, onSelect, anySelected, forceThreadClass) {
+        const el = document.createElement("div");
+        if (item.isEnd) {
+          el.className = "end-note" + (item.endGood ? " good" : item.endBad ? " bad" : "");
+          el.textContent = item.text;
+          return el;
+        }
+        const dn = deckName || item.deckName;
 
-        let cls="item ";
-        cls+=vis(item.key)?"visited ":"unvisited ";
-        if(item.selected && item.inferred)  cls+="inferred ";
-        else if(item.selected)               cls+="selected ";
-        else if(anySelected)                 cls+="other ";
-        if(dn==="DECK_ANGRY_HELLO"||dn==="DECK_ANGRY_PITCH") cls+="angry ";
-        if(dn==="DECK_HUNGRY_HELLO"||dn==="DECK_HUNGRY_PITCH") cls+="hungry ";
-        el.className=cls.trim();
-        el.dataset.key=item.key;
+        let cls = "item ";
+        cls += vis(item.key) ? "visited " : "unvisited ";
+        if (item.selected && item.inferred) cls += "inferred ";
+        else if (item.selected) cls += "selected ";
+        else if (anySelected) cls += "other ";
+        if (dn === "DECK_ANGRY_HELLO" || dn === "DECK_ANGRY_PITCH") cls += "angry ";
+        if (dn === "DECK_HUNGRY_HELLO" || dn === "DECK_HUNGRY_PITCH") cls += "hungry ";
 
-        if(EDIT_KEY===item.key&&dn){buildEditMode(el,item,dn);return el;}
+        // thread right-border class
+        const tc = forceThreadClass || item.threadClass;
+        if (tc) cls += tc + " ";
 
-        if(dn){ const eh=document.createElement("span"); eh.className="edit-hint"; eh.textContent="✎"; el.appendChild(eh); }
+        el.className = cls.trim();
+        el.dataset.key = item.key;
 
-        const tt=document.createElement("div"); tt.className="item-text";
-        if(item.italic) tt.style.fontStyle="italic";
-        tt.textContent=item.text; el.appendChild(tt);
-
-        const meta=document.createElement("div"); meta.className="item-meta";
-        if(item.badge){const b=document.createElement("span");b.className=`badge b-${item.badge}`;b.textContent=item.badge;meta.appendChild(b);}
-        tagsOf(item).forEach(t=>{const s=document.createElement("span");s.className="tag";s.textContent=t;meta.appendChild(s);});
-        if(item.follows){const s=document.createElement("span");s.className="tag f";s.textContent="\u2192"+item.follows;meta.appendChild(s);}
-        if(meta.children.length) el.appendChild(meta);
-
-        if(item.score!=null&&item.score>0){
-          const lbl=item.score===4?"follows \u2713":item.score===2?"boost":"";
-          if(lbl){
-            const sb=document.createElement("span");
-            sb.className=`score-badge score-${item.score}`;
-            sb.textContent=lbl;
-            const sr=document.createElement("div");sr.style.marginTop="4px";sr.appendChild(sb);el.appendChild(sr);
-          }
+        if (EDIT_KEY === item.key && dn) {
+          buildEditMode(el, item, dn);
+          return el;
         }
 
-        let ct=null;
-        el.addEventListener("click",e=>{
-          if(e.target.closest(".ebtn,.tag-x,.tag-in,.edit-ta,.follows-in"))return;
-          clearTimeout(ct); ct=setTimeout(()=>{markV(item.key);onSelect(dn,item.idx);},220);
+        if (dn) {
+          const eh = document.createElement("span");
+          eh.className = "edit-hint";
+          eh.textContent = "✎";
+          el.appendChild(eh);
+        }
+
+        const tt = document.createElement("div");
+        tt.className = "item-text";
+        if (item.italic) tt.style.fontStyle = "italic";
+        tt.textContent = item.text;
+        el.appendChild(tt);
+
+        const meta = document.createElement("div");
+        meta.className = "item-meta";
+        if (item.badge) {
+          const b = document.createElement("span");
+          b.className = `badge b-${item.badge}`;
+          b.textContent = item.badge;
+          meta.appendChild(b);
+        }
+        // always show tags (including on join-consent pairs)
+        tagsOf(item).forEach((t) => {
+          const s = document.createElement("span");
+          s.className = "tag";
+          s.textContent = t;
+          meta.appendChild(s);
         });
-        el.addEventListener("dblclick",e=>{
-          e.stopPropagation(); clearTimeout(ct);
-          if(!dn)return; EDIT_KEY=item.key; render();
+        if (item.follows) {
+          const s = document.createElement("span");
+          s.className = "tag f";
+          s.textContent = "→" + item.follows;
+          meta.appendChild(s);
+        }
+        if (meta.children.length) el.appendChild(meta);
+
+        if (item.score != null && item.score > 0) {
+          const sb = document.createElement("span");
+          sb.className = `score-badge score-${item.score}`;
+          sb.textContent = "tag match ✓";
+          const sr = document.createElement("div");
+          sr.style.marginTop = "4px";
+          sr.appendChild(sb);
+          el.appendChild(sr);
+        }
+
+        let ct = null;
+        el.addEventListener("click", (e) => {
+          if (e.target.closest(".ebtn,.tag-x,.tag-in,.edit-ta,.follows-in")) return;
+          clearTimeout(ct);
+          ct = setTimeout(() => {
+            markV(item.key);
+            onSelect(dn, item.idx);
+          }, 220);
+        });
+        el.addEventListener("dblclick", (e) => {
+          e.stopPropagation();
+          clearTimeout(ct);
+          if (!dn) return;
+          EDIT_KEY = item.key;
+          render();
         });
         return el;
       }
 
-      function buildEditMode(el,item,deckName) {
-        const arr=D[deckName]; if(!arr)return;
-        const raw=arr[item.idx];
-        const isStr=typeof raw==="string";
-        const obj=isStr?{t:raw}:raw;
-        const ta=document.createElement("textarea"); ta.className="edit-ta";
-        const tv=obj.t||""; ta.value=tv; ta.rows=Math.max(2,Math.ceil(tv.length/38));
+      function buildEditMode(el, item, deckName) {
+        const arr = D[deckName];
+        if (!arr) return;
+        const raw = arr[item.idx];
+        const isStr = typeof raw === "string";
+        const obj = isStr ? { t: raw } : raw;
+        const ta = document.createElement("textarea");
+        ta.className = "edit-ta";
+        const tv = obj.t || "";
+        ta.value = tv;
+        ta.rows = Math.max(2, Math.ceil(tv.length / 38));
         el.appendChild(ta);
-        const saveText=()=>{ const v=ta.value.trim();if(!v)return;if(isStr)arr[item.idx]=v;else if(obj.t!==undefined)obj.t=v;saveData(); };
-        ta.addEventListener("blur",()=>setTimeout(()=>{ if(EDIT_KEY!==item.key||el.contains(document.activeElement))return;saveText();EDIT_KEY=null;render(); },150));
+        const saveText = () => {
+          const v = ta.value.trim();
+          if (!v) return;
+          if (isStr) arr[item.idx] = v;
+          else if (obj.t !== undefined) obj.t = v;
+          saveData();
+        };
+        ta.addEventListener("blur", () =>
+          setTimeout(() => {
+            if (EDIT_KEY !== item.key || el.contains(document.activeElement)) return;
+            saveText();
+            EDIT_KEY = null;
+            render();
+          }, 150),
+        );
 
-        if(!isStr&&obj.tags!==undefined){
-          const tr=document.createElement("div");tr.className="tag-row";
-          const refresh=()=>{
-            tr.innerHTML="";
-            (obj.tags||[]).forEach((t,ti)=>{
-              const sp=document.createElement("span");sp.className="tag-e";
-              sp.innerHTML=`${esc(t)} <span class="tag-x">\xd7</span>`;
-              // fix: stop propagation on the chip and the x button
-              sp.onclick=(e)=>e.stopPropagation();
-              sp.querySelector(".tag-x").onclick=(e)=>{e.stopPropagation();obj.tags.splice(ti,1);saveData();render();};
+        if (!isStr && obj.tags !== undefined) {
+          const tr = document.createElement("div");
+          tr.className = "tag-row";
+          const refreshTags = () => {
+            tr.innerHTML = "";
+            (obj.tags || []).forEach((t, ti) => {
+              const sp = document.createElement("span");
+              sp.className = "tag-e";
+              sp.innerHTML = `${esc(t)} <span class="tag-x">×</span>`;
+              sp.onclick = (e) => e.stopPropagation();
+              sp.querySelector(".tag-x").onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                obj.tags.splice(ti, 1);
+                saveData();
+                refreshTags();
+              };
               tr.appendChild(sp);
             });
-            const inp=document.createElement("input");inp.className="tag-in";inp.placeholder="+tag";tr.appendChild(inp);
-            let ac=null;
-            inp.addEventListener("input",()=>{
-              if(ac){ac.remove();ac=null;}
-              const v=inp.value.trim().toLowerCase();if(!v)return;
-              const m=allTags().filter(t=>t.includes(v)&&!(obj.tags||[]).includes(t));if(!m.length)return;
-              ac=document.createElement("div");ac.className="ac";el.style.position="relative";
-              m.slice(0,8).forEach(t=>{const d=document.createElement("div");d.className="ac-item";d.textContent=t;
-                // fix: save text before adding tag via autocomplete
-                d.onmousedown=e=>{e.preventDefault();obj.t=ta.value.trim();if(!obj.tags)obj.tags=[];obj.tags.push(t);inp.value="";saveData();render();if(ac){ac.remove();ac=null;}};
-                ac.appendChild(d);});
+            const inp = document.createElement("input");
+            inp.className = "tag-in";
+            inp.placeholder = "+tag";
+            tr.appendChild(inp);
+            let ac = null;
+            inp.addEventListener("input", () => {
+              if (ac) {
+                ac.remove();
+                ac = null;
+              }
+              const v = inp.value.trim().toLowerCase();
+              if (!v) return;
+              const m = allTags().filter((t) => t.includes(v) && !(obj.tags || []).includes(t));
+              if (!m.length) return;
+              ac = document.createElement("div");
+              ac.className = "ac";
+              el.style.position = "relative";
+              m.slice(0, 8).forEach((t) => {
+                const d = document.createElement("div");
+                d.className = "ac-item";
+                d.textContent = t;
+                d.onmousedown = (e) => {
+                  e.preventDefault();
+                  obj.t = ta.value.trim();
+                  if (!obj.tags) obj.tags = [];
+                  obj.tags.push(t);
+                  inp.value = "";
+                  saveData();
+                  if (ac) {
+                    ac.remove();
+                    ac = null;
+                  }
+                  refreshTags();
+                };
+                ac.appendChild(d);
+              });
               el.appendChild(ac);
             });
-            inp.addEventListener("keydown",e=>{
-              if(e.key==="Enter"||e.key===","){e.preventDefault();const v=inp.value.replace(/,$/,"").trim();if(v){
-                // fix: save text before adding tag via keyboard
-                obj.t=ta.value.trim();
-                if(!obj.tags)obj.tags=[];obj.tags.push(v);inp.value="";saveData();render();}}
-              if(e.key==="Escape"){EDIT_KEY=null;render();}
+            inp.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const v = inp.value.replace(/,$/, "").trim();
+                if (v) {
+                  obj.t = ta.value.trim();
+                  if (!obj.tags) obj.tags = [];
+                  obj.tags.push(v);
+                  inp.value = "";
+                  saveData();
+                  refreshTags();
+                }
+              }
+              if (e.key === "Escape") {
+                EDIT_KEY = null;
+                render();
+              }
             });
-            inp.addEventListener("blur",()=>setTimeout(()=>{if(ac){ac.remove();ac=null;}},150));
+            inp.addEventListener("blur", () =>
+              setTimeout(() => {
+                if (ac) {
+                  ac.remove();
+                  ac = null;
+                }
+              }, 150),
+            );
           };
-          el.appendChild(tr);refresh();
+          el.appendChild(tr);
+          refreshTags();
 
-          const noF=new Set(["P_GREET","D_NO_BYE","D_NOT_NOW","D_NARC_REVEAL","D_RETURN","D_BACK_OFF_EARLY","D_BACK_OFF_LATE","D_F_INVITE","D_INVITE"]);
-          if(!noF.has(deckName)){
-            const fr=document.createElement("div");fr.className="follows-row";fr.innerHTML="<span>follows:</span>";
-            const fi=document.createElement("input");fi.className="follows-in";fi.value=obj.follows||"";fi.placeholder="tag\u2026";
-            const saveF=()=>{obj.follows=fi.value.trim()||undefined;saveData();};
-            fi.addEventListener("change",saveF);fi.addEventListener("blur",saveF);
-            let fac=null;
-            fi.addEventListener("input",()=>{
-              if(fac){fac.remove();fac=null;}
-              const v=fi.value.trim().toLowerCase();if(!v)return;
-              const m=allTags().filter(t=>t.includes(v));if(!m.length)return;
-              fac=document.createElement("div");fac.className="ac";el.style.position="relative";
-              m.slice(0,8).forEach(t=>{const d=document.createElement("div");d.className="ac-item";d.textContent=t;d.onmousedown=e2=>{e2.preventDefault();fi.value=t;obj.follows=t;saveData();if(fac){fac.remove();fac=null;}};fac.appendChild(d);});
-              fr.style.position="relative";fr.appendChild(fac);
+          const noF = new Set(["P_GREET", "D_NO_BYE", "D_NOT_NOW", "D_NARC_REVEAL", "D_RETURN", "D_BACK_OFF_EARLY", "D_BACK_OFF_LATE", "D_F_INVITE"]);
+          if (!noF.has(deckName)) {
+            const fr = document.createElement("div");
+            fr.className = "follows-row";
+            fr.innerHTML = "<span>follows:</span>";
+            const fi = document.createElement("input");
+            fi.className = "follows-in";
+            fi.value = obj.follows || "";
+            fi.placeholder = "tag…";
+            const saveF = () => {
+              obj.follows = fi.value.trim() || undefined;
+              saveData();
+            };
+            fi.addEventListener("change", saveF);
+            fi.addEventListener("blur", saveF);
+            let fac = null;
+            fi.addEventListener("input", () => {
+              if (fac) {
+                fac.remove();
+                fac = null;
+              }
+              const v = fi.value.trim().toLowerCase();
+              if (!v) return;
+              const m = allTags().filter((t) => t.includes(v));
+              if (!m.length) return;
+              fac = document.createElement("div");
+              fac.className = "ac";
+              el.style.position = "relative";
+              m.slice(0, 8).forEach((t) => {
+                const d = document.createElement("div");
+                d.className = "ac-item";
+                d.textContent = t;
+                d.onmousedown = (e2) => {
+                  e2.preventDefault();
+                  fi.value = t;
+                  obj.follows = t;
+                  saveData();
+                  if (fac) {
+                    fac.remove();
+                    fac = null;
+                  }
+                };
+                fac.appendChild(d);
+              });
+              fr.style.position = "relative";
+              fr.appendChild(fac);
             });
-            fi.addEventListener("blur",()=>setTimeout(()=>{if(fac){fac.remove();fac=null;}},150));
-            fi.addEventListener("keydown",e=>{if(e.key==="Escape"){if(fac){fac.remove();fac=null;}}});
-            fr.appendChild(fi);el.appendChild(fr);
+            fi.addEventListener("blur", () =>
+              setTimeout(() => {
+                if (fac) {
+                  fac.remove();
+                  fac = null;
+                }
+              }, 150),
+            );
+            fi.addEventListener("keydown", (e) => {
+              if (e.key === "Escape") {
+                if (fac) {
+                  fac.remove();
+                  fac = null;
+                }
+              }
+            });
+            fr.appendChild(fi);
+            el.appendChild(fr);
           }
         }
 
-        if(deckName==="D_JOIN_CONSENT_PAIRS"){
-          el.innerHTML="";
-          const f1=document.createElement("textarea");f1.className="edit-ta";f1.value=obj.join||"";f1.rows=2;f1.placeholder="join phrase\u2026";
-          const f2=document.createElement("textarea");f2.className="edit-ta";f2.value=obj.consent||"";f2.rows=1;f2.placeholder="consent phrase\u2026";f2.style.marginTop="4px";
-          const saveJC=()=>setTimeout(()=>{if(el.contains(document.activeElement))return;obj.join=f1.value.trim();obj.consent=f2.value.trim();saveData();EDIT_KEY=null;render();},150);
-          f1.addEventListener("blur",saveJC);f2.addEventListener("blur",saveJC);
-          el.appendChild(f1);el.appendChild(f2);
-          const acts=document.createElement("div");acts.className="edit-acts";
-          const sv=document.createElement("button");sv.className="ebtn save";sv.textContent="save";sv.onclick=()=>{obj.join=f1.value.trim();obj.consent=f2.value.trim();saveData();EDIT_KEY=null;render();};
-          const cn=document.createElement("button");cn.className="ebtn cancel";cn.textContent="cancel";cn.onclick=()=>{EDIT_KEY=null;render();};
-          const dl=document.createElement("button");dl.className="ebtn del";dl.textContent="delete";dl.onclick=()=>{if(!confirm("delete?"))return;arr.splice(item.idx,1);saveData();EDIT_KEY=null;render();};
-          acts.appendChild(sv);acts.appendChild(cn);acts.appendChild(dl);el.appendChild(acts);return;
+        if (deckName === "D_JOIN_CONSENT_PAIRS") {
+          el.innerHTML = "";
+          if (!obj.tags) obj.tags = [];
+          const f1 = document.createElement("textarea");
+          f1.className = "edit-ta";
+          f1.value = obj.join || "";
+          f1.rows = 2;
+          f1.placeholder = "join phrase…";
+          const f2 = document.createElement("textarea");
+          f2.className = "edit-ta";
+          f2.value = obj.consent || "";
+          f2.rows = 1;
+          f2.placeholder = "consent phrase…";
+          f2.style.marginTop = "4px";
+          el.appendChild(f1);
+          el.appendChild(f2);
+          // tag editing for join consent
+          const tr = document.createElement("div");
+          tr.className = "tag-row";
+          const refreshJCTags = () => {
+            tr.innerHTML = "";
+            (obj.tags || []).forEach((t, ti) => {
+              const sp = document.createElement("span");
+              sp.className = "tag-e";
+              sp.innerHTML = `${esc(t)} <span class="tag-x">×</span>`;
+              sp.onclick = (e) => e.stopPropagation();
+              sp.querySelector(".tag-x").onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                obj.tags.splice(ti, 1);
+                saveData();
+                refreshJCTags();
+              };
+              tr.appendChild(sp);
+            });
+            const inp = document.createElement("input");
+            inp.className = "tag-in";
+            inp.placeholder = "+tag";
+            tr.appendChild(inp);
+            let ac = null;
+            inp.addEventListener("input", () => {
+              if (ac) {
+                ac.remove();
+                ac = null;
+              }
+              const v = inp.value.trim().toLowerCase();
+              if (!v) return;
+              const m = allTags().filter((t) => t.includes(v) && !(obj.tags || []).includes(t));
+              if (!m.length) return;
+              ac = document.createElement("div");
+              ac.className = "ac";
+              el.style.position = "relative";
+              m.slice(0, 8).forEach((t) => {
+                const d = document.createElement("div");
+                d.className = "ac-item";
+                d.textContent = t;
+                d.onmousedown = (e) => {
+                  e.preventDefault();
+                  if (!obj.tags) obj.tags = [];
+                  obj.tags.push(t);
+                  inp.value = "";
+                  saveData();
+                  if (ac) {
+                    ac.remove();
+                    ac = null;
+                  }
+                  refreshJCTags();
+                };
+                ac.appendChild(d);
+              });
+              el.appendChild(ac);
+            });
+            inp.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const v = inp.value.replace(/,$/, "").trim();
+                if (v) {
+                  if (!obj.tags) obj.tags = [];
+                  obj.tags.push(v);
+                  inp.value = "";
+                  saveData();
+                  refreshJCTags();
+                }
+              }
+              if (e.key === "Escape") {
+                EDIT_KEY = null;
+                render();
+              }
+            });
+            inp.addEventListener("blur", () =>
+              setTimeout(() => {
+                if (ac) {
+                  ac.remove();
+                  ac = null;
+                }
+              }, 150),
+            );
+          };
+          el.appendChild(tr);
+          refreshJCTags();
+          const saveJC = () =>
+            setTimeout(() => {
+              if (el.contains(document.activeElement)) return;
+              obj.join = f1.value.trim();
+              obj.consent = f2.value.trim();
+              saveData();
+              EDIT_KEY = null;
+              render();
+            }, 150);
+          f1.addEventListener("blur", saveJC);
+          f2.addEventListener("blur", saveJC);
+          const acts = document.createElement("div");
+          acts.className = "edit-acts";
+          const sv = document.createElement("button");
+          sv.className = "ebtn save";
+          sv.textContent = "save";
+          sv.onclick = () => {
+            obj.join = f1.value.trim();
+            obj.consent = f2.value.trim();
+            saveData();
+            EDIT_KEY = null;
+            render();
+          };
+          const cn = document.createElement("button");
+          cn.className = "ebtn cancel";
+          cn.textContent = "cancel";
+          cn.onclick = () => {
+            EDIT_KEY = null;
+            render();
+          };
+          const dl = document.createElement("button");
+          dl.className = "ebtn del";
+          dl.textContent = "delete";
+          dl.onclick = () => {
+            if (!confirm("delete?")) return;
+            arr.splice(item.idx, 1);
+            saveData();
+            EDIT_KEY = null;
+            render();
+          };
+          acts.appendChild(sv);
+          acts.appendChild(cn);
+          acts.appendChild(dl);
+          el.appendChild(acts);
+          return;
         }
 
-        const acts=document.createElement("div");acts.className="edit-acts";
-        const sv=document.createElement("button");sv.className="ebtn save";sv.textContent="save";sv.onclick=()=>{saveText();EDIT_KEY=null;render();};
-        const cn=document.createElement("button");cn.className="ebtn cancel";cn.textContent="cancel";cn.onclick=()=>{EDIT_KEY=null;render();};
-        const dl=document.createElement("button");dl.className="ebtn del";dl.textContent="delete";dl.onclick=()=>{if(!confirm("delete?"))return;arr.splice(item.idx,1);saveData();EDIT_KEY=null;render();};
-        acts.appendChild(sv);acts.appendChild(cn);acts.appendChild(dl);el.appendChild(acts);
+        const acts = document.createElement("div");
+        acts.className = "edit-acts";
+        const sv = document.createElement("button");
+        sv.className = "ebtn save";
+        sv.textContent = "save";
+        sv.onclick = () => {
+          saveText();
+          EDIT_KEY = null;
+          render();
+        };
+        const cn = document.createElement("button");
+        cn.className = "ebtn cancel";
+        cn.textContent = "cancel";
+        cn.onclick = () => {
+          EDIT_KEY = null;
+          render();
+        };
+        const dl = document.createElement("button");
+        dl.className = "ebtn del";
+        dl.textContent = "delete";
+        dl.onclick = () => {
+          if (!confirm("delete?")) return;
+          arr.splice(item.idx, 1);
+          saveData();
+          EDIT_KEY = null;
+          render();
+        };
+        acts.appendChild(sv);
+        acts.appendChild(cn);
+        acts.appendChild(dl);
+        el.appendChild(acts);
       }
 
-      function makeAddBtn(dn){
-        const btn=document.createElement("button");btn.className="add-btn";btn.textContent="+ add line";
-        btn.onclick=e=>{
-          e.stopPropagation();e.preventDefault();
-          const arr=D[dn];if(!arr)return;
-          const isPlainDeck=arr.length>0&&typeof arr[0]==="string";
-          const ni=dn==="D_JOIN_CONSENT_PAIRS"?{join:"new join phrase",consent:"new consent"}
-                   :isPlainDeck?"new line"
-                   :{t:"new line",tags:[]};
-          arr.unshift(ni);saveData();EDIT_KEY=`${dn}:0`;render();
-          setTimeout(()=>{const el=document.querySelector(`[data-key="${dn}:0"]`);if(el)el.scrollIntoView({behavior:"smooth",block:"nearest"});},50);
+      function makeAddBtn(dn) {
+        const btn = document.createElement("button");
+        btn.className = "add-btn";
+        btn.textContent = "+ add line";
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const arr = D[dn];
+          if (!arr) return;
+          const isPlainDeck = arr.length > 0 && typeof arr[0] === "string";
+          const ni =
+            dn === "D_JOIN_CONSENT_PAIRS"
+              ? { join: "new join phrase", consent: "new consent", tags: [] }
+              : isPlainDeck
+                ? "new line"
+                : { t: "new line", tags: [] };
+          arr.unshift(ni);
+          saveData();
+          EDIT_KEY = `${dn}:0`;
+          render();
+          setTimeout(() => {
+            const el = document.querySelector(`[data-key="${dn}:0"]`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 50);
         };
         return btn;
       }
 
-      function updateBC(){
-        const parts=[];
-        if(P.greetIdx!=null) parts.push(D.P_GREET[P.greetIdx].t);
-        if(P.npcType) parts.push(P.npcType);
-        if(P.prefixIdx!=null){const k=(!P.npcType||P.npcType==="narc")?"narc":P.npcType;const px=D[`PREFIX_${P.tone}_${k}`][P.prefixIdx];parts.push('"'+((px&&(px.t||px))||"").toString().trim()+'"');}
-        if(P.helloIdx!=null){const dn=P.helloDN||(P.npcType==="narc"?"D_NARC_HELLO":P.npcType==="angry"?"DECK_ANGRY_HELLO":"DECK_HUNGRY_HELLO");const h=D[dn][P.helloIdx];const t=h.t||h;parts.push('"'+t.slice(0,28)+(t.length>28?"\u2026":"")+'"');}
-        document.getElementById("breadcrumb").textContent=parts.join(" \u2192 ")||"select a greeting to begin";
+      function updateBC() {
+        const parts = [];
+        if (P.greetIdx != null) parts.push(D.P_GREET[P.greetIdx].t);
+        if (P.npcType) parts.push(P.npcType);
+        if (P.helloIdx != null) {
+          const dn = P.helloDN || (P.npcType === "narc" ? "D_NARC_HELLO" : P.npcType === "angry" ? "DECK_ANGRY_HELLO" : "DECK_HUNGRY_HELLO");
+          const h = D[dn][P.helloIdx];
+          const t = h.t || h;
+          parts.push('"' + t.slice(0, 28) + (t.length > 28 ? "…" : "") + '"');
+        }
+        if (P.pitchDeck) parts.push(P.pitchDeck === "D_BACK_OFF_EARLY" ? "[bail]" : P.pitchDeck === "DECK_BAD_READ" ? "[bad read]" : "[pitch]");
+        document.getElementById("breadcrumb").textContent = parts.join(" › ") || "select a greeting to begin";
       }
 
-      function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+      function esc(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
 
-      function doExport(){
-        const ts=tags=>tags&&tags.length?`, tags: [${tags.map(t=>`"${t}"`).join(", ")}]`:`, tags: []`;
-        const fs=f=>f?`, follows: "${f}"`:"";
-        let out="";
-        const wPlain=(name,arr)=>{
-          out+=`const ${name} = [\n`;
-          arr.forEach(x=>{out+=`  ${JSON.stringify(typeof x==="string"?x:(x.t||x))},\n`;});
-          out+=`];\n\n`;
-        };
-        wPlain("D_AMB_HUNGRY",       D.D_AMB_HUNGRY);
-        wPlain("D_AMB_ANGRY",        D.D_AMB_ANGRY);
-        wPlain("D_AMB_NARC",         D.D_AMB_NARC);
-        wPlain("D_ACK_HUNGRY_ANGRY", D.D_ACK_HUNGRY_ANGRY);
-        wPlain("D_ACK_NARC",         D.D_ACK_NARC);
-        out+=`const P_GREET = [\n`;
-        D.P_GREET.forEach(x=>{out+=`  { t: ${JSON.stringify(x.t)}${ts(x.tags)} },\n`;});
-        out+=`];\n\n`;
-        out+=`const HELLO_PREFIX = {\n`;
-        ["casual","concerned","direct"].forEach(tone=>{
-          out+=`  ${tone}: {\n`;
-          ["angry","hungry","narc"].forEach(k=>{
-            const arr=D[`PREFIX_${tone}_${k}`];
-            out+=`    ${k}: [${arr.map(x=>JSON.stringify(x.t||x)).join(", ")}],\n`;
+      function doExport() {
+        const ts = (tags) => (tags && tags.length ? `, tags: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, tags: []`);
+        const fs = (f) => (f ? `, follows: "${f}"` : "");
+        let out = "";
+        const wPlain = (name, arr) => {
+          out += `const ${name} = [\n`;
+          arr.forEach((x) => {
+            out += `  ${JSON.stringify(typeof x === "string" ? x : x.t || x)},\n`;
           });
-          out+=`  },\n`;
+          out += `];\n\n`;
+        };
+        wPlain("D_AMB_HUNGRY", D.D_AMB_HUNGRY);
+        wPlain("D_AMB_ANGRY", D.D_AMB_ANGRY);
+        wPlain("D_AMB_NARC", D.D_AMB_NARC);
+        wPlain("D_ACK_HUNGRY_ANGRY", D.D_ACK_HUNGRY_ANGRY);
+        wPlain("D_ACK_NARC", D.D_ACK_NARC);
+        out += `const P_GREET = [\n`;
+        D.P_GREET.forEach((x) => {
+          out += `  { t: ${JSON.stringify(x.t)}${ts(x.tags)} },\n`;
         });
-        out+=`};\n\n`;
-        out+=`const D_NARC_HELLO = [\n`;
-        D.D_NARC_HELLO.forEach(x=>{out+=`  { t: ${JSON.stringify(x.t||x)}${ts(x.tags||[])} },\n`;});
-        out+=`];\n\n`;
-        const wArr=(name,arr,deck)=>{
-          out+=`const ${name} = ${deck?"new DM.Deck(":""}[\n`;
-          arr.forEach(x=>{
-            if(x&&x.join!==undefined){
-              const tp=x.tags&&x.tags.length?`, tags: [${x.tags.map(t=>`"${t}"`).join(", ")}]`:"";
-              out+=`  { join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)}${tp} },\n`;
+        out += `];\n\n`;
+        out += `const HELLO_PREFIX = {\n`;
+        ["casual", "concerned", "direct"].forEach((tone) => {
+          out += `  ${tone}: {\n`;
+          ["angry", "hungry", "narc"].forEach((k) => {
+            const arr = D[`PREFIX_${tone}_${k}`];
+            out += `    ${k}: [${arr.map((x) => JSON.stringify(x.t || x)).join(", ")}],\n`;
+          });
+          out += `  },\n`;
+        });
+        out += `};\n\n`;
+        out += `const D_NARC_HELLO = [\n`;
+        D.D_NARC_HELLO.forEach((x) => {
+          out += `  { t: ${JSON.stringify(x.t || x)}${ts(x.tags || [])} },\n`;
+        });
+        out += `];\n\n`;
+        const wArr = (name, arr, deck) => {
+          out += `const ${name} = ${deck ? "new DM.Deck(" : ""}[\n`;
+          arr.forEach((x) => {
+            if (x && x.join !== undefined) {
+              const tp = x.tags && x.tags.length ? `, tags: [${x.tags.map((t) => `"${t}"`).join(", ")}]` : "";
+              out += `  { join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)}${tp} },\n`;
               return;
             }
-            const t=x.t||(typeof x==="string"?x:"");
-            out+=`  { t: ${JSON.stringify(t)}${ts(x.tags||[])}${fs(x.follows)} },\n`;
+            const t = x.t || (typeof x === "string" ? x : "");
+            out += `  { t: ${JSON.stringify(t)}${ts(x.tags || [])}${fs(x.follows)} },\n`;
           });
-          out+=`]${deck?")":""};\n\n`;
+          out += `]${deck ? ")" : ""};\n\n`;
         };
-        wArr("DECK_ANGRY_HELLO",          D.DECK_ANGRY_HELLO,          true);
-        wArr("DECK_HUNGRY_HELLO",         D.DECK_HUNGRY_HELLO,         true);
-        wArr("DECK_ANGRY_PITCH",          D.DECK_ANGRY_PITCH,          true);
-        wArr("DECK_HUNGRY_PITCH",         D.DECK_HUNGRY_PITCH,         true);
-        wArr("D_F_INVITE",                D.D_F_INVITE,                false);
-        wArr("D_NO_BYE",                  D.D_NO_BYE,                  false);
-        wArr("D_SAY_MORE_WARM",           D.D_SAY_MORE_WARM,           true);
-        wArr("D_SAY_MORE_SKEPTICAL",      D.D_SAY_MORE_SKEPTICAL,      true);
-        wArr("D_JOIN_CONSENT_PAIRS",      D.D_JOIN_CONSENT_PAIRS,      false);
-        wArr("DECK_MISMATCH_TOO_LITERAL",     D.DECK_MISMATCH_TOO_LITERAL,    true);
-        wArr("DECK_MISMATCH_TOO_STRUCTURAL",  D.DECK_MISMATCH_TOO_STRUCTURAL, true);
-        wArr("D_BACK_OFF_EARLY",          D.D_BACK_OFF_EARLY,          true);
-        wArr("DECK_STRONGER_PITCH",       D.DECK_STRONGER_PITCH,       true);
-        wArr("D_INVITE",                  D.D_INVITE,                  false);
-        wArr("D_BACK_OFF_LATE",           D.D_BACK_OFF_LATE,           true);
-        wArr("DECK_BAD_READ",            D.DECK_BAD_READ,            true);
-        wArr("DECK_BAIL_RESPONSE",        D.DECK_BAIL_RESPONSE,        true);
-        wArr("D_FILLER",                  D.D_FILLER,                  true);
-        wArr("D_NARC_REVEAL",             D.D_NARC_REVEAL,             false);
-        wArr("D_NOT_NOW",                 D.D_NOT_NOW,                 false);
-        wArr("D_RETURN",                  D.D_RETURN,                  false);
-        const blob=new Blob([out],{type:"text/javascript"});
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement("a");a.href=url;a.download="game-data-words.js";a.click();
+        wArr("DECK_ANGRY_HELLO", D.DECK_ANGRY_HELLO, true);
+        wArr("DECK_HUNGRY_HELLO", D.DECK_HUNGRY_HELLO, true);
+        wArr("DECK_ANGRY_PITCH", D.DECK_ANGRY_PITCH, true);
+        wArr("DECK_HUNGRY_PITCH", D.DECK_HUNGRY_PITCH, true);
+        wArr("DECK_BAD_READ", D.DECK_BAD_READ, true);
+        wArr("D_F_INVITE", D.D_F_INVITE, false);
+        wArr("D_NO_BYE", D.D_NO_BYE, false);
+        wArr("D_SAY_MORE_WARM", D.D_SAY_MORE_WARM, true);
+        wArr("D_SAY_MORE_SKEPTICAL", D.D_SAY_MORE_SKEPTICAL, true);
+        wArr("D_JOIN_CONSENT_PAIRS", D.D_JOIN_CONSENT_PAIRS, false);
+        wArr("DECK_MISMATCH_TOO_LITERAL", D.DECK_MISMATCH_TOO_LITERAL, true);
+        wArr("DECK_MISMATCH_TOO_STRUCTURAL", D.DECK_MISMATCH_TOO_STRUCTURAL, true);
+        wArr("D_BACK_OFF_EARLY", D.D_BACK_OFF_EARLY, true);
+        wArr("DECK_BAIL_RESPONSE", D.DECK_BAIL_RESPONSE, true);
+        wArr("DECK_STRONGER_PITCH", D.DECK_STRONGER_PITCH, true);
+        wArr("D_BACK_OFF_LATE", D.D_BACK_OFF_LATE, true);
+        wArr("D_FILLER", D.D_FILLER, true);
+        wArr("D_NARC_REVEAL", D.D_NARC_REVEAL, false);
+        wArr("D_NOT_NOW", D.D_NOT_NOW, false);
+        wArr("D_RETURN", D.D_RETURN, false);
+        const blob = new Blob([out], { type: "text/javascript" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "game-data-words.js";
+        a.click();
         URL.revokeObjectURL(url);
       }
-      function exportJS(){doExport();}
+      function exportJS() {
+        doExport();
+      }
 
-      (function(){
-        const sc=document.getElementById("cols-scroll");
-        let down=false,sx=0,sl=0;
-        sc.addEventListener("mousedown",e=>{ if(e.target.closest(".item,.add-btn,.hbtn,.ebtn,.section-sep"))return; down=true;sx=e.pageX-sc.offsetLeft;sl=sc.scrollLeft;sc.classList.add("dragging"); });
-        sc.addEventListener("mouseleave",()=>{down=false;sc.classList.remove("dragging");});
-        sc.addEventListener("mouseup",()=>{down=false;sc.classList.remove("dragging");});
-        sc.addEventListener("mousemove",e=>{ if(!down)return;e.preventDefault();sc.scrollLeft=sl-(e.pageX-sc.offsetLeft-sx); });
+      (function () {
+        const sc = document.getElementById("cols-scroll");
+        let down = false,
+          sx = 0,
+          sl = 0;
+        sc.addEventListener("mousedown", (e) => {
+          if (e.target.closest(".item,.add-btn,.hbtn,.ebtn,.section-sep")) return;
+          down = true;
+          sx = e.pageX - sc.offsetLeft;
+          sl = sc.scrollLeft;
+          sc.classList.add("dragging");
+        });
+        sc.addEventListener("mouseleave", () => {
+          down = false;
+          sc.classList.remove("dragging");
+        });
+        sc.addEventListener("mouseup", () => {
+          down = false;
+          sc.classList.remove("dragging");
+        });
+        sc.addEventListener("mousemove", (e) => {
+          if (!down) return;
+          e.preventDefault();
+          sc.scrollLeft = sl - (e.pageX - sc.offsetLeft - sx);
+        });
       })();
 
-      window.addEventListener("error",e=>{const b=document.getElementById("error-box");b.style.display="block";b.textContent="error: "+e.message+" \u2014 "+e.filename+":"+e.lineno;});
+      window.addEventListener("error", (e) => {
+        const b = document.getElementById("error-box");
+        b.style.display = "block";
+        b.textContent = "error: " + e.message + " — " + e.filename + ":" + e.lineno;
+      });
 
-      loadV(); loadData(); loadSec(); render();
+      loadV();
+      loadData();
+      loadSec();
+      render();
     </script>
   </body>
 </html>

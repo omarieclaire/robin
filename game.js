@@ -424,7 +424,13 @@
       px = Math.round(px);
       py = Math.round(py);
       a.forEach((l, r) => {
-        for (let i = 0; i < l.length; i++) if (l[i] !== " ") this.set(px + i, py + r, l[i], co);
+        for (let i = 0; i < l.length; i++) {
+          if (l[i] !== " ") {
+            this.set(px + i, py + r, l[i], co);
+          } else {
+            this.set(px + i, py + r, " ", "#000"); // block mountain bleed
+          }
+        }
       });
     }
     html() {
@@ -764,9 +770,172 @@
   const CONV_TYPE_PUNCT_MS = 120; // ms extra pause after . ? !
   const CONV_TYPE_COMMA_MS = 60; // ms extra pause after ,
 
+  const T = {
+    tap: 180, // comma beat — barely there
+    beat: 420, // breath between thoughts
+    pause: 850, // dramatic pause — let it breathe
+    hold: 1500, // heavy line — wait for it to land
+    linger: 2400, // dense/long line — full read time
 
+    exit: 700, // before conv panel closes after final line
+    reply: 1800, // delay before NPC first speaks (thinking)
+    npcMin: 2800, // minimum ms to show an NPC line
+    npcPer: 200, // ms per word added on top of npcMin
+    chunk: 900, // gap between |pause| chunks (unchanged)
 
-  
+    // Banner-specific
+    bannerBeat: 600, // pause between banner sequence entries
+    bannerHold: 3000, // default banner display duration
+  };
+
+  /* ─────────────────────────────────────────────────────────────────
+   parseBeats(str)
+   Splits a string on [tag] or [ms] markers into an array of
+   { text: string, after: ms } objects.
+
+   "Hello.[beat] How are you?" →
+     [ { text: "Hello.", after: 420 }, { text: "How are you?", after: 0 } ]
+
+   Used by convAddLine — the Seq and banner helpers call it internally.
+   ───────────────────────────────────────────────────────────────── */
+  function parseBeats(str) {
+    const TAG = /\[(tap|beat|pause|hold|linger|\d+)\]/g;
+    const segments = [];
+    let last = 0,
+      m;
+    while ((m = TAG.exec(str)) !== null) {
+      const text = str.slice(last, m.index).trim();
+      const key = m[1];
+      const ms = isNaN(key) ? (T[key] ?? T.beat) : parseInt(key, 10);
+      segments.push({ text, after: ms });
+      last = m.index + m[0].length;
+    }
+    const tail = str.slice(last).trim();
+    if (tail || segments.length === 0) segments.push({ text: tail, after: 0 });
+    return segments;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+   readDelay(text, min?)
+   Dynamic read time based on word count. Replaces the old
+   readDelay() that was defined inside updateAct2.
+   ───────────────────────────────────────────────────────────────── */
+  function readDelay(text, min) {
+    const words = (text || "").trim().split(/\s+/).length;
+    return Math.max(min ?? T.npcMin, words * T.npcPer);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+   Seq — lightweight in-update sequencer
+   ══════════════════════════════════════════════════════════════════
+
+   Replaces all timing-sensitive setTimeout chains. Runs inside
+   your existing update(dt) loop — just call seq.update(dt).
+
+   STEP TYPES
+   ─────────────────────────────────────────────────────────────────
+   () => { ... }            — run immediately, advance
+   { wait: ms }             — hold for N milliseconds
+   { waitFor: () => bool }  — hold until predicate returns true
+   { waitFor: () => bool, timeout: ms } — same, with a fallback
+   [ step, step, ... ]      — nested array runs all in parallel
+                              (advances when ALL sub-steps done)
+
+   USAGE
+   ─────────────────────────────────────────────────────────────────
+   const mySeq = new Seq([
+     () => showBanner("Hello.", C_PLAYER, T.hold),
+     { waitFor: () => bannerTimer <= 0 },
+     { wait: T.beat },
+     () => convAddLine("Ready?", "you", C_PLAYER),
+     { wait: T.reply },
+     () => convAddLine("Always.", "them", C_TEAL),
+     { waitFor: () => convTypingDone() },
+     { wait: T.exit },
+     () => convStartFade(),
+   ]);
+
+   // In update(dt):
+   mySeq.update(dt);
+
+   // Check if done:
+   if (mySeq.done) { ... }
+
+   // Cancel early:
+   mySeq.cancel();
+   ══════════════════════════════════════════════════════════════════ */
+
+  class Seq {
+    constructor(steps) {
+      this._steps = steps;
+      this._idx = 0;
+      this._timer = 0;
+      this._pred = null;
+      this._timeout = 0;
+      this.done = false;
+      this._cancelled = false;
+    }
+
+    cancel() {
+      this._cancelled = true;
+      this.done = true;
+    }
+
+    update(dt) {
+      if (this.done || this._cancelled) return;
+
+      while (this._idx < this._steps.length) {
+        const step = this._steps[this._idx];
+
+        // ── wait: ms ──────────────────────────────────────────────
+        if (step && typeof step === "object" && "wait" in step) {
+          this._timer += dt;
+          if (this._timer < step.wait) return;
+          this._timer = 0;
+          this._idx++;
+          continue;
+        }
+
+        // ── waitFor: predicate ────────────────────────────────────
+        if (step && typeof step === "object" && "waitFor" in step) {
+          if (step.timeout) {
+            this._timer += dt;
+            if (this._timer >= step.timeout || step.waitFor()) {
+              this._timer = 0;
+              this._idx++;
+              continue;
+            }
+            return;
+          }
+          if (!step.waitFor()) return;
+          this._idx++;
+          continue;
+        }
+
+        // ── function: run immediately ─────────────────────────────
+        if (typeof step === "function") {
+          step();
+          this._idx++;
+          continue;
+        }
+
+        // ── unknown: skip ─────────────────────────────────────────
+        this._idx++;
+      }
+
+      this.done = true;
+    }
+  }
+
+  /* Helper — true when the last convLog entry is fully revealed
+   and no chunks are pending. Used in waitFor predicates. */
+  function convTypingDone() {
+    if (_convChunkQueue.length > 0) return false;
+    const li = convLog.length - 1;
+    if (li < 0) return true;
+    return (convReveal[li] ?? 0) >= convLog[li].text.length;
+  }
+
   let _convChunkQueue = [];
   let _convChunkTimer = 0;
   let convLog = [];
@@ -952,7 +1121,7 @@
       if (cur) hintLines.push(cur);
       const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
       hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
-      renderTapPrompt("tap to continue", hintY + hintLines.length + 1, "#666", "#444");
+      renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 1, "#666", "#444");
     }
   }
 
@@ -1453,6 +1622,42 @@
     CW = BW + RDW,
     CH = BH + RDH;
 
+  // function renderCity(cx, cy) {
+  //   for (let sy = 0; sy < H; sy++)
+  //     for (let sx = 0; sx < W; sx++) {
+  //       const mx = Math.floor(cx) + sx,
+  //         my = Math.floor(cy) + sy;
+  //       const lx = ((mx % CW) + CW) % CW,
+  //         ly = ((my % CH) + CH) % CH;
+  //       const inB = lx < BW && ly < BH;
+  //       const inRuelle = inB && ly >= HH && ly < HH + RUH;
+  //       if (!inB) {
+  //         if (ly === BH && lx < BW) grid.set(sx, sy, "\u2550", "#333");
+  //         else if (ly === CH - 1 && lx < BW) grid.set(sx, sy, "\u2550", "#333");
+  //         else if (lx === BW && ly < BH) grid.set(sx, sy, "\u2551", "#333");
+  //         else if (lx === CW - 1 && ly < BH) grid.set(sx, sy, "\u2551", "#333");
+  //         else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
+  //         else if (lx === CW - 1 && ly === BH) grid.set(sx, sy, "\u255A", "#333");
+  //         else if (lx === BW && ly === CH - 1) grid.set(sx, sy, "\u2557", "#333");
+  //         else if (lx === CW - 1 && ly === CH - 1) grid.set(sx, sy, "\u2554", "#333");
+  //       } else if (inRuelle) {
+  //         /* Clean ruelles — no dots */
+  //       } else {
+  //         const hr = ly < HH ? 0 : 1,
+  //           hly = hr === 0 ? ly : ly - HH - RUH;
+  //         const bc = ((Math.floor(mx / CW) % 30) + 30) % 30,
+  //           br = ((Math.floor(my / CH) % 30) + 30) % 30;
+  //         const hi = Math.floor(lx / HW),
+  //           ai = (bc + br + hi + hr * 2) % HA.length,
+  //           ci = (bc * 3 + br * 7 + hi * 5 + hr) % HC.length;
+  //         if (hly < HA[ai].length) {
+  //           const ch = HA[ai][hly];
+  //           if (ch !== " ") grid.set(sx, sy, ch, HC[ci]);
+  //         }
+  //       }
+  //     }
+  // }
+
   function renderCity(cx, cy) {
     for (let sy = 0; sy < H; sy++)
       for (let sx = 0; sx < W; sx++) {
@@ -1469,10 +1674,11 @@
           else if (lx === CW - 1 && ly < BH) grid.set(sx, sy, "\u2551", "#333");
           else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
           else if (lx === CW - 1 && ly === BH) grid.set(sx, sy, "\u255A", "#333");
-          else if (lx === BW && ly === CH - 1) grid.set(sx, sy, "\u2557", "#333");
+          else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
           else if (lx === CW - 1 && ly === CH - 1) grid.set(sx, sy, "\u2554", "#333");
+          else if (lx === BW && ly === CH - 1) grid.set(sx, sy, "\u2557", "#333");
         } else if (inRuelle) {
-          /* Clean ruelles — no dots */
+          /* Clean ruelles */
         } else {
           const hr = ly < HH ? 0 : 1,
             hly = hr === 0 ? ly : ly - HH - RUH;
@@ -1481,9 +1687,21 @@
           const hi = Math.floor(lx / HW),
             ai = (bc + br + hi + hr * 2) % HA.length,
             ci = (bc * 3 + br * 7 + hi * 5 + hr) % HC.length;
-          if (hly < HA[ai].length) {
-            const ch = HA[ai][hly];
-            if (ch !== " ") grid.set(sx, sy, ch, HC[ci]);
+          // Top row of each house block = roof
+          if (hly === 0) {
+            const roofW = HW;
+            const col = lx % roofW;
+            let roofCh;
+            if (col === 0) roofCh = "/";
+            else if (col === roofW - 1) roofCh = "\\";
+            else roofCh = "\u2584"; // ▄ filled lower half = flat roof cap
+            grid.set(sx, sy, roofCh, HC[ci]);
+          } else {
+            // Everything else: original HA art + HC colors
+            if (hly < HA[ai].length) {
+              const ch = HA[ai][hly];
+              if (ch !== " ") grid.set(sx, sy, ch, HC[ci]);
+            }
           }
         }
       }
@@ -2013,11 +2231,11 @@
             phase = "done";
             loop.stop();
             overlay.classList.remove("hidden");
-            ovTitle.textContent = "no";
+            ovTitle.textContent = window.LANG.loopGiveUpTitle;
             ovTitle.style.color = C_DANGER;
-            ovSub.textContent = "you kept living like this\nuntil you couldn't anymore";
+            ovSub.textContent = window.LANG.loopGiveUpSub;
             ovHint.textContent = "";
-            startBtn.textContent = "try again?";
+            startBtn.textContent = window.LANG.loopTryAgain;
             overlay.querySelectorAll(".final").forEach((e) => e.remove());
             overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
             return;
@@ -2194,7 +2412,25 @@
     }
     const px = Math.round(a1PX) - ox,
       py = Math.round(a1PY) - oy;
-    if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
+    // if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
+
+    //     if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
+    // const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
+    // if (_walking && py + 1 >= 0 && py + 1 < H) {
+    //   const _legFrames = ["V", "v"];
+    //   grid.set(px, py + 1, _legFrames[Math.floor(a1T / 180) % 2], playerPulseColor(a1T));
+    // }
+
+    // const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
+    // // Alternate between two chars in the SAME cell to simulate walking
+    // // Frame 0: @ (upright)   Frame 1: & (suggests legs mid-stride)
+    // const _pChar = (_walking && Math.floor(a1T / 180) % 2 === 1) ? "&" : "@";
+    // if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, _pChar, playerPulseColor(a1T));
+
+    const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
+    const _pChar = _walking ? (Math.floor(a1T / 2) % 2 === 0 ? "@" : "\u0398") : "@";
+    if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, _pChar, playerPulseColor(a1T));
+
     dialogRender();
     convRender();
 
@@ -2217,20 +2453,21 @@
   // act 2
   /////////////////////
 
+  /* ══════════════════════════════════════════════════════════════════
+   ACT 2: RECRUIT
+   ══════════════════════════════════════════════════════════════════ */
+
   const A2_MIN = 3,
     A2_MH = 3;
-  /* Time-based lose condition for Act 2.
-                       If the player takes too long to recruit A2_MIN robins, they lose.
-                       A2_TIME_LIMIT_MS = total ms allowed in Act 2 before failure.
-                       A2_TIME_WARN_MS = ms at which the warning banner appears. */
-  const A2_TIME_LIMIT_MS = 50000; /* 50 seconds  */
-  const A2_TIME_WARN_MS = 30000; /* 30 seconds  */
+  const A2_TIME_LIMIT_MS = 50000;
+  const A2_TIME_WARN_MS = 30000;
   const BUILDINGS = window.GAME_DATA.buildings;
+
   function tileBuildings(blockW) {
     const pieces = [];
-    let remain = blockW;
-    let iter = 0;
-    let lastArt = null;
+    let remain = blockW,
+      iter = 0,
+      lastArt = null;
     while (remain > 0 && iter++ < 20) {
       const fits = BUILDINGS.filter((b) => b.size <= remain);
       if (fits.length === 0) break;
@@ -2239,19 +2476,15 @@
         return r === 0 || r >= 6;
       });
       const pool = canClean.length > 0 ? canClean : fits;
-      // Avoid placing the same building art consecutively
       const noRepeat = pool.filter((b) => b.art !== lastArt);
       const chosen = (noRepeat.length > 0 ? noRepeat : pool)[Math.floor(Math.random() * (noRepeat.length > 0 ? noRepeat.length : pool.length))];
       lastArt = chosen.art;
-      pieces.push({
-        art: chosen.art,
-        w: chosen.size,
-      });
+      pieces.push({ art: chosen.art, w: chosen.size });
       remain -= chosen.size;
     }
     return pieces;
   }
-  /* Washed-out building colors — muted pastels so avatars pop */
+
   const A2_BCOL = ["#b9a89a", "#9ab89a", "#9a9ab8", "#b8a09a", "#9aa8b0", "#a89ab0", "#b0a898", "#98a8b0"];
   const A2_PA = window.GAME_DATA.playerArt;
   const A2_NPC_ARTS = window.GAME_DATA.npcArts;
@@ -2260,37 +2493,56 @@
   const A2_NARC = window.GAME_DATA.narcArt;
   const A2_ROB = window.GAME_DATA.robinArt;
 
-  /* 6 lanes */
   const A2_NUM_LANES = 6;
   let A2_RU_H = 3,
     A2_VRW = 7;
-
   let A2_BH_PER, A2_LANE_YS, A2_GND, A2_TOP_PAD;
+
   let a2WX, a2T, a2Ht, a2Spd;
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
-  let a2TN,
-    a2TP,
-    a2TT,
-    a2TalkCD,
-    a2Choice,
+  let a2TN, a2TP, a2TT, a2TalkCD;
+  let a2Choice,
     a2ChoiceLabels,
     a2PitchLines = [],
     a2ChoiceTags = [],
     a2LastGreetTone;
   let a2SV, a2SW, a2SD, a2SDT;
   let a2Gen;
-  let a2HudFlashT, a2HudFlashMsg; // HUD flash
-  let a2TimeWarned; // has the "too slow" warning fired yet?
+  let a2HudFlashT, a2HudFlashMsg;
+  let a2TimeWarned;
+  let a2MobileMoveX, a2MobileMoveT;
+  let a2bMobileMoveX, a2bMobileMoveT;
+
+  /* ── Act 2: conversation timing constants ────────────────────────
+   All expressed through T.* — change T values above to retune.
+
+   A2_GREET_DELAY    how long before the NPC first replies after
+                     the player opens with a greeting
+   A2_CHOICE_LOCK    minimum ms before a choice registers a click
+                     (prevents accidental double-taps)
+   A2_INVITE_DELAY   after filler line — before invite choices appear
+   A2_BAIL_CLOSE     after NPC bail response — before panel closes
+   A2_RECRUIT_CLOSE  after recruit confirmation — before panel closes
+   A2_NARC_PAUSE     after narc reveal — before consequence fires
+   ─────────────────────────────────────────────────────────────── */
+  const A2 = {
+    GREET_DELAY: T.reply, // 1800ms
+    CHOICE_LOCK: 900, // min ms before click registers
+    INVITE_DELAY: T.hold, // 1500ms — after filler before invite
+    BAIL_CLOSE: T.linger, // 2400ms — after bail response
+    RECRUIT_CLOSE: T.linger, // 2400ms — after recruit confirm
+    NARC_PAUSE: T.hold, // 1500ms — before narc consequence
+    MISMATCH_CLOSE: T.npcMin, // 2800ms — after mismatch rejection
+  };
 
   function a2Layout() {
     A2_GND = H - 1;
     A2_RU_H = 2;
-    const numRoads = 3;
-    const numBands = numRoads + 1;
+    const numRoads = 3,
+      numBands = numRoads + 1;
     const totalStreetH = numRoads * A2_RU_H * 2;
-    // Don't reduce A2_BH_PER — keep spacing identical, just shift origin down
     A2_BH_PER = Math.max(4, Math.floor((A2_GND - totalStreetH) / numBands));
     A2_TOP_PAD = Math.floor(H * 0.06);
     A2_LANE_YS = [];
@@ -2305,10 +2557,8 @@
     return A2_LANE_YS[ri] || A2_LANE_YS[0];
   }
   function a2NpcY(n) {
-    // return a2RuY(n.ru);
-    return a2RuY(n.ru) + 0;
+    return a2RuY(n.ru);
   }
-
   function a2BandY(bi) {
     if (bi <= 3) {
       const y = A2_TOP_PAD + bi * (A2_BH_PER + A2_RU_H * 2);
@@ -2325,49 +2575,35 @@
       rx += Util.randInt(30, 50);
     }
     a2Roads.sort((a, b) => a.wx - b.wx);
+
     const nearRoads = a2Roads.filter((r) => r.wx + A2_VRW > from - 80 && r.wx < to + 40);
     const roadXs = [-999, ...nearRoads.map((r) => r.wx), 99999];
+
     for (let ri = 0; ri < roadXs.length - 1; ri++) {
       const leftE = roadXs[ri] + (roadXs[ri] === -999 ? 999 : A2_VRW);
       const rightE = Math.min(roadXs[ri + 1], to);
       if (rightE <= from || leftE >= to || rightE - leftE < 8) continue;
       const overlap = a2Blocks.find((b) => b.band === 0 && b.wx < rightE && b.wx + b.w > leftE);
       if (overlap) continue;
-      /* Building bands for 6+1 bands */
       for (let band = 0; band <= 3; band++) {
         const { y: bandY, h: bandH } = a2BandY(band);
         if (bandH < 2) continue;
-        a2Blocks.push({
-          wx: leftE,
-          y: bandY,
-          w: rightE - leftE,
-          h: bandH,
-          band,
-          bldgs: [],
-        });
+        a2Blocks.push({ wx: leftE, y: bandY, w: rightE - leftE, h: bandH, band, bldgs: [] });
         const blk = a2Blocks[a2Blocks.length - 1];
         const availW = rightE - leftE - 2;
         const tiles = tileBuildings(availW);
-        let bx = leftE + 1;
+        let bx2 = leftE + 1;
         for (const tile of tiles) {
-          blk.bldgs.push({
-            dx: bx - leftE,
-            art: tile.art,
-            color: Util.pick(A2_BCOL),
-            w: tile.w,
-          });
-          bx += tile.w;
+          blk.bldgs.push({ dx: bx2 - leftE, art: tile.art, color: Util.pick(A2_BCOL), w: tile.w });
+          bx2 += tile.w;
         }
       }
     }
-    /* NPCs across all 6 lanes (skip top road - lanes 0-1 - to avoid dialogue cutoff) */
-   const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
-    // Smarter spacing: enforce a minimum gap between any two NPCs across all lanes
-    // so the player never gets swamped or has long dead stretches
-    const MIN_NPC_GAP = 55;
-    const MAX_NPC_GAP = 90;
+
+    const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
+    const MIN_NPC_GAP = 55,
+      MAX_NPC_GAP = 90;
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
-      // Stagger start per lane so encounters feel varied not simultaneous
       const laneOffset = (ri - mobileMinLane) * 18;
       for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) {
         let onRoad = false;
@@ -2386,19 +2622,13 @@
           tl = 1;
         }
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
-        /* Narc ambient tells */
         const ambLine = tp === "narc" ? drawAmb(DECK_AMB_NARC) : npcKind === "hungry" ? drawAmb(DECK_AMB_HUNGRY) : drawAmb(DECK_AMB_ANGRY);
-
-        // Narcs use currency-symbol heads — bright, varied, same 2-row structure as NPCs
-        // Player won't know on sight, but will feel the pattern after a few hits
         const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
         const narcHead = Util.pick(narcHeads);
-        const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]); // φ ψ Ω §
+        const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
         const npcArt = tp === "narc" ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
-        // Narcs are vivid like regulars but skew toward warm/alert tones
         const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
         const npcCol = tp === "narc" ? Util.pick(narcCols) : Util.pick(A2_NPC_COLORS);
-
         a2NPCs.push({
           wx: nx,
           ru: ri,
@@ -2418,7 +2648,7 @@
         });
       }
     }
-    // Clouds
+
     for (let cx = from + Util.randInt(8, 20); cx < to; cx += Util.randInt(20, 40))
       a2Clouds.push({
         wx: cx,
@@ -2428,13 +2658,55 @@
           [".-~~-.", "(     )", " `~~' "],
         ]),
       });
+
     a2Gen = to;
+  }
+
+  function _updateDomHud() {
+    if (phase === "act2") {
+      const pips = [];
+      for (let i = 0; i < A2_MIN; i++) pips.push(i < a2CrewCount ? "\u25C6" : "\u25C7");
+      const tl = Math.max(0, Math.floor((A2_TIME_LIMIT_MS - a2T) / 1000));
+      const heatStr = a2Ht > 0 ? "  ! NARCS: " + a2Ht + "/" + A2_MH : "";
+      hudLabel.textContent = window.LANG.hudRecruit + " " + pips.join("") + " " + a2CrewCount + "/" + A2_MIN;
+      hudLabel.style.color = a2CrewCount >= A2_MIN ? C_SUCCESS : C_TEAL;
+      hudScore.textContent = "";
+      hudStatus.textContent = window.LANG.hudTime + ": " + tl + "s" + heatStr;
+      hudStatus.style.color = a2Ht > 0 ? C_DANGER : tl < 15 ? C_WARN : C_DIM;
+    } else if (phase === "act2b") {
+      hudLabel.textContent = window.LANG.hudRally + "  " + window.LANG.hudMob + ": " + a2CrewCount;
+      hudLabel.style.color = C_TEAL;
+      hudScore.textContent = "";
+      hudStatus.textContent = a2bHt > 0 ? "! " + window.LANG.hudNarcs + ": " + a2bHt + "/" + A2B_MH : window.LANG.hudAvoidNarcs;
+      hudStatus.style.color = a2bHt > 0 ? C_DANGER : C_DIM;
+    } else if (phase === "act4") {
+      const my = state.get("score") || 0;
+      const _jitter = s4Ug > 0.2 ? (Math.random() < 0.15 ? 1 : 0) : 0;
+      const _ugFilled = Math.min(8, Math.round(s4Ug * 8) + _jitter);
+      const _bar = "\u2588".repeat(_ugFilled) + "\u2591".repeat(8 - _ugFilled);
+
+      // hudLabel.textContent = "HAUL: $" + (my + s4AlyScore);
+
+      hudLabel.textContent = window.LANG.hudHaul + ": $" + (my + s4AlyScore);
+
+      window.LANG.hudRally + "  ";
+      hudLabel.style.color = C_PLAYER;
+      hudScore.textContent = "";
+      // hudStatus.textContent = "COPS: " + _bar;
+      hudStatus.textContent = window.LANG.hudCops + ": " + _bar;
+
+      hudStatus.style.color = s4Ug < 0.35 ? C_TEAL : s4Ug < 0.7 ? C_WARN : C_DANGER;
+    } else {
+      hudLabel.textContent = "";
+      hudScore.textContent = "";
+      hudStatus.textContent = "";
+    }
   }
 
   function initAct2() {
     audio.play("level");
-    Music.transition("music_act2"); // fades out act1 if still playing, starts act2
-    audio.preload(["music_act3"]); // preload for act2b
+    Music.transition("music_act2");
+    audio.preload(["music_act3"]);
     phase = "act2";
     hasPlayed = true;
     a2Layout();
@@ -2454,10 +2726,8 @@
     a2TimeWarned = false;
     a2PRu = Math.max(0, A2_NUM_LANES - 2);
     a2PX = Math.floor(W / 2);
-    a2PY = a2RuY(a2PRu) + 0;
-
+    a2PY = a2RuY(a2PRu);
     a2TargetY = a2PY;
-
     a2Hopping = false;
     a2HopIntent = 0;
     a2HopTimer = 0;
@@ -2466,8 +2736,7 @@
     a2TN = null;
     a2TP = 0;
     a2TT = 0;
-
-    a2TalkCD = 0; //basically nothing at this point
+    a2TalkCD = 0;
     a2MobileMoveX = 0;
     a2MobileMoveT = 0;
     a2SV = false;
@@ -2476,25 +2745,8 @@
     a2SDT = null;
     dialogStack = [];
     a2GenChunk(0, W * 3);
-    hudLabel.textContent = window.LANG.hudCrewLabel;
-    hudScore.textContent = "0";
-    hudStatus.textContent = window.LANG.hudAct2Status;
-    hudStatus.style.color = C_SUCCESS;
+    _updateDomHud();
     bannerTimer = 0;
-    // showBanner(window.LANG.bannerRecruitCrew, C_ORANGE, 5000);
-
-    // setTimeout(() => {
-    //   if (phase === "act2") {
-    //     bannerText += "\n\n" + window.LANG.bannerWatchNarcs;
-
-    //     bannerTimer = Math.max(bannerTimer, 3500); // reset timer after appending line
-    //   }
-    // }, 1800);
-  }
-
-  function readDelay(text, minMs) {
-    const words = (text || "").split(" ").length;
-    return Math.max(minMs ?? CONV_READ_MIN_MS, words * CONV_READ_MS_PER_WORD);
   }
 
   function updateAct2(dt) {
@@ -2513,19 +2765,23 @@
       a2PAnim = 1 - a2PAnim;
     }
 
+    /* ── CONVERSATION STATE MACHINE (a2TP) ──────────────────────
+     The core logic is unchanged — only the timing comparisons
+     now read from T.* and A2.* instead of scattered literals.
+     ─────────────────────────────────────────────────────────── */
     if (a2TN) {
       const _lastFullyTyped = convLog.length === 0 || convReveal[convLog.length - 1] >= convLog[convLog.length - 1].text.length;
       if (_convChunkQueue.length === 0 && _lastFullyTyped) a2TT += dt;
-      const psx = Math.round(a2PX),
-        nsx = Math.round(a2TN.wx - a2WX);
-      const psy = Math.round(a2PY);
 
+      const psx = Math.round(a2PX),
+        nsx = Math.round(a2TN.wx - a2WX),
+        psy = Math.round(a2PY);
       convAnchorPX = psx;
       convAnchorNX = nsx;
       convAnchorY = psy;
 
-      // ── TP 0: open conv panel, fire greet immediately ──
-      if (a2TP === 0 && a2TT > 400) {
+      // ── TP 0: open conv, fire greet ───────────────────────────
+      if (a2TP === 0 && a2TT > T.beat) {
         dialogStack = [];
         convReset();
         convAnchorPX = psx;
@@ -2542,23 +2798,23 @@
         a2TT = 0;
       }
 
-      // ── TP 2: immediate join after match ──
+      // ── TP 2: immediate join after match ──────────────────────
       else if (a2TP === 2 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        const pair = DM.draw(DECK_JOIN_CONSENT);
+        const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.helloTags ?? []);
         convAddLine(pair.join, "them", convNPCColor);
         a2TN._line2 = pair.consent;
         a2TP = 21;
         a2TT = 0;
       }
 
-      // ── TP 12: wait before NPC replies ──
-      else if (a2TP === 12 && a2TT > CONV_NPC_REPLY_DELAY_MS && _convChunkQueue.length === 0) {
+      // ── TP 12: wait before NPC replies ───────────────────────
+      else if (a2TP === 12 && a2TT > A2.GREET_DELAY && _convChunkQueue.length === 0) {
         let helloDeck;
         if (a2TN.tp === "narc") helloDeck = DECK_NARC_HELLO;
         else if (a2TN.kind === "angry") helloDeck = DECK_ANGRY_HELLO;
         else helloDeck = DECK_HUNGRY_HELLO;
 
-        DM.clearLastTags(); // greet tags stop here
+        DM.clearLastTags();
         const { text: line, tags } = DM.drawWithTags(helloDeck);
         a2TN.helloTags = tags;
 
@@ -2571,15 +2827,17 @@
         a2TT = 0;
       }
 
-      // ── TP 13: show first pitch choices ──
+      // ── TP 13: show first pitch choices ──────────────────────
       else if (a2TP === 13 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
-        const matchResult = DM.drawWithTags(a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH, a2TN.helloTags ?? []);
+        // const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
+        const matchResult = DM.drawWithTags(
+          a2TN.tp === "narc" ? DECK_NARC_AGREE : a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH,
+          a2TN.helloTags ?? [],
+        );
         const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
         a2ChoiceTags = [matchResult.tags, badReadResult.tags, []];
-        a2PitchLines = [prefix + matchResult.text, prefix + badReadResult.text, DM.draw(DECK_BACK_OFF_EARLY)];
-        DM.clearLastTags(); // pitch tags stop here — don't bleed into i invite
-
+        a2PitchLines = [matchResult.text, badReadResult.text, DM.draw(DECK_BACK_OFF_EARLY, a2TN.helloTags ?? [])];
+        DM.clearLastTags();
         const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
         a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
         convShowChoices(a2ChoiceLabels);
@@ -2588,8 +2846,8 @@
         a2TT = 0;
       }
 
-      // ── TP 1: wait for first pitch choice ──
-      else if (a2TP === 1 && a2TT > 1100) {
+      // ── TP 1: wait for first pitch choice ────────────────────
+      else if (a2TP === 1 && a2TT > A2.CHOICE_LOCK) {
         if (clickPending) {
           clickPending = false;
           if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
@@ -2601,60 +2859,53 @@
               }
             }
             const lastChoiceStart = convChoiceYs[convChoiceYs.length - 1] ?? convChoiceY1;
-            if (picked < convChoices.length - 1 || clickSY >= lastChoiceStart) {
-              a2Choice = picked;
-            }
+            if (picked < convChoices.length - 1 || clickSY >= lastChoiceStart) a2Choice = picked;
           }
         }
         if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
           convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          // if (a2Choice === 0) {
-          //   for (const t of a2ChoiceTags[0] ?? []) DM._seedConvTag(t);
-          // } else if (a2Choice === 1) {
-          //   for (const t of a2ChoiceTags[1] ?? []) DM._seedConvTag(t);
-          // }
-          if (a2Choice === 2) {
-            a2TP = 25;
-          } else if (a2Choice === 1 && a2TN.tp !== "narc") {
-            a2TP = 14; // tone deaf — skip filler, go straight to mismatch check
-          } else {
-            a2TP = 141; // good read or narc — wait, then filler, then invite
-          }
+          if (a2Choice === 2) a2TP = 25;
+          else if (a2Choice === 1 && a2TN.tp !== "narc") a2TP = 14;
+          else a2TP = 141;
           a2TT = 0;
         }
       }
 
-      // ── TP 141: route based on first pitch choice ──
-      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, CONV_INVITE_DELAY_MS) && _convChunkQueue.length === 0) {
+      // ── TP 141: route after first pitch ──────────────────────
+      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.INVITE_DELAY) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (matched) {
-          // good read — filler then invite
-          convAddLine(DM.draw(DECK_FILLER), "them", convNPCColor);
+          const fillerResult = DM.drawWithTags(DECK_FILLER, a2ChoiceTags[a2Choice] ?? []);
+          a2TN.fillerTags = fillerResult.tags;
+          convAddLine(fillerResult.text, "them", convNPCColor);
           a2TP = 142;
         } else {
-          // tone deaf — go straight to mismatch check in TP 14
           a2TP = 14;
         }
         a2TT = 0;
       }
-      // ── TP 142: wait for invite/walk away choice ──
-      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 1400) && _convChunkQueue.length === 0) {
-        const inviteLabel = a2TN.kind === "angry" ? "(ง'̀-'́)ง recruit them" : "(•‿•) recruit them";
-        a2ChoiceLabels = [inviteLabel, "( ._.) walk away"];
-        a2PitchLines = [DM.draw(DECK_F_INVITE), DM.draw(DECK_BACK_OFF_EARLY)];
+
+      // ── TP 142: wait for invite/walk away choice ──────────────
+      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, T.hold) && _convChunkQueue.length === 0) {
+        const inviteLabel = a2TN.kind === "angry" ? window.LANG.choiceRecruitAngry : window.LANG.choiceRecruitHungry;
+        a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
+        const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
+        a2TN.inviteTags = inviteResult.tags;
+        a2PitchLines = [inviteResult.text, DM.draw(DECK_BACK_OFF_EARLY, a2TN.fillerTags ?? [])];
         convShowChoices(a2ChoiceLabels);
         a2Choice = -1;
         a2TP = 143;
         a2TT = 0;
       }
 
-      // ── TP 143: wait for player invite/walk away input ──
-      else if (a2TP === 143 && a2TT > 600) {
+      // ── TP 143: wait for invite/walk away input ───────────────
+      else if (a2TP === 143 && a2TT > A2.CHOICE_LOCK) {
         if (clickPending) {
           clickPending = false;
           if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
@@ -2665,44 +2916,41 @@
         if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
           convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          if (a2Choice === 1) {
-            a2TP = 25; // bail — same as before
-          } else {
-            a2TP = 14; // proceed to match check
-          }
+          a2TP = a2Choice === 1 ? 25 : 14;
           a2TT = 0;
         }
       }
 
-      // ── TP 14: check match, route accordingly ──
+      // ── TP 14: check match, route ─────────────────────────────
       else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (a2TN.tp === "narc") {
-          // narcs always probe deeper regardless of what player said
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.helloTags ?? []);
-          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.helloTags ?? []);
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? []);
+          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? []);
           convAddLine(skeptResult.text, "them", convNPCColor);
           a2TP = 15;
         } else if (!matched) {
-          // tone deaf — mismatch and leave
           const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
-          convAddLine(DM.draw(mismatchDeck) + " " + DM.draw(DECK_NO_BYE), "them", convNPCColor);
-          setTimeout(() => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN), convFadeDuration + 800);
+          convAddLine(DM.draw(mismatchDeck, a2TN.helloTags ?? []) + " " + DM.draw(DECK_NO_BYE, a2TN.helloTags ?? []), "them", convNPCColor);
+          setTimeout(
+            () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
+            convFadeDuration + 800,
+          );
           a2TP = 7;
         } else {
-          // matched, not narc
           if (Math.random() < 0.8) {
-            const pair = DM.draw(DECK_JOIN_CONSENT);
+            const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.inviteTags ?? []);
             convAddLine(pair.join, "them", convNPCColor);
             a2TN._line2 = pair.consent;
             a2TP = 21;
           } else {
-            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.helloTags ?? []);
-            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.helloTags ?? []);
+            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.inviteTags ?? []);
+            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.inviteTags ?? []);
             convAddLine(warmResult.text, "them", convNPCColor);
             a2TP = 15;
           }
@@ -2710,12 +2958,12 @@
         a2TT = 0;
       }
 
-      // ── TP 15: show second round choices ──
-      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 1800) && _convChunkQueue.length === 0) {
-        const pitchTags = a2TN.sayMoreTags ?? a2ChoiceTags?.[a2Choice] ?? a2TN.helloTags ?? [];
-        const strongerLine = DM.draw(DECK_STRONGER_PITCH, pitchTags);
-        DM.clearLastTags(); // stronger pitch tags stop here
-        a2PitchLines = [strongerLine, DM.draw(DECK_BACK_OFF_LATE)];
+      // ── TP 15: show second round choices ─────────────────────
+      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, T.hold) && _convChunkQueue.length === 0) {
+        const pitchTags = a2TN.sayMoreTags ?? [];
+        const strongerResult = DM.drawWithTags(DECK_STRONGER_PITCH, pitchTags);
+        a2TN.strongerTags = strongerResult.tags.length > 0 ? strongerResult.tags : pitchTags;
+        a2PitchLines = [strongerResult.text, DM.draw(DECK_BACK_OFF_LATE, pitchTags)];
         const tryHarderLabel = a2TN.kind === "angry" ? window.LANG.choiceTryHarderAngry : window.LANG.choiceTryHarderHungry;
         a2ChoiceLabels = [tryHarderLabel, window.LANG.choiceWalkAway];
         convShowChoices(a2ChoiceLabels);
@@ -2723,16 +2971,15 @@
         a2TP = 23;
         a2TT = 0;
       }
-
-      // ── TP 21: immediate join — jp first, now add cp ──
-      else if (a2TP === 21 && a2TT > 3000 && _convChunkQueue.length === 0) {
+      // ── TP 21: immediate join — add consent line ──────────────
+      else if (a2TP === 21 && a2TT > T.hold && _convChunkQueue.length === 0) {
         convAddLine(a2TN._line2, "them", convNPCColor);
         a2TP = 8;
         a2TT = 0;
       }
 
-      // ── TP 23: wait for second choice ──
-      else if (a2TP === 23 && a2TT > 1100) {
+      // ── TP 23: wait for second choice ────────────────────────
+      else if (a2TP === 23 && a2TT > A2.CHOICE_LOCK) {
         if (clickPending) {
           clickPending = false;
           if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
@@ -2743,20 +2990,17 @@
         if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+
         if (a2Choice >= 0) {
           audio.play("click");
           convHideChoices();
           convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          if (a2Choice === 0) {
-            a2TP = 24; // second pitch resolves directly — no second invite
-          } else {
-            a2TP = 24; // walked away — also resolves in TP 24
-          }
+          a2TP = 24;
           a2TT = 0;
         }
       }
 
-      // ── TP 24: resolve second choice — narc reveals here, or join/defer for regulars ──
+      // ── TP 24: resolve second choice ─────────────────────────
       else if (a2TP === 24 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
         if (a2Choice === 1) {
           DM.endConv();
@@ -2765,94 +3009,101 @@
           a2TN.cd = 9999;
           a2TN = null;
           a2TalkCD = 500;
-          if (wasNarc) {
-            showBanner(window.LANG.bannerGoodCallNarc, C_SUCCESS, 3000);
-          } else {
-            addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
-          }
-          convEndWhenDone(1200, () => {
+          if (wasNarc) showBanner(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold);
+          else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+          convEndWhenDone(A2.RECRUIT_CLOSE, () => {
             dialogStack = [];
             convStartFade();
           });
         } else if (a2TN.tp === "narc") {
-          convAddLine(DM.draw(DECK_NARC_REV), "them", C_DANGER);
+          convAddLine(DM.draw(DECK_NARC_REV, a2TN.strongerTags ?? []), "them", C_DANGER);
           a2TP = 9;
           a2TT = 0;
         } else {
           if (Math.random() < 0.6) {
-            const pair = DM.draw(DECK_JOIN_CONSENT);
+            const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.strongerTags ?? []);
             convAddLine(pair.join, "them", convNPCColor);
             a2TN._line2 = pair.consent;
             a2TP = 21;
           } else {
-            convAddLine(DM.draw(DECK_NOT_NOW), "them", convNPCColor);
+            const notNowResult = DM.drawWithTags(DECK_NOT_NOW, a2TN.strongerTags ?? []);
+            a2TN.notNowTags = notNowResult.tags.length > 0 ? notNowResult.tags : (a2TN.strongerTags ?? []);
+            convAddLine(notNowResult.text, "them", convNPCColor);
             a2TP = 10;
           }
           a2TT = 0;
         }
       }
 
-      // ── TP 25: player bailed at first round ──
-      // ── TP 25: player bailed at first round — NPC responds then conv ends ──
-      else if (a2TP === 25 && a2TT > 1100 && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_BAIL_RESPONSE), "them", convNPCColor);
+      // ── TP 25: player bailed first round ─────────────────────
+      else if (a2TP === 25 && a2TT > T.beat && _convChunkQueue.length === 0) {
+        convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2TN.helloTags ?? []), "them", convNPCColor);
         a2TP = 251;
         a2TT = 0;
       }
 
-      // ── TP 251: close conv after bail response ──
-      else if (a2TP === 251 && a2TT > readDelay(convLog[convLog.length - 1]?.text, CONV_BAIL_MS) && _convChunkQueue.length === 0) {
+      // ── TP 251: close after bail ──────────────────────────────
+      else if (a2TP === 251 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.BAIL_CLOSE) && _convChunkQueue.length === 0) {
         DM.endConv();
         const wasNarc = a2TN.tp === "narc";
         a2TN.st = "done";
         a2TN.cd = 9999;
         a2TN = null;
         a2TalkCD = 500;
-        if (wasNarc) {
-          addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
-        } else {
-          addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
-        }
-        convEndWhenDone(1200, () => {
+        if (wasNarc) addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
+        else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+        convEndWhenDone(T.exit, () => {
           dialogStack = [];
           convStartFade();
         });
       }
 
-      // ── TP 7: NPC declined, close conv ──
-      else if (a2TP === 7 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+      // ── TP 7: NPC declined ────────────────────────────────────
+      else if (a2TP === 7 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.MISMATCH_CLOSE) && _convChunkQueue.length === 0) {
         DM.endConv();
         a2TN.st = "done";
         a2TN.cd = 9999;
         a2TN = null;
         a2TalkCD = 500;
-        convEndWhenDone(1200, () => {
+        convEndWhenDone(T.exit, () => {
           dialogStack = [];
           convStartFade();
         });
       }
 
-      // ── TP 8: recruit ──
+      // ── TP 8: recruit! ────────────────────────────────────────────
       else if (a2TP === 8 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
         DM.endConv();
         const n = a2TN;
         n.st = "rec";
         a2CrewCount++;
         audio.play("recruit");
-        spark(Math.round(a2PX), Math.round(a2PY), C_TEAL, 10);
+        // Big celebration sparks
+        for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
+        triggerFlashGood();
         a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-        setTimeout(() => addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL), convFadeDuration + 400);
+        // Progress message
+        const _rem = A2_MIN - a2CrewCount;
+        let _progressMsg;
+        if (_rem > 0) {
+          const _ordinals = window.LANG.recruitOrdinals;
+          const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
+          _progressMsg = _haveOrd.toUpperCase() + " " + window.LANG.recruitProgress1 + _rem + window.LANG.recruitProgressRemaining;
+        } else {
+          _progressMsg = window.LANG.recruitProgressComplete;
+        }
+        setTimeout(() => addFloat(_progressMsg, 0, 0, _rem > 0 ? C_ORANGE : C_TEAL), convFadeDuration + 400);
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
-        convEndWhenDone(1200, () => {
+        convEndWhenDone(A2.RECRUIT_CLOSE, () => {
           dialogStack = [];
           convStartFade();
         });
       }
 
-      // ── TP 9: narc reveal consequence ──
-      else if (a2TP === 9 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+      // ── TP 9: narc reveal consequence ─────────────────────────
+      else if (a2TP === 9 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.NARC_PAUSE) && _convChunkQueue.length === 0) {
         DM.endConv();
         const n = a2TN;
         n.st = "angry";
@@ -2867,13 +3118,13 @@
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
-        convEndWhenDone(1200, () => {
+        convEndWhenDone(T.exit, () => {
           dialogStack = [];
           convReset();
         });
       }
 
-      // ── TP 10: NPC defers — maybe returns later ──
+      // ── TP 10: NPC defers ─────────────────────────────────────
       else if (a2TP === 10 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
         DM.endConv();
         const n = a2TN;
@@ -2882,7 +3133,7 @@
         addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, "#a80");
         a2TN = null;
         a2TalkCD = 500;
-        convEndWhenDone(1200, () => {
+        convEndWhenDone(T.exit, () => {
           dialogStack = [];
           convStartFade();
         });
@@ -2900,8 +3151,8 @@
               convPlayerColor = C_PLAYER;
               convNPCColor = n.col;
               convVisible = true;
-              convAddLine(DM.draw(DECK_RETURN), "them", n.col);
-              convEndWhenDone(1200, () => {
+              convAddLine(DM.draw(DECK_RETURN, n.notNowTags ?? []), "them", n.col);
+              convEndWhenDone(T.exit, () => {
                 dialogStack = [];
                 convStartFade();
               });
@@ -2912,26 +3163,38 @@
         );
       }
 
-      hudScore.textContent = a2CrewCount;
       return;
     }
+    /* ── end a2TN block ───────────────────────────────────────── */
 
     if (a2SD) {
       if (a2SDT === null) {
         a2SDT = 0;
-        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, 4500);
+        // Big celebration burst
+        for (let _ci = 0; _ci < 6; _ci++) {
+          setTimeout(() => {
+            burstGood(Util.randInt(4, W - 4), Util.randInt(2, H - 2), C_TEAL, 10);
+            triggerFlashGood();
+            audio.play("recruit");
+          }, _ci * 280);
+        }
+        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, T.linger + 2000);
+        // Crew cluster toward player
+        for (let _ci2 = 0; _ci2 < a2Crew.length; _ci2++) {
+          a2Crew[_ci2]._celebrating = true;
+        }
       }
       a2SDT += dt;
       if (a2SDT > 5500 && a2SDT - dt <= 5500) {
-        showBanner(window.LANG.bannerTimeToRally, C_ORANGE, 999999);
+        showBanner(window.LANG.bannerTimeToRally, C_ORANGE, 3000);
       }
-      if (a2SDT > 7500 && clickPending) {
-        clickPending = false;
+      // Auto-advance after 8.5s — no click needed
+      if (a2SDT > 8500) {
         spark(Math.floor(W / 2), H - 2, C_ORANGE, 5);
         initInter(
           [
             { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
-            { pause: true, d: 800 },
+            { pause: true, d: T.bannerBeat },
             { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2500 },
           ],
           initAct2b,
@@ -2946,7 +3209,7 @@
       a2SV = true;
       setTimeout(() => {
         a2SD = true;
-      }, 1800);
+      }, T.hold);
     }
 
     a2Spd = 0.004 + a2T * 0.00000015;
@@ -2984,25 +3247,21 @@
       const newRu = Util.clamp(a2PRu + a2HopIntent, 0, A2_NUM_LANES - 1);
       const sameRoad = Math.floor(a2PRu / 2) === Math.floor(newRu / 2);
       let atGap = sameRoad;
-      if (!atGap) {
-        for (const rd of a2Roads) {
+      if (!atGap)
+        for (const rd of a2Roads)
           if (pwx >= rd.wx - 2 && pwx <= rd.wx + A2_VRW + 2) {
             atGap = true;
             break;
           }
-        }
-      }
-      if (!atGap) {
-        for (const blk of a2Blocks) {
+      if (!atGap)
+        for (const blk of a2Blocks)
           if (Math.abs(pwx - blk.wx) <= 3 || Math.abs(pwx - (blk.wx + blk.w)) <= 3) {
             atGap = true;
             break;
           }
-        }
-      }
       if (atGap && newRu !== a2PRu) {
         a2PRu = newRu;
-        a2PY = a2RuY(a2PRu) + 0;
+        a2PY = a2RuY(a2PRu);
         a2Hopping = false;
         a2HopIntent = 0;
         a2HopTimer = 0;
@@ -3028,19 +3287,13 @@
     for (const n of a2NPCs) {
       if (n.st !== "idle") continue;
       const dist = Math.abs(n.wx - pwx2);
-      if (dist < 18 && dist > 3 && a2T > 3000) {
-        n.ambShow = true;
-      } else {
-        n.ambShow = false;
-      }
+      n.ambShow = dist < 18 && dist > 3 && a2T > 3000;
     }
 
     if (a2TalkCD <= 0 && a2T > 1000 && !convVisible) {
       const pwx = a2WX + a2PX;
       for (const n of a2NPCs) {
-        if (n.st !== "idle") continue;
-        if (n.cd > 0) continue;
-        if (n.ru !== a2PRu) continue;
+        if (n.st !== "idle" || n.cd > 0 || n.ru !== a2PRu) continue;
         if (Math.abs(n.wx - pwx) < 3) {
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
@@ -3057,7 +3310,7 @@
     if (!a2SV) {
       if (!a2TimeWarned && a2T > A2_TIME_WARN_MS) {
         a2TimeWarned = true;
-        showBanner(window.LANG.bannerCopsCircling, C_WARN, 3000);
+        showBanner(window.LANG.bannerCopsCircling, C_WARN, T.bannerHold);
       }
       if (a2T > A2_TIME_LIMIT_MS) {
         quickBust("timeout", initAct2);
@@ -3065,21 +3318,7 @@
       }
     }
 
-    hudLabel.textContent = window.LANG.hudCrewLabel;
-    if (a2HudFlashT > 0) {
-      hudScore.textContent = a2HudFlashMsg;
-      hudScore.style.color = C_SUCCESS;
-    } else {
-      hudScore.textContent = a2CrewCount;
-      hudScore.style.color = C_DANGER;
-    }
-    if (a2SV) hudStatus.textContent = "Store: " + Math.max(0, Math.floor((a2SW - a2WX) / 3)) + "m";
-    else if (a2CrewCount < A2_MIN) {
-      const timeLeft = Math.max(0, Math.floor((A2_TIME_LIMIT_MS - a2T) / 1000));
-      hudStatus.textContent = "Need " + (A2_MIN - a2CrewCount) + " | " + timeLeft + "s";
-    } else hudStatus.textContent = "Keep going!";
-    if (a2Ht > 0) hudStatus.textContent += " | HEAT:" + a2Ht + "/" + A2_MH;
-    hudStatus.style.color = a2Ht >= 2 || (a2TimeWarned && !a2SV) ? C_DANGER : C_SUCCESS;
+    _updateDomHud();
   }
 
   function renderAct2() {
@@ -3160,7 +3399,10 @@
       if (cx2 >= 0 && cx2 + 3 < W) grid.art(r.art || A2_ROB, cx2, cy2, crewCol);
     }
     // Player — glow effect at start
-    grid.art(A2_PA[a2PAnim], ppx, ppy, playerPulseColor(a2T));
+    const _a2PFrame = [...A2_PA[a2PAnim]];
+    const _a2PWalk = a2TN === null; // only animate when not in conversation
+    _a2PFrame[1] = _a2PWalk ? (Math.floor(a2T / 160) % 2 === 0 ? A2_PA[a2PAnim][0] : "\u20B3") : A2_PA[a2PAnim][1];
+    grid.art(_a2PFrame, ppx, ppy, playerPulseColor(a2T));
 
     // Ambient mutters above nearby NPCs
     for (const n of a2NPCs) {
@@ -3188,6 +3430,7 @@
     //   grid.textCenter("swipe ↑↓ to change lane", Math.max(1, py - 4), hintCol);
     //   grid.textCenter("hold ◀ ▶ sides to move", Math.min(H - 2, py + 4), hintCol);
     // }
+
     renderBanner();
   }
 
@@ -3213,29 +3456,28 @@
   let A2B_TOP_H, A2B_BOT_H, A2B_ROAD_Y1, A2B_ROAD_Y2;
 
   function a2bCalcLayout() {
-    /* Top buildings: rows 1 to ~25% of H
-                         Road: ~25% to ~75% of H
-                         Bottom buildings: ~75% to ~95% of H
-                         Last row: ground/heat display */
-    A2B_TOP_H = Math.max(5, Math.floor(H * 0.22));
-    A2B_BOT_H = Math.max(5, Math.floor(H * 0.22));
-    A2B_ROAD_Y1 = A2B_TOP_H + 1; /* top sidewalk line */
-    A2B_ROAD_Y2 = H - A2B_BOT_H - 2; /* bottom sidewalk line */
+    A2B_TOP_H = Math.max(7, Math.floor(H * 0.45));
+    A2B_BOT_H = Math.max(5, Math.floor(H * 0.18)); // was 0.32 — let buildings sit near true bottom
+    A2B_ROAD_Y1 = A2B_TOP_H + 1;
+    A2B_ROAD_Y2 = H - A2B_BOT_H - 2;
   }
 
   function a2bGenRow(totalWX) {
-    /* Generate a row of buildings to fill totalWX pixels */
     const parts = [];
     let sx = 0;
+    let shuffled = [];
     while (sx < totalWX) {
-      const bldg = Util.pick(A2B_BUILDINGS);
+      if (shuffled.length === 0) {
+        shuffled = [...A2B_BUILDINGS].sort(() => Math.random() - 0.5);
+      }
+      const bldg = shuffled.pop();
       parts.push({
         wx: sx,
         art: bldg.art,
         w: bldg.size,
         col: Util.pick(A2B_BCOL),
       });
-      sx += bldg.size + Util.randInt(1, 3);
+      sx += bldg.size; // no gap
     }
     return parts;
   }
@@ -3321,10 +3563,7 @@
     //   }
     // }, 2000);
 
-    hudLabel.textContent = window.LANG.hudCrewLabel;
-    hudScore.textContent = String(a2CrewCount);
-    hudStatus.textContent = "";
-    hudStatus.style.color = C_SUCCESS;
+    _updateDomHud();
   }
 
   function updateAct2b(dt) {
@@ -3387,7 +3626,13 @@
             triggerChromatic(600);
             a2bHt++;
             popupPush(window.LANG.floatNarc, Math.round(n.wx - a2bWX), n.wy, C_DANGER, 1200);
-            popupPush(Util.pick([window.LANG.floatOops, "!!", "oh no"]), Math.round(a2bPX), Math.round(a2bPY), C_PLAYER, 1200);
+            popupPush(
+              Util.pick([window.LANG.floatOops, window.LANG.floatOhNo, window.LANG.floatExclaim]),
+              Math.round(a2bPX),
+              Math.round(a2bPY),
+              C_PLAYER,
+              1200,
+            );
             if (a2bHt >= A2B_MH) {
               setTimeout(() => quickBust("busted", initAct2b), 1500);
               return;
@@ -3476,16 +3721,66 @@
       );
     }
     /* HUD */
-    hudScore.textContent = String(a2CrewCount);
-    if (a2bHt > 0) {
-      hudStatus.textContent = "HEAT: " + a2bHt + "/" + A2B_MH;
-      hudStatus.style.color = a2bHt >= 2 ? C_DANGER : "#a80";
-    } else {
-      hudStatus.textContent = "";
-    }
+    _updateDomHud();
   }
 
   function renderAct2b() {
+    /* ── very slow parallax 0.04× ── */
+    const mtScrollX = a2bWX * 0.04;
+    const mtBaseY = A2B_TOP_H - 1; // mountain base sits at top-band floor
+
+    let peakScreenX = -1;
+    let peakScreenY = 99999;
+
+    for (let x = 0; x < W; x++) {
+      const wx = x + mtScrollX; // world x (float OK for smooth scroll)
+
+      const period = 220;
+      const phase = ((wx % period) + period) % period; // 0..220
+      const norm = phase / period; // 0..1
+
+      const dome = Math.exp(-Math.pow((norm - 0.3) * 3.0, 2)); // Secondary shoulder to the right (Outremont side)
+      const shoulder = Math.exp(-Math.pow((norm - 0.62) * 5.0, 2)) * 0.35;
+      const hillH = Math.round((dome + shoulder) * (A2B_TOP_H * 0.6));
+
+      const topY = mtBaseY - hillH;
+      if (topY < peakScreenY) {
+        peakScreenY = topY;
+        peakScreenX = x;
+      }
+
+      const tallestBuilding = Math.max(...a2bTopParts.map((sp) => sp.art.length));
+
+      const hillFloor = A2B_TOP_H - tallestBuilding - 1;
+      for (let dy = topY; dy <= Math.min(mtBaseY, hillFloor); dy++) {
+        if (dy < 0 || dy >= H) continue;
+        const depth = dy - topY; // 0 at peak
+        let ch, col;
+        if (depth === 0) {
+          ch = "\u0BF3";
+          col = "#27371c"; // ridgeline
+        } else if (depth < 2) {
+          ch = "\u0B70";
+          col = "#213417"; // dense treeline
+        } else if (depth < 5) {
+          ch = "\u2592";
+          col = "#0e170a";
+        } else {
+          ch = "\u2591";
+          col = "#12200c"; // deep hillside
+        }
+
+        grid.set(x, dy, ch, col);
+      }
+    }
+
+    if (peakScreenX >= 0) {
+      const crossArt = [" | ", "-+-", " | "];
+      const cx = peakScreenX - 1; // offset left by 1 so center char aligns with peak
+      const cy = peakScreenY - 3; // place art above the peak
+      grid.art(crossArt, cx, cy, "#f0e8c0");
+    }
+
     /* ── Top building row (slight parallax 0.85×) ── */
     const topScrollX = a2bWX * 0.85;
     for (const sp of a2bTopParts) {
@@ -3503,11 +3798,11 @@
 
     /* ── Road zone — clean, no dots ── */
     /* Centre dashes — lane markings */
-    const roadMidY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
-    for (let x = 0; x < W; x++) {
-      const wx = x + Math.floor(a2bWX);
-      if (wx % 8 < 4) grid.set(x, roadMidY, "\u2500", "#ddd");
-    }
+    // const roadMidY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
+    // for (let x = 0; x < W; x++) {
+    //   const wx = x + Math.floor(a2bWX);
+    //   if (wx % 8 < 4) grid.set(x, roadMidY, "\u2500", "#ddd");
+    // }
 
     /* ── Bottom sidewalk ── */
     for (let x = 0; x < W; x++) {
@@ -3527,8 +3822,11 @@
       if (n.st !== "idle") continue;
       const sx = Math.round(n.wx - a2bWX);
       if (sx < -2 || sx > W + 2) continue;
-      const art = n.art || [n.ch, "\u03C6"];
-      grid.art(art, sx, n.wy, n.col);
+      const _a2bNpcFrame = [...(n.art || [n.ch, "\u03C6"])];
+      if (n.st === "joined") {
+        _a2bNpcFrame[1] = Math.floor(a2bT / 200 + n.wx * 0.3) % 2 === 0 ? _a2bNpcFrame[1] : "\u20B3";
+      }
+      grid.art(_a2bNpcFrame, sx, n.wy, n.col);
     }
 
     /* ── Bursts (expanding rings of glyphs) ── */
@@ -3559,15 +3857,18 @@
       const mx = Math.round(ppx + baseOX + orbitX);
       const my = Math.round(ppy + orbitY);
       if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
-        const art = m.art || [m.ch, "\u03C6"];
+        const _mobFrame = [...(m.art || [m.ch, "\u03C6"])];
+        _mobFrame[1] = Math.floor(a2bT / 200 + m.b * 30) % 2 === 0 ? _mobFrame[1] : "\u20B3";
         let col = m.col || "#3a9a3a";
         if (m.popT && m.popT > 100) col = "#fff";
-        grid.art(art, mx, my, col);
+        grid.art(_mobFrame, mx, my, col);
       }
     }
 
     /* ── Player — same 2-row art as Act 2 ── */
-    grid.art(A2_PA[Math.floor(a2bT / 250) % 2], ppx, ppy, playerPulseColor(a2bT));
+    const _a2bPFrame = [...A2_PA[Math.floor(a2bT / 10) % 2]];
+    _a2bPFrame[1] = Math.floor(a2bT / 180) % 2 === 0 ? _a2bPFrame[1] : "\u20B3";
+    grid.art(_a2bPFrame, ppx, ppy, playerPulseColor(a2bT));
 
     /* ── NPC ambient text boxes ── */
     for (const n of a2bNPCs) {
@@ -3694,8 +3995,8 @@
     //   }
     // }, 2400);
 
-    hudLabel.textContent = window.LANG.hudCrewLabel;
-    hudScore.textContent = a2CrewCount;
+    hudLabel.textContent = "";
+    hudScore.textContent = "";
     hudStatus.textContent = "";
     // Build walk-in animation: robins slide in from off-screen edges
     {
@@ -3890,13 +4191,47 @@
       }
     }
 
+    // if (a3T > 1500) {
+    //   const tapFlash = Math.sin(Date.now() / 300) > 0;
+    //   const tapY = Math.min(H - 2, ly + 5);
+    //   const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
+    //   const tapMsg = a3HatsOn && a3PlayerHatted ? "[ tap to enter store ]" : hatsAnimating ? "" : "[ tap to put on hats ]";
+    //   const tapCol = a3HatsOn && a3PlayerHatted ? (tapFlash ? "#fff" : C_PLAYER) : tapFlash ? "#fff" : C_ORANGE;
+    //   grid.textCenter(tapMsg, tapY, tapCol);
+    // }
+
+    // Trees flanking store
+    const treeCol = "#3a7a3a";
+    const treeArt = [" ^ ", "/|\\", " | "];
+    if (scx > 6) grid.art(treeArt, scx - 5, stY + 1, treeCol);
+    if (scx > 10) grid.art(treeArt, scx - 9, stY + 2, "#2a6a2a");
+    if (scx + STO_W + 5 < W) grid.art(treeArt, scx + STO_W + 2, stY + 1, treeCol);
+    if (scx + STO_W + 9 < W) grid.art(treeArt, scx + STO_W + 6, stY + 2, "#2a6a2a");
+
     if (a3T > 1500) {
       const tapFlash = Math.sin(Date.now() / 300) > 0;
       const tapY = Math.min(H - 2, ly + 5);
       const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
-      const tapMsg = a3HatsOn && a3PlayerHatted ? "[ tap to enter store ]" : hatsAnimating ? "" : "[ tap to put on hats ]";
-      const tapCol = a3HatsOn && a3PlayerHatted ? (tapFlash ? "#fff" : C_PLAYER) : tapFlash ? "#fff" : C_ORANGE;
+      // Clearer staged instructions
+      let tapMsg, tapCol;
+      if (!a3HatsOn && !hatsAnimating) {
+        tapMsg = window.LANG.act3TapHat;
+        tapCol = tapFlash ? "#fff" : C_ORANGE;
+      } else if (hatsAnimating) {
+        tapMsg = window.LANG.act3HattingInProgress;
+        tapCol = C_DIM;
+      } else if (a3HatsOn && !a3PlayerHatted) {
+        tapMsg = window.LANG.act3HattingWait;
+        tapCol = C_DIM;
+      } else {
+        tapMsg = window.LANG.act3TapEnter;
+        tapCol = tapFlash ? "#fff" : C_PLAYER;
+      }
       grid.textCenter(tapMsg, tapY, tapCol);
+      // Secondary hint line
+      if (a3HatsOn && a3PlayerHatted) {
+        grid.textCenter(window.LANG.act3HatsOnEnter, tapY - 2, C_TEAL);
+      }
     }
     // Show "put on hats" banner a couple seconds after everyone arrives, before the tap hint
     if (a3T > 2200 && a3T < 2216 && !a3HatsOn) {
@@ -3982,7 +4317,7 @@
     s4WX = 0;
     s4Sp = 0.006;
     s4Ug = 0;
-    s4UR = Math.max(0.005, 0.015 - a2CrewCount * 0.0004);
+    s4UR = Math.max(0.004, 0.012 - a2CrewCount * 0.0003); // slower = longer scene ~50s base
     s4GT = 0;
     s4LM = -1;
     s4IT = 0;
@@ -3992,7 +4327,7 @@
     state.reset({ score: 0 });
     s4AlyScore = 0;
     s4ExitPinned = false;
-    s4ExitScreenX = W - 8; /* pinned to right side of screen */
+    s4ExitScreenX = W - 5; /* tight to right edge */
     s4GrabBursts = []; /* per-grab starburst effects */
     s4RobinCheerT = 4000; /* countdown to next robin cheer */
 
@@ -4000,12 +4335,13 @@
                          Top of screen: shelving unit (~60% of H)
                          Below that: aisle (~25% of H, min 5 rows)
                          Bottom: floor line + exit row */
-    const aisleH = Math.max(5, Math.floor(H * 0.22));
+    const aisleH = Math.max(8, Math.floor(H * 0.32));
+    const S4_SHIFT = 3;
     S4_FLOOR_Y = H - 2;
     S4_AISLE_BOT = S4_FLOOR_Y - 1;
-    S4_AISLE_TOP = S4_AISLE_BOT - aisleH + 1;
-    S4_SHELF_BOT = S4_AISLE_TOP - 1; /* bottom border of shelving unit */
-    S4_SHELF_TOP = 1;
+    S4_AISLE_TOP = S4_AISLE_BOT - aisleH + 1 + S4_SHIFT;
+    S4_SHELF_BOT = S4_AISLE_TOP - 1;
+    S4_SHELF_TOP = 1 + S4_SHIFT;
 
     /* Shelf rows: each row is 4 chars tall (3 food + 1 divider) */
     S4_SHELF_ROW_H = 5;
@@ -4100,7 +4436,7 @@
     /* ── Remaining state ── */
     // s4Ex = [];
     // s4ExitPinned = false;
-    // s4ExitScreenX = W - 8; /* pinned to right side of screen */
+    // s4ExitScreenX = W - 5; /* tight to right edge */
     // s4ExitAisle = -1;
 
     s4As = [
@@ -4178,8 +4514,8 @@
       return;
     }
 
-    /* Exit appears after 8 seconds */
-    if (!s4ExitPinned && s4GT > 6) {
+    /* Exit appears after x seconds */
+    if (!s4ExitPinned && s4GT > 1) {
       s4ExitPinned = true;
       audio.play("exit");
       showBanner(window.LANG.bannerExitOpen, C_TEAL, 3000);
@@ -4222,8 +4558,16 @@
       else if (input.justPressed("right")) s4PX2 += s4TapStep;
     }
 
-    /* ── Click handling ── */
+    /* ── Click handling — always runs, independent of keyboard ── */
+
     if (clickPending && phase === "act4") {
+      /* Check exit FIRST before anything else consumes the click */
+      if (s4ExitPinned && clickSX >= s4ExitScreenX - 3 && clickSX <= s4ExitScreenX + 3 && clickSY >= S4_AISLE_BOT - 4 && clickSY <= S4_FLOOR_Y) {
+        clickPending = false;
+        endGame("escaped");
+        return;
+      }
+
       clickPending = false;
 
       /* Check if clicking on a food item in a bookcase */
@@ -4242,35 +4586,28 @@
             audio.play("grab");
             state.set("score", state.get("score") + it.food.p);
             burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, 9);
-            s4GrabBursts.push({
-              x: ix + Math.floor(S4_SLOT_W / 2),
-              y: aY + 1,
-              t: 400,
-              max: 400,
-              col: it.color,
-            });
+            s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
             addFloat(it.food.n + " +$" + it.food.p, 0, 0, it.color);
             grabbedItem = true;
             break outer4;
           }
         }
       }
+
       if (!grabbedItem && clickSY >= S4_AISLE_TOP && clickSY <= S4_FLOOR_Y) {
-        /* Click in aisle area — move player vertically toward click */
         if (clickSY < s4PY2 - 1) s4PY2 -= 2;
         else if (clickSY > s4PY2 + 1) s4PY2 += 2;
-        /* Check if clicking the EXIT */
-        if (s4ExitPinned) {
-          if (Math.abs(clickSX - s4ExitScreenX) < 8 && clickSY >= S4_FLOOR_Y - 2) {
-            endGame("escaped");
-            return;
-          }
-        }
       }
     }
 
     /* Clamp player to aisle */
     s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+
+    /* Exit collision — walk into it OR click it to leave */
+
+    if (s4ExitPinned) {
+      if (Math.abs(s4PX2 - s4ExitScreenX) < 4) endGame("escaped");
+    }
 
     /* ── Guard movement + collision ── */
     const worldPX = s4WX + s4PX2;
@@ -4289,7 +4626,7 @@
         spark(Math.round(s4PX2), Math.round(s4PY2), C_DANGER, 10);
         triggerChromatic(380);
         state.set("score", Math.max(0, state.get("score") - 20));
-        s4St2 = 800;
+        s4St2 = 500; // reduced stun so keyboard still feels responsive quickly
         showBanner(window.LANG.bannerSecurityGrabbed, C_DANGER, 1000, true);
       }
     }
@@ -4312,10 +4649,7 @@
 
     /* ── HUD ── */
     const my = state.get("score");
-    hudLabel.textContent = window.LANG.hudHaulLabel;
-    hudScore.textContent = "$" + (my + s4AlyScore);
-    hudStatus.textContent = window.LANG.hudAct4Haul(my, s4AlyScore);
-    hudStatus.style.color = s4Ug < 0.35 ? C_TEAL : s4Ug < 0.7 ? C_WARN : C_DANGER;
+    _updateDomHud();
   }
   function renderAct4() {
     const ox = Math.floor(s4WX);
@@ -4362,7 +4696,10 @@
       const sx = Math.round(g.wx - s4WX),
         sy = Math.round(g.wy);
       if (sx < -3 || sx > W + 3) continue;
-      grid.art(["[S]", "/!\\"], sx, sy, C_DANGER);
+      // Guard same height as player (2 rows), with badge symbol
+      const _guardFlash = Math.floor(Date.now() / 400) % 2 === 0;
+      const _guardLeg = Math.floor(Date.now() / 200 + g.wx * 0.3) % 2 === 0 ? "\u03C6!" : "\u20B3!";
+      grid.art([_guardFlash ? "\u00A7G" : "!G", _guardLeg], sx, sy, C_DANGER);
     }
 
     /* ── Robins trailing behind player — spread out, organic ── */
@@ -4381,7 +4718,9 @@
         const src = a2Crew[i];
         const rArt = (src && src.art) || A2_ROB;
         const rCol = (src && src.col) || C_TEAL;
-        grid.art(rArt, rx, ry, rCol);
+        const _a4RFrame = [...rArt];
+        _a4RFrame[1] = Math.floor((s4GT * 1000) / 200 + i * 1.7) % 2 === 0 ? _a4RFrame[1] : "\u20B3";
+        grid.art(_a4RFrame, rx, ry, rCol);
       }
     }
 
@@ -4399,7 +4738,9 @@
     if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
       // Keep urgency flash when heat is high, otherwise use normal pulse
       let pc = s4Ug > 0.7 ? (Math.floor(Date.now() / 200) % 2 ? C_WARN : C_PLAYER) : playerPulseColor(s4GT * 1000);
-      grid.art(A2_PA[Math.floor(s4GT * 4) % 2], Math.round(s4PX2), Math.round(s4PY2), pc);
+      const _a4PFrame = [...A2_PA[Math.floor(s4GT * 4) % 2]];
+      _a4PFrame[1] = Math.floor((s4GT * 1000) / 180) % 2 === 0 ? _a4PFrame[1] : "\u20B3";
+      grid.art(_a4PFrame, Math.round(s4PX2), Math.round(s4PY2), pc);
     }
 
     /* ── Floor line ── */
@@ -4407,22 +4748,41 @@
       grid.set(x, S4_FLOOR_Y, "\u2550", "#444");
     }
 
-    /* ── EXIT — pinned to bottom-right of screen ── */
     if (s4ExitPinned) {
       const exSX = s4ExitScreenX;
-      const fl = Math.sin(Date.now() / 300) > 0 ? C_TEAL : "#3a9a8a";
-      /* Door gap in floor line */
-      for (let x = exSX - 7; x <= exSX + 7; x++) {
+      const _ef = Math.floor(Date.now() / 800) % 2 === 0;
+      const _exitCol = C_TEAL;
+      const _dimCol = "#1a5a4a";
+
+      const archTop = S4_AISLE_BOT - 2;
+      const archBot = S4_FLOOR_Y;
+      const archW = 2;
+      const lx = exSX - archW;
+      const rx = exSX + archW;
+
+      // Top beam
+      for (let x = lx; x <= rx; x++) {
+        if (x >= 0 && x < W) grid.set(x, archTop, "\u2550", _exitCol);
+      }
+      if (lx >= 0 && lx < W) grid.set(lx, archTop, "\u2554", _exitCol);
+      if (rx >= 0 && rx < W) grid.set(rx, archTop, "\u2557", _exitCol);
+
+      // Pillars
+      for (let y = archTop + 1; y < archBot; y++) {
+        if (lx >= 0 && lx < W) grid.set(lx, y, "\u2551", _exitCol);
+        if (lx + 1 >= 0 && lx + 1 < W) grid.set(lx + 1, y, "\u2502", _dimCol);
+        if (rx >= 0 && rx < W) grid.set(rx, y, "\u2551", _exitCol);
+        if (rx - 1 >= 0 && rx - 1 < W) grid.set(rx - 1, y, "\u2502", _dimCol);
+      }
+
+      // Floor gap
+      for (let x = lx; x <= rx; x++) {
         if (x >= 0 && x < W) grid.set(x, S4_FLOOR_Y, " ", null);
       }
-      // if (exSX - 8 >= 0) grid.set(exSX - 8, S4_FLOOR_Y, "\u2551", C_DANGER);
-      if (exSX + 8 < W) grid.set(exSX + 8, S4_FLOOR_Y, "\u2551", C_DANGER);
-      const _ef = Math.sin(Date.now() / 220) > 0;
-      const _exitLabel = "[ >> EXIT >> ]";
-      const _exitX = Util.clamp(exSX - 7, 0, W - _exitLabel.length);
-      if (S4_FLOOR_Y - 1 >= 0) grid.text(_exitLabel, _exitX, S4_FLOOR_Y - 1, _ef ? "#fff" : C_DANGER);
-      grid.text(_exitLabel, _exitX, S4_FLOOR_Y, _ef ? C_DANGER : "#fff");
-      // if (S4_FLOOR_Y - 1 >= 0) grid.text("EXIT ↓", Util.clamp(exSX - 2, 0, W - 6), S4_FLOOR_Y - 1, C_TEAL);
+
+      // EXIT label in beam
+      const _label = window.LANG.act4ExitLabel;
+      grid.text(_label, exSX - Math.floor(_label.length / 2), archTop, _ef ? "#fff" : _exitCol);
     }
 
     /* ── Urgency border flash ── */
@@ -4638,7 +4998,7 @@
     grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
 
     // Tap prompt
-    if (a5P === 2) renderTapPrompt("TAP TO PLACE FOOD", plY + 4, "#fff", C_TEAL);
+    if (a5P === 2) renderTapPrompt(window.LANG.act5TapFood, plY + 4, "#fff", C_TEAL);
     // Food appearing in fridge — real food art reused from Act 4
     if (a5P >= 3) {
       /* New fridge layout (width 37, height 18):
@@ -4705,7 +5065,7 @@
       }
     }
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
-      renderTapPrompt("TAP TO CONTINUE", H - 2, "#fff", C_TEAL);
+      renderTapPrompt(window.LANG.act5TapContinue, H - 2, "#fff", C_TEAL);
     popupRender();
     renderBanner();
   }
@@ -4856,7 +5216,7 @@
         convAnchorPX = Math.floor(W / 2);
         convAnchorNX = Math.floor(W / 2);
         convVisible = true;
-        convShowChoices(["yes — tell me how", "maybe someday"]);
+        convShowChoices([window.LANG.ctaChoiceYes, window.LANG.ctaChoiceMaybe]);
       }
       if (clickPending && convChoiceY2 > 0 && clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
         clickPending = false;
@@ -4865,10 +5225,10 @@
         if (ctaChoice === "yes") {
           burstGood(Math.floor(W / 2), Math.floor(H / 2), C_TEAL, 16);
           triggerFlashGood();
-          ctaEndLine = "then it starts with you.";
+          ctaEndLine = window.LANG.ctaEndYes;
           ctaEndCol = C_TEAL;
         } else {
-          ctaEndLine = "the neighbourhood will wait.";
+          ctaEndLine = window.LANG.ctaEndMaybe;
           ctaEndCol = C_DIM;
         }
       }
@@ -4881,11 +5241,11 @@
       phase = "done";
       loop.stop();
       overlay.classList.remove("hidden");
-      ovTitle.textContent = "ROBINS DES RUELLES";
+      ovTitle.textContent = window.LANG.ctaGameTitle;
       ovTitle.style.color = C_PLAYER;
-      ovSub.innerHTML = "The neighbourhood remembers.<br><br>Will you join them?";
+      ovSub.innerHTML = window.LANG.ctaFinalSub;
       ovHint.textContent = "";
-      startBtn.textContent = "PLAY AGAIN";
+      startBtn.textContent = window.LANG.ctaPlayAgain;
       overlay.querySelectorAll(".final").forEach((e) => e.remove());
       overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
       startBtn.onclick = () => {
@@ -5012,6 +5372,7 @@
   }
 
   /* ── END GAME (failure) ────────────────────────────────── */
+
   function endGame(result) {
     if (phase === "done") return;
     if (result === "escaped") {
@@ -5025,14 +5386,14 @@
     const my = state.get("score") || 0,
       tot = my + s4AlyScore;
     let title, sub, color;
+    color = C_DANGER;
     if (result === "busted") {
-      color = C_DANGER;
       title = window.LANG.endGameBustedTitle;
       sub = window.LANG.endGameBustedSub;
     } else {
-      color = C_DANGER;
-      title = tot > 0 ? window.LANG.endGameCaughtTitle : window.LANG.endGameCaughtEmpty;
-      sub = tot > 0 ? window.LANG.endGameCaughtSub + s4AlyScore + "." : window.LANG.endGameCaughtSubEmpty;
+      // "caught" — do NOT say escaped
+      title = window.LANG.endGameCaughtTitle || "CAUGHT.";
+      sub = window.LANG.endGameCaughtSub + (tot > 0 ? " " + window.LANG.endGameCaughtHad.replace("{tot}", tot) : "");
     }
     overlay.classList.remove("hidden");
     ovTitle.textContent = title;
