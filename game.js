@@ -1935,7 +1935,7 @@
       }
       if (tooClose) continue;
       placed++;
-      const msg = Util.pick(["ugh", "merde", ":(", "sigh", "...", "pfft", "crisse", "oy", "bruh", "why me", "$$$", "so tired"]);
+      const msg = Util.pick(window.LANG.act1AmbMutters);
       const startShowing = Math.random() < 0.4;
       a1AmbNPCs.push({
         x: nx,
@@ -1987,7 +1987,7 @@
       if (an.msgCD <= 0) {
         an.msgT = an.msgMax;
         an.msgCD = Util.randInt(8000, 18000);
-        an.msg = Util.pick(["ugh", "merde", ":(", "sigh", "...", "pfft", "crisse", "oy", "bruh", "why", "$$$", "tired"]);
+        an.msg = Util.pick(window.LANG.act1AmbMutters);
       }
       if (an.msgT > 0) an.msgT -= dt;
     }
@@ -3083,6 +3083,8 @@
         n.st = "rec";
         a2CrewCount++;
         audio.play("recruit");
+        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
+
         // Big celebration sparks
         for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
         triggerFlashGood();
@@ -3093,7 +3095,10 @@
         if (_rem > 0) {
           const _ordinals = window.LANG.recruitOrdinals;
           const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
-          _progressMsg = _haveOrd.toUpperCase() + " " + window.LANG.recruitProgress1 + _rem + window.LANG.recruitProgressRemaining;
+          _progressMsg = window.LANG.recruitProgress1
+            .replace("{ord}", _haveOrd.toUpperCase())
+            .replace("{rem}", _rem)
+            .replace("{remaining}", window.LANG.recruitProgressRemaining);
         } else {
           _progressMsg = window.LANG.recruitProgressComplete;
         }
@@ -3115,6 +3120,8 @@
         n.col = C_DANGER;
         a2Ht++;
         audio.play("narc");
+        addFloat(window.LANG.floatNarc, 0, 0, C_DANGER);
+
         spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
         triggerChromatic(500);
         for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
@@ -3423,9 +3430,7 @@
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-    if (a2SD && a2SDT !== null && a2SDT > 4500)
-      renderTapPrompt("tap to continue", H - 2, "#fff", C_DIM); /* Heat is shown in the HUD — no in-game overlay needed */
-    // Mobile hint: shown for first 5 seconds, fades out
+    if (a2SD && a2SDT !== null && a2SDT > 4500) renderTapPrompt(window.LANG.tapToContinue, H - 2, "#fff", C_DIM);
     // if (Device.isMobile && a2T < 5000 && !a2TN) {
     //   const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
     //   const hintCol = fade > 0.6 ? C_DIM : "#444";
@@ -4959,6 +4964,7 @@
       a5P = 4;
       a5T = 0;
     }
+
     if (a5P === 4) {
       let allArrived = true;
       for (const nb of a5Neighbours) {
@@ -4968,7 +4974,8 @@
             nb.x = nb.tx;
             nb.arrived = true;
             nb.msgShow = true;
-            dialogPush(nb.msg, nb.col || C_TEAL, "center", Math.round(nb.tx), nb.ty - 2, 6000);
+            const _nbIdx = a5Neighbours.indexOf(nb);
+            dialogPush(nb.msg, nb.col || C_TEAL, "center", Math.round(nb.tx), nb.ty - 2, 1200 + _nbIdx * 150);
           } else allArrived = false;
         }
       }
@@ -5072,6 +5079,8 @@
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
       renderTapPrompt(window.LANG.act5TapContinue, H - 2, "#fff", C_TEAL);
     popupRender();
+    dialogRender();
+
     renderBanner();
   }
 
@@ -5184,7 +5193,8 @@
       if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
       y += wrapped[i].length + 1 + (l.extraGap || 0);
     }
-    if (endT >= (endD.doneT || 9999)) renderTapPrompt("tap", H - 3, "#bbb", C_DIM);
+    if (endT >= (endD.doneT || 9999)) renderTapPrompt(window.LANG.tapToContinue, H - 3, "#bbb", C_DIM);
+
     renderBanner();
   }
 
@@ -5852,7 +5862,7 @@
           ],
           initAct5,
           5,
-          5,
+          null,
         );
       },
       7: () => {
