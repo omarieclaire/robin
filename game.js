@@ -2792,7 +2792,7 @@
         convVisible = true;
         DM.startConv();
         const greetResult = DM.drawWithTags(DECK_GREET);
-        a2LastGreetTone = greetResult.tags[0] ?? "casual";
+        a2TN.greetTone = greetResult.tags[0] ?? "casual";
         convAddLine(greetResult.text, "you", convPlayerColor);
         a2TP = 12;
         a2TT = 0;
@@ -2835,8 +2835,9 @@
           a2TN.helloTags ?? [],
         );
         const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
-        a2ChoiceTags = [matchResult.tags, badReadResult.tags, []];
-        a2PitchLines = [matchResult.text, badReadResult.text, DM.draw(DECK_BACK_OFF_EARLY, a2TN.helloTags ?? [])];
+        const bailResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.helloTags ?? []);
+        a2ChoiceTags = [matchResult.tags, badReadResult.tags, bailResult.tags];
+        a2PitchLines = [matchResult.text, badReadResult.text, bailResult.text];
         DM.clearLastTags();
         const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
         a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
@@ -2897,7 +2898,9 @@
         a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
         const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
         a2TN.inviteTags = inviteResult.tags;
-        a2PitchLines = [inviteResult.text, DM.draw(DECK_BACK_OFF_EARLY, a2TN.fillerTags ?? [])];
+        const bailLateResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.fillerTags ?? []);
+        a2TN.bailLateTags = bailLateResult.tags;
+        a2PitchLines = [inviteResult.text, bailLateResult.text];
         convShowChoices(a2ChoiceLabels);
         a2Choice = -1;
         a2TP = 143;
@@ -2921,6 +2924,7 @@
           audio.play("click");
           convHideChoices();
           convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
+          if (a2Choice === 1) a2ChoiceTags[2] = a2TN.bailLateTags ?? [];
           a2TP = a2Choice === 1 ? 25 : 14;
           a2TT = 0;
         }
@@ -2936,7 +2940,8 @@
           a2TP = 15;
         } else if (!matched) {
           const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
-          convAddLine(DM.draw(mismatchDeck, a2TN.helloTags ?? []) + " " + DM.draw(DECK_NO_BYE, a2TN.helloTags ?? []), "them", convNPCColor);
+          const badReadTags = a2ChoiceTags[1] ?? [];
+          convAddLine(DM.draw(mismatchDeck, badReadTags) + " " + DM.draw(DECK_NO_BYE, badReadTags), "them", convNPCColor);
           setTimeout(
             () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
             convFadeDuration + 800,
@@ -3037,7 +3042,7 @@
 
       // ── TP 25: player bailed first round ─────────────────────
       else if (a2TP === 25 && a2TT > T.beat && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2TN.helloTags ?? []), "them", convNPCColor);
+        convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2ChoiceTags[2] ?? []), "them", convNPCColor);
         a2TP = 251;
         a2TT = 0;
       }

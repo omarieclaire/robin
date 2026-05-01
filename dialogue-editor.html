@@ -352,7 +352,7 @@
 
       /* ── section separators ── */
       .section-sep {
-        font-size: 1rem;
+        font-size: 1.2rem;
         font-family: "Courier New", monospace;
         text-transform: uppercase;
         letter-spacing: 1.5px;
@@ -456,6 +456,9 @@
         border-color: var(--sel-border);
         border-left: 6px solid var(--sel-bar);
         background: #fff8d6;
+        box-shadow: 0 2px 8px rgba(200, 160, 32, 0.25);
+        outline: 2px solid var(--sel-border);
+        outline-offset: -1px;
       }
       .item.selected.thread-greet {
         border-right: 2px dashed var(--tc-greet);
@@ -493,6 +496,7 @@
         border-color: var(--other-border);
         border-left-color: var(--other-bar);
         background: var(--other-bg);
+        opacity: 0.45;
       }
       .item.angry {
         border-left-color: #b05050;
@@ -516,28 +520,28 @@
       /* ── thread right-border on items ── */
       /* continuing items get a dashed right border in the thread colour of the NEXT column */
       .item.thread-greet {
-        border-right: 2px dashed var(--tc-greet);
+        border-right: 4px solid var(--tc-greet);
       }
       .item.thread-hello {
-        border-right: 2px dashed var(--tc-hello);
+        border-right: 4px solid var(--tc-hello);
       }
       .item.thread-pitch {
-        border-right: 2px dashed var(--tc-pitch);
+        border-right: 4px solid var(--tc-pitch);
       }
       .item.thread-filler {
-        border-right: 2px dashed var(--tc-filler);
+        border-right: 4px solid var(--tc-filler);
       }
       .item.thread-recruit {
-        border-right: 2px dashed var(--tc-recruit);
+        border-right: 4px solid var(--tc-recruit);
       }
       .item.thread-saymore {
-        border-right: 2px dashed var(--tc-saymore);
+        border-right: 4px solid var(--tc-saymore);
       }
       .item.thread-stronger {
-        border-right: 2px dashed var(--tc-stronger);
+        border-right: 4px solid var(--tc-stronger);
       }
       .item.thread-outcome {
-        border-right: 2px dashed var(--tc-outcome);
+        border-right: 4px solid var(--tc-outcome);
       }
       /* terminal items get solid red right border */
       .item.thread-terminal {
@@ -550,7 +554,7 @@
         color: var(--text);
       }
       .item.unvisited .item-text {
-        font-weight: bold;
+        font-weight: 600;
       }
       .item.visited .item-text {
         font-weight: normal;
@@ -646,12 +650,13 @@
         font-size: 1rem;
         font-family: "Courier New", monospace;
         color: var(--dim);
-        padding: 5px 8px;
+        padding: 3px 8px;
         cursor: pointer;
-        border: 1px dashed var(--border);
-        margin: 4px 0;
-        background: var(--bg3);
-        border-radius: 2px;
+        border: none;
+        border-top: 1px dashed var(--border);
+        margin: 6px 0 2px 0;
+        background: transparent;
+        border-radius: 0;
         letter-spacing: 0.5px;
         text-transform: uppercase;
         display: flex;
@@ -661,6 +666,31 @@
       .unmatched-toggle:hover {
         color: var(--accent);
         border-color: var(--accent);
+        background: transparent;
+      }
+      .unmatched-toggle:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .unmatched-toggle + .unmatched-toggle {
+        margin-top: 2px;
+      }
+
+      .unmatched-items {
+        margin-bottom: 6px;
+      }
+
+      .section-items {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+      }
+
+      .section-items:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
       }
       .unmatched-items.hidden {
         display: none;
@@ -1013,6 +1043,90 @@
       #script-toggle:hover {
         background: #2a3820;
       }
+
+      /* ── export modal ── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Courier New", monospace;
+      }
+      .modal-box {
+        background: #1c2818;
+        border: 1px solid #c8b870;
+        padding: 28px 32px;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .modal-title {
+        font-size: 1rem;
+        color: #c8b870;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .modal-desc {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: #c8d8b0;
+        font-family: Georgia, serif;
+      }
+      .modal-btn-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .modal-btn {
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        padding: 7px 16px;
+        background: transparent;
+        border: 1px solid #4a6040;
+        color: #a0b888;
+        cursor: pointer;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .modal-btn:hover {
+        border-color: #c8b870;
+        color: #c8b870;
+      }
+      .modal-btn.primary {
+        border-color: #c8b870;
+        color: #c8b870;
+      }
+      .modal-btn.diff {
+        border-color: #6aaa48;
+        color: #8acc68;
+      }
+      .modal-btn.diff:hover {
+        border-color: #aaee78;
+        color: #c8ee98;
+      }
+      .modal-stats {
+        font-size: 1rem;
+        color: #8aaa70;
+        background: #0e1208;
+        border: 1px solid #3a4a30;
+        padding: 10px 12px;
+        font-family: "Courier New", monospace;
+        line-height: 1.7;
+      }
+      .modal-stats .stat-row {
+        display: flex;
+        justify-content: space-between;
+      }
+      .modal-stats .stat-row .num {
+        color: #c8b870;
+      }
+      .modal-stats .stat-row.zero .num {
+        color: #5a7050;
+      }
     </style>
   </head>
   <body>
@@ -1179,6 +1293,13 @@
         "PREFIX_direct_narc",
       ];
 
+      // ── snapshot pristine source-file state BEFORE loadData() applies localStorage edits ──
+      // ORIGINAL_DATA is what's in the actual .js source file. It's the baseline we diff against.
+      const ORIGINAL_DATA = {};
+      SAVEABLE.forEach((k) => {
+        if (D[k]) ORIGINAL_DATA[k] = JSON.parse(JSON.stringify(D[k]));
+      });
+
       function saveData() {
         try {
           const snap = {};
@@ -1296,6 +1417,7 @@
 
       function dmScore(item, followTags) {
         const tags = tagsOf(item);
+        if (tags.length === 0) return -1;
         if (tags.some((t) => followTags && followTags.includes(t))) return 2;
         return 0;
       }
@@ -1319,7 +1441,8 @@
       let P = {},
         EDIT_KEY = null,
         colFilters = {},
-        lastFocusColId = null;
+        lastFocusColId = null,
+        lastFocusColCaret = null;
 
       function wrapPlain(arr, dn) {
         return arr.map((x, i) => ({
@@ -1433,7 +1556,7 @@
           deckName: "P_GREET",
           role: "player",
           tc: "greet",
-          stepNote: "DECK_GREET · draws freely · tone tag → prefix only",
+          stepNote: "you speak first · your tone (casual / concerned / direct) shapes the NPC's opening",
           clearKey: [
             "greetIdx",
             "tone",
@@ -1470,6 +1593,7 @@
             const same = P.greetIdx === i;
             if (same) {
               _clearFrom("greetIdx");
+              scrollColTop("greet");
               render();
               return;
             }
@@ -1495,7 +1619,7 @@
           deckName: prefixDN,
           role: "npc",
           tc: "hello",
-          stepNote: `HELLO_PREFIX[${tone}][${kind}] · matched to greet tone tag only`,
+          stepNote: "NPC's opener · short phrase before their main hello · set by your tone + NPC type",
           clearKey: [
             "prefixIdx",
             "helloIdx",
@@ -1531,6 +1655,7 @@
             const same = P.prefixIdx === i;
             if (same) {
               _clearFrom("prefixIdx");
+              scrollColTop("prefix");
               render();
               return;
             }
@@ -1554,6 +1679,7 @@
           const same = P.helloIdx === i && P.helloDN === dn;
           if (same) {
             _clearFrom("helloIdx");
+            scrollColTop("hello");
             render();
             return;
           }
@@ -1574,7 +1700,7 @@
           deckName: null,
           role: "npc",
           tc: "pitch",
-          stepNote: "draws freely · which section sets npc type · hello tags feed pitch & say-more",
+          stepNote: "NPC responds · which section you pick here decides if they're angry, hungry, or a narc",
           clearKey: [
             "helloIdx",
             "helloDN",
@@ -1598,21 +1724,21 @@
           ],
           sections: [
             {
-              label: "angry hello  [npc type: angry]",
+              label: "angry hello",
               secTc: "tc-hello",
               deckName: "DECK_ANGRY_HELLO",
               items: D.DECK_ANGRY_HELLO.map((x, i) => mkHI("DECK_ANGRY_HELLO", x, i)),
               threadClass: "thread-filler",
             },
             {
-              label: "hungry hello  [npc type: hungry]",
+              label: "hungry hello",
               secTc: "tc-hello",
               deckName: "DECK_HUNGRY_HELLO",
               items: D.DECK_HUNGRY_HELLO.map((x, i) => mkHI("DECK_HUNGRY_HELLO", x, i)),
               threadClass: "thread-filler",
             },
             {
-              label: "narc hello  [npc type: narc]",
+              label: "narc hello",
               secTc: "tc-hello",
               deckName: "D_NARC_HELLO",
               items: D.D_NARC_HELLO.map((x, i) => mkHI("D_NARC_HELLO", x, i)),
@@ -1649,7 +1775,7 @@
           deckName: null,
           role: "player",
           tc: "filler",
-          stepNote: `A/B/C choice · A&B tag-matched to hello tags · C unmatched${narcNote}`,
+          stepNote: "your move · A: meet their energy · B: talk over them (bad end) · C: run away (bad end)",
           clearKey: [
             "pitchDeck",
             "pitchIdx",
@@ -1669,7 +1795,7 @@
           ],
           sections: [
             {
-              label: P.npcType === "narc" ? "A · play along (DECK_NARC_AGREE)" : "A · match their energy (commiserate)",
+              label: P.npcType === "narc" ? "A) play along (DECK_NARC_AGREE)" : "match energy",
               secTc: "tc-filler",
               deckName: matchDN,
               items: sortPitch(matchDN),
@@ -1677,7 +1803,7 @@
               splitByScore: true,
             },
             {
-              label: "B · bad read / talk over them (tone deaf)",
+              label: "talk over them",
               secTc: "tc-terminal",
               deckName: "DECK_BAD_READ",
               items:
@@ -1691,7 +1817,7 @@
               splitByScore: true,
             },
             {
-              label: "C · bail early (run away)",
+              label: "bail",
               secTc: "tc-terminal",
               deckName: "D_BACK_OFF_EARLY",
               items: scoreAndSort(
@@ -1709,10 +1835,12 @@
               splitByScore: true,
             },
           ],
+
           onSelect: (dn, i) => {
             const same = P.pitchDeck === dn && P.pitchIdx === i;
             if (same) {
               _clearFrom("pitchDeck");
+              scrollColTop("pitch");
               render();
               return;
             }
@@ -1721,7 +1849,15 @@
             P.pitchTags = tagsOf(D[dn][i]) || [];
             P.isBoEarly = dn === "D_BACK_OFF_EARLY";
             _clearFrom("walkedAway");
-            scrollColTop(P.isBoEarly ? "bail_resp" : P.pitchDeck === "DECK_BAD_READ" ? "mismatch" : "filler");
+            scrollColTop(
+              P.isBoEarly
+                ? "bail_resp"
+                : P.pitchDeck === "DECK_BAD_READ" && P.npcType !== "narc"
+                  ? "mismatch"
+                  : P.pitchDeck === "DECK_BAD_READ" && P.npcType === "narc"
+                    ? "npcresp"
+                    : "filler",
+            );
             render();
           },
         });
@@ -1765,8 +1901,10 @@
           return cols;
         }
 
-        // PATH B: bad read
-        if (P.pitchDeck === "DECK_BAD_READ") {
+        // PATH B: bad read — non-narc routes to mismatch+end; narc routes to skeptical (skipFillerAndInvite)
+        const skipFillerAndInvite = P.pitchDeck === "DECK_BAD_READ" && P.npcType === "narc";
+
+        if (P.pitchDeck === "DECK_BAD_READ" && P.npcType !== "narc") {
           const mdn = P.npcType === "hungry" ? "DECK_MISMATCH_TOO_STRUCTURAL" : "DECK_MISMATCH_TOO_LITERAL";
           const mLabel =
             P.npcType === "hungry"
@@ -1778,34 +1916,19 @@
             deckName: mdn,
             role: "npc",
             tc: null,
-            stepNote: `${mLabel} · then DECK_NO_BYE appended`,
+            stepNote: mLabel,
             pathNote: "bad",
-            pathNoteText: "path B: bad read · draws freely",
+            pathNoteText: "path B: bad read → mismatch → end",
             items: scoreAndSort(
-              D[mdn].map((x, i) => ({ key: `${mdn}:${i}`, text: x.t, tags: x.tags || [], idx: i, selected: false, threadClass: "thread-terminal" })),
-              hTags,
-            ),
-            splitByScore: true,
-            onSelect: () => {},
-          });
-          cols.push({
-            id: "no_bye",
-            label: "+ no/bye appended",
-            deckName: "D_NO_BYE",
-            role: "npc",
-            tc: null,
-            stepNote: "D_NO_BYE · appended immediately after mismatch line",
-            pathNote: "bad",
-            items: scoreAndSort(
-              D.D_NO_BYE.map((x, i) => ({
-                key: `D_NO_BYE:${i}`,
-                text: x.t || x,
+              D[mdn].map((x, i) => ({
+                key: `${mdn}:${i}`,
+                text: x.t,
                 tags: x.tags || [],
                 idx: i,
                 selected: false,
                 threadClass: "thread-terminal",
               })),
-              hTags,
+              P.pitchTags || [],
             ),
             splitByScore: true,
             onSelect: () => {},
@@ -1816,122 +1939,138 @@
             deckName: null,
             role: null,
             isEndCol: true,
-            items: [{ key: "end_mismatch", text: "tone deaf · NPC walks away", tags: [], isEnd: true, endBad: true }],
+            items: [
+              {
+                key: "end_mismatch",
+                text: "mismatch · npc says no/bye · read the room float · conversation ends",
+                tags: [],
+                isEnd: true,
+                endBad: true,
+              },
+            ],
             onSelect: () => {},
           });
           return cols;
         }
 
         // PATH A: good read — FILLER
-        cols.push({
-          id: "filler",
-          label: "5a · npc filler line",
-          deckName: "D_FILLER",
-          role: "npc",
-          tc: "recruit",
-          stepNote: "DECK_FILLER · tag-matched to hello tags · path A only",
-          pathNote: "good",
-          pathNoteText: "path A: matched pitch",
-          clearKey: [
-            "fillerIdx",
-            "fInviteIdx",
-            "walkedAway",
-            "smDeck",
-            "smIdx",
-            "smTags",
-            "joinedEarly",
-            "strongerDeck",
-            "strongerIdx",
-            "isBOLate",
-            "outcomeSeen",
-          ],
-          items: scoreAndSort(
-            D.D_FILLER.map((x, i) => ({
-              key: `D_FILLER:${i}`,
-              text: x.t,
-              tags: x.tags || [],
-              idx: i,
-              deckName: "D_FILLER",
-              selected: P.fillerIdx === i,
-              threadClass: "thread-saymore",
-            })),
-            hTags,
-          ),
-          splitByScore: true,
-          onSelect: (dn, i) => {
-            P.fillerIdx = i;
-            P.fillerSeen = true;
-            render();
-          },
-        });
+        if (!skipFillerAndInvite)
+          cols.push({
+            id: "filler",
+            label: "5a · npc filler line",
+            deckName: "D_FILLER",
+            role: "npc",
+            tc: "recruit",
+            stepNote: "NPC keeps talking · matched to their hello · only happens on a good pitch",
+            pathNote: "good",
+            pathNoteText: "path A: matched pitch",
+            clearKey: [
+              "fillerIdx",
+              "fInviteIdx",
+              "fInviteDN",
+              "walkedAway",
+              "smDeck",
+              "smIdx",
+              "smTags",
+              "joinedEarly",
+              "strongerDeck",
+              "strongerIdx",
+              "isBOLate",
+              "outcomeSeen",
+            ],
+            items: scoreAndSort(
+              D.D_FILLER.map((x, i) => ({
+                key: `D_FILLER:${i}`,
+                text: x.t,
+                tags: x.tags || [],
+                idx: i,
+                deckName: "D_FILLER",
+                selected: P.fillerIdx === i,
+                threadClass: "thread-saymore",
+              })),
+              hTags,
+            ),
+            splitByScore: true,
+            onSelect: (dn, i) => {
+              P.fillerIdx = i;
+              P.fillerTags = tagsOf(D.D_FILLER[i]) || [];
+
+              P.fillerSeen = true;
+              render();
+            },
+          });
 
         // STEP 6: RECRUIT OR WALK
-        cols.push({
-          id: "f_invite",
-          label: "6 · recruit or walk away?",
-          deckName: null,
-          role: "player",
-          tc: "saymore",
-          stepNote: "player's second choice · recruit → step 8 · walk → end",
-          clearKey: [
-            "fInviteIdx",
-            "walkedAway",
-            "smDeck",
-            "smIdx",
-            "smTags",
-            "joinedEarly",
-            "strongerDeck",
-            "strongerIdx",
-            "isBOLate",
-            "outcomeSeen",
-          ],
-          sections: [
-            {
-              label: "recruit them (D_F_INVITE)",
-              secTc: "tc-saymore",
-              deckName: "D_F_INVITE",
-              items: scoreAndSort(
-                D.D_F_INVITE.map((x, i) => ({
-                  key: `D_F_INVITE:${i}`,
-                  text: x.t || x,
-                  tags: x.tags || [],
-                  idx: i,
-                  selected: P.fInviteIdx === i && !P.walkedAway,
-                })),
-                P.pitchTags || [],
-              ),
-              threadClass: "thread-stronger",
-              splitByScore: true,
-            },
-            {
-              label: "walk away (DECK_BACK_OFF_EARLY)",
-              secTc: "tc-terminal",
-              deckName: "D_BACK_OFF_EARLY",
-              items: scoreAndSort(
-                D.D_BACK_OFF_EARLY.map((x, i) => ({
-                  key: `D_BACK_OFF_EARLY:walk:${i}`,
-                  text: x.t,
-                  tags: x.tags || [],
-                  idx: i,
-                  deckName: "D_BACK_OFF_EARLY",
-                  selected: P.walkedAway && P.fInviteIdx === i,
-                })),
-                P.pitchTags || [],
-              ),
-              threadClass: "thread-terminal",
-              splitByScore: true,
-            },
-          ],
-          onSelect: (dn, i) => {
-            P.fInviteIdx = i;
-            P.walkedAway = dn === "D_BACK_OFF_EARLY";
-            _clearFrom("smDeck");
-            if (!P.walkedAway) scrollColTop("npcresp");
-            render();
-          },
-        });
+        if (!skipFillerAndInvite)
+          cols.push({
+            id: "f_invite",
+            label: "6 · recruit or walk away?",
+            deckName: null,
+            role: "player",
+            tc: "saymore",
+            stepNote: "do you ask them to join, or leave? · your choice here leads to their response or the end",
+            clearKey: [
+              "fInviteIdx",
+              "walkedAway",
+              "smDeck",
+              "smIdx",
+              "smTags",
+              "joinedEarly",
+              "strongerDeck",
+              "strongerIdx",
+              "isBOLate",
+              "outcomeSeen",
+            ],
+            sections: [
+              {
+                label: "D_F_INVITE",
+                secTc: "tc-saymore",
+                deckName: "D_F_INVITE",
+                items: scoreAndSort(
+                  D.D_F_INVITE.map((x, i) => ({
+                    key: `D_F_INVITE:${i}`,
+                    text: x.t || x,
+                    tags: x.tags || [],
+                    idx: i,
+                    selected: P.fInviteIdx === i && P.fInviteDN === "D_F_INVITE",
+                  })),
+                  P.fillerTags || P.pitchTags || [],
+                ),
+                threadClass: "thread-stronger",
+                splitByScore: true,
+              },
+              {
+                label: "back off EARLY",
+                secTc: "tc-terminal",
+                deckName: "D_BACK_OFF_EARLY",
+                items: scoreAndSort(
+                  D.D_BACK_OFF_EARLY.map((x, i) => ({
+                    key: `D_BACK_OFF_EARLY:walk:${i}`,
+                    text: x.t,
+                    tags: x.tags || [],
+                    idx: i,
+                    deckName: "D_BACK_OFF_EARLY",
+                    selected: P.walkedAway && P.fInviteIdx === i && P.pitchDeck !== "D_BACK_OFF_EARLY",
+                  })),
+                  P.pitchTags || [],
+                ),
+                threadClass: "thread-terminal",
+                splitByScore: true,
+              },
+            ],
 
-        if (P.walkedAway) {
+            onSelect: (dn, i) => {
+              // use a separate key for walk-at-invite vs bail-at-pitch
+              P.fInviteIdx = i;
+              P.fInviteDN = dn;
+              P.walkedAway = dn === "D_BACK_OFF_EARLY";
+              _clearFrom("smDeck");
+              if (!P.walkedAway) scrollColTop("npcresp");
+              render();
+            },
+          });
+
+        if (!skipFillerAndInvite && P.walkedAway) {
           cols.push({
             id: "end_walk",
             label: "— conversation ends —",
@@ -1953,20 +2092,14 @@
           idx: i,
           selected: P.smDeck === dn && P.smIdx === i,
         });
-        const smWarm =
-          P.fInviteIdx != null
-            ? scoreAndSort(
-                D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i)),
-                hTags,
-              )
-            : D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i));
-        const smSkep =
-          P.fInviteIdx != null
-            ? scoreAndSort(
-                D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i)),
-                hTags,
-              )
-            : D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i));
+        const smWarm = scoreAndSort(
+          D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i)),
+          hTags,
+        );
+        const smSkep = scoreAndSort(
+          D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i)),
+          hTags,
+        );
         const joinItems = scoreAndSort(
           D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
             key: `D_JOIN_CONSENT_PAIRS:${i}`,
@@ -1984,11 +2117,11 @@
           deckName: null,
           role: "npc",
           tc: "stronger",
-          stepNote: "80% join now · 20% say more warm · narc always skeptical · say-more matched to hello tags",
+          stepNote: "NPC reacts to your invite · 80% join on the spot · 20% want more · narc always pushes back",
           clearKey: ["smDeck", "smIdx", "smTags", "joinedEarly", "strongerDeck", "strongerIdx", "isBOLate", "outcomeSeen"],
           sections: [
             {
-              label: "80% · join immediately → two consent lines → end",
+              label: "80% join",
               secTc: "tc-recruit",
               deckName: "D_JOIN_CONSENT_PAIRS",
               items: joinItems,
@@ -1996,7 +2129,7 @@
               splitByScore: true,
             },
             {
-              label: "20% · say more warm (non-narc) → step 9",
+              label: "20% say more",
               secTc: "tc-saymore",
               deckName: "D_SAY_MORE_WARM",
               items: smWarm,
@@ -2004,7 +2137,7 @@
               splitByScore: true,
             },
             {
-              label: "narc · say more skeptical → step 9",
+              label: "say more skeptical",
               secTc: "tc-saymore",
               deckName: "D_SAY_MORE_SKEPTICAL",
               items: smSkep,
@@ -2016,6 +2149,7 @@
             const same = P.smDeck === dn && P.smIdx === i;
             if (same) {
               _clearFrom("smDeck");
+              scrollColTop("npcresp");
               render();
               return;
             }
@@ -2075,11 +2209,11 @@
           deckName: null,
           role: "player",
           tc: "outcome",
-          stepNote: "stronger pitch matched to say-more tags · walk away unmatched · no invite step",
+          stepNote: "one more try · matched to what they just said · walk away ends it",
           clearKey: ["strongerDeck", "strongerIdx", "isBOLate", "outcomeSeen"],
           sections: [
             {
-              label: "go harder (DECK_STRONGER_PITCH) → resolves in step 10",
+              label: "STRONGER_PITCH",
               secTc: "tc-outcome",
               deckName: "DECK_STRONGER_PITCH",
               items: strongerItems,
@@ -2087,7 +2221,7 @@
               splitByScore: true,
             },
             {
-              label: "walk away (DECK_BACK_OFF_LATE) → end",
+              label: "BACK_OFF_LATE",
               secTc: "tc-terminal",
               deckName: "D_BACK_OFF_LATE",
               items: scoreAndSort(
@@ -2109,6 +2243,7 @@
             const same = P.strongerDeck === dn && P.strongerIdx === i;
             if (same) {
               _clearFrom("strongerDeck");
+              scrollColTop("stronger");
               render();
               return;
             }
@@ -2141,7 +2276,7 @@
               deckName: "D_NARC_REVEAL",
               role: "npc",
               tc: null,
-              stepNote: "DECK_NARC_REV · draws freely · heat +1 · conversation ends",
+              stepNote: "narc drops the mask · heat goes up · bad outcome",
               pathNote: "narc",
               pathNoteText: "narc: always reveals here",
               items: scoreAndSort(
@@ -2178,7 +2313,7 @@
               deckName: "D_JOIN_CONSENT_PAIRS",
               role: "npc",
               tc: null,
-              stepNote: "DECK_JOIN_CONSENT · join line, then consent line ~3s later · end",
+              stepNote: "60% they join · consent line follows ~3s later · good outcome",
               pathNote: "good",
               pathNoteText: "60%: recruited",
               clearKey: ["outcomeJoinIdx"],
@@ -2207,7 +2342,7 @@
               deckName: "D_NOT_NOW",
               role: "npc",
               tc: "recruit",
-              stepNote: "DECK_NOT_NOW · NPC wanders off · returns 4-7s later via DECK_RETURN",
+              stepNote: "40% they wander off · but come back a few seconds later",
               pathNote: "bad",
               pathNoteText: "40%: not yet — returns shortly",
               clearKey: ["outcomeNotNowIdx", "outcomeReturnIdx"],
@@ -2236,7 +2371,7 @@
               deckName: "D_RETURN",
               role: "npc",
               tc: null,
-              stepNote: "DECK_RETURN · NPC rejoins · recruited · end",
+              stepNote: "NPC comes back · says one more line · then joins",
               pathNote: "good",
               pathNoteText: "returns → recruited",
               items: scoreAndSort(
@@ -2277,8 +2412,10 @@
         "isBoEarly",
         "walkedAway",
         "fillerIdx",
+        "fillerTags",
         "fillerSeen",
         "fInviteIdx",
+        "fInviteDN",
         "smDeck",
         "smIdx",
         "smTags",
@@ -2303,6 +2440,14 @@
           if (col) {
             const b = col.querySelector(".col-body");
             if (b) b.scrollTop = 0;
+            const sc = document.getElementById("cols-scroll");
+            const colLeft = col.offsetLeft;
+            const colRight = colLeft + col.offsetWidth;
+            const viewLeft = sc.scrollLeft;
+            const viewRight = viewLeft + sc.offsetWidth;
+            if (colRight > viewRight || colLeft < viewLeft) {
+              sc.scrollTo({ left: colLeft - 20, behavior: "smooth" });
+            }
           }
         }, 30);
       }
@@ -2348,11 +2493,12 @@
               const fi = col.querySelector("input[placeholder='filter…']");
               if (fi) {
                 fi.focus();
-                const l = fi.value.length;
-                fi.setSelectionRange(l, l);
+                const pos = lastFocusColCaret ?? fi.value.length;
+                fi.setSelectionRange(pos, pos);
               }
             }
             lastFocusColId = null;
+            lastFocusColCaret = null;
           }, 60);
         renderScriptPanel();
       }
@@ -2700,6 +2846,7 @@
         filterIn.addEventListener("input", () => {
           colFilters[cd.id] = filterIn.value;
           lastFocusColId = cd.id;
+          lastFocusColCaret = filterIn.selectionStart;
           render();
         });
         filterIn.addEventListener("click", (e) => e.stopPropagation());
@@ -2762,7 +2909,8 @@
 
           if (splitByScore && items.length) {
             const matched = items.filter((x) => x.score > 0);
-            const unmatched = items.filter((x) => !x.score || x.score === 0);
+            const unmatched = items.filter((x) => x.score === 0);
+            const untagged = items.filter((x) => x.score < 0);
             matched.forEach((item) => target.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
             if (unmatched.length) {
               const ukKey = `${cd.id}::${deckName}::unmatched`;
@@ -2780,6 +2928,22 @@
               unmatched.forEach((item) => uw.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
               target.appendChild(uw);
             }
+            if (untagged.length) {
+              const utKey = `${cd.id}::${deckName}::untagged`;
+              const open = isUnmatchedOpen(utKey);
+              const tog = document.createElement("div");
+              tog.className = "unmatched-toggle";
+              tog.innerHTML = `<span>${open ? "▾" : "▸"}</span><span>${open ? "hide" : "show"} ${untagged.length} untagged</span>`;
+              tog.onclick = (e) => {
+                e.stopPropagation();
+                toggleUnmatched(utKey);
+              };
+              target.appendChild(tog);
+              const uw = document.createElement("div");
+              uw.className = "unmatched-items" + (open ? "" : " hidden");
+              untagged.forEach((item) => uw.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
+              target.appendChild(uw);
+            }
           } else {
             items.forEach((item) => target.appendChild(makeItemEl(item, deckName, cd.onSelect, anySelected, tc)));
           }
@@ -2791,7 +2955,10 @@
             const sep = document.createElement("div");
             sep.className = "section-sep" + (sec.secTc ? " " + sec.secTc : "");
             const sl = document.createElement("span");
-            sl.textContent = sec.label;
+            const matchCount = (sec.items || []).filter((x) => x.score > 0).length;
+            const totalCount = (sec.items || []).length;
+            const countStr = matchCount > 0 ? ` (${matchCount}/${totalCount})` : ` (${totalCount})`;
+            sl.textContent = sec.label + countStr;
             const st = document.createElement("span");
             st.className = "sec-tog";
             st.textContent = collapsed ? "▸" : "▾";
@@ -3021,73 +3188,6 @@
           };
           el.appendChild(tr);
           refreshTags();
-
-          const noF = new Set(["P_GREET", "D_NO_BYE", "D_NOT_NOW", "D_NARC_REVEAL", "D_RETURN", "D_BACK_OFF_EARLY", "D_BACK_OFF_LATE", "D_F_INVITE"]);
-          if (!noF.has(deckName)) {
-            const fr = document.createElement("div");
-            fr.className = "follows-row";
-            fr.innerHTML = "<span>follows:</span>";
-            const fi = document.createElement("input");
-            fi.className = "follows-in";
-            fi.value = obj.follows || "";
-            fi.placeholder = "tag…";
-            const saveF = () => {
-              obj.follows = fi.value.trim() || undefined;
-              saveData();
-            };
-            fi.addEventListener("change", saveF);
-            fi.addEventListener("blur", saveF);
-            let fac = null;
-            fi.addEventListener("input", () => {
-              if (fac) {
-                fac.remove();
-                fac = null;
-              }
-              const v = fi.value.trim().toLowerCase();
-              if (!v) return;
-              const m = allTags().filter((t) => t.includes(v));
-              if (!m.length) return;
-              fac = document.createElement("div");
-              fac.className = "ac";
-              el.style.position = "relative";
-              m.slice(0, 8).forEach((t) => {
-                const d = document.createElement("div");
-                d.className = "ac-item";
-                d.textContent = t;
-                d.onmousedown = (e2) => {
-                  e2.preventDefault();
-                  fi.value = t;
-                  obj.follows = t;
-                  saveData();
-                  if (fac) {
-                    fac.remove();
-                    fac = null;
-                  }
-                };
-                fac.appendChild(d);
-              });
-              fr.style.position = "relative";
-              fr.appendChild(fac);
-            });
-            fi.addEventListener("blur", () =>
-              setTimeout(() => {
-                if (fac) {
-                  fac.remove();
-                  fac = null;
-                }
-              }, 150),
-            );
-            fi.addEventListener("keydown", (e) => {
-              if (e.key === "Escape") {
-                if (fac) {
-                  fac.remove();
-                  fac = null;
-                }
-              }
-            });
-            fr.appendChild(fi);
-            el.appendChild(fr);
-          }
         }
 
         if (deckName === "D_JOIN_CONSENT_PAIRS") {
@@ -3309,6 +3409,19 @@
           parts.push('"' + t.slice(0, 28) + (t.length > 28 ? "…" : "") + '"');
         }
         if (P.pitchDeck) parts.push(P.pitchDeck === "D_BACK_OFF_EARLY" ? "[bail]" : P.pitchDeck === "DECK_BAD_READ" ? "[bad read]" : "[pitch]");
+        if (P.fillerIdx != null) {
+          const f = D.D_FILLER[P.fillerIdx];
+          const t = f.t || f;
+          parts.push('"' + t.slice(0, 20) + (t.length > 20 ? "…" : "") + '"');
+        }
+        if (P.walkedAway) parts.push("[walked away]");
+        else if (P.fInviteIdx != null) parts.push("[invited]");
+        if (P.joinedEarly) parts.push("✓ joined");
+        else if (P.smDeck === "D_SAY_MORE_WARM") parts.push("[say more]");
+        else if (P.smDeck === "D_SAY_MORE_SKEPTICAL") parts.push("[skeptical]");
+        if (P.isBOLate) parts.push("[walked away late]");
+        else if (P.strongerDeck && P.strongerDeck !== "D_BACK_OFF_LATE") parts.push("[stronger pitch]");
+        if (P.outcomeSeen) parts.push(P.npcType === "narc" ? "heat +1" : "✓ recruited");
         document.getElementById("breadcrumb").textContent = parts.join(" › ") || "select a greeting to begin";
       }
 
@@ -3316,6 +3429,126 @@
         return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
+      // ── DIFF helpers ──────────────────────────────────────────────────────────
+      // canonicalise an item to a string for stable comparison.
+      // we sort tags so reorderings don't count as edits.
+      function _canon(x) {
+        if (x == null) return "null";
+        if (typeof x === "string") return JSON.stringify({ s: x });
+        if (x.join !== undefined) {
+          return JSON.stringify({
+            j: x.join || "",
+            c: x.consent || "",
+            tags: [...(x.tags || [])].sort(),
+          });
+        }
+        return JSON.stringify({
+          t: x.t || "",
+          tags: [...(x.tags || [])].sort(),
+          follows: x.follows || null,
+        });
+      }
+
+      // returns: { changed: [{idx, before, after}], added: [{idx, item}], removed: [{idx, item}] }
+      // strategy:
+      //   pass 1: exact-canonical matches → unchanged (consume both sides)
+      //   pass 2: pair remaining unmatched items as edits ONLY when length is equal.
+      //           when length differs, we can't reliably tell edit-vs-add-vs-remove from
+      //           positions alone, so we use length-delta to assign adds/removes first,
+      //           then pair the rest as edits. this handles the common workflow:
+      //             - text/tag edits in place → all "changed"
+      //             - "+ add line" (unshift) → all "added"
+      //             - delete button → all "removed"
+      function diffDeck(deckName) {
+        const orig = ORIGINAL_DATA[deckName] || [];
+        const cur = D[deckName] || [];
+        const result = { changed: [], added: [], removed: [] };
+
+        const origCanons = orig.map(_canon);
+        const curCanons = cur.map(_canon);
+        const origUsed = new Array(orig.length).fill(false);
+        const curUsed = new Array(cur.length).fill(false);
+
+        // pass 1: exact-match unchanged items (consume both sides)
+        for (let i = 0; i < cur.length; i++) {
+          const j = origCanons.indexOf(curCanons[i]);
+          if (j !== -1 && !origUsed[j]) {
+            origUsed[j] = true;
+            curUsed[i] = true;
+          }
+        }
+
+        // collect remaining unmatched indices on each side
+        const remCur = [];
+        const remOrig = [];
+        for (let i = 0; i < cur.length; i++) if (!curUsed[i]) remCur.push(i);
+        for (let j = 0; j < orig.length; j++) if (!origUsed[j]) remOrig.push(j);
+
+        if (remCur.length === remOrig.length) {
+          // same count → likely all in-place edits. pair by position.
+          for (let k = 0; k < remCur.length; k++) {
+            result.changed.push({ idx: remCur[k], before: orig[remOrig[k]], after: cur[remCur[k]] });
+          }
+        } else if (remCur.length > remOrig.length) {
+          // net additions. pair the first remOrig.length items as edits, rest as adds.
+          // we pair the LAST items position-wise, since adds usually happen at top via unshift,
+          // pushing originals down. so remCur[0..delta-1] are likely the new ones.
+          const delta = remCur.length - remOrig.length;
+          for (let k = 0; k < delta; k++) {
+            result.added.push({ idx: remCur[k], item: cur[remCur[k]] });
+          }
+          for (let k = 0; k < remOrig.length; k++) {
+            result.changed.push({ idx: remCur[delta + k], before: orig[remOrig[k]], after: cur[remCur[delta + k]] });
+          }
+        } else {
+          // net removals. pair as many edits as cur has remaining, rest are removes.
+          const delta = remOrig.length - remCur.length;
+          for (let k = 0; k < remCur.length; k++) {
+            result.changed.push({ idx: remCur[k], before: orig[remOrig[k]], after: cur[remCur[k]] });
+          }
+          for (let k = 0; k < delta; k++) {
+            const j = remOrig[remCur.length + k];
+            result.removed.push({ idx: j, item: orig[j] });
+          }
+        }
+
+        return result;
+      }
+
+      function hasAnyChanges() {
+        let n = 0;
+        SAVEABLE.forEach((dn) => {
+          const d = diffDeck(dn);
+          n += d.changed.length + d.added.length + d.removed.length;
+        });
+        return n;
+      }
+
+      function diffStats() {
+        const stats = [];
+        SAVEABLE.forEach((dn) => {
+          const d = diffDeck(dn);
+          const n = d.changed.length + d.added.length + d.removed.length;
+          if (n > 0) stats.push({ dn, changed: d.changed.length, added: d.added.length, removed: d.removed.length });
+        });
+        return stats;
+      }
+
+      // format a single item as a JS object literal line (mirrors the full-export format)
+      function _itemLine(x) {
+        if (x == null) return "null";
+        const ts = (tags) => (tags && tags.length ? `, tags: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, tags: []`);
+        const fs = (f) => (f ? `, follows: "${f}"` : "");
+        if (typeof x === "string") return JSON.stringify(x);
+        if (x.join !== undefined) {
+          const tp = x.tags && x.tags.length ? `, tags: [${x.tags.map((t) => `"${t}"`).join(", ")}]` : "";
+          return `{ join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)}${tp} }`;
+        }
+        const t = x.t || "";
+        return `{ t: ${JSON.stringify(t)}${ts(x.tags || [])}${fs(x.follows)} }`;
+      }
+
+      // ── full export (same as original) ────────────────────────────────────────
       function doExport() {
         const ts = (tags) => (tags && tags.length ? `, tags: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, tags: []`);
         const fs = (f) => (f ? `, follows: "${f}"` : "");
@@ -3369,6 +3602,7 @@
         wArr("DECK_HUNGRY_HELLO", D.DECK_HUNGRY_HELLO, true);
         wArr("DECK_ANGRY_PITCH", D.DECK_ANGRY_PITCH, true);
         wArr("DECK_HUNGRY_PITCH", D.DECK_HUNGRY_PITCH, true);
+        wArr("DECK_NARC_AGREE", D.DECK_NARC_AGREE, true);
         wArr("DECK_BAD_READ", D.DECK_BAD_READ, true);
         wArr("D_F_INVITE", D.D_F_INVITE, false);
         wArr("D_NO_BYE", D.D_NO_BYE, false);
@@ -3381,7 +3615,7 @@
         wArr("DECK_BAIL_RESPONSE", D.DECK_BAIL_RESPONSE, true);
         wArr("DECK_STRONGER_PITCH", D.DECK_STRONGER_PITCH, true);
         wArr("D_BACK_OFF_LATE", D.D_BACK_OFF_LATE, true);
-        wArr("D_FILLER", D.D_FILLER, true);
+        wArr("D_FILLER", D.D_FILLER, false);
         wArr("D_NARC_REVEAL", D.D_NARC_REVEAL, false);
         wArr("D_NOT_NOW", D.D_NOT_NOW, false);
         wArr("D_RETURN", D.D_RETURN, false);
@@ -3393,8 +3627,164 @@
         a.click();
         URL.revokeObjectURL(url);
       }
+
+      // ── diff-only export ──────────────────────────────────────────────────────
+      // emits each touched deck with only the lines that differ.
+      // format: changed lines show OLD (commented) and NEW side-by-side.
+      // added lines are marked // ADDED. removed lines are marked // REMOVED (commented out).
+      function doDiffExport() {
+        let out = "// ─── diff export ───\n";
+        out += "// only lines that changed since the source file are listed below.\n";
+        out += "// each deck shows: idx, OLD (commented), NEW.\n";
+        out += "// ADDED lines are new. REMOVED lines are commented out.\n";
+        out += `// generated ${new Date().toISOString()}\n\n`;
+
+        let totalDecks = 0;
+
+        SAVEABLE.forEach((dn) => {
+          const d = diffDeck(dn);
+          const n = d.changed.length + d.added.length + d.removed.length;
+          if (n === 0) return;
+          totalDecks++;
+
+          out += `// ═══ ${dn} ═══  (${d.changed.length} changed, ${d.added.length} added, ${d.removed.length} removed)\n`;
+          out += `const ${dn} = [\n`;
+
+          // sort merged list by idx so the file reads in array order
+          const entries = [];
+          d.changed.forEach((c) => entries.push({ idx: c.idx, kind: "changed", before: c.before, after: c.after }));
+          d.added.forEach((a) => entries.push({ idx: a.idx, kind: "added", item: a.item }));
+          d.removed.forEach((r) => entries.push({ idx: r.idx, kind: "removed", item: r.item }));
+          entries.sort((a, b) => a.idx - b.idx);
+
+          entries.forEach((e) => {
+            if (e.kind === "changed") {
+              out += `  // idx ${e.idx} — CHANGED\n`;
+              out += `  // OLD: ${_itemLine(e.before)},\n`;
+              out += `  ${_itemLine(e.after)},  // NEW\n`;
+            } else if (e.kind === "added") {
+              out += `  ${_itemLine(e.item)},  // ADDED at idx ${e.idx}\n`;
+            } else if (e.kind === "removed") {
+              out += `  // REMOVED at idx ${e.idx}: ${_itemLine(e.item)},\n`;
+            }
+          });
+
+          out += `];\n\n`;
+        });
+
+        if (totalDecks === 0) {
+          out += "// no changes detected.\n";
+        }
+
+        const blob = new Blob([out], { type: "text/javascript" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "game-data-words.diff.js";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // ── export modal ──────────────────────────────────────────────────────────
       function exportJS() {
-        doExport();
+        const stats = diffStats();
+        const total = stats.reduce((s, x) => s + x.changed + x.added + x.removed, 0);
+
+        const ov = document.createElement("div");
+        ov.className = "modal-overlay";
+        const bx = document.createElement("div");
+        bx.className = "modal-box";
+
+        const title = document.createElement("div");
+        title.className = "modal-title";
+        title.textContent = "export";
+        bx.appendChild(title);
+
+        const desc = document.createElement("div");
+        desc.className = "modal-desc";
+        desc.innerHTML = `<strong style="color:#e8dfc0">Full export</strong> writes the complete <code>game-data-words.js</code> ready to drop in.<br><br><strong style="color:#8acc68">Diff export</strong> writes only the lines that changed since the source file loaded — old + new side by side, with ADDED / REMOVED markers.`;
+        bx.appendChild(desc);
+
+        const stt = document.createElement("div");
+        stt.className = "modal-stats";
+        if (total === 0) {
+          const r = document.createElement("div");
+          r.className = "stat-row zero";
+          r.innerHTML = `<span>changes detected</span><span class="num">0</span>`;
+          stt.appendChild(r);
+        } else {
+          const r = document.createElement("div");
+          r.className = "stat-row";
+          r.innerHTML = `<span>total touched lines</span><span class="num">${total}</span>`;
+          stt.appendChild(r);
+          stats.slice(0, 8).forEach((s) => {
+            const row = document.createElement("div");
+            row.className = "stat-row";
+            const parts = [];
+            if (s.changed) parts.push(`${s.changed} edited`);
+            if (s.added) parts.push(`${s.added} added`);
+            if (s.removed) parts.push(`${s.removed} removed`);
+            row.innerHTML = `<span>${s.dn}</span><span class="num">${parts.join(", ")}</span>`;
+            stt.appendChild(row);
+          });
+          if (stats.length > 8) {
+            const r2 = document.createElement("div");
+            r2.className = "stat-row";
+            r2.innerHTML = `<span>… and ${stats.length - 8} more decks</span><span></span>`;
+            stt.appendChild(r2);
+          }
+        }
+        bx.appendChild(stt);
+
+        const row = document.createElement("div");
+        row.className = "modal-btn-row";
+
+        const fullBtn = document.createElement("button");
+        fullBtn.className = "modal-btn primary";
+        fullBtn.textContent = "full export";
+        fullBtn.onclick = () => {
+          document.body.removeChild(ov);
+          doExport();
+        };
+        row.appendChild(fullBtn);
+
+        const diffBtn = document.createElement("button");
+        diffBtn.className = "modal-btn diff";
+        diffBtn.textContent = total === 0 ? "diff export (empty)" : "diff export";
+        diffBtn.disabled = total === 0;
+        if (total === 0) {
+          diffBtn.style.opacity = "0.5";
+          diffBtn.style.cursor = "not-allowed";
+        }
+        diffBtn.onclick = () => {
+          if (total === 0) return;
+          document.body.removeChild(ov);
+          doDiffExport();
+        };
+        row.appendChild(diffBtn);
+
+        const cancel = document.createElement("button");
+        cancel.className = "modal-btn";
+        cancel.textContent = "cancel";
+        cancel.onclick = () => document.body.removeChild(ov);
+        row.appendChild(cancel);
+
+        bx.appendChild(row);
+        ov.appendChild(bx);
+        document.body.appendChild(ov);
+
+        // close on overlay click
+        ov.addEventListener("click", (e) => {
+          if (e.target === ov) document.body.removeChild(ov);
+        });
+        // esc to close
+        const escHandler = (e) => {
+          if (e.key === "Escape") {
+            if (document.body.contains(ov)) document.body.removeChild(ov);
+            document.removeEventListener("keydown", escHandler);
+          }
+        };
+        document.addEventListener("keydown", escHandler);
       }
 
       (function () {
