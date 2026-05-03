@@ -59,7 +59,7 @@ const DM = (() => {
   //   → picks randomly among matches
   //   → if no matches (or no matchTags), picks randomly from full deck
   //   → records drawn item's tags as lastTags
-  //   → returns text string, or pair object for DECK_JOIN_CONSENT
+  //   → returns text string, or pair object for const isTagged = (d) => d.src.length > 0 && typeof d.src[0] !== "string" && (!isPair(d.src[0]) || (d.src[0].tags?.length > 0));
   // ─────────────────────────────────────────
 
   function draw(deck, matchTags = []) {

@@ -164,6 +164,14 @@
         background: #222;
       }
 
+      .flash-gold { animation: flashGold 300ms ease-out; }
+@keyframes flashGold {
+  0% { filter: brightness(1.8) saturate(1.5); }
+  100% { filter: brightness(1) saturate(1); }
+}
+
+/* .flash-gold { background: gold !important; color: black !important; } */
+
       #game-screen.chroma {
         animation: chroma-pulse 0.13s steps(1) infinite;
       }

@@ -12,12 +12,13 @@ window.LANG_EN = {
   // banners
   bannerIsThisALife: "is this a life?",
   bannerWhoIsInControl: "who's in control here?",
+  bannerYouControlNothing: "(it sure isn't you)",
 
   bannerRecruitCrew: "recruit your crew",
   bannerWatchNarcs: "but watch out for narcs",
   bannerRallyNeighbourhood: "rally the neighbourhood!",
   bannerAvoidNarcs: "avoid narcs",
-  bannerYouHaveACrew: "You have a crew.",
+  bannerYouHaveACrew: "tiny crew assembled!",
   bannerTimeToRally: "time to rally the whole neighbourhood",
   bannerCopsCircling: "Cops are circling. Wrap it up.",
   bannerGoodCallNarc: "good call. that was a narc.",
@@ -81,20 +82,20 @@ window.LANG_EN = {
         {
           who: "p",
           texts: [
-            "when did food get so expensive?",
+            "why is food so expensive?",
             "ugh, when did grocery stores get so fucké?",
             "crisse, when did food get sacrament chére?",
             "ostie, when did food get SO expensive??",
             "CÂLICE. when did food get this expensive??",
           ],
+          hold: 3000, // setup — quick into the joke
         },
-        { who: "n", text: "idk I use a coupon app." },
-        { who: "n", text: "I've saved sixty dollars this year." },
-        { who: "n", text: "prices went up eighty." },
-
+        { who: "n", text: "idk\n but I have an app for coupons", hold: 4500 }, // mini- give it a beat
+        { who: "n", text: "and I have another app |pause|that helps me buy rotting food", hold: 5500 }, // punch — let it land
         {
           who: "p",
-          texts: ["um,|pause||pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],
+          texts: ["um,|pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],
+          hold: 4500, // last line — lingers before walking away
         },
       ],
     },
@@ -103,15 +104,15 @@ window.LANG_EN = {
         {
           who: "p",
           texts: [
-            "metro is charging $2 for an apple",
+            "it was $2 for an apple",
             "2 piasses for a freaking apple??",
             "ostie de... $2 for ONE apple?",
             "esti de marde, 2 PIASSES for ONE apple",
             "CÂLICE. 2 for an apple??!",
           ],
+          hold: 3500, // setup with weight
         },
-
-        { who: "n", text: "and?" },
+        { who: "n", text: "and?", hold: 3000 }, // short, dry — room to feel sharp
         {
           who: "p",
           texts: [
@@ -121,10 +122,9 @@ window.LANG_EN = {
             "CRISSE. nobody can survive like this",
             "TABARNAK. nobody should have to survive like this",
           ],
+          hold: 4000, // emotional beat
         },
-        { who: "p", text: "everyone was staring at me" },
-
-        { who: "p", text: "so humiliating" },
+        { who: "p", text: "just humiliating", hold: 4500 }, // last line — heavy, let it sit
       ],
     },
     {
@@ -138,14 +138,13 @@ window.LANG_EN = {
             "câline. somebody needs to do something",
             "ESTI DE CÂLICE DE TABARNAK. someone has to do something",
           ],
+          hold: 3500, // setup
         },
-        { who: "n", text: "you know," },
-        { who: "n", text: "stealing from a thief|pause||pause|isn't theft" },
-
+        { who: "n", text: "you know,\nstealing from a thief\nisn't theft", hold: 6000 }, // the THESIS of the game — let it really land
         {
           who: "p",
           texts: ["what?|pause|", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"],
-          delay: 2800,
+          hold: 4500, // last line of the act — final beat before walking away
         },
       ],
     },
@@ -170,9 +169,9 @@ window.LANG_EN = {
     { t: 2200, text: "robbed a grocery store chain in montreal" },
     { t: 3300, text: "they gave the food to the hungry" },
     { t: 4600, text: "" },
-    { t: 5400, text: "in february 2026, they hit again" },
-    { t: 6700, text: "" },
-    { t: 7500, text: "they called themselves" },
+    { t: 5400, text: "in february they hit again" },
+    { t: 6700, text: "and again in may" },
+    { t: 7500, text: "they call themselves" },
     { t: 8600, text: "ROBINS DES RUELLES" },
     { t: 9900, text: "" },
     { t: 10700, text: "is your neighbourhood next?" },
@@ -256,7 +255,7 @@ window.LANG_EN = {
   choiceWalkAway: "( ._.) walk away",
 
   // EN
-  recruitProgress1: "DOWN — ",
+  recruitProgress1: "{ord} down — {rem} to go",
   recruitProgressRemaining: " to go!",
   recruitProgressComplete: "★ CREW COMPLETE ★",
   choiceRecruitAngry: "(ง'̀-'́)ง recruit them",
@@ -300,4 +299,19 @@ window.LANG_EN = {
   muteMute: "mute",
   muteMuted: "muted",
   act1AmbMutters: ["ugh", ":(", "sigh", "...", "pfft", "oy", "bruh", "why me", "$$$", "so tired", "rent...", "bills"],
+
+  catLines: [
+    { cat: "miaou !", you: "cute." },
+    { cat: "prrrr...", you: "who's a good cat" },
+    { cat: "meow ?", you: "hi friend" },
+    { cat: "mrrrow.", you: "I see you" },
+  ],
+  coinPickups: [
+    { amount: "+$0.10", quip: "85 more = bag of chips" },
+    { amount: "+$0.01", quip: "an ancient relic" },
+    { amount: "+$2.00", quip: "don't spend it all in one place" },
+    { amount: "+$0.25", quip: "a quarter. groundbreaking." },
+    { amount: "+$5.00", quip: "dépanneur tonight." },
+    { amount: "+$0.05", quip: "lol. a nickel." },
+{ amount: "+$20.00", quip: "fake. invitation to church on the back." },  ],
 };

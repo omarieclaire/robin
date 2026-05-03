@@ -12,11 +12,13 @@ window.LANG_FR = {
   // banners
   bannerIsThisALife: "c'est ça, la vie?",
   bannerWhoIsInControl: "c'est qui qui décide ici?",
+  bannerYouControlNothing: "(ce n'est certainement pas toi)",
+
   bannerRecruitCrew: "recrute ton équipe",
   bannerWatchNarcs: "mais méfie-toi des mouchards",
   bannerRallyNeighbourhood: "rallie le quartier!",
   bannerAvoidNarcs: "évite les mouchards",
-  bannerYouHaveACrew: "T'as une équipe.",
+  bannerYouHaveACrew: "ta petite équipe est au complet !",
   bannerTimeToRally: "temps de rallier tout le quartier",
   bannerCopsCircling: "Les flics rôdent. Dépêche-toi.",
   bannerGoodCallNarc: "bonne décision. c'était un mouchard.",
@@ -237,7 +239,7 @@ window.LANG_FR = {
   choiceWalkAway: "( ._.) partir",
 
   // FR
-  recruitProgress1: "DE RECRUTÉE — ",
+  recruitProgress1: "{ord} de moins — plus que {rem}",
   recruitProgressRemaining: " à aller !",
   recruitProgressComplete: "★ ÉQUIPE COMPLÈTE ★",
   choiceRecruitAngry: "(ง'̀-'́)ง les recruter",
@@ -281,4 +283,20 @@ window.LANG_FR = {
   muteMute: "son",
   muteMuted: "muet",
   act1AmbMutters: ["ugh", "merde", ":(", "soupir", "...", "pfft", "crisse", "câline", "pourquoi", "$$$", "épuisé", "loyer..."],
+
+  catLines: [
+    { cat: "miaou !", you: "trop mignon." },
+    { cat: "prrrr...", you: "qui est un bon chat" },
+    { cat: "meow ?", you: "salut l'ami" },
+    { cat: "mrrrow.", you: "je te vois" },
+  ],
+  coinPickups: [
+    { amount: "+0,10$", quip: "85 de plus = un sac de chips" },
+    { amount: "+0,01$", quip: "une relique ancienne" },
+    { amount: "+2,00$", quip: "dépense pas tout d'un coup" },
+    { amount: "+0,25$", quip: "vingt-cinq sous. wow." },
+    { amount: "+5,00$", quip: "dép ce soir." },
+    { amount: "+0,05$", quip: "lol. cinq cennes." },
+    { amount: "+20,00$", quip: "faux. invitation à l'église au verso." },
+  ],
 };

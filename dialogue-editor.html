@@ -1978,18 +1978,18 @@
               "isBOLate",
               "outcomeSeen",
             ],
-            items: scoreAndSort(
-              D.D_FILLER.map((x, i) => ({
-                key: `D_FILLER:${i}`,
-                text: x.t,
-                tags: x.tags || [],
-                idx: i,
-                deckName: "D_FILLER",
-                selected: P.fillerIdx === i,
-                threadClass: "thread-saymore",
-              })),
-              hTags,
-            ),
+       items: scoreAndSort(
+  D.D_FILLER.map((x, i) => ({
+    key: `D_FILLER:${i}`,
+    text: x.t,
+    tags: x.tags || [],
+    idx: i,
+    deckName: "D_FILLER",
+    selected: P.fillerIdx === i,
+    threadClass: "thread-saymore",
+  })),
+  P.pitchTags || hTags,
+),
             splitByScore: true,
             onSelect: (dn, i) => {
               P.fillerIdx = i;
@@ -2092,14 +2092,16 @@
           idx: i,
           selected: P.smDeck === dn && P.smIdx === i,
         });
-        const smWarm = scoreAndSort(
-          D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i)),
-          hTags,
-        );
-        const smSkep = scoreAndSort(
-          D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i)),
-          hTags,
-        );
+
+        const inviteTags = P.fillerTags || P.pitchTags || [];
+const smWarm = scoreAndSort(
+  D.D_SAY_MORE_WARM.map((x, i) => mkSM("D_SAY_MORE_WARM", x, i)),
+  inviteTags,
+);
+const smSkep = scoreAndSort(
+  D.D_SAY_MORE_SKEPTICAL.map((x, i) => mkSM("D_SAY_MORE_SKEPTICAL", x, i)),
+  skipFillerAndInvite ? P.pitchTags || [] : inviteTags,
+);
         const joinItems = scoreAndSort(
           D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
             key: `D_JOIN_CONSENT_PAIRS:${i}`,

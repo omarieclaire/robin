@@ -41,8 +41,6 @@
     pendingDown: false,
     pendingLeft: false,
     pendingRight: false,
-    holdLeft: false,
-    holdRight: false,
   };
 
   function _mobResolveDir(dx, dy) {
@@ -72,7 +70,6 @@
           const pl = { x: Math.round(a2PX), y: Math.round(a2PY) };
           const ddx = tapCX - pl.x,
             ddy = tapCY - pl.y;
-          console.log("act2 tap: ddx:", Math.round(ddx), "ddy:", Math.round(ddy), "dir:", _mobResolveDir(ddx, ddy));
           if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
         }
         if (phase === "act2b") {
@@ -85,7 +82,6 @@
           const pl = { x: Math.round(s4PX2), y: Math.round(s4PY2) };
           const ddx = tapCX - pl.x,
             ddy = tapCY - pl.y;
-          console.log("act4 tap: tapCY:", Math.round(tapCY), "S4_AISLE_TOP:", S4_AISLE_TOP, "S4_AISLE_BOT:", S4_AISLE_BOT, "pl.y:", pl.y);
           // Give aisle a 5-row buffer above S4_AISLE_TOP so taps near the shelf edge still move player
           if (tapCY >= S4_AISLE_TOP && tapCY <= S4_FLOOR_Y) {
             if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
@@ -95,8 +91,6 @@
     }
     _mob.active = false;
     _mob.pointerId = null;
-    _mob.holdLeft = false;
-    _mob.holdRight = false;
     _mob.dir = null;
     _mob.holding = false;
   }
@@ -120,10 +114,6 @@
         _mob.holding = false;
         _mob.hopTimer = 0;
 
-        _mob.holdLeft = false;
-        _mob.holdRight = false;
-        _mob.dragAccX = 0;
-        _mob.dragAccY = 0;
         _mob.lastX = e.clientX;
         _mob.lastY = e.clientY;
       },
@@ -197,10 +187,10 @@
         a2PY = newY;
       }
     } else if (phase === "act2b") {
-      a2bPX += dxCells;
+      // Horizontal finger drag scrolls the world; vertical moves the player in the lane.
+      a2bWX += dxCells * 0.7;
       a2bPY += dyCells;
       a2bPY = Util.clamp(a2bPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
-      a2bPX = Util.clamp(a2bPX, 3, W - 4);
     } else if (phase === "act4") {
       s4PX2 += dxCells;
       s4PY2 += dyCells;
@@ -210,17 +200,6 @@
   }
 
   if (Device.isMobile) {
-    const _origIsDown = input.isDown.bind(input);
-    input.isDown = function (keyOrAction) {
-      if (phase === "act2" || phase === "act2b" || phase === "act4") {
-        if (keyOrAction === "left" && _mob.holdLeft) return true;
-        if (keyOrAction === "right" && _mob.holdRight) return true;
-        if ((phase === "act2b" || phase === "act4") && keyOrAction === "up" && _mob.holding && _mob.dir === "up") return true;
-        if ((phase === "act2b" || phase === "act4") && keyOrAction === "down" && _mob.holding && _mob.dir === "down") return true;
-      }
-      return _origIsDown(keyOrAction);
-    };
-
     const _origJP = input.justPressed.bind(input);
     input.justPressed = function (keyOrAction) {
       if (phase === "act2" || phase === "act2b" || phase === "act4") {
@@ -504,12 +483,6 @@
   let _originalPlayerHead = null;
   let _originalCrewHeads = [];
 
-  function applyHats() {
-    // Instant apply — used for restoration/cleanup only
-    applyPlayerHat();
-    for (let i = 0; i < a2Crew.length; i++) applyCrewHat(i);
-  }
-
   function applyCrewHat(i) {
     const c = a2Crew[i];
     if (!c || !c.art || c.art.length === 0) return;
@@ -533,8 +506,7 @@
         A2_PA[frame] = [_originalPlayerHead[frame] + A2_PA[frame][0].slice(1), ...A2_PA[frame].slice(1)];
       }
       _originalPlayerHead = null;
-    }
-    // Restore crew
+    } // Restore crew
     for (let i = 0; i < a2Crew.length; i++) {
       const orig = _originalCrewHeads[i];
       if (orig && a2Crew[i] && a2Crew[i].art) {
@@ -548,6 +520,20 @@
   function playerPulseColor(t) {
     // Gentle 1.4Hz white glow — works in any act, just pass the act timer
     return Math.sin(t / 0.01) > 0.3 ? "#e69224" : C_PLAYER;
+  }
+
+  function dullColor(hex, amount) {
+    // amount 0..1 — 0 = original, 1 = full gray
+    amount = amount ?? 0.55;
+    const h = hex.replace("#", "");
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    const gray = 140;
+    const mr = Math.round(r * (1 - amount) + gray * amount);
+    const mg = Math.round(g * (1 - amount) + gray * amount);
+    const mb = Math.round(b * (1 - amount) + gray * amount);
+    return "#" + mr.toString(16).padStart(2, "0") + mg.toString(16).padStart(2, "0") + mb.toString(16).padStart(2, "0");
   }
 
   const state = new State({
@@ -594,7 +580,7 @@
     flashGoodT = 350;
   }
   function triggerFlashGold() {
-    flashGoldT = 300;
+    flashGoldT = 600;
   }
   function burstGood(cx, cy, color, n) {
     /* Fan upward — celebration shape */
@@ -633,7 +619,7 @@
   let _bannerSeq = null; // active sequence state
 
   function showBanner(t, c, d, silent) {
-    if (!silent) audio.play("trumpet");
+    audio.play("trumpet");
     _bannerSeq = null; // cancel any running sequence
     bannerText = t;
     bannerColor = c || C_PLAYER;
@@ -673,7 +659,7 @@
           else bannerText = entry.t;
           if (entry.c) bannerColor = entry.c;
           seq.lineTimer = entry.d || 3000;
-          if (!seq.silent) audio.play("paper"); // subtle per-line sound
+          audio.play("trumpet"); // always play per-line sound
         }
       }
       return; // don't tick bannerTimer while sequence is running
@@ -757,7 +743,7 @@
   }
   /* ── CONVERSATION PANEL (Act 2) ────────────────────── */
 
-  const CONV_CHUNK_PAUSE_MS = 900;
+  const CONV_CHUNK_PAUSE_MS = 1400;
   const CONV_NPC_REPLY_DELAY_MS = 2200; // delay before NPC first replies
   const CONV_INVITE_DELAY_MS = 3000; // delay before invite/filler beat
   const CONV_READ_MIN_MS = 3500; // minimum read time for NPC lines
@@ -778,9 +764,9 @@
     linger: 2400, // dense/long line — full read time
 
     exit: 700, // before conv panel closes after final line
-    reply: 1800, // delay before NPC first speaks (thinking)
-    npcMin: 2800, // minimum ms to show an NPC line
-    npcPer: 200, // ms per word added on top of npcMin
+    reply: 2400, // delay before NPC first speaks (thinking)
+    npcMin: 3600, // minimum ms to show an NPC line
+    npcPer: 260, // ms per word added on top of npcMin
     chunk: 900, // gap between |pause| chunks (unchanged)
 
     // Banner-specific
@@ -951,16 +937,19 @@
   let convAnchorNX = 10;
   let convAnchorY = 10;
   let convEncounterIndex = 0; // Track which encounter this is for positioning adjustments
-  let convChoiceY1 = 0,
+let convChoiceY1 = 0,
     convChoiceY2 = 0,
     convChoiceBX = 0,
     convChoiceBW = 0,
     convChoiceHover = -1,
+    convChoicePicked = -1,
     convChoiceYs = []; // start row of each choice
+    convChoiceSelected = -1,
+    convChoiceSelectedT = 0;
   let convReveal = [];
   let _convTypeTimer = 0;
 
-  function convReset() {
+function convReset() {
     convLog = [];
     convChoices = null;
     convVisible = false;
@@ -969,6 +958,9 @@
     convChoiceY1 = 0;
     convChoiceY2 = 0;
     convChoiceHover = -1;
+    convChoicePicked = -1;
+    convChoiceSelected = -1;
+    convChoiceSelectedT = 0;
     _convChunkQueue = [];
     _convChunkTimer = 0;
     convReveal = [];
@@ -1020,11 +1012,11 @@
         bannerTimer = 99999;
         interLI++;
         interT = 0;
+        audio.play("trumpet");
       }
     }
-    console.log("interLI", interLI, "interLines.length", interLines.length, "interT", Math.round(interT), "interDone", interDone);
     // auto-advance after last line
-    if (!interDone && interLI >= interLines.length && interT > 5000) {
+    if (!interDone && interLI >= interLines.length && interT > 25000) {
       interDone = true;
       bannerTimer = 0;
       interNext();
@@ -1106,8 +1098,9 @@
 
     renderInterFrame();
     renderBanner();
-    if (interControlsHint) {
-      const hintCol = Math.sin(Date.now() / 600) > 0 ? C_DIM : "#555";
+    const _allLinesDone = interLines && interLI >= interLines.length;
+    if (interControlsHint && _allLinesDone && interT > 1000) {
+      const hintCol = Math.sin(Date.now() / 600) > 0 ? "#ddd" : "#aaa";
       const maxW = W - 6;
       const words = interControlsHint.split(" ");
       const hintLines = [];
@@ -1121,7 +1114,11 @@
       if (cur) hintLines.push(cur);
       const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
       hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
-      renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 1, "#666", "#444");
+      if (interT > 3000) {
+        renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 3, "#fff", "#bbb");
+      }
+    } else if (!interControlsHint && _allLinesDone && interT > 3000) {
+      renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", "#bbb");
     }
   }
 
@@ -1133,12 +1130,19 @@
 
   function convStartFadeWhenDone(extraMs) {
     const extra = extraMs || 1200;
+    const startPhase = phase;
     const check = setInterval(() => {
+      if (phase !== startPhase) {
+        clearInterval(check);
+        return;
+      }
       if (_convChunkQueue.length > 0) return; // still chunks pending
       const li = convLog.length - 1;
       if (li < 0 || convReveal[li] >= convLog[li].text.length) {
         clearInterval(check);
-        setTimeout(() => convStartFade(), extra);
+        setTimeout(() => {
+          if (phase === startPhase) convStartFade();
+        }, extra);
       }
     }, 50);
   }
@@ -1146,13 +1150,18 @@
   function convEndWhenDone(extraMs, thenFn) {
     // waits for typing AND chunks to finish, holds extraMs, then calls thenFn
     const extra = extraMs || 1200;
+    const startPhase = phase;
     const check = setInterval(() => {
+      if (phase !== startPhase) {
+        clearInterval(check);
+        return;
+      }
       if (_convChunkQueue.length > 0) return;
       const li = convLog.length - 1;
       if (li < 0 || convReveal[li] >= convLog[li].text.length) {
         clearInterval(check);
         setTimeout(() => {
-          thenFn();
+          if (phase === startPhase) thenFn();
         }, extra);
       }
     }, 50);
@@ -1171,11 +1180,12 @@
     const q = _convChunkQueue[0];
     if (!q) return;
     const chunk = q.chunks[q.idx];
-    audio.play(q.side === "you" ? "playertxtbox" : "npctxtbox");
+    if (!q.skipFirstSound) audio.play(q.side === "you" ? "playertxtbox" : "npctxtbox");
+    q.skipFirstSound = false;
     const last = convLog[convLog.length - 1];
     if (last && last.side === q.side) {
-      last.text = last.text + " " + chunk;
-      // reveal counter already exists for this entry, no change needed
+      const sep = chunk.startsWith("\n") ? "" : " ";
+      last.text = last.text + sep + chunk;
     } else {
       convLog.push({ text: chunk, side: q.side, color: q.color });
       convReveal.push(0);
@@ -1187,22 +1197,30 @@
   }
 
   function convAddLine(text, side, color) {
-    const chunks = text.split("|pause|");
+    // Treat \n and \n\n as implicit pause markers, same as |pause|.
+    // Preserve them in the output by inserting a sentinel that survives the trim.
+    const normalized = text
+      .replace(/\n\n/g, "|pause|__BREAK2__")
+      .replace(/\n/g, "|pause|__BREAK1__");
+    const chunks = normalized
+      .split("|pause|")
+      .map((s) => s.trim())
+      .map((s) => s.replace(/^__BREAK2__/, "\n\n").replace(/^__BREAK1__/, "\n"));
     if (chunks.length === 1) {
       audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
       const last = convLog[convLog.length - 1];
       if (last && last.side === side) {
-        last.text = last.text + "\n\n" + text;
-        // reveal counter already exists for this entry
+        last.text = last.text + "\n\n" + chunks[0];
       } else {
-        convLog.push({ text, side, color });
+        convLog.push({ text: chunks[0], side, color });
         convReveal.push(0);
       }
       return;
     }
-    // Chunked path — push and let the update driver time all chunks
-    _convChunkQueue.push({ chunks, idx: 0, side, color });
-    _convChunkTimer = 0; // trigger first chunk on next frame immediately
+    // Chunked path — sound fires immediately; queue handles subsequent chunks
+    audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
+    _convChunkQueue.push({ chunks, idx: 0, side, color, skipFirstSound: true });
+    _convChunkTimer = 0;
   }
 
   function convShowChoices(labels) {
@@ -1475,7 +1493,18 @@
                 }
                 linesCount += cLines.length + 1;
               }
-              lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convChoiceHover === choiceIdx ? "#fff" : "#888";
+              if (convChoicePicked === choiceIdx) {
+                lineCol = Math.floor(Date.now() / 600) % 2 === 0 ? "#ffd700" : "rgb(150, 112, 9)";
+              } else {
+                lineCol =
+                  phase === "act1"
+                    ? choiceIdx === 0
+                      ? "#c8a070"
+                      : "#8a9ab0"
+                    : convChoiceHover === choiceIdx
+                      ? "#fff"
+                      : "#888";
+              }
               const bulletCol = choiceMutedColors[choiceIdx % choiceMutedColors.length];
               const rendered = box.lines[li];
               const bulletIdx = rendered.indexOf("\u25B6");
@@ -1622,42 +1651,6 @@
     CW = BW + RDW,
     CH = BH + RDH;
 
-  // function renderCity(cx, cy) {
-  //   for (let sy = 0; sy < H; sy++)
-  //     for (let sx = 0; sx < W; sx++) {
-  //       const mx = Math.floor(cx) + sx,
-  //         my = Math.floor(cy) + sy;
-  //       const lx = ((mx % CW) + CW) % CW,
-  //         ly = ((my % CH) + CH) % CH;
-  //       const inB = lx < BW && ly < BH;
-  //       const inRuelle = inB && ly >= HH && ly < HH + RUH;
-  //       if (!inB) {
-  //         if (ly === BH && lx < BW) grid.set(sx, sy, "\u2550", "#333");
-  //         else if (ly === CH - 1 && lx < BW) grid.set(sx, sy, "\u2550", "#333");
-  //         else if (lx === BW && ly < BH) grid.set(sx, sy, "\u2551", "#333");
-  //         else if (lx === CW - 1 && ly < BH) grid.set(sx, sy, "\u2551", "#333");
-  //         else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
-  //         else if (lx === CW - 1 && ly === BH) grid.set(sx, sy, "\u255A", "#333");
-  //         else if (lx === BW && ly === CH - 1) grid.set(sx, sy, "\u2557", "#333");
-  //         else if (lx === CW - 1 && ly === CH - 1) grid.set(sx, sy, "\u2554", "#333");
-  //       } else if (inRuelle) {
-  //         /* Clean ruelles — no dots */
-  //       } else {
-  //         const hr = ly < HH ? 0 : 1,
-  //           hly = hr === 0 ? ly : ly - HH - RUH;
-  //         const bc = ((Math.floor(mx / CW) % 30) + 30) % 30,
-  //           br = ((Math.floor(my / CH) % 30) + 30) % 30;
-  //         const hi = Math.floor(lx / HW),
-  //           ai = (bc + br + hi + hr * 2) % HA.length,
-  //           ci = (bc * 3 + br * 7 + hi * 5 + hr) % HC.length;
-  //         if (hly < HA[ai].length) {
-  //           const ch = HA[ai][hly];
-  //           if (ch !== " ") grid.set(sx, sy, ch, HC[ci]);
-  //         }
-  //       }
-  //     }
-  // }
-
   function renderCity(cx, cy) {
     for (let sy = 0; sy < H; sy++)
       for (let sx = 0; sx < W; sx++) {
@@ -1674,9 +1667,8 @@
           else if (lx === CW - 1 && ly < BH) grid.set(sx, sy, "\u2551", "#333");
           else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
           else if (lx === CW - 1 && ly === BH) grid.set(sx, sy, "\u255A", "#333");
-          else if (lx === BW && ly === BH) grid.set(sx, sy, "\u255D", "#333");
-          else if (lx === CW - 1 && ly === CH - 1) grid.set(sx, sy, "\u2554", "#333");
           else if (lx === BW && ly === CH - 1) grid.set(sx, sy, "\u2557", "#333");
+          else if (lx === CW - 1 && ly === CH - 1) grid.set(sx, sy, "\u2554", "#333");
         } else if (inRuelle) {
           /* Clean ruelles */
         } else {
@@ -1725,10 +1717,7 @@
   let clickSX = -1,
     clickSY = -1,
     clickPending = false;
-  gs.addEventListener("pointermove", (e) => {
-    e.preventDefault();
-    if (!convChoices) return;
-    const r = gs.getBoundingClientRect();
+  function _measureCell() {
     const fontSize = parseFloat(gs.style.fontSize);
     const probe = document.createElement("span");
     probe.style.cssText =
@@ -1737,8 +1726,16 @@
       "px;letter-spacing:0";
     probe.textContent = "M";
     gs.appendChild(probe);
-    const cellH = probe.getBoundingClientRect().height;
+    const rect = probe.getBoundingClientRect();
     gs.removeChild(probe);
+    return { cellW: rect.width, cellH: rect.height };
+  }
+
+  gs.addEventListener("pointermove", (e) => {
+    e.preventDefault();
+    if (!convChoices) return;
+    const r = gs.getBoundingClientRect();
+    const { cellH } = _measureCell();
     const my = Math.floor((e.clientY - r.top) / cellH);
 
     if (my >= convChoiceY1 && my <= convChoiceY2) {
@@ -1770,17 +1767,7 @@
   gs.addEventListener("pointerup", (e) => {
     e.preventDefault();
     const r = gs.getBoundingClientRect();
-    const fontSize = parseFloat(gs.style.fontSize);
-    const probe = document.createElement("span");
-    probe.style.cssText =
-      "font-family:'Courier New','Consolas','Monaco',monospace;white-space:pre;line-height:1;position:absolute;visibility:hidden;font-size:" +
-      fontSize +
-      "px;letter-spacing:0";
-    probe.textContent = "M";
-    gs.appendChild(probe);
-    const cellW = probe.getBoundingClientRect().width;
-    const cellH = probe.getBoundingClientRect().height;
-    gs.removeChild(probe);
+    const { cellW, cellH } = _measureCell();
     clickSX = Math.floor((e.clientX - r.left) / cellW);
     clickSY = Math.floor((e.clientY - r.top) / cellH);
     clickPending = true;
@@ -1993,8 +1980,8 @@
     }
     if (a1St === "pause") {
       a1ST2 += dt;
-      // 2sec player pause before walking
-      if (a1ST2 > 5000) {
+      // wait for all intro banners to finish before walking
+      if (bannerTimer <= 0 && a1ST2 > 800) {
         a1St = "walk";
         a1ST2 = 0;
         a1IdleTimer = 0;
@@ -2011,6 +1998,9 @@
         if (a1EI < a1NPCs.length) {
           a1St = "enc";
           audio.play("bump");
+          const _encOX = Math.floor(a1CX),
+            _encOY = Math.floor(a1CY);
+          spark(Math.round(a1PX) - _encOX, Math.round(a1PY) - _encOY, C_DIM, 2);
           a1ES = 0;
           a1ST2 = 0;
           a1EncNPC = a1NPCs[a1EI];
@@ -2018,6 +2008,7 @@
           a1St = "tap";
           a1ST2 = 0;
           a1IdleTimer = 0;
+          clickPending = false;
         } else if (a1NP < NQ.length) {
           showBanner(NQ[a1NP].t, NQ[a1NP].c, NQ[a1NP].d);
           a1NP++;
@@ -2111,8 +2102,10 @@
           convAddLine(txt, side, col);
           a1ES = 1;
           a1ST2 = 0;
-        } else if (a1ST2 > (turns[a1ES]?.delay ?? 3500)) {
-          // ACT 1 TIMING: Default delay between text boxes (in ms)
+        } else if (a1ST2 > (turns[a1ES - 1]?.hold ?? 3500)) {
+          // ACT 1 TIMING: how long the previous line stays on screen
+          // before this one appears. Set per-line via `hold:` in lang data.
+          // Default (no `hold` set) = 3500ms.
           const t = turns[a1ES];
           const side = t.who === "p" ? "you" : "them";
           const col = t.who === "p" ? C_PLAYER : convNPCColor;
@@ -2121,8 +2114,11 @@
           a1ES++;
           a1ST2 = 0;
         }
-        // pause after last conversational line
-      } else if (a1ST2 > 3000) {
+      // pause after last conversational line
+      } else if (a1ST2 > (turns[turns.length - 1]?.hold ?? 3500)) {
+        // ACT 1 TIMING: how long the LAST line stays before the conversation
+        // closes and the player walks on. Uses the last turn's `hold:` value.
+        // Default (no `hold` set) = 3500ms.
         // All turns done, move on
         const np = a1PA[a1EI];
         a1EI++;
@@ -2155,29 +2151,97 @@
       if (a1ST2 > 800 && clickPending) {
         clickPending = false;
         /* Only act on clicks within the choice box Y range. Clicks outside = ignore. */
+      
         if (convChoiceY2 > 0 && clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
           const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
           audio.play("click");
-          convStartFade();
+          triggerFlashGold();
+          convChoicePicked = clickSY < splitY ? 0 : 1;
           a1ST2 = 0;
           if (clickSY < splitY) {
             // "I've had enough"
-            a1St = "outro";
             const ox = Math.floor(a1CX),
               oy = Math.floor(a1CY);
             const px = Math.round(a1PX) - ox,
               py = Math.round(a1PY) - oy;
-            burstGood(px, py, C_PLAYER, 16);
-            triggerFlashGood();
+            // Hold for flash, then fade conv and advance
+            setTimeout(() => {
+              convStartFade();
+              a1St = "outro";
+              burstGood(px, py, C_PLAYER, 16);
+              triggerFlashGood();
+              a1NP = 0;
+              a1ST2 = 0;
+              a1PauseT = 1200;
+              setTimeout(() => {
+                showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
+                a1NP = 1;
+              }, 1200);
+            }, 600);
+          } else {
+            // "keep living like this"
+            const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
+            // Hold for flash, then advance
+            setTimeout(() => {
+              convStartFade();
+              showBanner(lm.t, lm.c, 2000, true);
+              a1LoopCount++;
+              if (a1LoopCount > 5) {
+                Music.stop();
+                phase = "done";
+                loop.stop();
+                overlay.classList.remove("hidden");
+                ovTitle.textContent = ".";
+                ovTitle.style.color = C_DANGER;
+                ovSub.textContent = window.LANG.bannerKeepLivingLike;
+                ovHint.textContent = "";
+                startBtn.textContent = window.LANG.endScreenTryAgain;
+                overlay.querySelectorAll(".final").forEach((e) => e.remove());
+                overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
+                return;
+              }
+              if (!a1StartX) {
+                a1StartX = a1Path[0].x;
+                a1StartY = a1Path[0].y;
+              }
+              a1St = "loop";
+              a1Path = [
+                { x: Math.round(a1PX), y: Math.round(a1PY) },
+                { x: a1StartX, y: Math.round(a1PY) },
+                { x: a1StartX, y: a1StartY },
+              ];
+              a1PI = 0;
+            }, 600);
+          }
+        }
+        /* else: click outside choice — ignore, keep box visible */
+      }
+      // Keyboard: down = "keep living" → loop, up = "I've had enough" → outro
+      if (a1ST2 > 800) {
+        if (input.justPressed("up")) {
+          audio.play("click");
+          triggerFlashGold();
+          convChoicePicked = 0;
+          a1ST2 = 0;
+          setTimeout(() => {
+            convStartFade();
+            a1St = "outro";
             a1NP = 0;
             a1ST2 = 0;
-            a1PauseT = 1200; // hold off the outro loop until NQ[0] is ready
+            a1PauseT = 1200;
             setTimeout(() => {
               showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
               a1NP = 1;
             }, 1200);
-          } else {
-            // "keep living like this"
+          }, 600);
+        }
+        if (input.justPressed("down")) {
+          audio.play("click");
+          triggerFlashGold();
+          convChoicePicked = 1;
+          a1ST2 = 0;
+          setTimeout(() => {
+            convStartFade();
             const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
             showBanner(lm.t, lm.c, 2000, true);
             a1LoopCount++;
@@ -2186,11 +2250,11 @@
               phase = "done";
               loop.stop();
               overlay.classList.remove("hidden");
-              ovTitle.textContent = ".";
+              ovTitle.textContent = window.LANG.loopGiveUpTitle;
               ovTitle.style.color = C_DANGER;
-              ovSub.textContent = window.LANG.bannerKeepLivingLike;
+              ovSub.textContent = window.LANG.loopGiveUpSub;
               ovHint.textContent = "";
-              startBtn.textContent = window.LANG.endScreenTryAgain;
+              startBtn.textContent = window.LANG.loopTryAgain;
               overlay.querySelectorAll(".final").forEach((e) => e.remove());
               overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
               return;
@@ -2201,66 +2265,12 @@
             }
             a1St = "loop";
             a1Path = [
-              {
-                x: Math.round(a1PX),
-                y: Math.round(a1PY),
-              },
-              {
-                x: a1StartX,
-                y: Math.round(a1PY),
-              },
-              {
-                x: a1StartX,
-                y: a1StartY,
-              },
+              { x: Math.round(a1PX), y: Math.round(a1PY) },
+              { x: a1StartX, y: Math.round(a1PY) },
+              { x: a1StartX, y: a1StartY },
             ];
             a1PI = 0;
-          }
-        }
-        /* else: click outside choice — ignore, keep box visible */
-      }
-      // Keyboard: up = "I've had enough", down = "keep living"
-      if (a1ST2 > 800) {
-        if (input.justPressed("up")) {
-          convStartFade();
-          const lm = A1_LOOP_MSGS[Math.min(a1LoopCount, A1_LOOP_MSGS.length - 1)];
-          showBanner(lm.t, lm.c, 2000, true);
-          a1LoopCount++;
-          if (a1LoopCount > 5) {
-            Music.stop();
-            phase = "done";
-            loop.stop();
-            overlay.classList.remove("hidden");
-            ovTitle.textContent = window.LANG.loopGiveUpTitle;
-            ovTitle.style.color = C_DANGER;
-            ovSub.textContent = window.LANG.loopGiveUpSub;
-            ovHint.textContent = "";
-            startBtn.textContent = window.LANG.loopTryAgain;
-            overlay.querySelectorAll(".final").forEach((e) => e.remove());
-            overlay.querySelectorAll(".give-up-btn").forEach((e) => e.remove());
-            return;
-          }
-          if (!a1StartX) {
-            a1StartX = a1Path[0].x;
-            a1StartY = a1Path[0].y;
-          }
-          a1St = "loop";
-          a1ST2 = 0;
-          a1Path = [
-            {
-              x: Math.round(a1PX),
-              y: Math.round(a1PY),
-            },
-            {
-              x: a1StartX,
-              y: Math.round(a1PY),
-            },
-            {
-              x: a1StartX,
-              y: a1StartY,
-            },
-          ];
-          a1PI = 0;
+          }, 600);
         }
       }
     } else if (a1St === "outro") {
@@ -2270,6 +2280,7 @@
         a1PauseT -= dt;
         return;
       }
+
       if (!_bannerSeq && bannerTimer <= 0) {
         if (a1NP < NQ.length) {
           const q = NQ[a1NP];
@@ -2375,7 +2386,7 @@
           ],
           initAct2,
           0,
-          window.LANG.controlsAct2,
+          Device.isMobile ? window.LANG.controlsAct2Mobile : window.LANG.controlsAct2,
         );
     }
   }
@@ -2412,21 +2423,6 @@
     }
     const px = Math.round(a1PX) - ox,
       py = Math.round(a1PY) - oy;
-    // if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
-
-    //     if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, "@", playerPulseColor(a1T));
-    // const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
-    // if (_walking && py + 1 >= 0 && py + 1 < H) {
-    //   const _legFrames = ["V", "v"];
-    //   grid.set(px, py + 1, _legFrames[Math.floor(a1T / 180) % 2], playerPulseColor(a1T));
-    // }
-
-    // const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
-    // // Alternate between two chars in the SAME cell to simulate walking
-    // // Frame 0: @ (upright)   Frame 1: & (suggests legs mid-stride)
-    // const _pChar = (_walking && Math.floor(a1T / 180) % 2 === 1) ? "&" : "@";
-    // if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, _pChar, playerPulseColor(a1T));
-
     const _walking = a1St === "walk" || a1St === "outro" || a1St === "loop" || a1St === "descend";
     const _pChar = _walking ? (Math.floor(a1T / 2) % 2 === 0 ? "@" : "\u0398") : "@";
     if (px >= 0 && px < W && py >= 0 && py < H) grid.set(px, py, _pChar, playerPulseColor(a1T));
@@ -2459,8 +2455,9 @@
 
   const A2_MIN = 3,
     A2_MH = 3;
-  const A2_TIME_LIMIT_MS = 50000;
-  const A2_TIME_WARN_MS = 30000;
+  // how long you have to play act 2
+  const A2_TIME_LIMIT_MS = 100000;
+  const A2_TIME_WARN_MS = 70000;
   const BUILDINGS = window.GAME_DATA.buildings;
 
   function tileBuildings(blockW) {
@@ -2508,7 +2505,7 @@
     a2PitchLines = [],
     a2ChoiceTags = [],
     a2LastGreetTone;
-  let a2SV, a2SW, a2SD, a2SDT;
+  let a2SV, a2SW, a2SD, a2SDT, a2SDFired;
   let a2Gen;
   let a2HudFlashT, a2HudFlashMsg;
   let a2TimeWarned;
@@ -2609,26 +2606,55 @@
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
+       
+        // how likely you are to encounter a narc
         const r = Math.random();
         let tp, tl;
-        if (r < 0.13) {
+        if (r < 0.25) {
           tp = "narc";
           tl = 0;
-        } else if (r < 0.42) {
+        } else if (r < 0.32) {
+          tp = "cat";
+          tl = 0;
+        } else if (r < 0.58) {
+          tp = "coin";
+          tl = 0;
+        } else if (r < 0.55) {
           tp = "resist";
           tl = 1;
         } else {
           tp = "norm";
           tl = 1;
         }
+        // Prevent same interactable type appearing 3+ times in a row
+        if (tp === "cat" || tp === "coin" || tp === "narc") {
+          const recent = a2NPCs.slice(-2).map((n) => n.tp);
+          if (recent.length === 2 && recent[0] === tp && recent[1] === tp) {
+            tp = "norm";
+            tl = 1;
+          }
+        }
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
-        const ambLine = tp === "narc" ? drawAmb(DECK_AMB_NARC) : npcKind === "hungry" ? drawAmb(DECK_AMB_HUNGRY) : drawAmb(DECK_AMB_ANGRY);
+        
+        const ambLine = tp === "narc"   ? drawAmb(DECK_AMB_NARC)
+                      : tp === "cat"    ? Util.pick(["miaou...", "prrrr", "mrrrow"])
+                      : tp === "coin"   ? ""
+                      : npcKind === "hungry" ? drawAmb(DECK_AMB_HUNGRY) : drawAmb(DECK_AMB_ANGRY);
+
         const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
         const narcHead = Util.pick(narcHeads);
         const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
-        const npcArt = tp === "narc" ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
-        const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
-        const npcCol = tp === "narc" ? Util.pick(narcCols) : Util.pick(A2_NPC_COLORS);
+        const npcArt = tp === "narc" ? [narcHead, narcBody]
+                     : tp === "cat"  ? [" ", "ஹ"]
+                     : tp === "coin" ? [" ", "\u25CE"]
+                     : Util.pick(A2_NPC_ARTS);
+
+        
+                     const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+        const npcCol = tp === "narc" ? Util.pick(narcCols)
+                     : tp === "cat"  ? "#ee8833"
+                     : tp === "coin" ? "#c8a800"
+                     : Util.pick(A2_NPC_COLORS);
         a2NPCs.push({
           wx: nx,
           ru: ri,
@@ -2743,6 +2769,7 @@
     a2SW = 500;
     a2SD = false;
     a2SDT = null;
+    a2SDFired = false;
     dialogStack = [];
     a2GenChunk(0, W * 3);
     _updateDomHud();
@@ -2867,19 +2894,30 @@
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
 
-        if (a2Choice >= 0) {
+        if (a2Choice >= 0 && a2TP === 1) {
           audio.play("click");
-          convHideChoices();
-          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          if (a2Choice === 2) a2TP = 25;
-          else if (a2Choice === 1 && a2TN.tp !== "narc") a2TP = 14;
+          triggerFlashGold();
+          convChoicePicked = a2Choice;
+          const _line = a2PitchLines[a2Choice];
+          const _picked = a2Choice;
+          const _startPhase = phase;
+          setTimeout(() => {
+            if (phase !== _startPhase || !a2TN) return;
+            convChoicePicked = -1;
+            convHideChoices();
+            convAddLine(_line, "you", convPlayerColor);
+          }, 600);
+          if (_picked === 2) a2TP = 25;
+          else if (_picked === 1 && a2TN.tp !== "narc") a2TP = 14;
           else a2TP = 141;
-          a2TT = 0;
+          a2TT = -600;
         }
       }
 
-      // ── TP 141: route after first pitch ──────────────────────
-      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.INVITE_DELAY) && _convChunkQueue.length === 0) {
+// ── TP 141: route after first pitch ──────────────────────
+      // ACT 2 TIMING: how long the player's pitch line holds before the NPC's filler reply appears.
+      // Raise the number to give the player's punchline more room. Default min 3000ms.
+      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (matched) {
           const fillerResult = DM.drawWithTags(DECK_FILLER, a2ChoiceTags[a2Choice] ?? []);
@@ -2892,8 +2930,10 @@
         a2TT = 0;
       }
 
-      // ── TP 142: wait for invite/walk away choice ──────────────
-      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, T.hold) && _convChunkQueue.length === 0) {
+   // ── TP 142: wait for invite/walk away choice ──────────────
+      // ACT 2 TIMING: how long the NPC's filler line holds before recruit/walk-away choices appear.
+      // Raise the number to give the player time to read the filler. Default min 5000ms.
+      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 6000) && _convChunkQueue.length === 0) {
         const inviteLabel = a2TN.kind === "angry" ? window.LANG.choiceRecruitAngry : window.LANG.choiceRecruitHungry;
         a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
         const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
@@ -2920,22 +2960,35 @@
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
 
-        if (a2Choice >= 0) {
+        if (a2Choice >= 0 && a2TP === 143) {
           audio.play("click");
-          convHideChoices();
-          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
-          if (a2Choice === 1) a2ChoiceTags[2] = a2TN.bailLateTags ?? [];
-          a2TP = a2Choice === 1 ? 25 : 14;
-          a2TT = 0;
+          triggerFlashGold();
+          convChoicePicked = a2Choice;
+          const _line = a2PitchLines[a2Choice];
+          const _picked = a2Choice;
+          const _startPhase = phase;
+          setTimeout(() => {
+            if (phase !== _startPhase || !a2TN) return;
+            convChoicePicked = -1;
+            convHideChoices();
+            convAddLine(_line, "you", convPlayerColor);
+          }, 600);
+          if (_picked === 1) a2ChoiceTags[2] = a2TN.bailLateTags ?? [];
+          a2TP = _picked === 1 ? 25 : 14;
+          a2TT = -600;
         }
       }
 
-      // ── TP 14: check match, route ─────────────────────────────
-      else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
+// ── TP 14: check match, route ─────────────────────────────
+      // ACT 2 TIMING: how long the player's invite line holds before the NPC's say-more reply appears.
+      // Raise the number to give the invite room to land. Default min 2400ms.
+      else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 2400) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (a2TN.tp === "narc") {
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? []);
-          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? []);
+      const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
+a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
+          
+
           convAddLine(skeptResult.text, "them", convNPCColor);
           a2TP = 15;
         } else if (!matched) {
@@ -2963,8 +3016,10 @@
         a2TT = 0;
       }
 
-      // ── TP 15: show second round choices ─────────────────────
-      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, T.hold) && _convChunkQueue.length === 0) {
+  // ── TP 15: show second round choices ─────────────────────
+      // ACT 2 TIMING: how long the NPC's say-more line holds before try-harder/walk-away choices appear.
+      // Raise the number to give the player time to read the NPC's deeper question. Default min 3000ms.
+      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
         const pitchTags = a2TN.sayMoreTags ?? [];
         const strongerResult = DM.drawWithTags(DECK_STRONGER_PITCH, pitchTags);
         a2TN.strongerTags = strongerResult.tags.length > 0 ? strongerResult.tags : pitchTags;
@@ -2996,12 +3051,20 @@
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
         if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
 
-        if (a2Choice >= 0) {
+        if (a2Choice >= 0 && a2TP === 23) {
           audio.play("click");
-          convHideChoices();
-          convAddLine(a2PitchLines[a2Choice], "you", convPlayerColor);
+          triggerFlashGold();
+          convChoicePicked = a2Choice;
+          const _line = a2PitchLines[a2Choice];
+          const _startPhase = phase;
+          setTimeout(() => {
+            if (phase !== _startPhase || !a2TN) return;
+            convChoicePicked = -1;
+            convHideChoices();
+            convAddLine(_line, "you", convPlayerColor);
+          }, 600);
           a2TP = 24;
-          a2TT = 0;
+          a2TT = -600;
         }
       }
 
@@ -3041,7 +3104,7 @@
       }
 
       // ── TP 25: player bailed first round ─────────────────────
-      else if (a2TP === 25 && a2TT > T.beat && _convChunkQueue.length === 0) {
+      else if (a2TP === 25 && a2TT > T.hold && _convChunkQueue.length === 0) {
         convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2ChoiceTags[2] ?? []), "them", convNPCColor);
         a2TP = 251;
         a2TT = 0;
@@ -3083,7 +3146,7 @@
         n.st = "rec";
         a2CrewCount++;
         audio.play("recruit");
-        addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
+        // addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
 
         // Big celebration sparks
         for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
@@ -3095,14 +3158,20 @@
         if (_rem > 0) {
           const _ordinals = window.LANG.recruitOrdinals;
           const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
+          const _remOrd = _ordinals[_rem - 1] || String(_rem);
           _progressMsg = window.LANG.recruitProgress1
             .replace("{ord}", _haveOrd.toUpperCase())
-            .replace("{rem}", _rem)
+            .replace("{rem}", _remOrd.toUpperCase())
             .replace("{remaining}", window.LANG.recruitProgressRemaining);
         } else {
           _progressMsg = window.LANG.recruitProgressComplete;
         }
-        setTimeout(() => addFloat(_progressMsg, 0, 0, _rem > 0 ? C_ORANGE : C_TEAL), convFadeDuration + 400);
+
+        if (!_progressMsg || _progressMsg.trim() === "") _progressMsg = a2CrewCount + "/" + A2_MIN;
+        // Only show progress float for non-final recruits — final recruit gets the big celebration instead
+        if (_rem > 0) {
+          setTimeout(() => addFloat(_progressMsg, 0, 0, C_ORANGE), convFadeDuration + 400);
+        }
         a2TN.cd = 1000;
         a2TN = null;
         a2TalkCD = 500;
@@ -3182,27 +3251,46 @@
     if (a2SD) {
       if (a2SDT === null) {
         a2SDT = 0;
-        // Big celebration burst
-        for (let _ci = 0; _ci < 6; _ci++) {
-          setTimeout(() => {
-            burstGood(Util.randInt(4, W - 4), Util.randInt(2, H - 2), C_TEAL, 10);
-            triggerFlashGood();
-            audio.play("recruit");
-          }, _ci * 280);
-        }
-        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, T.linger + 2000);
-        // Crew cluster toward player
-        for (let _ci2 = 0; _ci2 < a2Crew.length; _ci2++) {
-          a2Crew[_ci2]._celebrating = true;
-        }
+        // Wait for any open conv panel to fade before celebrating
+        convStartFade();
       }
       a2SDT += dt;
-      if (a2SDT > 5500 && a2SDT - dt <= 5500) {
-        showBanner(window.LANG.bannerTimeToRally, C_ORANGE, 3000);
+      // After fade completes, fire the celebration
+      if (!a2SDFired && a2SDT > convFadeDuration + 200) {
+        a2SDFired = true;
+        const ppx = Math.round(a2PX), ppy = Math.round(a2PY);
+        // Big simultaneous burst centered on the player
+        for (let _bi = 0; _bi < 5; _bi++) {
+          burstGood(ppx + Util.randInt(-6, 6), ppy + Util.randInt(-3, 3), C_TEAL, 14);
+        }
+        burstGood(ppx, ppy, C_PLAYER, 18);
+        triggerFlashGood();
+        triggerFlashGold();
+        audio.play("recruit");
+        audio.play("trumpet");
+        setTimeout(() => {
+          burstGood(ppx - 8, ppy, C_TEAL, 10);
+          burstGood(ppx + 8, ppy, C_TEAL, 10);
+          triggerFlashGold();
+          audio.play("recruit");
+        }, 350);
+        setTimeout(() => {
+          for (let _bi = 0; _bi < 4; _bi++) {
+            burstGood(Util.randInt(4, W - 4), Util.randInt(2, H - 4), C_TEAL, 8);
+          }
+          triggerFlashGood();
+        }, 700);
+        setTimeout(() => {
+          for (let _bi = 0; _bi < 3; _bi++) {
+            burstGood(ppx + Util.randInt(-10, 10), ppy + Util.randInt(-3, 3), C_TEAL, 8);
+          }
+          triggerFlashGold();
+        }, 1100);
+        showBanner(window.LANG.bannerYouHaveACrew, C_PLAYER, 99999);
       }
-      // Auto-advance after 8.5s — no click needed
-      if (a2SDT > 8500) {
-        spark(Math.floor(W / 2), H - 2, C_ORANGE, 5);
+      // Hold the celebration ~3s total, then auto-cut to inter (no tap needed)
+      if (a2SDFired && a2SDT > convFadeDuration + 200 + 3000) {
+        bannerTimer = 0;
         initInter(
           [
             { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
@@ -3211,7 +3299,7 @@
           ],
           initAct2b,
           1,
-          window.LANG.controlsAct2b,
+          Device.isMobile ? window.LANG.controlsAct2bMobile : window.LANG.controlsAct2b,
         );
       }
       return;
@@ -3219,13 +3307,12 @@
 
     if (!a2SV && a2CrewCount >= A2_MIN) {
       a2SV = true;
-      setTimeout(() => {
-        a2SD = true;
-      }, T.hold);
+      a2SD = true;
     }
 
     a2Spd = 0.004 + a2T * 0.00000015;
-    a2WX += a2Spd * dt;
+    // Pause world scroll while conversation panel is visible or fading out
+    if (!convVisible && !convFading) a2WX += a2Spd * dt;
     while (a2Gen < a2WX + W + 150) a2GenChunk(a2Gen, a2Gen + 80);
 
     if (input.justPressed("up")) {
@@ -3307,9 +3394,40 @@
       for (const n of a2NPCs) {
         if (n.st !== "idle" || n.cd > 0 || n.ru !== a2PRu) continue;
         if (Math.abs(n.wx - pwx) < 3) {
+          a2PX = n.wx - a2WX - 3;
+         
+          if (n.tp === "coin") {
+              n.st = "gone"; n.cd = 9999;
+              audio.play("click");
+              spark(Math.round(a2PX), Math.round(a2PY), "#c8a800", 6);
+              const coin = Util.pick(window.LANG.coinPickups);
+              addFloat(coin.amount + " — " + coin.quip, 0, 0, "#c8a800");
+              a2TalkCD = 800;
+              break;
+            }
+            if (n.tp === "cat") {
+              n.cd = 9999;
+              // Don't set n.st = "done" — keep cat visible in its color
+              audio.play("bump");
+              spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
+              convReset();
+              convAnchorPX = Math.round(a2PX);
+              convAnchorNX = Math.round(n.wx - a2WX);
+              convAnchorY = Math.round(a2PY);
+              convNPCColor = "#ee8833";
+              convVisible = true;
+              const catLine = Util.pick(window.LANG.catLines);
+              convAddLine(catLine.cat, "them", "#ee8833");
+              setTimeout(() => {
+                if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
+              }, 1800);
+              convResetLater(4500);
+              a2TalkCD = 4800;
+              break;
+            }
+          // regular NPC conversation
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
-          a2PX = n.wx - a2WX - 3;
           a2TN = n;
           a2TP = 0;
           a2TT = 0;
@@ -3372,20 +3490,23 @@
         }
     }
 
-    // NPCs — hide recruited ones (they're now in the crew trail)
+// NPCs — hide recruited ones (they're now in the crew trail) and picked-up coins
     for (const n of a2NPCs) {
-      if (n.st === "rec") continue;
+      if (n.st === "rec" || n.st === "gone") continue;
       const sx = Math.round(n.wx - a2WX),
         sy = a2NpcY(n);
       if (sx < -3 || sx > W + 3) continue;
+      // Cats keep their color even after interaction (n.st stays "idle")
       let col = n.st === "angry" ? C_DANGER : n.st === "done" ? "#333" : n.col;
       /* Narcs fidget too (don't stand still / stiff) */
 
       let fidget = 0;
-      if (n.st === "idle") {
+      if (n.st === "idle" && n.tp !== "coin") {
         const speed = n.tp === "narc" ? 200 : 400;
         const amp = n.tp === "narc" ? 1.2 : 0.6;
         fidget = Math.round(Math.sin(a2T / speed + n.wx * 3) * amp);
+        /* Narcs: one brief colour blip every ~4 s — subtle, rewards attention */
+        if (n.tp === "narc" && Math.floor(a2T / 80) % 52 === 0) col = C_DANGER;
       } /* Warning flash during narc bail-out window */
       if (a2TN === n && a2TP === 11) {
         col = Math.floor(a2TT / 150) % 2 === 0 ? "#c88" : "#f66";
@@ -3423,14 +3544,15 @@
         nsy = a2NpcY(n);
       if (nsx >= 0 && nsx < W - 5) {
         const txt = n.amb.substring(0, Math.min(n.amb.length, W - nsx - 1));
-        grid.text(txt, nsx - Math.floor(txt.length / 2), nsy - 3, "#bbb");
+        // make ambient text more visible
+        grid.text(txt, nsx - Math.floor(txt.length / 2), nsy - 2, dullColor(n.col, 0.5));
       }
     }
     // Dialogue
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-    if (a2SD && a2SDT !== null && a2SDT > 4500) renderTapPrompt(window.LANG.tapToContinue, H - 2, "#fff", C_DIM);
+    // No tap prompt — auto-advances after celebration holds
     // if (Device.isMobile && a2T < 5000 && !a2TN) {
     //   const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
     //   const hintCol = fade > 0.6 ? C_DIM : "#444";
@@ -3532,7 +3654,9 @@
     a2bSpd = 0.007;
     a2bWX = 0;
     /* Player starts in the middle of the road */
-    a2bPX = 10;
+    // a2bPX = 10;
+    a2bPX = Math.floor(W * 0.3);
+
     a2bPY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     /* Carry over existing crew from Act 2 */
     a2bMob = [];
@@ -3589,18 +3713,21 @@
     else if (input.justPressed("up")) a2bPY -= tapStep;
     if (input.isDown("down")) a2bPY += ms * dt;
     else if (input.justPressed("down")) a2bPY += tapStep;
-    if (input.isDown("left")) a2bPX -= ms * dt;
-    else if (input.justPressed("left")) a2bPX -= tapStep;
-    if (input.isDown("right")) a2bPX += ms * dt;
-    else if (input.justPressed("right")) a2bPX += tapStep;
+    // Horizontal input scrolls the WORLD, not just the player's screen position.
+    // Pressing right = run forward (everything rushes at you faster).
+    // Pressing left = slow down (and slightly back up if held).
+    if (input.isDown("right")) a2bWX += ms * dt * 0.6;
+    else if (input.justPressed("right")) a2bWX += tapStep * 0.6;
+    if (input.isDown("left")) a2bWX -= ms * dt * 0.4;
+    else if (input.justPressed("left")) a2bWX -= tapStep * 0.4;
 
     if (clickPending && phase === "act2b") {
       clickPending = false;
       if (!Device.isMobile) {
         if (clickSY < a2bPY - 2) a2bPY -= 3;
         else if (clickSY > a2bPY + 2) a2bPY += 3;
-        if (clickSX < a2bPX - 3) a2bPX -= 3;
-        else if (clickSX > a2bPX + 3) a2bPX += 3;
+        if (clickSX < a2bPX - 3) a2bWX -= 2;
+        else if (clickSX > a2bPX + 3) a2bWX += 2;
       }
     }
     // Mobile left/right from hold — no mobileMoveX needed
@@ -3635,13 +3762,13 @@
             spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 24);
             triggerChromatic(600);
             a2bHt++;
-            popupPush(window.LANG.floatNarc, Math.round(n.wx - a2bWX), n.wy, C_DANGER, 1200);
+            popupPush(window.LANG.floatNarc, Math.round(n.wx - a2bWX), n.wy, C_DANGER, 700);
             popupPush(
               Util.pick([window.LANG.floatOops, window.LANG.floatOhNo, window.LANG.floatExclaim]),
               Math.round(a2bPX),
               Math.round(a2bPY),
               C_PLAYER,
-              1200,
+              600,
             );
             if (a2bHt >= A2B_MH) {
               setTimeout(() => quickBust("busted", initAct2b), 1500);
@@ -3682,7 +3809,7 @@
               _hitSX,
               n.wy,
               n.col,
-              1200,
+              400,
             );
           }
         }
@@ -3693,42 +3820,10 @@
       if (m.joinAnimT > 0) m.joinAnimT -= dt;
     }
 
-    /* Trigger as soon as the store's left edge enters the screen (right side).
-                         store_screen_x = a2bStoreX - a2bWX. We want that <= W (just appeared). */
-    if (a2bStoreX - a2bWX <= W - 4 && !a2bDone) {
+    if (a2bStoreX - a2bWX <= Math.floor(W * 0.7) && !a2bDone) {
       a2bDone = true;
       a2bSpd = 0;
-
-      // showBanner(a2CrewCount + " Robins.", C_DANGER, 999999);
-      // setTimeout(() => {
-      //   if (phase === "act3") {
-      //     bannerText += window.LANG.bannerOneStore;
-      //     bannerTimer = 999999;
-      //   }
-      // }, 1200);
-      // setTimeout(() => {
-      //   if (phase === "act3") {
-      //     bannerText += window.LANG.bannerLetsEat;
-      //     bannerTimer = 999999;
-      //   }
-      // }, 2400);
-
-      setTimeout(
-        () =>
-          initInter(
-            [
-              { t: a2CrewCount + " Robins", c: C_DANGER, d: 2000 },
-              { pause: true, d: 700 }, // ← beat after the crew count lands
-              { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
-              { pause: true, d: 700 },
-              { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
-            ],
-            initAct3,
-            2,
-            null,
-          ),
-        1500,
-      );
+      setTimeout(() => initAct3(), 2500);
     }
     /* HUD */
     _updateDomHud();
@@ -3836,7 +3931,8 @@
       if (n.st === "joined") {
         _a2bNpcFrame[1] = Math.floor(a2bT / 200 + n.wx * 0.3) % 2 === 0 ? _a2bNpcFrame[1] : "\u20B3";
       }
-      grid.art(_a2bNpcFrame, sx, n.wy, n.col);
+      const _a2bNpcCol = n.narc && Math.floor(a2bT / 80) % 52 === 0 ? C_DANGER : n.col;
+      grid.art(_a2bNpcFrame, sx, n.wy, _a2bNpcCol);
     }
 
     /* ── Bursts (expanding rings of glyphs) ── */
@@ -3902,7 +3998,7 @@
       const bw = Math.min(maxInner + 2, Math.max(...lines.map((l) => l.length)) + 2);
       const bh = lines.length + 2;
       const tx = Util.clamp(sx - Math.floor(bw / 2), 0, W - bw);
-      const ty = n.wy - bh - 1;
+      const ty = n.wy - bh - 0;
       if (ty >= A2B_ROAD_Y1 && ty + bh < A2B_ROAD_Y2) {
         for (let by = ty; by < ty + bh && by < H; by++)
           for (let bx2 = tx; bx2 < tx + bw && bx2 < W; bx2++) if (bx2 >= 0) grid.set(bx2, by, " ", null);
@@ -4008,26 +4104,45 @@
     hudLabel.textContent = "";
     hudScore.textContent = "";
     hudStatus.textContent = "";
+    // Show the rally summary as a banner sequence over the storefront
+    showBannerSequence(
+      [
+        { t: a2CrewCount + " Robins", c: C_DANGER, d: 2000 },
+        { pause: true, d: 700 },
+        { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
+        { pause: true, d: 700 },
+        { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
+      ],
+      false,
+    );
+
     // Build walk-in animation: robins slide in from off-screen edges
     {
-      const sY = Math.floor(H * 0.62);
+const sY = Math.floor(H * 0.62);
       const scx = Math.floor((W - STO_W) / 2);
       const dc = scx + Math.floor(STO_W / 2);
       const ly = sY + 3;
-      const rc = Math.min(a2CrewCount, 12);
-      const maxSlots = Math.max(1, Math.ceil(rc / 2));
-      const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
+      const rc = a2CrewCount;
+      // Original-style spacing — robins arc out from center on each side. Wrap to new row when too wide.
+      const slotW = 3; // horizontal cells per robin (tweak: bigger = more spread out)
+      const usableW = W - 6;
+      const slotsPerSide = Math.max(1, Math.floor(usableW / 2 / slotW));
+      const slotsPerRow = slotsPerSide * 2; // both sides combined
       a3CrewOffsets = [];
       for (let i = 0; i < rc; i++) {
-        const side = i % 2 === 0 ? -1 : 1;
-        const slot = Math.floor((i + 2) / 2);
-        const tx = Util.clamp(dc + side * slot * spacing, 2, W - 5);
-        const startX = side < 0 ? -4 : W + 4; // enter from left or right edge
+        const row = Math.floor(i / slotsPerRow);
+        const idxInRow = i % slotsPerRow;
+        const side = idxInRow % 2 === 0 ? -1 : 1;
+        const slot = Math.floor((idxInRow + 2) / 2);
+        const tx = Util.clamp(dc + side * slot * slotW, 2, W - 5);
+        const ty = ly + row * 2;
+        const startX = side < 0 ? -4 - row : W + 4 + row;
         a3CrewOffsets.push({
           cx: startX,
           tx,
-          cy: Math.floor(H * 0.62) + 3,
-          delay: 300 + i * 180,
+          cy: ty,
+          ty,
+          delay: 9500 + i * 280
         });
       }
     }
@@ -4060,7 +4175,7 @@
           const sY = Math.floor(H * 0.62);
           const scx = Math.floor((W - (window.GAME_DATA.storeArtEN[0] || "").length) / 2);
           const dc = scx + Math.floor((window.GAME_DATA.storeArtEN[0] || "").length / 2);
-          const rc = Math.min(a2CrewCount, 12);
+          const rc = a2CrewCount;
           const maxSlots = Math.max(1, Math.ceil(rc / 2));
           const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
           const side = next.idx % 2 === 0 ? -1 : 1;
@@ -4074,7 +4189,7 @@
           burstGood(Math.floor(W / 2), Math.floor(H * 0.62) + 3, C_ORANGE, 10);
           showBanner(window.LANG.bannerHatsOn || "hats on.", C_ORANGE, 2000, true);
         }
-        a3HatQueueT = 120; // ms between each hat
+        a3HatQueueT = 350; // ms between each hat — slow enough to read
       }
     }
 
@@ -4112,7 +4227,7 @@
               ],
               initAct4,
               3,
-              window.LANG.controlsAct4,
+              Device.isMobile ? window.LANG.controlsAct4Mobile : window.LANG.controlsAct4,
             );
           }, 1200);
         }
@@ -4120,22 +4235,28 @@
       }
     }
     if (clickPending) {
-      clickPending = false;
-      if (a3T > 1200 && !a3HatsOn && a3HatQueue.length === 0) {
+      const _allArrived2 = a3CrewOffsets && a3CrewOffsets.every((c) => c.arrived);
+      const _bannerClear2 = bannerTimer <= 0 && !_bannerSeq;
+      const _hatPromptVisible = _allArrived2 && _bannerClear2 && a3T > 12000 && !a3Entering;
+      if (_hatPromptVisible && !a3HatsOn && a3HatQueue.length === 0) {
+        clickPending = false;
         a3HatsOn = true;
-        // Build queue: crew one by one, player last
         a3HatQueue = a2Crew.map((_, i) => ({ type: "crew", idx: i }));
         a3HatQueue.push({ type: "player" });
         a3HatQueueT = 0;
         a3PlayerHatted = false;
-      } else if (a3T > 1200 && a3HatsOn && a3PlayerHatted) {
+      } else if (a3HatsOn && a3PlayerHatted && _bannerClear2) {
+        clickPending = false;
         burstGood(Math.floor(W / 2), Math.floor(H * 0.62) + 3, C_PLAYER, 8);
         a3Entering = true;
         const sY = Math.floor(H * 0.62);
         const scx = Math.floor((W - STO_W) / 2);
         const dc = scx + Math.floor(STO_W / 2);
-        a3PlayerX = dc; // start from current player position
+        a3PlayerX = dc;
         bannerTimer = 0;
+      } else {
+        // Click before the prompt is visible — discard it
+        clickPending = false;
       }
     }
   }
@@ -4176,27 +4297,31 @@
     }
     const dc = scx + Math.floor(STO_W / 2),
       ly = sY + 3,
-      rc = Math.min(a2CrewCount, 12);
-    /* Player in middle — draw FIRST so robins don't overlap */
-    const plX = a3Entering ? Math.round(a3PlayerX) : dc;
-    const plY = a3Entering ? Math.round(a3PlayerY || ly) : ly;
-    grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY, playerPulseColor(a3T)); // const plGlow = a3T < 3000 ? (Math.floor(a3T / 150) % 2 === 0 ? "#fff" : C_PLAYER) : C_PLAYER;
+      rc = a2CrewCount;
+    /* Player appears after the full banner sequence (~8500ms) — fade in with a brief flash, before crew walks in */
+    const _playerAppearT = 8500;
+    if (a3T > _playerAppearT) {
+      const plX = a3Entering ? Math.round(a3PlayerX) : dc;
+      const plY = a3Entering ? Math.round(a3PlayerY || ly) : ly;
+      const _appearAge = a3T - _playerAppearT;
+      const _appearFlash = _appearAge < 600 ? (Math.floor(_appearAge / 100) % 2 === 0 ? "#fff" : C_PLAYER) : playerPulseColor(a3T);
+      grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY, _appearFlash);
+      if (_appearAge < 50) burstGood(plX, plY, C_PLAYER, 8);
+    }
     // grid.art(A2_PA[Math.floor(a3T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), plGlow);
     /* Robins on either side — use their preserved art + color */
     const maxSlots = Math.max(1, Math.ceil(rc / 2));
     const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
     for (let i = 0; i < rc; i++) {
-      const rx = a3CrewOffsets
-        ? Math.round(a3CrewOffsets[i].cx)
-        : (() => {
-            const side = i % 2 === 0 ? -1 : 1;
-            const slot = Math.floor((i + 2) / 2);
-            return dc + side * slot * spacing;
-          })();
+      if (!a3CrewOffsets[i]) continue;
+      const rx = Math.round(a3CrewOffsets[i].cx);
+      const baseTY = a3CrewOffsets[i].ty || ly;
       const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
       const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
-      if (rx >= 0 && rx + 3 < W && ly + 3 < H) {
-        const ry = a3Entering ? Math.round(a3CrewOffsets[i].cy) : ly + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
+      if (rx >= 0 && rx + 3 < W && baseTY + 3 < H) {
+        const ry = a3Entering
+          ? Math.round(a3CrewOffsets[i].cy)
+          : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
@@ -4218,11 +4343,13 @@
     if (scx + STO_W + 5 < W) grid.art(treeArt, scx + STO_W + 2, stY + 1, treeCol);
     if (scx + STO_W + 9 < W) grid.art(treeArt, scx + STO_W + 6, stY + 2, "#2a6a2a");
 
-    if (a3T > 1500) {
+    // Wait until robins have arrived AND banner has cleared before any prompt
+    const _allArrived = a3CrewOffsets && a3CrewOffsets.every((c) => c.arrived);
+    const _bannerClear = bannerTimer <= 0 && !_bannerSeq;
+    if (_allArrived && _bannerClear && a3T > 12000 && !a3Entering) {
       const tapFlash = Math.sin(Date.now() / 300) > 0;
       const tapY = Math.min(H - 2, ly + 5);
       const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
-      // Clearer staged instructions
       let tapMsg, tapCol;
       if (!a3HatsOn && !hatsAnimating) {
         tapMsg = window.LANG.act3TapHat;
@@ -4238,14 +4365,6 @@
         tapCol = tapFlash ? "#fff" : C_PLAYER;
       }
       grid.textCenter(tapMsg, tapY, tapCol);
-      // Secondary hint line
-      if (a3HatsOn && a3PlayerHatted) {
-        grid.textCenter(window.LANG.act3HatsOnEnter, tapY - 2, C_TEAL);
-      }
-    }
-    // Show "put on hats" banner a couple seconds after everyone arrives, before the tap hint
-    if (a3T > 2200 && a3T < 2216 && !a3HatsOn) {
-      showBanner(window.LANG.bannerPutOnHats, C_ORANGE, 2800, false);
     }
     renderBanner();
   }
@@ -4649,12 +4768,17 @@
       });
     }
 
-    // Scroll ticker -- slow it down
+    // Intercom messages fire as banners — ticker removed
     s4TickerX -= 0.01 * dt;
     if (s4TickerX + s4TickerMsg.length < 0) {
       s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx % D_INTERCOM_TICKER.length];
       s4TickerNextIdx++;
       s4TickerX = W + 2;
+      if (bannerTimer <= 0) showBanner(s4TickerMsg, "#6a8a9a", 2200, true);
+    }
+    /* Re-fire exit reminder once per 12-second window after it opens */
+    if (s4ExitPinned && bannerTimer <= 0 && s4GT > 12 && Math.floor(s4GT / 12) > Math.floor((s4GT - dt / 1000) / 12)) {
+      showBanner(window.LANG.bannerExitOpen, C_TEAL, 2500, true);
     }
 
     /* ── HUD ── */
@@ -4806,21 +4930,7 @@
       grid.textCenter([window.LANG.urgencyCopsEnRoute, window.LANG.urgencyFindExit][Math.floor(Date.now() / 800) % 2], 0, C_DANGER);
     }
 
-    // Intercom ticker — one row above the bookcase top
-    const tickerY = S4_SHELF_TOP - 1;
-    if (tickerY >= 0) {
-      // Clear the row first
-      for (let x = 0; x < W; x++) grid.set(x, tickerY, " ", null);
-      // Draw scrolling text
-      const tx = Math.round(s4TickerX);
-      const tickerColor = s4Ug > 0.5 ? C_DANGER : "#6a8a9a";
-      for (let i = 0; i < s4TickerMsg.length; i++) {
-        const cx = tx + i;
-        if (cx >= 0 && cx < W) grid.set(cx, tickerY, s4TickerMsg[i], tickerColor);
-      }
-      // Left label
-      if (tickerY >= 0) grid.text("", 0, tickerY, "#555"); // fallback: use ">>" if emoji breaks
-    }
+    // (intercom ticker replaced by banner messages)
 
     renderBanner();
   }
@@ -5443,7 +5553,7 @@
                        Used for big moments (recruit, narc, maybe-later). */
   const FLOAT_STYLE = {
     boxed: true /* draw border box around text? */,
-    life: 2000 /* ms on screen */,
+    life: 2500 /* ms on screen */,
     fadeStart: 0.15 /* fraction of life at which it fades */,
     padX: 1 /* horizontal padding inside box */,
   };
@@ -5451,7 +5561,9 @@
   function addFloat(t, x, y, co) {
     /* x, y ignored — floats cluster near top of screen (playful overlap).
        To move the cluster up or down, edit floatBaseY in the render function. */
-    const life = phase === "act4" ? 1200 : FLOAT_STYLE.life;
+    // const life = phase === "act4" ? 1200 : FLOAT_STYLE.life;
+    // food floats to disappear slightly faster
+    const life = phase === "act4" ? 550 : FLOAT_STYLE.life;
     floats.push({
       text: t,
       color: co,
@@ -5497,6 +5609,7 @@
         convReset();
       }
     } else if (phase === "inter") updateInter(dt);
+    if (convChoiceSelected >= 0) convChoiceSelectedT += dt;
 
     for (let i = floats.length - 1; i >= 0; i--) {
       floats[i].life -= dt;
@@ -5627,13 +5740,18 @@
       gs.classList.add("chroma");
     } else gs.classList.remove("chroma");
     if (flashGoodT > 0) {
-      flashGoodT -= 16;
+      gs.classList.remove("flash-good");
+      void gs.offsetWidth;
       gs.classList.add("flash-good");
-    } else gs.classList.remove("flash-good");
-    if (flashGoldT > 0) {
-      flashGoldT -= 16;
+      flashGoodT = 0;
+    }
+   if (flashGoldT > 0) {
+      console.log("RENDER applying flash-gold, phase=", phase);
+      gs.classList.remove("flash-gold");
+      void gs.offsetWidth;
       gs.classList.add("flash-gold");
-    } else gs.classList.remove("flash-gold");
+      flashGoldT = 0;
+    }
   }
 
   function startGame() {
@@ -5672,10 +5790,16 @@
       //   true,
       // );
 
-      showBanner(window.LANG.bannerIsThisALife, "#9ab0cc", 2000, true);
-      setTimeout(() => {
-        if (phase === "act1") showBanner(window.LANG.bannerWhoIsInControl, "#9ab0cc", 3000, true);
-      }, 2800);
+      showBannerSequence(
+        [
+          { t: window.LANG.bannerIsThisALife, c: "#9ab0cc", d: 2500 },
+          { pause: true, d: 800 },
+          { t: window.LANG.bannerWhoIsInControl, c: "#9ab0cc", d: 3000 },
+          { pause: true, d: 1000 },
+          { t: window.LANG.bannerYouControlNothing || "(it sure isn't you)", c: "#9ab0cc", d: 4500 },
+        ],
+        true,
+      );
     }
     // hasPlayed is set to true when the player reaches Act 2
   }
@@ -5744,48 +5868,6 @@
   });
 
   window.addEventListener("keydown", function (e) {
-    // const jumps = {
-    //   1: function () {
-    //     Music.stop();
-    //     initAct1();
-    //   },
-    //   2: function () {
-    //     Music.stop();
-    //     initAct2();
-    //   },
-    //   3: function () {
-    //     Music.stop();
-    //     initAct2b();
-    //   },
-    //   4: function () {
-    //     Music.stop();
-    //     a2CrewCount = Math.max(a2CrewCount, 5);
-    //     initAct3();
-    //   },
-    //   5: function () {
-    //     Music.stop();
-    //     a2CrewCount = Math.max(a2CrewCount, 5);
-    //     initAct4();
-    //   },
-    //   6: function () {
-    //     Music.stop();
-    //     a2CrewCount = Math.max(a2CrewCount, 5);
-    //     s4AlyScore = s4AlyScore || 0;
-    //     initAct5();
-    //   },
-    //   7: function () {
-    //     Music.stop();
-    //     a2CrewCount = Math.max(a2CrewCount, 5);
-    //     s4AlyScore = s4AlyScore || 0;
-    //     state.reset({ score: 80 });
-    //     initEnd();
-    //   },
-    //   8: function () {
-    //     Music.stop();
-    //     initCTA();
-    //   },
-    // };
-
     const jumps = {
       1: () =>
         initInter(
