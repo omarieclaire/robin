@@ -246,7 +246,7 @@ window.LANG_EN = {
   bannerHatsOn: "hats on.",
   bannerPutOnHats: "let's all put on Robin Hood hats.",
 
-  choiceCommiserateAngry: "(╯°□°)╯ commiserate",
+  choiceCommiserateAngry: "(╯°□°)╯ agree",
   choiceCommiserateHungry: "(っ◔◡◔)っ commiserate",
   choiceTalkOver: "(ಠ_ಠ) talk over them",
   choiceRun: "[>_>] RUN",
@@ -258,7 +258,7 @@ window.LANG_EN = {
   recruitProgress1: "{ord} down — {rem} to go",
   recruitProgressRemaining: " to go!",
   recruitProgressComplete: "★ CREW COMPLETE ★",
-  choiceRecruitAngry: "(ง'̀-'́)ง recruit them",
+choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
   choiceRecruitHungry: "(•‿•) recruit them",
   choiceWalkAwayShort: "( ._.) walk away",
   act3TapHat: "▶ tap to give everyone a hat ◀",
@@ -314,4 +314,7 @@ window.LANG_EN = {
     { amount: "+$5.00", quip: "dépanneur tonight." },
     { amount: "+$0.05", quip: "lol. a nickel." },
 { amount: "+$20.00", quip: "fake. invitation to church on the back." },  ],
+
+bannerEscaped: "ESCAPED!",
+  bannerBackToHood: "back to the neighbourhood.",
 };

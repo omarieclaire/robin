@@ -230,7 +230,7 @@ window.LANG_FR = {
   bannerHatsOn: "chapeaux.",
   bannerPutOnHats: "on met tous nos chapeaux de Robin des Bois.",
 
-  choiceCommiserateAngry: "(╯°□°)╯ compatir",
+  choiceCommiserateAngry: "(╯°□°)╯ mets-en",
   choiceCommiserateHungry: "(っ◔◡◔)っ compatir",
   choiceTalkOver: "(ಠ_ಠ) parler par-dessus",
   choiceRun: "[>_>] FUIR",
@@ -299,4 +299,7 @@ window.LANG_FR = {
     { amount: "+0,05$", quip: "lol. cinq cennes." },
     { amount: "+20,00$", quip: "faux. invitation à l'église au verso." },
   ],
+
+  bannerEscaped: "ÉCHAPPÉ!",
+  bannerBackToHood: "retour dans le quartier.",
 };

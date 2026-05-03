@@ -2950,18 +2950,17 @@ window.GAME_DATA = {
         ["Ω", "Π"],
         ["⋊", "∬"],
     ],
-    npcColors: [
+   npcColors: [
         "#0ff",
         "#f0f",
         "#ff0",
         "#53ffaf",
-        "#ffcb8f",
+        "#bb8fff",
         "#8f0",
         "#c787ff",
         "#f08",
         "#66b8ff",
     ],
-
     /* ─────────────────────────────────────────────────────────
        NARRATIVE QUOTES (Act 1 transition banners)
        Used by: Act 1 end sequence (NQ array).

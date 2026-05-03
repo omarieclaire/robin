@@ -1099,7 +1099,7 @@ function convReset() {
     renderInterFrame();
     renderBanner();
     const _allLinesDone = interLines && interLI >= interLines.length;
-    if (interControlsHint && _allLinesDone && interT > 1000) {
+    if (interControlsHint && _allLinesDone && interT > 2500) {
       const hintCol = Math.sin(Date.now() / 600) > 0 ? "#ddd" : "#aaa";
       const maxW = W - 6;
       const words = interControlsHint.split(" ");
@@ -1115,10 +1115,10 @@ function convReset() {
       const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
       hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
       if (interT > 3000) {
-        renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 3, "#fff", "#bbb");
+        renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 3, "#fff", C_PLAYER);
       }
-    } else if (!interControlsHint && _allLinesDone && interT > 3000) {
-      renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", "#bbb");
+    } else if (!interControlsHint && _allLinesDone && interT > 6000) {
+      renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", C_PLAYER);
     }
   }
 
@@ -2650,7 +2650,8 @@ function convReset() {
                      : Util.pick(A2_NPC_ARTS);
 
         
-                     const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+                    //  const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+                    const narcCols = ["#cc6688", "#bb5577", "#dd5599", "#aa4488", "#cc4477"];
         const npcCol = tp === "narc" ? Util.pick(narcCols)
                      : tp === "cat"  ? "#ee8833"
                      : tp === "coin" ? "#c8a800"
@@ -3626,7 +3627,8 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
       const narcHead = Util.pick(narcHeads);
       const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
       const npcArt = isNarc ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
-      const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+      // const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+      const narcCols = ["#cc6688", "#bb5577", "#dd5599", "#aa4488", "#cc4477"];
       const npcCol = isNarc ? Util.pick(narcCols) : Util.pick(A2B_NPC_COL);
       a2bNPCs.push({
         wx: nx + Util.randInt(-3, 3),
@@ -4189,7 +4191,7 @@ const sY = Math.floor(H * 0.62);
           burstGood(Math.floor(W / 2), Math.floor(H * 0.62) + 3, C_ORANGE, 10);
           showBanner(window.LANG.bannerHatsOn || "hats on.", C_ORANGE, 2000, true);
         }
-        a3HatQueueT = 350; // ms between each hat — slow enough to read
+        a3HatQueueT = 80; // ms between each hat — slow enough to read put on those hats! hat timing
       }
     }
 
@@ -4460,23 +4462,17 @@ const sY = Math.floor(H * 0.62);
     s4GrabBursts = []; /* per-grab starburst effects */
     s4RobinCheerT = 4000; /* countdown to next robin cheer */
 
-    /* ── Compute layout from screen height ──
-                         Top of screen: shelving unit (~60% of H)
-                         Below that: aisle (~25% of H, min 5 rows)
+/* ── Compute layout from screen height ──
+                         Shelf area sized to fit exactly 4 rows of food.
+                         Aisle gets all remaining vertical space.
                          Bottom: floor line + exit row */
-    const aisleH = Math.max(8, Math.floor(H * 0.32));
-    const S4_SHIFT = 3;
+    S4_SHELF_ROW_H = 5;
+    S4_SHELF_ROWS = 5;
+    S4_SHELF_TOP = 2;
+    S4_SHELF_BOT = S4_SHELF_TOP + S4_SHELF_ROWS * S4_SHELF_ROW_H + 1;
+    S4_AISLE_TOP = S4_SHELF_BOT + 1;
     S4_FLOOR_Y = H - 2;
     S4_AISLE_BOT = S4_FLOOR_Y - 1;
-    S4_AISLE_TOP = S4_AISLE_BOT - aisleH + 1 + S4_SHIFT;
-    S4_SHELF_BOT = S4_AISLE_TOP - 1;
-    S4_SHELF_TOP = 1 + S4_SHIFT;
-
-    /* Shelf rows: each row is 4 chars tall (3 food + 1 divider) */
-    S4_SHELF_ROW_H = 5;
-    const shelfInner = S4_SHELF_BOT - S4_SHELF_TOP - 1;
-    S4_SHELF_ROWS = Math.max(2, Math.floor(shelfInner / S4_SHELF_ROW_H));
-
     /* ── Generate initial bookcases ── */
     s4Items = [];
     s4Bookcases = [];
@@ -4590,6 +4586,274 @@ const sY = Math.floor(H * 0.62);
     s4TickerNextIdx = 1;
   }
 
+  /* ══════════════════════════════════════════════════════════
+   ACT 4 EXIT: brief cinematic — player walks to door, crew converges,
+   then transitions into the run home
+   ══════════════════════════════════════════════════════════ */
+  let s4ExitT, s4ExitDone, s4ExitTargetX, s4ExitCrewX;
+  function initAct4Exit() {
+    phase = "act4exit";
+    s4ExitT = 0;
+    s4ExitDone = false;
+    s4ExitTargetX = s4ExitScreenX;
+    s4ExitCrewX = [];
+    for (let i = 0; i < s4Alys.length; i++) {
+      s4ExitCrewX.push({ x: s4PX2 - 5 - i * 4, y: s4PY2 });
+    }
+    s4Alys = [];
+    audio.play("exit");
+    Music.transition("music_act3"); // run-home music
+    showBanner(window.LANG.bannerEscaped, C_TEAL, 1500);
+  }
+
+  function updateAct4Exit(dt) {
+    s4ExitT += dt;
+    updateBanner(dt);
+
+    // Keep the world scrolling so shelves don't freeze
+    s4WX += s4Sp * dt;
+    while (s4GE < s4WX + W + 80) s4GenBookcases(s4GE, s4GE + 80);
+    s4Bookcases = s4Bookcases.filter((bc) => bc.wx + S4_BC_W > s4WX - 20);
+
+    // Move player toward exit (slower lerp for more deliberate walk)
+    s4PX2 = Util.lerp(s4PX2, s4ExitTargetX, 0.05);
+    s4PY2 = Util.lerp(s4PY2, S4_AISLE_BOT - 2, 0.04);
+
+    // Crew converges on door — staggered start so they flow in one by one
+    let allIn = true;
+    for (let i = 0; i < s4ExitCrewX.length; i++) {
+      const c = s4ExitCrewX[i];
+      const delay = i * 300;
+      if (s4ExitT < delay) { allIn = false; continue; }
+      c.x = Util.lerp(c.x, s4ExitTargetX, 0.03);
+      c.y = Util.lerp(c.y, S4_AISLE_BOT - 2, 0.03);
+      if (Math.abs(c.x - s4ExitTargetX) > 1 || Math.abs(c.y - (S4_AISLE_BOT - 2)) > 1) allIn = false;
+    }
+
+    // Guards aggressively chase toward the door — they realize what's happening
+    for (const g of s4Gs) {
+      const dxToDoor = s4ExitTargetX - (g.wx - s4WX);
+      g.wx += dxToDoor > 0 ? 0.012 * dt : 0;
+      g.wy = Util.lerp(g.wy, S4_AISLE_BOT - 2, 0.04);
+    }
+
+    // Burst of teal sparks at door, occasionally
+    if (s4ExitT > 1500 && s4ExitT < 4000 && Math.random() < 0.12) {
+      spark(s4ExitTargetX + Util.randInt(-2, 2), S4_AISLE_BOT - 1, C_TEAL, 6);
+    }
+
+    // Transition once all crew have reached the door — identical to Act 3
+    if (!s4ExitDone && allIn && Math.abs(s4PX2 - s4ExitTargetX) < 1) {
+      s4ExitDone = true;
+      for (let _b = 0; _b < 10; _b++) {
+        burstGood(s4ExitTargetX + Util.randInt(-3, 3), S4_AISLE_BOT - 1, a2Crew[_b % a2Crew.length]?.col || C_TEAL, 8);
+      }
+      triggerFlashGood();
+      setTimeout(() => initAct4Run(), 1200);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+   ACT 4 RUN: crew runs back to community fridge through the
+   neighbourhood — visual callback to Act 2b but wordless and fast
+   ══════════════════════════════════════════════════════════ */
+  let s4RunT, s4RunSpd, s4RunWX, s4RunFridgeX, s4RunDone, s4RunPX, s4RunPY;
+  let s4RunTopParts, s4RunBotParts, s4RunBannerShown;
+  function initAct4Run() {
+    phase = "act4run";
+    a2bCalcLayout(); // reuse Act 2b layout helpers
+    s4RunT = 0;
+    s4RunSpd = 0.008; // slower so the run feels more substantial
+    s4RunWX = 0;
+    s4RunDone = false;
+    s4RunBannerShown = false;
+    s4RunPX = 12;
+    s4RunPY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
+    s4RunFridgeX = Math.floor(s4RunSpd * 16000); // fridge appears after ~16s
+    s4RunTopParts = a2bGenRow(s4RunFridgeX + W);
+    s4RunBotParts = a2bGenRow(s4RunFridgeX + W);
+  }
+
+  function updateAct4Run(dt) {
+    s4RunT += dt;
+    updateBanner(dt);
+    s4RunWX += s4RunSpd * dt;
+
+    // Player movement — same scheme as Act 2b
+    const ms = 0.025;
+    const tapStep = 2;
+    if (input.isDown("up")) s4RunPY -= ms * dt;
+    else if (input.justPressed("up")) s4RunPY -= tapStep;
+    if (input.isDown("down")) s4RunPY += ms * dt;
+    else if (input.justPressed("down")) s4RunPY += tapStep;
+    if (input.isDown("left")) s4RunPX -= ms * dt;
+    else if (input.justPressed("left")) s4RunPX -= tapStep;
+    if (input.isDown("right")) s4RunPX += ms * dt;
+    else if (input.justPressed("right")) s4RunPX += tapStep;
+
+    if (clickPending && phase === "act4run") {
+      clickPending = false;
+      if (!Device.isMobile) {
+        if (clickSY < s4RunPY - 2) s4RunPY -= 3;
+        else if (clickSY > s4RunPY + 2) s4RunPY += 3;
+        if (clickSX < s4RunPX - 3) s4RunPX -= 3;
+        else if (clickSX > s4RunPX + 3) s4RunPX += 3;
+      }
+    }
+
+    s4RunPY = Util.clamp(s4RunPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
+    s4RunPX = Util.clamp(s4RunPX, 3, W - 4);
+
+    // Banner appears once mid-run
+    if (!s4RunBannerShown && s4RunT > 1500) {
+      s4RunBannerShown = true;
+      showBanner(window.LANG.bannerBackToHood, C_TEAL, 2500);
+    }
+
+    // When the fridge is centered, stop scrolling and let crew gather in front
+if (!s4RunDone && s4RunFridgeX - s4RunWX <= Math.floor(W * 0.65)) {
+      s4RunDone = true;
+      s4RunSpd = 0;
+      // Wait for crew to gather in front of fridge (handled in render)
+      setTimeout(() => initAct5(), 2400);
+    }
+  }
+
+  function renderAct4Run() {
+    // Mountain parallax (same as Act 2b)
+    const mtScrollX = s4RunWX * 0.04;
+    const mtBaseY = A2B_TOP_H - 1;
+    let peakScreenX = -1, peakScreenY = 99999;
+    for (let x = 0; x < W; x++) {
+      const wx = x + mtScrollX;
+      const period = 220;
+      const phase2 = ((wx % period) + period) % period;
+      const norm = phase2 / period;
+      const dome = Math.exp(-Math.pow((norm - 0.3) * 3.0, 2));
+      const shoulder = Math.exp(-Math.pow((norm - 0.62) * 5.0, 2)) * 0.35;
+      const hillH = Math.round((dome + shoulder) * (A2B_TOP_H * 0.6));
+      const topY = mtBaseY - hillH;
+      if (topY < peakScreenY) { peakScreenY = topY; peakScreenX = x; }
+      const tallestBuilding = Math.max(...s4RunTopParts.map((sp) => sp.art.length));
+      const hillFloor = A2B_TOP_H - tallestBuilding - 1;
+      for (let dy = topY; dy <= Math.min(mtBaseY, hillFloor); dy++) {
+        if (dy < 0 || dy >= H) continue;
+        const depth = dy - topY;
+        let ch, col;
+        if (depth === 0) { ch = "\u0BF3"; col = "#27371c"; }
+        else if (depth < 2) { ch = "\u0B70"; col = "#213417"; }
+        else if (depth < 5) { ch = "\u2592"; col = "#0e170a"; }
+        else { ch = "\u2591"; col = "#12200c"; }
+        grid.set(x, dy, ch, col);
+      }
+    }
+    if (peakScreenX >= 0) {
+      const crossArt = [" | ", "-+-", " | "];
+      grid.art(crossArt, peakScreenX - 1, peakScreenY - 3, "#f0e8c0");
+    }
+
+    // Top buildings
+    const topScrollX = s4RunWX * 0.85;
+    for (const sp of s4RunTopParts) {
+      const sx = Math.round(sp.wx - topScrollX);
+      if (sx + sp.w < -2 || sx > W + 2) continue;
+      const by = A2B_TOP_H - sp.art.length;
+      grid.art(sp.art, sx, Math.max(0, by), sp.col);
+    }
+    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y1, "\u2550", "#b0a898");
+    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y2, "\u2550", "#b0a898");
+
+    // Bottom buildings
+    for (const sp of s4RunBotParts) {
+      const sx = Math.round(sp.wx - s4RunWX);
+      if (sx + sp.w < -2 || sx > W + 2) continue;
+      grid.art(sp.art, sx, A2B_ROAD_Y2 + 1, sp.col);
+    }
+
+    // Crew running alongside — keep hats on
+    // When run is done (at fridge), crew clusters in front of fridge
+    for (let i = 0; i < a2Crew.length; i++) {
+      const c = a2Crew[i];
+      let mx, my;
+      if (s4RunDone) {
+        // Freeze where they stopped — no movement
+  if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
+  if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
+  mx = Math.round(c._gatherX);
+  my = Math.round(c._gatherY);
+        // Cluster in front of fridge: spread out symmetrically
+        // const fridgeSX = Math.round(s4RunFridgeX - s4RunWX);
+        // const sideSign = i % 2 === 0 ? -1 : 1;
+        // const slot = Math.floor(i / 2);
+        // const targetX = fridgeSX - 3 - i * 2;
+        // const targetY = A2B_ROAD_Y2 - 1;
+        // // Lerp toward gather position
+        // if (c._gatherX === undefined) c._gatherX = s4RunPX + (-2 - Math.floor(i / 3) * 2);
+        // if (c._gatherY === undefined) c._gatherY = s4RunPY;
+        // c._gatherX = Util.lerp(c._gatherX, targetX, 0.08);
+        // c._gatherY = Util.lerp(c._gatherY, targetY, 0.06);
+        // mx = Math.round(c._gatherX);
+        // my = Math.round(c._gatherY);
+      } else {
+        const clusterR = 2;
+        const angle = s4RunT / 600 + (c.b || i);
+        const orbitX = Math.sin(angle + i) * clusterR;
+        const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
+        const baseOX = -2 - Math.floor(i / 3) * 2;
+        mx = Math.round(s4RunPX + baseOX + orbitX);
+        my = Math.round(s4RunPY + orbitY);
+      }
+      if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
+        const _frame = [...(c.art || A2_ROB)];
+        _frame[1] = Math.floor(s4RunT / 200 + (c.b || 0) * 30) % 2 === 0 ? _frame[1] : "\u20B3";
+        grid.art(_frame, mx, my, c.col || C_TEAL);
+      }
+    }
+
+    // Player running
+    const _pFrame = [...A2_PA[Math.floor(s4RunT / 10) % 2]];
+    _pFrame[1] = Math.floor(s4RunT / 180) % 2 === 0 ? _pFrame[1] : "\u20B3";
+    grid.art(_pFrame, Math.round(s4RunPX), Math.round(s4RunPY), playerPulseColor(s4RunT));
+
+    // Mid-sized community fridge — fits in the road, readable from a distance
+    if (s4RunWX > s4RunFridgeX - W - 10) {
+      const fsx = Math.round(s4RunFridgeX - s4RunWX);
+      if (fsx < W + 10) {
+        const miniFridge = [
+          "╔═══════════════╗",
+          "║  FRIGO        ║",
+          "║  COMMUN       ║",
+          "╠═══════════════╣",
+          "║ ◉   ◉   ◉   ◉ ║",
+          "║               ║",
+          "║ ◉   ◉   ◉   ◉ ║",
+          "╚═══════════════╝",
+        ];
+const aisleH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
+const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        grid.art(miniFridge, fsx, fY, C_TEAL);
+      }
+    }
+
+    renderBanner();
+  }
+
+  function renderAct4Exit() {
+    // Reuse Act 4's renderer to keep the store visible during exit
+    renderAct4();
+
+    // Draw crew sliding toward door
+    for (let i = 0; i < s4ExitCrewX.length; i++) {
+      const cx = Math.round(s4ExitCrewX[i].x);
+      const cy = Math.round(s4ExitCrewX[i].y);
+      const src = a2Crew[i];
+      const rArt = (src && src.art) || A2_ROB;
+      const rCol = (src && src.col) || C_TEAL;
+      if (cx >= 0 && cx < W && cy >= 0 && cy < H) {
+        grid.art(rArt, cx, cy, rCol);
+      }
+    }
+  }
+
   const SU = [
     {
       a: 0.15,
@@ -4644,7 +4908,7 @@ const sY = Math.floor(H * 0.62);
     }
 
     /* Exit appears after x seconds */
-    if (!s4ExitPinned && s4GT > 1) {
+    if (!s4ExitPinned && s4GT > 18) {
       s4ExitPinned = true;
       audio.play("exit");
       showBanner(window.LANG.bannerExitOpen, C_TEAL, 3000);
@@ -4710,16 +4974,23 @@ const sY = Math.floor(H * 0.62);
           const rY = S4_SHELF_TOP + 1 + it.row * S4_SHELF_ROW_H;
           const sY = rY + S4_SHELF_ROW_H - 1;
           const aY = sY - it.food.a.length;
+         
           if (clickSX >= ix - 1 && clickSX < ix + S4_SLOT_W && clickSY >= aY && clickSY < sY) {
-            it.grabbed = true;
-            audio.play("grab");
-            state.set("score", state.get("score") + it.food.p);
-            burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, 9);
-            s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
-            addFloat(it.food.n + " +$" + it.food.p, 0, 0, it.color);
-            grabbedItem = true;
-            break outer4;
-          }
+              it.grabbed = true;
+              audio.play("grab");
+              state.set("score", state.get("score") + it.food.p);
+              burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, 9);
+              s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
+              popupPush(
+                it.food.n + " +$" + it.food.p,
+                ix + Math.floor(S4_SLOT_W / 2) + Util.randInt(-2, 2),
+                aY + Util.randInt(-2, -1),
+                it.color,
+                500,
+              );
+              grabbedItem = true;
+              break outer4;
+            }
         }
       }
 
@@ -4825,15 +5096,14 @@ const sY = Math.floor(H * 0.62);
     //   }
     // }
 
-    /* ── Security guards ── */
+    /* ── Security guards — 2 chars wide, same scale as player/NPCs ── */
     for (const g of s4Gs) {
       const sx = Math.round(g.wx - s4WX),
         sy = Math.round(g.wy);
       if (sx < -3 || sx > W + 3) continue;
-      // Guard same height as player (2 rows), with badge symbol
       const _guardFlash = Math.floor(Date.now() / 400) % 2 === 0;
-      const _guardLeg = Math.floor(Date.now() / 200 + g.wx * 0.3) % 2 === 0 ? "\u03C6!" : "\u20B3!";
-      grid.art([_guardFlash ? "\u00A7G" : "!G", _guardLeg], sx, sy, C_DANGER);
+      const _guardLeg = Math.floor(Date.now() / 200 + g.wx * 0.3) % 2 === 0 ? "\u03C6" : "\u20B3";
+      grid.art([_guardFlash ? "\u00A7" : "!", _guardLeg], sx, sy, C_DANGER);
     }
 
     /* ── Robins trailing behind player — spread out, organic ── */
@@ -4859,14 +5129,14 @@ const sY = Math.floor(H * 0.62);
     }
 
     /* ── Robin grab floats ── */
-    for (const f of s4RobinFloats) {
-      if (f.life < 100) continue;
-      for (let i = 0; i < f.text.length; i++) {
-        const fx = Math.round(f.x) + i,
-          fy = Math.round(f.y);
-        if (fx >= 0 && fx < W && fy >= 0 && fy < H) grid.set(fx, fy, f.text[i], f.col);
-      }
-    }
+    // for (const f of s4RobinFloats) {
+    //   if (f.life < 100) continue;
+    //   for (let i = 0; i < f.text.length; i++) {
+    //     const fx = Math.round(f.x) + i,
+    //       fy = Math.round(f.y);
+    //     if (fx >= 0 && fx < W && fy >= 0 && fy < H) grid.set(fx, fy, f.text[i], f.col);
+    //   }
+    // }
 
     /* ── Player ── */
     if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
@@ -4931,6 +5201,7 @@ const sY = Math.floor(H * 0.62);
     }
 
     // (intercom ticker replaced by banner messages)
+    popupRender();
 
     renderBanner();
   }
@@ -5119,8 +5390,8 @@ const sY = Math.floor(H * 0.62);
     const plY = a5Crew._playerY || fy + FRIDGE.length + 1;
     grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
 
-    // Tap prompt
-    if (a5P === 2) renderTapPrompt(window.LANG.act5TapFood, plY + 4, "#fff", C_TEAL);
+    if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
+      renderTapPrompt(window.LANG.act5TapContinue, H - 2, "#fff", C_TEAL);
     // Food appearing in fridge — real food art reused from Act 4
     if (a5P >= 3) {
       /* New fridge layout (width 37, height 18):
@@ -5303,7 +5574,7 @@ const sY = Math.floor(H * 0.62);
       if (endT >= l.t) wrapped[i].forEach((ln, j) => grid.textCenter(ln, y + j, l.col));
       y += wrapped[i].length + 1 + (l.extraGap || 0);
     }
-    if (endT >= (endD.doneT || 9999)) renderTapPrompt(window.LANG.tapToContinue, H - 3, "#bbb", C_DIM);
+    if (endT >= (endD.doneT || 9999)) renderTapPrompt(window.LANG.tapToContinue, H - 3, "#fff", C_PLAYER);
 
     renderBanner();
   }
@@ -5448,7 +5719,7 @@ const sY = Math.floor(H * 0.62);
     }
 
     if (ctaChoice && ctaEndLine) grid.textCenter(ctaEndLine, H - 4, ctaEndCol);
-    if (ctaT > 12500 && !ctaChoice) renderTapPrompt("tap", H - 2, "#bbb", C_DIM);
+    if (ctaT > 12500 && !ctaChoice) renderTapPrompt("tap", H - 2, "#fff", C_PLAYER);
   }
 
   function quickBust(result, restartFn) {
@@ -5501,7 +5772,7 @@ const sY = Math.floor(H * 0.62);
   function endGame(result) {
     if (phase === "done") return;
     if (result === "escaped") {
-      initInter([{ t: window.LANG.bannerShareBounty, c: C_SUCCESS, d: 2500 }], initAct5, 4, null);
+      initAct4Exit();
       return;
     }
     Music.stop();
@@ -5630,7 +5901,11 @@ const sY = Math.floor(H * 0.62);
       updateAct2b(dt);
       popupUpdate(dt);
     } else if (phase === "act3") updateAct3(dt);
-    else if (phase === "act4") updateAct4(dt);
+    else if (phase === "act4") {
+      updateAct4(dt);
+      popupUpdate(dt);
+    } else if (phase === "act4exit") updateAct4Exit(dt);
+    else if (phase === "act4run") updateAct4Run(dt);
     else if (phase === "act5") updateAct5(dt);
     else if (phase === "end") updateEnd(dt);
     else if (phase === "cta") updateCTA(dt);
@@ -5643,6 +5918,8 @@ const sY = Math.floor(H * 0.62);
     else if (phase === "act2b") renderAct2b();
     else if (phase === "act3") renderAct3();
     else if (phase === "act4") renderAct4();
+    else if (phase === "act4exit") renderAct4Exit();
+    else if (phase === "act4run") renderAct4Run();
     else if (phase === "act5") renderAct5();
     else if (phase === "end") renderEnd();
     else if (phase === "cta") renderCTA();
@@ -5847,10 +6124,20 @@ const sY = Math.floor(H * 0.62);
         },
         6: () => {
           a2CrewCount = Math.max(a2CrewCount, 5);
+          initAct4();
+          initAct4Exit();
+        },
+        7: () => {
+          a2CrewCount = Math.max(a2CrewCount, 5);
+          initAct4();
+          initAct4Run();
+        },
+        8: () => {
+          a2CrewCount = Math.max(a2CrewCount, 5);
           s4AlyScore = s4AlyScore || 0;
           initAct5();
         },
-        7: () => {
+        9: () => {
           a2CrewCount = Math.max(a2CrewCount, 5);
           s4AlyScore = s4AlyScore || 0;
           state.reset({
@@ -5858,7 +6145,7 @@ const sY = Math.floor(H * 0.62);
           });
           initEnd();
         },
-        8: () => initCTA(),
+        0: () => initCTA(),
       };
       if (jmp[act]) {
         jmp[act]();
@@ -5933,6 +6220,16 @@ const sY = Math.floor(H * 0.62);
       },
       6: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
+        initAct4();
+        initAct4Exit();
+      },
+      7: () => {
+        a2CrewCount = Math.max(a2CrewCount, 5);
+        initAct4();
+        initAct4Run();
+      },
+      8: () => {
+        a2CrewCount = Math.max(a2CrewCount, 5);
         s4AlyScore = s4AlyScore || 0;
         initInter(
           [
@@ -5947,7 +6244,7 @@ const sY = Math.floor(H * 0.62);
           null,
         );
       },
-      7: () => {
+      9: () => {
         a2CrewCount = Math.max(a2CrewCount, 5);
         s4AlyScore = s4AlyScore || 0;
         state.reset({
@@ -5955,7 +6252,7 @@ const sY = Math.floor(H * 0.62);
         });
         initEnd();
       },
-      8: () => initCTA(),
+      0: () => initCTA(),
     };
     if (!jumps[e.key]) return;
     try {
