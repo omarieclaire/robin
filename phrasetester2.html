@@ -199,6 +199,32 @@ function getDM(){
   return _DM;
 }
 const getDeck=n=>getDM()[n]||null;
+
+
+/* ── prefix pool enumeration ── */
+function flattenPrefixPool(npcKind,helloVibes){
+  // Returns flat array of { tone, text, vibes, matched } for ALL tones,
+  // filtered to entries whose vibes overlap with helloVibes.
+  // matched = true means the entry would be eligible at runtime.
+  if(typeof HELLO_PREFIX==="undefined")return[];
+  const out=[];
+  for(const tone of ["casual","concerned","direct"]){
+    const pool=HELLO_PREFIX[tone]?.[npcKind];
+    if(!pool?.length)continue;
+    // Normalize entries (string OR {t,vibes})
+    const norm=pool.map(p=>typeof p==="string"?{t:p,vibes:[]}:p);
+    // Eligible: untagged OR vibe overlap
+    const eligible=norm.filter(p=>p.vibes.length===0||p.vibes.some(v=>(helloVibes||[]).includes(v)));
+    // If filter rejected everything, fall back to full pool (matches runtime)
+    const finalPool=eligible.length?eligible:norm;
+    const isFallback=eligible.length===0&&norm.length>0;
+    for(const e of finalPool){
+      out.push({tone,text:e.t,vibes:e.vibes,fallback:isFallback});
+    }
+  }
+  return out;
+}
+
 const ALL_DECKS=["DECK_GREET","DECK_ANGRY_HELLO","DECK_HUNGRY_HELLO","DECK_NARC_HELLO","DECK_ANGRY_PITCH","DECK_HUNGRY_PITCH","DECK_NARC_AGREE","DECK_BAD_READ","DECK_FILLER","DECK_F_INVITE","DECK_INVITE","DECK_STRONGER_PITCH","DECK_SAY_MORE_WARM","DECK_SAY_MORE_SKEPTICAL","DECK_BACK_OFF_EARLY","DECK_BACK_OFF_LATE","DECK_BAIL_RESPONSE","DECK_JOIN_CONSENT","DECK_NO_BYE","DECK_NOT_NOW","DECK_RETURN","DECK_NARC_REV","DECK_ACK_NARC","DECK_MISMATCH_TOO_LITERAL","DECK_MISMATCH_TOO_STRUCTURAL"];
 
 function collectAllTags(){
@@ -234,7 +260,8 @@ function buildTree(tag,npcKind){
   const hDeck=getDeck(hName);
   const hMatched=hDeck?.src.filter(c=>tagsOf(c).includes(tag))??[];
   const hello={kind:"cont",speaker:"npc",deckName:hName,pool:hMatched,
-    mode:hMatched.length?"tagged":"empty",matchTags:[tag],children:[],npcFlavor:isNarc?"narc":null};
+    mode:hMatched.length?"tagged":"empty",matchTags:[tag],children:[],
+    npcFlavor:isNarc?"narc":null,isHello:true,npcKind};
   if(!hMatched.length)return{hello,available:false};
 
   const ht=ptags(hello);
@@ -381,7 +408,7 @@ function buildLayout(root){
 let nodeReg=new Map();
 let idCounter=0;
 
-const rt=t=>t?esc(t).replace(/\|pause\|/g,'<span class="pause"> · </span>'):"";
+const rt=t=>t?esc(t).replace(/\n/g,"<br>").replace(/\|pause\|/g,'<span class="pause"> · </span>'):"";
 
 function cardHTML(node,id){
   const cls=["card",node.kind];
@@ -405,13 +432,16 @@ function cardHTML(node,id){
     inner+=`<div class="ctext" id="${id}-t" style="color:var(--ink-faint);font-style:italic">(no reply — float + close)</div>`;
   }else if(!card){
     inner+=`<div class="ctext" id="${id}-t">(unavailable)</div>`;
+  }else if(node.isHello){
+    // Hello card with combined prefix + hello text + prefix carousel
+    inner+=`<div class="ctext" id="${id}-t">${cardContent(card,node)}</div>`;
   }else{
     inner+=`<div class="ctext" id="${id}-t">${cardContent(card,node)}</div>`;
   }
 
   if(node.outcome)inner+=`<div class="outcome ${node.outcome}">${esc(olabel(node.outcome))}</div>`;
 
-  if(!node.silent){
+if(!node.silent){
     const tags=card?tagsOf(card):[];
     let tc="",ts;
     if(node.mode==="untagged")ts="(untagged)";
@@ -425,13 +455,41 @@ function cardHTML(node,id){
       <button class="carr" onclick="cycleN('${id}',1)" ${total<=1?"disabled":""}>▶</button>
       <span class="ctags ${tc}" id="${id}-g" title="${esc(ts)}">${esc(ts)}</span>
     </div>`;
+
+    // Prefix carousel — only on hello cards
+    if(node.isHello && card){
+      const helloVibes=tagsOf(card);
+      const ppool=flattenPrefixPool(node.npcKind,helloVibes);
+      const ptot=ppool.length;
+      const first=ppool[0];
+      const plabel=first?`${first.tone}${first.fallback?" ⚠":""}`:"(none)";
+      inner+=`<div class="carousel" style="border-top:none;padding-top:0">
+        <span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600">prefix</span>
+        <button class="carr" onclick="cyclePrefix('${id}',-1)" ${ptot<=1?"disabled":""}>◀</button>
+        <span class="cpos" id="${id}-pp">${ptot?1:0} / ${ptot}</span>
+        <button class="carr" onclick="cyclePrefix('${id}',1)" ${ptot<=1?"disabled":""}>▶</button>
+        <span class="ctags" id="${id}-pl" style="color:var(--ink-soft)">${esc(plabel)}</span>
+      </div>`;
+    }
   }
   return`<div class="${cls.join(" ")}" id="${id}" style="width:${CW}px;position:absolute;top:-9999px;left:0">${inner}</div>`;
 }
 
-function cardContent(card,node){
+function cardContent(card,node,prefixIdx){
   if(!card)return"";
-  let h=rt(textOf(card));
+  let h="";
+  // Hello cards prepend the currently-selected prefix
+  if(node.isHello){
+    const helloVibes=tagsOf(card);
+    const ppool=flattenPrefixPool(node.npcKind,helloVibes);
+    if(ppool.length){
+      const pi=Math.min(prefixIdx??0,ppool.length-1);
+      const p=ppool[pi];
+      const fbStyle=p.fallback?"color:var(--amber);":"";
+      h+=`<span style="color:var(--ink-soft);${fbStyle}font-style:italic">${esc(p.text)}</span> `;
+    }
+  }
+  h+=rt(textOf(card));
   if(node.followPool?.length){
     const fv=node.followPool[0];
     h+=`<span class="consent">${rt(textOf(fv))} <span style="color:var(--ink-faint);font-size:.85em;font-family:var(--mono)">[${esc(node.followDeck)}]</span></span>`;
@@ -447,13 +505,44 @@ function cycleN(id,dir){
   const e=nodeReg.get(id);if(!e)return;
   const tot=e.node.pool?.length||0;if(tot<=1)return;
   e.idx=(e.idx+dir+tot)%tot;
+  // Reset prefix carousel when hello cycles
+  if(e.node.isHello)e.prefixIdx=0;
   const card=e.node.pool[e.idx];
   const t=document.getElementById(id+"-t");
   const p=document.getElementById(id+"-p");
   const g=document.getElementById(id+"-g");
-  if(t)t.innerHTML=cardContent(card,e.node);
+  if(t)t.innerHTML=cardContent(card,e.node,e.prefixIdx??0);
   if(p)p.textContent=(e.idx+1)+" / "+tot;
   if(g&&e.node.mode==="tagged"){const tags=tagsOf(card);const s=tags.length?"["+tags.join(", ")+"]":"(no tags)";g.textContent=s;g.title=s;}
+  // Refresh prefix carousel UI (pool changed with new hello)
+  if(e.node.isHello)refreshPrefixCarousel(id);
+}
+
+function cyclePrefix(id,dir){
+  const e=nodeReg.get(id);if(!e||!e.node.isHello)return;
+  const card=e.node.pool[e.idx];if(!card)return;
+  const helloVibes=tagsOf(card);
+  const ppool=flattenPrefixPool(e.node.npcKind,helloVibes);
+  if(ppool.length<=1)return;
+  e.prefixIdx=((e.prefixIdx??0)+dir+ppool.length)%ppool.length;
+  // Refresh hello text (prefix is part of it)
+  const t=document.getElementById(id+"-t");
+  if(t)t.innerHTML=cardContent(card,e.node,e.prefixIdx);
+  refreshPrefixCarousel(id);
+}
+
+function refreshPrefixCarousel(id){
+  const e=nodeReg.get(id);if(!e||!e.node.isHello)return;
+  const card=e.node.pool[e.idx];if(!card)return;
+  const helloVibes=tagsOf(card);
+  const ppool=flattenPrefixPool(e.node.npcKind,helloVibes);
+  const ptot=ppool.length;
+  const idx=Math.min(e.prefixIdx??0,Math.max(0,ptot-1));
+  const cur=ppool[idx];
+  const pp=document.getElementById(id+"-pp");
+  const pl=document.getElementById(id+"-pl");
+  if(pp)pp.textContent=(ptot?idx+1:0)+" / "+ptot;
+  if(pl)pl.textContent=cur?`${cur.tone}${cur.fallback?" ⚠":""}`:"(none)";
 }
 
 function renderTree(root){
@@ -610,11 +699,12 @@ function walkAllTags(){
 
 function boot(){
   try{
-    allTags=collectAllTags();
+    allTags=collectAllTags().filter(t=>["angry","hungry","narc"].some(k=>helloHasTag(k,t)));
+
     if(!allTags.length){document.getElementById("canvas-wrap").innerHTML=`<div class="empty-state">no tagged cards found</div>`;return;}
     const sel=document.getElementById("tagSel");
     sel.innerHTML=allTags.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
-    sel.addEventListener("change",e=>{const i=allTags.indexOf(e.target.value);if(i>=0){curIdx=i;renderForTag(allTags[i],curKind);}});
+    sel.addEventListener("change",e=>{const i=allTags.indexOf(e.target.value);if(i>=0)goTo(i);});
     document.getElementById("npcSel").addEventListener("change",e=>setKind(e.target.value));
     document.addEventListener("keydown",e=>{
       const ae=document.activeElement;

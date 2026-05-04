@@ -2827,7 +2827,25 @@ function convReset() {
     bannerTimer = 0;
   }
 
+/* Pick a prefix from a pool, preferring entries whose vibes overlap
+     with the hello line's vibes. Backwards-compatible: plain strings
+     in the pool are treated as untagged (always eligible).
+     - pool: array of strings or {t, vibes:[...]} objects
+     - helloVibes: array of vibe strings from the hello line's tags
+     Returns the prefix text (no trailing space), or "" if pool empty. */
+  function pickPrefix(pool, helloVibes) {
+    if (!pool || pool.length === 0) return "";
+    const norm = pool.map(p => typeof p === "string" ? { t: p, vibes: [] } : p);
+    let matching = norm.filter(p =>
+      p.vibes.length === 0 ||
+      p.vibes.some(v => (helloVibes || []).includes(v))
+    );
+    if (matching.length === 0) matching = norm;
+    return matching[Math.floor(Math.random() * matching.length)].t;
+  }
+
   function updateAct2(dt) {
+    
     if (!a2TN) a2T += dt;
     updateBanner(dt);
     dialogUpdate(dt);
@@ -2898,7 +2916,8 @@ function convReset() {
         const tone = a2TN.greetTone ?? "casual";
         const npcType = a2TN.tp === "narc" ? "narc" : a2TN.kind;
         const prefixPool = HELLO_PREFIX[tone]?.[npcType] ?? [];
-        const prefix = prefixPool.length > 0 ? prefixPool[Math.floor(Math.random() * prefixPool.length)] + " " : "";
+        const prefixText = pickPrefix(prefixPool, tags);
+        const prefix = prefixText ? prefixText + " " : "";
         convAddLine(prefix + line, "them", convNPCColor);
         a2TP = 13;
         a2TT = 0;
@@ -3200,19 +3219,18 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
           const _ordinals = window.LANG.recruitOrdinals;
           const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
           const _remOrd = _ordinals[_rem - 1] || String(_rem);
-          // French elision: "plus que un" → "plus qu'un" before vowel-initial words
+          // French elision: "plus que une" → "plus qu'une" before vowel-initial words
           const _firstChar = _remOrd.charAt(0).toLowerCase();
           const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
           const _que = window.LANG === window.LANG_FR
-            ? (_isVowel ? "plus qu'" : "plus que ")
-            : "still ";
+            ? (_isVowel ? "PLUS QU'" : "PLUS QUE ")
+            : "";
           _progressMsg = window.LANG.recruitProgress1
             .replace("{ord}", _haveOrd.toUpperCase())
-            .replace("{que}", _que.toUpperCase().trimEnd())
+            .replace("{que} ", _que)
+            .replace("{que}", _que.trim())
             .replace("{rem}", _remOrd.toUpperCase())
             .replace("{remaining}", window.LANG.recruitProgressRemaining);
-          // Fix spacing for elision (no space after qu')
-          _progressMsg = _progressMsg.replace(/QU' /g, "QU'");
         } else {
           _progressMsg = window.LANG.recruitProgressComplete;
         }
@@ -5458,8 +5476,7 @@ const sY = Math.floor(H * 0.62);
       const itemsInRow = Math.min(slotsPerRow, totalSlots - row * slotsPerRow);
       const rowStartX = Math.floor((W - itemsInRow * slotW) / 2);
       const targetX = rowStartX + idxInRow * slotW;
-      const targetY = lineY + row * 2;
-      const cs = a2Crew[crewIdx] || {};
+const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row * 2` to stack upward (gang behind leader)      const cs = a2Crew[crewIdx] || {};
       a5Crew.push({
         x: crewIdx % 2 === 0 ? -3 - crewIdx * 4 : W + 3 + crewIdx * 4,
         y: targetY,

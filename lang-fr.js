@@ -239,7 +239,7 @@ window.LANG_FR = {
   choiceWalkAway: "( ._.) partir",
 
   // FR
-  recruitProgress1: "{ord} de moins — {que} {rem}",
+  recruitProgress1: "{ord} DE MOINS — {que} {rem}",
   recruitProgressRemaining: " à aller !",
   recruitProgressComplete: "★ ÉQUIPE COMPLÈTE ★",
   choiceRecruitAngry: "(ง'̀-'́)ง les recruter",
