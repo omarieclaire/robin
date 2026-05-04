@@ -255,7 +255,7 @@ const DECK_HUNGRY_HELLO = new DM.Deck([
   { t: "I would do crimes for a sandwich right now.", tags: ["sandwich"] },
   { t: "I ate crackers over a sink and called it lunch.", tags: ["sink-crackers"] },
   { t: "my stomach is doing its mardi spaghetti experimental music set.", tags: ["spaghetti"] },
-  { t: "I'm so hungry I could eat a traffic cone.", tags: ["traffic-cone"] },
+  { t: "I'm so hungry I could eat a traffic cone", tags: ["traffic-cone"] },
   { t: "you smell like someone who ate today.", tags: ["smell"] },
   { t: "was going to eat. rent had other plans.", tags: ["rent"] },
   { t: "I make condiment sandwiches now.", tags: ["condiment"] },

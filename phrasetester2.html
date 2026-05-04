@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>tag walker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#fff;--bg-soft:#fafafa;--bg-card:#fff;
+  --ink:#1a1f36;--ink-soft:#4f566b;--ink-faint:#8792a2;--ink-ghost:#b8c0cc;
+  --rule:#e6e9ee;--rule-soft:#f0f2f5;
+  --accent:#635bff;
+  --green:#1f7a4d;--green-bg:#ecf7f1;--green-line:#cce5d8;
+  --amber:#8a6d1d;--amber-bg:#fbf6e8;--amber-line:#ead9a6;
+  --rose:#b13a3a;--rose-bg:#fbeeee;--rose-line:#ecc9c9;
+  --teal:#156877;--teal-bg:#e9f4f6;--teal-line:#b6dde2;
+  --serif:"Iowan Old Style","Charter","Georgia",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+  --mono:"SF Mono","Menlo","Consolas",monospace;
+}
+html,body{background:var(--bg);}
+body{color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+  padding:0 0 80px;-webkit-font-smoothing:antialiased;}
+
+.ctrl-wrap{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(10px);
+  padding:14px 20px 10px;
+  border-bottom:1px solid var(--rule);
+}
+h1{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:-.01em;margin-bottom:10px;}
+h1 .sub{color:var(--ink-faint);margin-left:8px;font-size:12px;font-style:italic;}
+.controls{display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;}
+.ctrl{display:flex;flex-direction:column;gap:4px;}
+.ctrl label{color:var(--ink-faint);font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;}
+select{background:var(--bg-card);border:1px solid var(--rule);color:var(--ink);
+  padding:6px 9px;font-family:inherit;font-size:12px;border-radius:5px;
+  outline:none;min-width:120px;cursor:pointer;}
+select:focus{border-color:var(--accent);}
+button{background:var(--ink);border:1px solid var(--ink);color:#fff;
+  padding:6px 11px;font-family:inherit;font-size:12px;font-weight:500;
+  border-radius:5px;cursor:pointer;transition:background 120ms;}
+button:hover{background:#2d3548;}
+button.sec{background:var(--bg-card);border:1px solid var(--rule);color:var(--ink);}
+button.sec:hover{background:var(--bg-soft);border-color:var(--ink-ghost);}
+
+.legend{font-size:10px;color:var(--ink-soft);display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.legend span{display:inline-flex;align-items:center;}
+.legend .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;}
+
+.tag-hdr{padding:16px 20px 0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.tag-hdr .lbl{color:var(--ink-faint);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
+.tag-hdr .name{color:var(--ink);font-family:var(--serif);font-size:26px;font-weight:500;letter-spacing:-.02em;}
+.tag-hdr .avail{color:var(--ink-soft);font-size:12px;font-style:italic;font-family:var(--serif);}
+.tag-hdr .pos{color:var(--ink-faint);font-size:11px;font-family:var(--mono);margin-left:auto;}
+
+.npc-row{padding:6px 20px 14px;display:flex;gap:6px;align-items:center;}
+.pill{padding:2px 9px;border:1px solid var(--rule);border-radius:999px;cursor:pointer;
+  color:var(--ink-soft);background:var(--bg-card);font-size:11px;transition:all 100ms;}
+.pill.active{color:#fff;border-color:var(--ink);background:var(--ink);}
+.pill.disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through;}
+.pill:not(.disabled):not(.active):hover{border-color:var(--ink-soft);color:var(--ink);}
+.hint{margin-left:auto;color:var(--ink-faint);font-size:10px;font-family:var(--mono);}
+
+#canvas-wrap{padding:0 20px 40px;overflow-x:auto;}
+#tree-area{position:relative;}
+
+.card{
+  position:absolute;
+  background:var(--bg-card);
+  border:1px solid var(--rule);
+  border-radius:8px;
+  padding:14px 16px;
+  display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 1px 2px rgba(26,31,54,.04),0 1px 3px rgba(26,31,54,.06);
+  overflow:hidden;
+}
+.card:hover{box-shadow:0 2px 8px rgba(26,31,54,.1);}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:8px 0 0 8px;}
+.card.match::before{background:var(--green-line);}
+.card.over::before{background:var(--amber-line);}
+.card.bail::before{background:var(--rose-line);}
+.card.cont::before{background:var(--ink-ghost);}
+.card.term::before{background:var(--ink-ghost);}
+.card.terminal{background:var(--bg-soft);}
+.card.fallback{background:var(--amber-bg);border-color:var(--amber-line);}
+.card.cempty{background:var(--rose-bg);border-color:var(--rose-line);}
+
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.ckind{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--ink-faint);flex-shrink:0;}
+.ckind.match{color:var(--green);}
+.ckind.over{color:var(--amber);}
+.ckind.bail{color:var(--rose);}
+.ckind.cont{color:var(--teal);}
+.cdeck{font-family:var(--mono);font-size:10px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:right;}
+.cspk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--ink-faint);}
+.cspk.npc{color:var(--teal);}
+.cspk.player{color:var(--green);}
+.ctext{font-family:var(--serif);font-size:16px;line-height:1.45;color:var(--ink);word-break:break-word;}
+.card.terminal .ctext{font-size:15px;color:var(--ink-soft);}
+.card.cempty .ctext{color:var(--rose);font-style:italic;font-size:14px;}
+.ctext .pause{color:var(--ink-faint);font-size:.7em;margin:0 2px;}
+.ctext .consent{display:block;color:var(--ink-soft);margin-top:6px;padding-top:6px;border-top:1px solid var(--rule-soft);font-size:14px;}
+.outcome{font-size:11px;padding:3px 8px;border-radius:4px;align-self:flex-start;font-weight:500;}
+.outcome.joined{color:var(--green);background:var(--green-bg);}
+.outcome.declined{color:var(--amber);background:var(--amber-bg);}
+.outcome.narc{color:var(--rose);background:var(--rose-bg);}
+.outcome.backed{color:var(--ink-soft);background:var(--rule-soft);}
+.outcome.deferred{color:var(--teal);background:var(--teal-bg);}
+.carousel{display:flex;align-items:center;gap:6px;padding-top:7px;border-top:1px solid var(--rule-soft);}
+.carr{background:var(--bg-card);border:1px solid var(--rule);color:var(--ink-soft);
+  font-size:11px;padding:2px 7px;border-radius:4px;cursor:pointer;font-weight:500;flex-shrink:0;}
+.carr:disabled{opacity:.35;cursor:not-allowed;}
+.carr:not(:disabled):hover{border-color:var(--ink-soft);color:var(--ink);}
+.cpos{font-size:11px;font-family:var(--mono);color:var(--ink-soft);flex-shrink:0;}
+.ctags{font-size:10px;font-family:var(--mono);color:var(--teal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:auto;}
+.ctags.fallback{color:var(--amber);}
+.ctags.cempty{color:var(--rose);}
+
+.empty-state{color:var(--ink-soft);text-align:center;padding:60px 20px;font-size:15px;font-family:var(--serif);font-style:italic;}
+.empty-state strong{font-style:normal;color:var(--ink);}
+#error-box{background:var(--rose-bg);border:1px solid var(--rose-line);color:var(--rose);
+  padding:12px 16px;border-radius:7px;margin:16px 20px;font-family:var(--mono);font-size:11px;display:none;}
+</style>
+</head>
+<body>
+<div id="error-box"></div>
+<div class="ctrl-wrap">
+  <h1>// tag walker <span class="sub">— exhaustive paths per tag</span></h1>
+  <div class="controls">
+    <div class="ctrl"><label>TAG</label><select id="tagSel"></select></div>
+    <div class="ctrl"><label>NPC</label>
+      <select id="npcSel">
+        <option value="angry">angry</option>
+        <option value="hungry">hungry</option>
+        <option value="narc">narc</option>
+      </select>
+    </div>
+    <div class="ctrl"><label>&nbsp;</label><button onclick="randomTag()">🎲 random</button></div>
+    <div class="ctrl"><label>&nbsp;</label><button class="sec" onclick="prevTag()">◀ prev</button></div>
+    <div class="ctrl"><label>&nbsp;</label><button class="sec" onclick="nextTag()">next ▶</button></div>
+    <div class="ctrl"><label>&nbsp;</label><button class="sec" id="walkBtn" onclick="walkAllTags()">▶▶ walk all</button></div>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:#cce5d8"></span>match</span>
+    <span><span class="sw" style="background:#ead9a6"></span>talk over</span>
+    <span><span class="sw" style="background:#ecc9c9"></span>bail</span>
+    <span><span class="sw" style="background:#fbf6e8;border:1px solid #ead9a6"></span>fallback</span>
+    <span><span class="sw" style="background:#fbeeee;border:1px solid #ecc9c9"></span>unavailable</span>
+  </div>
+</div>
+<div id="tag-hdr"></div>
+<div id="canvas-wrap"><div id="tree-area"><svg id="conn-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg></div></div>
+
+<script src="game-data.js"></script>
+<script src="game-data-words-engine.js"></script>
+<script src="game-data-words.js"></script>
+<script>
+/* stubs */
+window.GAME_DATA=window.GAME_DATA||{buildings:[],playerArt:[[" @ "],[" @ "]],npcArts:[["&"]],npcColors:["#aaa"],narcArt:["%"],robinArt:["R"],narrativeQuotes:[]};
+const _n=()=>{};
+window.audio={play:_n};window.grid={set:_n,text:_n,textCenter:_n,art:_n};
+window.Util=window.Util||{pick:a=>a[Math.floor(Math.random()*a.length)],clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),randInt:(a,b)=>Math.floor(Math.random()*(b-a+1))+a,lerp:(a,b,t)=>a+(b-a)*t};
+window.phase="tester";window.W=80;window.H=30;window.dialogStack=[];
+['C_PLAYER','C_DIM','C_DANGER','C_SUCCESS','C_TEAL','C_ORANGE','C_WARN'].forEach(k=>window[k]="#888");
+window.bannerTimer=0;window.hasPlayed=false;
+['showBanner','updateBanner','renderBanner','dialogUpdate','dialogRender','addFloat','spark','triggerChromatic','endGame','initAct2b'].forEach(k=>window[k]=_n);
+window.hudLabel={textContent:""};window.hudScore={textContent:"",style:{}};window.hudStatus={textContent:"",style:{}};
+if(!document.getElementById("gamescreen")){const c=document.createElement("canvas");c.id="gamescreen";c.style.display="none";document.body.appendChild(c);}
+window.gs=document.getElementById("gamescreen");
+window.input={isDown:_n,justPressed:_n};window.clickPending=false;
+window.CONV_BOX=window.DIALOG_BOX={tl:"+",tr:"+",bl:"+",br:"+",h:"-",v:"|"};
+window.A1_LOOP_MSGS=[];window.HA=[[""]];window.HC=["#fff"];
+</script>
+<script>
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const f=n=>Math.round(n*10)/10;
+
+/* ── deck helpers ── */
+const isTaggedDeck=d=>{const s=d?.src;if(!s?.length)return false;return typeof s[0]!=="string";};
+const tagsOf=c=>(!c||typeof c==="string")?[]:(c.tags||[]);
+const textOf=c=>typeof c==="string"?c:(c?.t??"");
+
+let _DM=null;
+function getDM(){
+  if(_DM)return _DM; _DM={};
+  [["DECK_GREET",()=>DECK_GREET],["DECK_ANGRY_HELLO",()=>DECK_ANGRY_HELLO],["DECK_HUNGRY_HELLO",()=>DECK_HUNGRY_HELLO],
+   ["DECK_NARC_HELLO",()=>DECK_NARC_HELLO],["DECK_ANGRY_PITCH",()=>DECK_ANGRY_PITCH],["DECK_HUNGRY_PITCH",()=>DECK_HUNGRY_PITCH],
+   ["DECK_NARC_AGREE",()=>DECK_NARC_AGREE],["DECK_BAD_READ",()=>DECK_BAD_READ],["DECK_FILLER",()=>DECK_FILLER],
+   ["DECK_F_INVITE",()=>DECK_F_INVITE],["DECK_INVITE",()=>DECK_INVITE],["DECK_STRONGER_PITCH",()=>DECK_STRONGER_PITCH],
+   ["DECK_SAY_MORE_WARM",()=>DECK_SAY_MORE_WARM],["DECK_SAY_MORE_SKEPTICAL",()=>DECK_SAY_MORE_SKEPTICAL],
+   ["DECK_BACK_OFF_EARLY",()=>DECK_BACK_OFF_EARLY],["DECK_BACK_OFF_LATE",()=>DECK_BACK_OFF_LATE],
+   ["DECK_BAIL_RESPONSE",()=>DECK_BAIL_RESPONSE],["DECK_JOIN_CONSENT",()=>DECK_JOIN_CONSENT],
+   ["DECK_NO_BYE",()=>DECK_NO_BYE],["DECK_NOT_NOW",()=>DECK_NOT_NOW],["DECK_RETURN",()=>DECK_RETURN],
+   ["DECK_NARC_REV",()=>DECK_NARC_REV],["DECK_ACK_NARC",()=>DECK_ACK_NARC],
+   ["DECK_MISMATCH_TOO_LITERAL",()=>DECK_MISMATCH_TOO_LITERAL],["DECK_MISMATCH_TOO_STRUCTURAL",()=>DECK_MISMATCH_TOO_STRUCTURAL]
+  ].forEach(([n,f])=>{try{const v=f();if(v)_DM[n]=v;}catch(e){}});
+  return _DM;
+}
+const getDeck=n=>getDM()[n]||null;
+const ALL_DECKS=["DECK_GREET","DECK_ANGRY_HELLO","DECK_HUNGRY_HELLO","DECK_NARC_HELLO","DECK_ANGRY_PITCH","DECK_HUNGRY_PITCH","DECK_NARC_AGREE","DECK_BAD_READ","DECK_FILLER","DECK_F_INVITE","DECK_INVITE","DECK_STRONGER_PITCH","DECK_SAY_MORE_WARM","DECK_SAY_MORE_SKEPTICAL","DECK_BACK_OFF_EARLY","DECK_BACK_OFF_LATE","DECK_BAIL_RESPONSE","DECK_JOIN_CONSENT","DECK_NO_BYE","DECK_NOT_NOW","DECK_RETURN","DECK_NARC_REV","DECK_ACK_NARC","DECK_MISMATCH_TOO_LITERAL","DECK_MISMATCH_TOO_STRUCTURAL"];
+
+function collectAllTags(){
+  const s=new Set();
+  for(const n of ALL_DECKS){const d=getDeck(n);if(!d?.src)continue;for(const c of d.src)for(const t of tagsOf(c))if(t)s.add(t);}
+  return[...s].sort();
+}
+function resolvePool(name,tags){
+  const d=getDeck(name);if(!d?.src)return{cards:[],mode:"empty"};
+  const src=d.src;
+  if(!isTaggedDeck(d))return{cards:src.slice(),mode:"untagged"};
+  if(!tags?.length)return{cards:src.slice(),mode:"tagged"};
+  const m=src.filter(c=>tagsOf(c).some(t=>tags.includes(t)));
+  if(!m.length)return{cards:src.slice(),mode:"fallback"};
+  return{cards:m,mode:"tagged"};
+}
+const helloHasTag=(kind,tag)=>{
+  const n=kind==="narc"?"DECK_NARC_HELLO":kind==="angry"?"DECK_ANGRY_HELLO":"DECK_HUNGRY_HELLO";
+  return getDeck(n)?.src.some(c=>tagsOf(c).includes(tag))??false;
+};
+const bestKind=tag=>["angry","hungry","narc"].find(k=>helloHasTag(k,tag))||"angry";
+
+/* ── tree model ── */
+function mkNode(kind,speaker,deckName,matchTags,extra={}){
+  const{cards,mode}=resolvePool(deckName,matchTags);
+  return{kind,speaker,deckName,pool:cards,mode,matchTags,children:[],...extra};
+}
+const ptags=n=>tagsOf(n.pool?.[0]);
+
+function buildTree(tag,npcKind){
+  const isNarc=npcKind==="narc";
+  const hName=isNarc?"DECK_NARC_HELLO":npcKind==="angry"?"DECK_ANGRY_HELLO":"DECK_HUNGRY_HELLO";
+  const hDeck=getDeck(hName);
+  const hMatched=hDeck?.src.filter(c=>tagsOf(c).includes(tag))??[];
+  const hello={kind:"cont",speaker:"npc",deckName:hName,pool:hMatched,
+    mode:hMatched.length?"tagged":"empty",matchTags:[tag],children:[],npcFlavor:isNarc?"narc":null};
+  if(!hMatched.length)return{hello,available:false};
+
+  const ht=ptags(hello);
+  const pitchName=isNarc?"DECK_NARC_AGREE":npcKind==="angry"?"DECK_ANGRY_PITCH":"DECK_HUNGRY_PITCH";
+  const matchN=mkNode("match","player",pitchName,ht);
+  const overN=mkNode("over","player","DECK_BAD_READ",ht);
+  const bailN=mkNode("bail","player","DECK_BACK_OFF_EARLY",ht);
+
+  bailN.children=[{lbl:"",node:mkNode("term","npc","DECK_BAIL_RESPONSE",ptags(bailN),{outcome:"backed"})}];
+
+  if(isNarc){
+    overN.children=[{lbl:"",node:buildSayMore("DECK_SAY_MORE_SKEPTICAL",[],npcKind)}];
+  }else{
+    const mmN=mkNode("term","npc",npcKind==="hungry"?"DECK_MISMATCH_TOO_STRUCTURAL":"DECK_MISMATCH_TOO_LITERAL",ptags(overN),{outcome:"declined"});
+    const nb=resolvePool("DECK_NO_BYE",ptags(overN));mmN.followDeck="DECK_NO_BYE";mmN.followPool=nb.cards;
+    overN.children=[{lbl:"",node:mmN}];
+  }
+
+  const fillerN=mkNode("cont","npc","DECK_FILLER",ptags(matchN));
+  const ft=ptags(fillerN);
+  const invN=mkNode("match","player","DECK_F_INVITE",ft);
+  const walkN=mkNode("bail","player","DECK_BACK_OFF_EARLY",ft);
+  walkN.children=[{lbl:"",node:mkNode("term","npc","DECK_BAIL_RESPONSE",ptags(walkN),{outcome:"backed"})}];
+
+  if(isNarc){
+    invN.children=[{lbl:"",node:buildSayMore("DECK_SAY_MORE_SKEPTICAL",ptags(invN),npcKind)}];
+  }else{
+    invN.children=[
+      {lbl:"JOIN (80%)",node:mkNode("term","npc","DECK_JOIN_CONSENT",ptags(invN),{outcome:"joined"})},
+      {lbl:"SAY MORE (20%)",node:buildSayMore("DECK_SAY_MORE_WARM",ptags(invN),npcKind)},
+    ];
+  }
+  fillerN.children=[{lbl:"RECRUIT",node:invN},{lbl:"WALK AWAY",node:walkN}];
+  matchN.children=[{lbl:"",node:fillerN}];
+  hello.children=[{lbl:"MATCH",node:matchN},{lbl:"TALK OVER",node:overN},{lbl:"BAIL",node:bailN}];
+  return{hello,available:true};
+}
+
+function buildSayMore(deckName,inputTags,npcKind){
+  const isNarc=npcKind==="narc";
+  const smN=mkNode("cont","npc",deckName,inputTags);
+  const smt=ptags(smN).length?ptags(smN):inputTags;
+  const strN=mkNode("match","player","DECK_STRONGER_PITCH",smt);
+  const lbN=mkNode("bail","player","DECK_BACK_OFF_LATE",smt);
+  lbN.children=[{lbl:"",node:{kind:"term",speaker:null,deckName:"(no NPC reply)",pool:[],mode:"untagged",matchTags:[],children:[],outcome:"backed",silent:true}}];
+  const st=ptags(strN).length?ptags(strN):smt;
+  if(isNarc){
+    strN.children=[{lbl:"",node:mkNode("term","npc","DECK_NARC_REV",st,{outcome:"narc"})}];
+  }else{
+    const nnN=mkNode("cont","npc","DECK_NOT_NOW",st);
+    const nnt=ptags(nnN).length?ptags(nnN):st;
+    nnN.children=[{lbl:"(4-7s later)",node:mkNode("term","npc","DECK_RETURN",nnt,{outcome:"deferred"})}];
+    strN.children=[
+      {lbl:"JOIN (60%)",node:mkNode("term","npc","DECK_JOIN_CONSENT",st,{outcome:"joined"})},
+      {lbl:"NOT NOW (40%)",node:nnN},
+    ];
+  }
+  smN.children=[{lbl:"STRONGER",node:strN},{lbl:"WALK AWAY",node:lbN}];
+  return smN;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────────
+   Strategy:
+   1. Walk tree, assign each node a depth (row) and a preferred cx
+      (center-x) = same as parent's cx initially.
+   2. Collect all nodes into rows.
+   3. For each row left→right, nudge nodes apart if they overlap.
+      When a node is nudged, shift its entire subtree with it.
+   4. After all positions settled, render cards and draw SVG lines.
+────────────────────────────────────────────────────────────────────── */
+
+const CW=300;   // card width
+const HPAD=24;  // min horizontal gap between cards
+const VGAP=88;  // vertical gap between rows (connector space)
+
+function buildLayout(root){
+  // Flatten tree into items with depth + preferred cx
+  const rows=[];   // rows[depth] = array of items
+  const items=[];
+
+  function walk(node,depth,preferredCx,parentItem,lbl){
+    if(!rows[depth])rows[depth]=[];
+    const item={node,depth,cx:preferredCx,parentItem,lbl,children:[],id:null,el:null};
+    rows[depth].push(item);
+    items.push(item);
+    if(parentItem)parentItem.children.push(item);
+
+    // Preferred cx for children: spread evenly around this node's cx
+    const ch=node.children||[];
+    if(!ch.length)return;
+    const n=ch.length;
+    // Space children evenly: total span = n*(CW+HPAD) - HPAD
+    const totalSpan=(CW+HPAD)*n - HPAD;
+    const startCx=preferredCx - totalSpan/2 + CW/2;
+    ch.forEach((c,i)=>walk(c.node,depth+1,startCx+i*(CW+HPAD),item,c.lbl));
+  }
+
+  // Root starts centered; we'll shift everything after layout
+  walk(root,0,0,null,"");
+
+  // For each row, sort by cx, then nudge overlapping nodes rightward,
+  // carrying their subtrees with them.
+  function subtreeItems(item){
+    const out=[item];
+    for(const c of item.children)out.push(...subtreeItems(c));
+    return out;
+  }
+
+  // Pass 1: nudge overlapping siblings rightward (carrying subtrees)
+  for(const row of rows){
+    if(!row)continue;
+    row.sort((a,b)=>a.cx-b.cx);
+    for(let i=1;i<row.length;i++){
+      const prev=row[i-1];
+      const cur=row[i];
+      const gap=(cur.cx-CW/2)-(prev.cx+CW/2);
+      if(gap < HPAD){
+        const shift=HPAD-gap;
+        for(const si of subtreeItems(cur))si.cx+=shift;
+      }
+    }
+  }
+
+  // Pass 2: ensure nothing goes left of a small margin (8px).
+  // Process rows in depth order so parent shifts propagate before children.
+  const depthOrder=[...rows.keys()].filter(d=>rows[d]);
+  for(const d of depthOrder){
+    const row=rows[d];
+    row.sort((a,b)=>a.cx-b.cx);
+    for(let i=0;i<row.length;i++){
+      const cur=row[i];
+      const minAllowed=i===0 ? CW/2+8 : row[i-1].cx+CW/2+HPAD+CW/2;
+      if(cur.cx < minAllowed){
+        const shift=minAllowed-cur.cx;
+        for(const si of subtreeItems(cur))si.cx+=shift;
+      }
+    }
+  }
+
+  return{items,rows};
+}
+
+/* ── RENDER ── */
+let nodeReg=new Map();
+let idCounter=0;
+
+const rt=t=>t?esc(t).replace(/\|pause\|/g,'<span class="pause"> · </span>'):"";
+
+function cardHTML(node,id){
+  const cls=["card",node.kind];
+  if(node.outcome)cls.push("terminal");
+  if(node.mode==="fallback")cls.push("fallback");
+  if(node.mode==="empty"&&!node.silent)cls.push("cempty");
+
+  const card=node.pool?.[0];
+  const kindLabel=({match:"MATCH",over:"TALK OVER",bail:"BAIL",cont:"•",
+    term:node.outcome?"▣ "+node.outcome.toUpperCase():"▣"})[node.kind]||"•";
+  const spk=node.speaker?(node.speaker==="npc"?"NPC":"PLAYER"):"—";
+  const dk=node.deckName.replace(/^DECK_/,"").toLowerCase();
+
+  let inner=`<div class="card-head">
+    <span class="ckind ${node.kind}">${esc(kindLabel)}</span>
+    <span class="cdeck" title="${esc(node.deckName)}">${esc(dk)}</span>
+  </div>
+  <div class="cspk ${node.speaker||""}">${spk}</div>`;
+
+  if(node.silent){
+    inner+=`<div class="ctext" id="${id}-t" style="color:var(--ink-faint);font-style:italic">(no reply — float + close)</div>`;
+  }else if(!card){
+    inner+=`<div class="ctext" id="${id}-t">(unavailable)</div>`;
+  }else{
+    inner+=`<div class="ctext" id="${id}-t">${cardContent(card,node)}</div>`;
+  }
+
+  if(node.outcome)inner+=`<div class="outcome ${node.outcome}">${esc(olabel(node.outcome))}</div>`;
+
+  if(!node.silent){
+    const tags=card?tagsOf(card):[];
+    let tc="",ts;
+    if(node.mode==="untagged")ts="(untagged)";
+    else if(node.mode==="fallback"){tc="fallback";ts="⚠ fallback";}
+    else if(node.mode==="empty"){tc="cempty";ts="(unavailable)";}
+    else ts=tags.length?"["+tags.join(", ")+"]":"(no tags)";
+    const total=node.pool?.length||0;
+    inner+=`<div class="carousel">
+      <button class="carr" onclick="cycleN('${id}',-1)" ${total<=1?"disabled":""}>◀</button>
+      <span class="cpos" id="${id}-p">${total?1:0} / ${total}</span>
+      <button class="carr" onclick="cycleN('${id}',1)" ${total<=1?"disabled":""}>▶</button>
+      <span class="ctags ${tc}" id="${id}-g" title="${esc(ts)}">${esc(ts)}</span>
+    </div>`;
+  }
+  return`<div class="${cls.join(" ")}" id="${id}" style="width:${CW}px;position:absolute;top:-9999px;left:0">${inner}</div>`;
+}
+
+function cardContent(card,node){
+  if(!card)return"";
+  let h=rt(textOf(card));
+  if(node.followPool?.length){
+    const fv=node.followPool[0];
+    h+=`<span class="consent">${rt(textOf(fv))} <span style="color:var(--ink-faint);font-size:.85em;font-family:var(--mono)">[${esc(node.followDeck)}]</span></span>`;
+  }
+  return h;
+}
+
+function olabel(o){
+  return({joined:"✓ joined",declined:"✗ declined",narc:"⚠ narc revealed",backed:"→ backed off",deferred:"~ deferred (4-7s)"})[o]||o;
+}
+
+function cycleN(id,dir){
+  const e=nodeReg.get(id);if(!e)return;
+  const tot=e.node.pool?.length||0;if(tot<=1)return;
+  e.idx=(e.idx+dir+tot)%tot;
+  const card=e.node.pool[e.idx];
+  const t=document.getElementById(id+"-t");
+  const p=document.getElementById(id+"-p");
+  const g=document.getElementById(id+"-g");
+  if(t)t.innerHTML=cardContent(card,e.node);
+  if(p)p.textContent=(e.idx+1)+" / "+tot;
+  if(g&&e.node.mode==="tagged"){const tags=tagsOf(card);const s=tags.length?"["+tags.join(", ")+"]":"(no tags)";g.textContent=s;g.title=s;}
+}
+
+function renderTree(root){
+  const area=document.getElementById("tree-area");
+  nodeReg=new Map();idCounter=0;
+  area.innerHTML='<svg id="conn-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg>';
+  const svg=document.getElementById("conn-svg");
+
+  const{items,rows}=buildLayout(root);
+
+  // Inject cards (off-screen for measurement)
+  for(const item of items){
+    const id="n"+(idCounter++);
+    item.id=id;
+    nodeReg.set(id,{node:item.node,idx:0});
+    const wrap=document.createElement("div");
+    wrap.innerHTML=cardHTML(item.node,id);
+    item.el=wrap.firstChild;
+    area.appendChild(item.el);
+  }
+
+  // Measure heights, position cards
+  requestAnimationFrame(()=>{
+    // Row heights
+    const rowH=rows.map(row=>row?Math.max(...row.map(i=>i.el?.offsetHeight||100)):0);
+
+    // Cumulative y per row
+    const rowY=[];
+    let y=0;
+    for(let d=0;d<rows.length;d++){
+      rowY[d]=y;
+      y+=rowH[d]+VGAP;
+    }
+
+    // Position each card
+    for(const item of items){
+      const cardLeft=item.cx-CW/2;
+      item.el.style.left=cardLeft+"px";
+      item.el.style.top=rowY[item.depth]+"px";
+      item.cardCx=item.cx;
+      item.cardTop=rowY[item.depth];
+      item.cardBot=rowY[item.depth]+(item.el.offsetHeight||100);
+    }
+
+    // Size the area
+    const totalW=Math.max(...items.map(i=>i.cx+CW/2))+20;
+    const totalH=y+20;
+    area.style.width=totalW+"px";
+    area.style.height=totalH+"px";
+    svg.style.width=totalW+"px";
+    svg.style.height=totalH+"px";
+    svg.setAttribute("viewBox",`0 0 ${totalW} ${totalH}`);
+
+    // Draw connectors
+    const STROKE="#d4d8de";
+    let s="";
+
+    for(const item of items){
+      if(!item.children.length)continue;
+      const px=f(item.cardCx);
+      const py=f(item.cardBot);
+
+      if(item.children.length===1){
+        const ch=item.children[0];
+        const cx=f(ch.cardCx);
+        const cy=f(ch.cardTop);
+        // elbow: go 60% of the way down, turn, then finish
+        const my=f(item.cardBot+(ch.cardTop-item.cardBot)*0.6);
+        s+=`<path d="M${px},${py} V${my} H${cx} V${cy}" fill="none" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`;
+        const lbl=(ch.lbl||"").toUpperCase();
+        if(lbl){
+          // label sits just above the horizontal elbow turn
+          s+=`<text x="${cx}" y="${f(parseFloat(my)-7)}" text-anchor="middle" font-size="11" font-family="system-ui,sans-serif" fill="#8792a2" letter-spacing="0.8">${esc(lbl)}</text>`;
+        }
+      }else{
+        // Long stem: go 65% of the gap, place junction there
+        const jy=f(item.cardBot+(VGAP)*0.65);
+        s+=`<line x1="${px}" y1="${py}" x2="${px}" y2="${jy}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
+        // horizontal bar spanning all children
+        const xs=item.children.map(c=>f(c.cardCx));
+        s+=`<line x1="${Math.min(...xs)}" y1="${jy}" x2="${Math.max(...xs)}" y2="${jy}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
+        // short drop to each child + label just above the junction
+        for(const ch of item.children){
+          const cx=f(ch.cardCx);
+          s+=`<line x1="${cx}" y1="${jy}" x2="${cx}" y2="${f(ch.cardTop)}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
+          if(ch.lbl){
+            s+=`<text x="${cx}" y="${f(parseFloat(jy)-7)}" text-anchor="middle" font-size="11" font-family="system-ui,sans-serif" fill="#8792a2" letter-spacing="0.8">${esc(ch.lbl.toUpperCase())}</text>`;
+          }
+        }
+      }
+    }
+    svg.innerHTML=s;
+  });
+}
+
+/* ── page logic ── */
+let allTags=[],curIdx=0,curKind="angry";
+
+function renderForTag(tag,kind){
+  const result=buildTree(tag,kind);
+  const avail={angry:helloHasTag("angry",tag),hungry:helloHasTag("hungry",tag),narc:helloHasTag("narc",tag)};
+  const aKinds=Object.entries(avail).filter(([,v])=>v).map(([k])=>k);
+  const aStr=aKinds.length?"available for: "+aKinds.join(", "):"no NPC kind has a hello tagged with this";
+
+  const pills=["angry","hungry","narc"].map(k=>{
+    const cls=["pill"];
+    if(k===kind)cls.push("active");
+    if(!avail[k])cls.push("disabled");
+    return`<span class="${cls.join(" ")}" onclick="${avail[k]?`setKind('${k}')`:''}'">${k}</span>`;
+  }).join("");
+
+  document.getElementById("tag-hdr").innerHTML=`
+    <div class="tag-hdr">
+      <span class="lbl">TAG</span>
+      <span class="name">${esc(tag)}</span>
+      <span class="avail">${esc(aStr)}</span>
+      <span class="pos">${curIdx+1} / ${allTags.length}</span>
+    </div>
+    <div class="npc-row">
+      <span style="color:var(--ink-faint);font-size:11px">NPC kind</span>
+      ${pills}
+      <span class="hint">← → · R random · ◀ ▶ cycle cards</span>
+    </div>`;
+
+  const wrap=document.getElementById("canvas-wrap");
+  if(!result.available){
+    wrap.innerHTML=`<div class="empty-state">no <strong>${esc(kind)}</strong> hello has tag <strong>${esc(tag)}</strong>.<br>${esc(aStr)}</div>`;
+    return;
+  }
+  wrap.innerHTML=`<div id="tree-area"><svg id="conn-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg></div>`;
+  renderTree(result.hello);
+}
+
+function setKind(k){curKind=k;document.getElementById("npcSel").value=k;renderForTag(allTags[curIdx],k);}
+
+function goTo(idx){
+  curIdx=idx;const tag=allTags[idx];
+  if(!helloHasTag(curKind,tag)){curKind=bestKind(tag);document.getElementById("npcSel").value=curKind;}
+  document.getElementById("tagSel").value=tag;
+  renderForTag(tag,curKind);
+}
+function nextTag(){if(allTags.length)goTo((curIdx+1)%allTags.length);}
+function prevTag(){if(allTags.length)goTo((curIdx-1+allTags.length)%allTags.length);}
+function randomTag(){if(!allTags.length)return;let n;do{n=Math.floor(Math.random()*allTags.length);}while(n===curIdx&&allTags.length>1);goTo(n);}
+
+let walkH=null;
+function walkAllTags(){
+  const btn=document.getElementById("walkBtn");
+  if(walkH){clearInterval(walkH);walkH=null;btn.textContent="▶▶ walk all";return;}
+  btn.textContent="■ stop";
+  walkH=setInterval(()=>{nextTag();if(curIdx===0){clearInterval(walkH);walkH=null;btn.textContent="▶▶ walk all";}},3000);
+  nextTag();
+}
+
+function boot(){
+  try{
+    allTags=collectAllTags();
+    if(!allTags.length){document.getElementById("canvas-wrap").innerHTML=`<div class="empty-state">no tagged cards found</div>`;return;}
+    const sel=document.getElementById("tagSel");
+    sel.innerHTML=allTags.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    sel.addEventListener("change",e=>{const i=allTags.indexOf(e.target.value);if(i>=0){curIdx=i;renderForTag(allTags[i],curKind);}});
+    document.getElementById("npcSel").addEventListener("change",e=>setKind(e.target.value));
+    document.addEventListener("keydown",e=>{
+      const ae=document.activeElement;
+      if(ae?.tagName==="SELECT"||ae?.tagName==="INPUT")return;
+      if(e.key==="ArrowRight"){nextTag();e.preventDefault();}
+      else if(e.key==="ArrowLeft"){prevTag();e.preventDefault();}
+      else if(e.key==="r"||e.key==="R"){randomTag();e.preventDefault();}
+    });
+    curKind=bestKind(allTags[0]);
+    document.getElementById("npcSel").value=curKind;
+    goTo(0);
+  }catch(err){
+    const b=document.getElementById("error-box");b.style.display="block";
+    b.textContent="error: "+err.message+"\n"+(err.stack||"");
+  }
+}
+window.addEventListener("error",e=>{const b=document.getElementById("error-box");b.style.display="block";b.textContent="error: "+e.message+" — "+e.filename+":"+e.lineno;});
+if(document.readyState==="complete"||document.readyState==="interactive")setTimeout(boot,0);
+else document.addEventListener("DOMContentLoaded",boot);
+</script>
+</body>
+</html>
