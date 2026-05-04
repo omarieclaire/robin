@@ -2105,7 +2105,7 @@ const smSkep = scoreAndSort(
         const joinItems = scoreAndSort(
           D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
             key: `D_JOIN_CONSENT_PAIRS:${i}`,
-            text: `"${x.join}"  /  "${x.consent}"`,
+            text: x.t,
             tags: x.tags || [],
             idx: i,
             selected: P.smDeck === "D_JOIN_CONSENT_PAIRS" && P.smIdx === i,
@@ -2322,7 +2322,7 @@ const smSkep = scoreAndSort(
               items: scoreAndSort(
                 D.D_JOIN_CONSENT_PAIRS.map((x, i) => ({
                   key: `D_JOIN_CONSENT_PAIRS:out:${i}`,
-                  text: `"${x.join}"  /  "${x.consent}"`,
+                  text: x.t,
                   tags: x.tags || [],
                   idx: i,
                   selected: P.outcomeJoinIdx === i,
@@ -2617,7 +2617,7 @@ const smSkep = scoreAndSort(
           if (idx == null || !D[dn]) return null;
           const x = D[dn][idx];
           if (!x) return null;
-          const text = typeof x === "string" ? x : x.t || (x.join ? `"${x.join}" / "${x.consent}"` : "");
+          const text = typeof x === "string" ? x : x.t || "";
           const tags = (typeof x === "object" ? x.tags : null) || [];
           return { text, tags };
         }
@@ -2723,8 +2723,7 @@ const smSkep = scoreAndSort(
         if (P.smDeck === "D_JOIN_CONSENT_PAIRS") {
           const item = D.D_JOIN_CONSENT_PAIRS[P.smIdx];
           if (item) {
-            body.appendChild(spLine("npc", `"${item.join}"`, "", item.tags || [], prevTags));
-            body.appendChild(spLine("npc", `"${item.consent}"`, "", [], []));
+            body.appendChild(spLine("npc", item.t, "", item.tags || [], prevTags));
           }
           const end = document.createElement("div");
           end.className = "sp-text";
@@ -2780,8 +2779,7 @@ const smSkep = scoreAndSort(
           if (P.outcomeJoinIdx != null) {
             const jItem = D.D_JOIN_CONSENT_PAIRS[P.outcomeJoinIdx];
             if (jItem) {
-              body.appendChild(spLine("npc", `"${jItem.join}"`, "", jItem.tags || [], prevTags));
-              body.appendChild(spLine("npc", `"${jItem.consent}"`, "", [], []));
+              body.appendChild(spLine("npc", jItem.t, "", jItem.tags || [], prevTags));
               const rec = document.createElement("div");
               rec.className = "sp-text";
               rec.style.color = "#4a9a68";
@@ -3192,152 +3190,7 @@ const smSkep = scoreAndSort(
           refreshTags();
         }
 
-        if (deckName === "D_JOIN_CONSENT_PAIRS") {
-          el.innerHTML = "";
-          if (!obj.tags) obj.tags = [];
-          const f1 = document.createElement("textarea");
-          f1.className = "edit-ta";
-          f1.value = obj.join || "";
-          f1.rows = 2;
-          f1.placeholder = "join phrase…";
-          const f2 = document.createElement("textarea");
-          f2.className = "edit-ta";
-          f2.value = obj.consent || "";
-          f2.rows = 1;
-          f2.placeholder = "consent phrase…";
-          f2.style.marginTop = "4px";
-          el.appendChild(f1);
-          el.appendChild(f2);
-          // tag editing for join consent
-          const tr = document.createElement("div");
-          tr.className = "tag-row";
-          const refreshJCTags = () => {
-            tr.innerHTML = "";
-            (obj.tags || []).forEach((t, ti) => {
-              const sp = document.createElement("span");
-              sp.className = "tag-e";
-              sp.innerHTML = `${esc(t)} <span class="tag-x">×</span>`;
-              sp.onclick = (e) => e.stopPropagation();
-              sp.querySelector(".tag-x").onclick = (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                obj.tags.splice(ti, 1);
-                saveData();
-                refreshJCTags();
-              };
-              tr.appendChild(sp);
-            });
-            const inp = document.createElement("input");
-            inp.className = "tag-in";
-            inp.placeholder = "+tag";
-            tr.appendChild(inp);
-            let ac = null;
-            inp.addEventListener("input", () => {
-              if (ac) {
-                ac.remove();
-                ac = null;
-              }
-              const v = inp.value.trim().toLowerCase();
-              if (!v) return;
-              const m = allTags().filter((t) => t.includes(v) && !(obj.tags || []).includes(t));
-              if (!m.length) return;
-              ac = document.createElement("div");
-              ac.className = "ac";
-              el.style.position = "relative";
-              m.slice(0, 8).forEach((t) => {
-                const d = document.createElement("div");
-                d.className = "ac-item";
-                d.textContent = t;
-                d.onmousedown = (e) => {
-                  e.preventDefault();
-                  if (!obj.tags) obj.tags = [];
-                  obj.tags.push(t);
-                  inp.value = "";
-                  saveData();
-                  if (ac) {
-                    ac.remove();
-                    ac = null;
-                  }
-                  refreshJCTags();
-                };
-                ac.appendChild(d);
-              });
-              el.appendChild(ac);
-            });
-            inp.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === ",") {
-                e.preventDefault();
-                const v = inp.value.replace(/,$/, "").trim();
-                if (v) {
-                  if (!obj.tags) obj.tags = [];
-                  obj.tags.push(v);
-                  inp.value = "";
-                  saveData();
-                  refreshJCTags();
-                }
-              }
-              if (e.key === "Escape") {
-                EDIT_KEY = null;
-                render();
-              }
-            });
-            inp.addEventListener("blur", () =>
-              setTimeout(() => {
-                if (ac) {
-                  ac.remove();
-                  ac = null;
-                }
-              }, 150),
-            );
-          };
-          el.appendChild(tr);
-          refreshJCTags();
-          const saveJC = () =>
-            setTimeout(() => {
-              if (el.contains(document.activeElement)) return;
-              obj.join = f1.value.trim();
-              obj.consent = f2.value.trim();
-              saveData();
-              EDIT_KEY = null;
-              render();
-            }, 150);
-          f1.addEventListener("blur", saveJC);
-          f2.addEventListener("blur", saveJC);
-          const acts = document.createElement("div");
-          acts.className = "edit-acts";
-          const sv = document.createElement("button");
-          sv.className = "ebtn save";
-          sv.textContent = "save";
-          sv.onclick = () => {
-            obj.join = f1.value.trim();
-            obj.consent = f2.value.trim();
-            saveData();
-            EDIT_KEY = null;
-            render();
-          };
-          const cn = document.createElement("button");
-          cn.className = "ebtn cancel";
-          cn.textContent = "cancel";
-          cn.onclick = () => {
-            EDIT_KEY = null;
-            render();
-          };
-          const dl = document.createElement("button");
-          dl.className = "ebtn del";
-          dl.textContent = "delete";
-          dl.onclick = () => {
-            if (!confirm("delete?")) return;
-            arr.splice(item.idx, 1);
-            saveData();
-            EDIT_KEY = null;
-            render();
-          };
-          acts.appendChild(sv);
-          acts.appendChild(cn);
-          acts.appendChild(dl);
-          el.appendChild(acts);
-          return;
-        }
+        
 
         const acts = document.createElement("div");
         acts.className = "edit-acts";
@@ -3382,12 +3235,7 @@ const smSkep = scoreAndSort(
           const arr = D[dn];
           if (!arr) return;
           const isPlainDeck = arr.length > 0 && typeof arr[0] === "string";
-          const ni =
-            dn === "D_JOIN_CONSENT_PAIRS"
-              ? { join: "new join phrase", consent: "new consent", tags: [] }
-              : isPlainDeck
-                ? "new line"
-                : { t: "new line", tags: [] };
+          const ni = isPlainDeck ? "new line" : { t: "new line\n\nnew consent", tags: [] };
           arr.unshift(ni);
           saveData();
           EDIT_KEY = `${dn}:0`;
@@ -3437,13 +3285,6 @@ const smSkep = scoreAndSort(
       function _canon(x) {
         if (x == null) return "null";
         if (typeof x === "string") return JSON.stringify({ s: x });
-        if (x.join !== undefined) {
-          return JSON.stringify({
-            j: x.join || "",
-            c: x.consent || "",
-            tags: [...(x.tags || [])].sort(),
-          });
-        }
         return JSON.stringify({
           t: x.t || "",
           tags: [...(x.tags || [])].sort(),
@@ -3542,10 +3383,6 @@ const smSkep = scoreAndSort(
         const ts = (tags) => (tags && tags.length ? `, tags: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, tags: []`);
         const fs = (f) => (f ? `, follows: "${f}"` : "");
         if (typeof x === "string") return JSON.stringify(x);
-        if (x.join !== undefined) {
-          const tp = x.tags && x.tags.length ? `, tags: [${x.tags.map((t) => `"${t}"`).join(", ")}]` : "";
-          return `{ join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)}${tp} }`;
-        }
         const t = x.t || "";
         return `{ t: ${JSON.stringify(t)}${ts(x.tags || [])}${fs(x.follows)} }`;
       }
@@ -3590,11 +3427,6 @@ const smSkep = scoreAndSort(
         const wArr = (name, arr, deck) => {
           out += `const ${name} = ${deck ? "new DM.Deck(" : ""}[\n`;
           arr.forEach((x) => {
-            if (x && x.join !== undefined) {
-              const tp = x.tags && x.tags.length ? `, tags: [${x.tags.map((t) => `"${t}"`).join(", ")}]` : "";
-              out += `  { join: ${JSON.stringify(x.join)}, consent: ${JSON.stringify(x.consent)}${tp} },\n`;
-              return;
-            }
             const t = x.t || (typeof x === "string" ? x : "");
             out += `  { t: ${JSON.stringify(t)}${ts(x.tags || [])}${fs(x.follows)} },\n`;
           });
@@ -3610,7 +3442,7 @@ const smSkep = scoreAndSort(
         wArr("D_NO_BYE", D.D_NO_BYE, false);
         wArr("D_SAY_MORE_WARM", D.D_SAY_MORE_WARM, true);
         wArr("D_SAY_MORE_SKEPTICAL", D.D_SAY_MORE_SKEPTICAL, true);
-        wArr("D_JOIN_CONSENT_PAIRS", D.D_JOIN_CONSENT_PAIRS, false);
+        wArr("D_JOIN_CONSENT_PAIRS", D.D_JOIN_CONSENT_PAIRS, true);
         wArr("DECK_MISMATCH_TOO_LITERAL", D.DECK_MISMATCH_TOO_LITERAL, true);
         wArr("DECK_MISMATCH_TOO_STRUCTURAL", D.DECK_MISMATCH_TOO_STRUCTURAL, true);
         wArr("D_BACK_OFF_EARLY", D.D_BACK_OFF_EARLY, true);

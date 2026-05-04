@@ -219,7 +219,7 @@ window.LANG_FR = {
   promptTap: "[ toucher ]",
   promptTapToPlaceFood: "[ TOUCHER POUR DÉPOSER ]",
   urgencyCopsEnRoute: ">> FLICS EN ROUTE <<",
-  urgencyFindExit: "!! TROUVE UNE SORTIE !!",
+  urgencyFindExit: "!! TROUVE LA SORTIE !!",
 
   controlsAct2: "flèches ou touche pour bouger",
   controlsAct2b: "flèches ou touche pour bouger",
@@ -239,7 +239,7 @@ window.LANG_FR = {
   choiceWalkAway: "( ._.) partir",
 
   // FR
-  recruitProgress1: "{ord} de moins — plus que {rem}",
+  recruitProgress1: "{ord} de moins — {que} {rem}",
   recruitProgressRemaining: " à aller !",
   recruitProgressComplete: "★ ÉQUIPE COMPLÈTE ★",
   choiceRecruitAngry: "(ง'̀-'́)ง les recruter",
@@ -282,6 +282,7 @@ window.LANG_FR = {
   hudAvoidNarcs: "évite les narcs",
   muteMute: "son",
   muteMuted: "muet",
+  quitBtn: "quitter",
   act1AmbMutters: ["ugh", "merde", ":(", "soupir", "...", "pfft", "crisse", "câline", "pourquoi", "$$$", "épuisé", "loyer..."],
 
   catLines: [
@@ -302,4 +303,8 @@ window.LANG_FR = {
 
   bannerEscaped: "ÉCHAPPÉ!",
   bannerBackToHood: "retour dans le quartier.",
+
+  bannerWeLostThem: "on les a perdus!",
+  runBystanderLines: ["j'ai rien vu", "vu personne moi", "bonne chance!", "courez, courez", "vu quoi?"],
+  act5TapDeposit: "appuyez pour partager",
 };

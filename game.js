@@ -226,6 +226,7 @@
   // ── END UNIFIED MOBILE CONTROLS ───────────────────────────────
 
   const quitBtn = document.getElementById("quit-btn");
+  quitBtn.textContent = window.LANG.quitBtn;
   quitBtn.addEventListener("click", () => {
     try {
       loop.stop();
@@ -359,12 +360,41 @@
     gs.style.fontSize = finalFS + "px";
   }
   /* ── GRID ──────────────────────────────────────────────── */
+  /* Detects characters that may render wider than 1 monospace cell.
+     Covers: CJK ideographs, hiragana/katakana, hangul, fullwidth forms,
+     emoji-range symbols, and a few stray wide symbols (e.g. Tamil ஹ).
+     Returns true for characters that need rigid per-cell rendering. */
+  function isWideChar(ch) {
+    if (!ch || ch.length === 0) return false;
+    const code = ch.charCodeAt(0);
+    /* Fast reject for common ASCII + Latin */
+    if (code < 0x0300) return false;
+    /* Known problem ranges */
+    return (
+      (code >= 0x0B80 && code <= 0x0BFF) || /* Tamil (cat ஹ) */
+      (code >= 0x1100 && code <= 0x115F) || /* Hangul Jamo */
+      (code >= 0x2E80 && code <= 0x303E) || /* CJK Radicals, Kangxi */
+      (code >= 0x3041 && code <= 0x33FF) || /* Hiragana, Katakana, CJK symbols */
+      (code >= 0x3400 && code <= 0x4DBF) || /* CJK Extension A */
+      (code >= 0x4E00 && code <= 0x9FFF) || /* CJK Unified Ideographs */
+      (code >= 0xA000 && code <= 0xA4CF) || /* Yi */
+      (code >= 0xAC00 && code <= 0xD7A3) || /* Hangul Syllables */
+      (code >= 0xF900 && code <= 0xFAFF) || /* CJK Compatibility Ideographs */
+      (code >= 0xFE30 && code <= 0xFE4F) || /* CJK Compatibility Forms */
+      (code >= 0xFF00 && code <= 0xFF60) || /* Fullwidth Forms */
+      (code >= 0xFFE0 && code <= 0xFFE6) || /* Fullwidth Signs */
+      code >= 0xD800 /* Surrogates (emoji + supplementary planes) */
+    );
+  }
+
   let grid;
   class Grid {
     constructor(w, h) {
       this.w = w;
       this.h = h;
       this.c = [];
+      this.wideRows = new Set();
+      this.wideRows = new Set();
       for (let y = 0; y < h; y++) {
         this.c[y] = [];
         for (let x = 0; x < w; x++)
@@ -380,6 +410,7 @@
           this.c[y][x].ch = " ";
           this.c[y][x].co = null;
         }
+      this.wideRows.clear();
     }
     set(x, y, ch, co) {
       x = Math.floor(x);
@@ -387,6 +418,7 @@
       if (x >= 0 && x < this.w && y >= 0 && y < this.h) {
         this.c[y][x].ch = ch;
         this.c[y][x].co = co || null;
+        if (isWideChar(ch)) this.wideRows.add(y);
       }
     }
     text(s, x, y, co) {
@@ -415,18 +447,35 @@
     html() {
       let o = "";
       for (let y = 0; y < this.h; y++) {
-        let lc = null;
-        for (let x = 0; x < this.w; x++) {
-          const c = this.c[y][x];
-          if (c.co !== lc) {
-            if (lc) o += "</span>";
-            if (c.co) o += '<span style="color:' + c.co + '">';
-            lc = c.co;
+        if (this.wideRows.has(y)) {
+          /* Rigid per-cell rendering for rows containing wide chars.
+             Each cell is a fixed-width inline-block; wide glyphs overflow
+             visually into neighbours but don't push the column grid. */
+          for (let x = 0; x < this.w; x++) {
+            const c = this.c[y][x];
+            const ch = c.ch === "<" ? "&lt;" : c.ch === ">" ? "&gt;" : c.ch === "&" ? "&amp;" : c.ch;
+            if (c.co) {
+              o += '<span class="cell" style="color:' + c.co + '">' + ch + "</span>";
+            } else {
+              o += '<span class="cell">' + ch + "</span>";
+            }
           }
-          o += c.ch === "<" ? "&lt;" : c.ch === ">" ? "&gt;" : c.ch === "&" ? "&amp;" : c.ch;
+          o += "\n";
+        } else {
+          /* Fast path: run-length color merging for normal rows. */
+          let lc = null;
+          for (let x = 0; x < this.w; x++) {
+            const c = this.c[y][x];
+            if (c.co !== lc) {
+              if (lc) o += "</span>";
+              if (c.co) o += '<span style="color:' + c.co + '">';
+              lc = c.co;
+            }
+            o += c.ch === "<" ? "&lt;" : c.ch === ">" ? "&gt;" : c.ch === "&" ? "&amp;" : c.ch;
+          }
+          if (lc) o += "</span>";
+          o += "\n";
         }
-        if (lc) o += "</span>";
-        o += "\n";
       }
       return o;
     }
@@ -1022,7 +1071,8 @@ function convReset() {
       interNext();
     }
     // tap to skip
-    if (clickPending && interT > 500) {
+    const _tapAllowed = interLI >= interLines.length && interT > 5000;
+    if (clickPending && _tapAllowed) {
       clickPending = false;
       if (!interDone) {
         interDone = true;
@@ -1114,10 +1164,10 @@ function convReset() {
       if (cur) hintLines.push(cur);
       const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
       hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
-      if (interT > 3000) {
+      if (interT > 10000) {
         renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 3, "#fff", C_PLAYER);
       }
-    } else if (!interControlsHint && _allLinesDone && interT > 6000) {
+    } else if (!interControlsHint && _allLinesDone && interT > 10000) {
       renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", C_PLAYER);
     }
   }
@@ -2613,10 +2663,10 @@ function convReset() {
         if (r < 0.25) {
           tp = "narc";
           tl = 0;
-        } else if (r < 0.32) {
+        } else if (r < 0.42) {
           tp = "cat";
           tl = 0;
-        } else if (r < 0.58) {
+        } else if (r < 0.48) {
           tp = "coin";
           tl = 0;
         } else if (r < 0.55) {
@@ -2828,10 +2878,9 @@ function convReset() {
 
       // ── TP 2: immediate join after match ──────────────────────
       else if (a2TP === 2 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.helloTags ?? []);
-        convAddLine(pair.join, "them", convNPCColor);
-        a2TN._line2 = pair.consent;
-        a2TP = 21;
+        const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.helloTags ?? []);
+        convAddLine(joinLine, "them", convNPCColor);
+        a2TP = 8;
         a2TT = 0;
       }
 
@@ -3003,10 +3052,9 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
           a2TP = 7;
         } else {
           if (Math.random() < 0.8) {
-            const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.inviteTags ?? []);
-            convAddLine(pair.join, "them", convNPCColor);
-            a2TN._line2 = pair.consent;
-            a2TP = 21;
+            const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.inviteTags ?? []);
+            convAddLine(joinLine, "them", convNPCColor);
+            a2TP = 8;
           } else {
             const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.inviteTags ?? []);
             a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.inviteTags ?? []);
@@ -3032,13 +3080,6 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
         a2TP = 23;
         a2TT = 0;
       }
-      // ── TP 21: immediate join — add consent line ──────────────
-      else if (a2TP === 21 && a2TT > T.hold && _convChunkQueue.length === 0) {
-        convAddLine(a2TN._line2, "them", convNPCColor);
-        a2TP = 8;
-        a2TT = 0;
-      }
-
       // ── TP 23: wait for second choice ────────────────────────
       else if (a2TP === 23 && a2TT > A2.CHOICE_LOCK) {
         if (clickPending) {
@@ -3090,10 +3131,9 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
           a2TT = 0;
         } else {
           if (Math.random() < 0.6) {
-            const pair = DM.draw(DECK_JOIN_CONSENT, a2TN.strongerTags ?? []);
-            convAddLine(pair.join, "them", convNPCColor);
-            a2TN._line2 = pair.consent;
-            a2TP = 21;
+            const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.strongerTags ?? []);
+            convAddLine(joinLine, "them", convNPCColor);
+            a2TP = 8;
           } else {
             const notNowResult = DM.drawWithTags(DECK_NOT_NOW, a2TN.strongerTags ?? []);
             a2TN.notNowTags = notNowResult.tags.length > 0 ? notNowResult.tags : (a2TN.strongerTags ?? []);
@@ -3160,10 +3200,19 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
           const _ordinals = window.LANG.recruitOrdinals;
           const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
           const _remOrd = _ordinals[_rem - 1] || String(_rem);
+          // French elision: "plus que un" → "plus qu'un" before vowel-initial words
+          const _firstChar = _remOrd.charAt(0).toLowerCase();
+          const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
+          const _que = window.LANG === window.LANG_FR
+            ? (_isVowel ? "plus qu'" : "plus que ")
+            : "still ";
           _progressMsg = window.LANG.recruitProgress1
             .replace("{ord}", _haveOrd.toUpperCase())
+            .replace("{que}", _que.toUpperCase().trimEnd())
             .replace("{rem}", _remOrd.toUpperCase())
             .replace("{remaining}", window.LANG.recruitProgressRemaining);
+          // Fix spacing for elision (no space after qu')
+          _progressMsg = _progressMsg.replace(/QU' /g, "QU'");
         } else {
           _progressMsg = window.LANG.recruitProgressComplete;
         }
@@ -4659,6 +4708,7 @@ const sY = Math.floor(H * 0.62);
    ══════════════════════════════════════════════════════════ */
   let s4RunT, s4RunSpd, s4RunWX, s4RunFridgeX, s4RunDone, s4RunPX, s4RunPY;
   let s4RunTopParts, s4RunBotParts, s4RunBannerShown;
+  let s4RunCops, s4RunBystanders, s4RunSparkleT, s4RunFloatT, s4RunTriumphShown;
   function initAct4Run() {
     phase = "act4run";
     a2bCalcLayout(); // reuse Act 2b layout helpers
@@ -4667,19 +4717,131 @@ const sY = Math.floor(H * 0.62);
     s4RunWX = 0;
     s4RunDone = false;
     s4RunBannerShown = false;
+    s4RunTriumphShown = false;
     s4RunPX = 12;
     s4RunPY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     s4RunFridgeX = Math.floor(s4RunSpd * 16000); // fridge appears after ~16s
     s4RunTopParts = a2bGenRow(s4RunFridgeX + W);
     s4RunBotParts = a2bGenRow(s4RunFridgeX + W);
+
+    // Cops chasing — spawn ON screen behind the player so we actually see them.
+    // They have positive vx (running right), but slower than the world scrolls,
+    // so they visibly fall behind and exit screen-left.
+    s4RunCops = [];
+    const numCops = 5;
+    const midY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
+    for (let i = 0; i < numCops; i++) {
+      // Player is at screen x ~12, world wx = s4RunWX + 12 ≈ 12 at t=0.
+      // Spawn cops at screen x 2..8 (behind & around the player), staggered.
+      s4RunCops.push({
+        wx: 2 + i * 1.5,                               // visible on screen at start
+        wy: midY + Util.randInt(-2, 2),
+        vx: 0.0058 + Math.random() * 0.0008,           // slower than s4RunSpd (0.008) — they fall behind, but not too fast
+        bobPhase: Math.random() * 6,
+      });
+    }
+    triggerChromatic(400);
+
+    // Bystanders along the route — sit on the top sidewalk, mutter as player passes.
+    // Bystanders are 2 rows tall (head + body), so they need rows A2B_ROAD_Y1 - 2 and -1.
+    s4RunBystanders = [];
+    const bystanderLines = window.LANG.runBystanderLines || ["didn't see a thing", "never saw 'em", "good for you"];
+    const numBystanders = 4;
+    for (let i = 0; i < numBystanders; i++) {
+      const wx = 35 + i * Math.floor(s4RunFridgeX / (numBystanders + 1));
+      const wy = A2B_ROAD_Y1 - 2; // top of head sits 2 above the top road line; body lands at -1
+      s4RunBystanders.push({
+        wx,
+        wy,
+        line: Util.pick(bystanderLines),
+        col: Util.pick(window.GAME_DATA.npcColors),
+        triggered: false,
+        msgT: 0,
+        msgMax: 2200,
+      });
+    }
+
+    s4RunSparkleT = 0;
+    s4RunFloatT = 1500; // first celebration float fires ~1.5s in
   }
+
 
   function updateAct4Run(dt) {
     s4RunT += dt;
     updateBanner(dt);
     s4RunWX += s4RunSpd * dt;
 
-    // Player movement — same scheme as Act 2b
+    // ── Cops chase: they move forward but slower than scroll, so they fall behind ──
+    for (let i = s4RunCops.length - 1; i >= 0; i--) {
+      const c = s4RunCops[i];
+      c.wx += c.vx * dt;
+      // Once they're off-screen left (relative to world scroll), drop them
+      if (c.wx - s4RunWX < -4) s4RunCops.splice(i, 1);
+    }
+
+    // ── Triumph beat: when all cops are gone (or after 4.5s as fallback), show banner ──
+    if (!s4RunTriumphShown && (s4RunCops.length === 0 || s4RunT > 4500)) {
+      s4RunTriumphShown = true;
+      const triumphMsg = window.LANG.bannerWeLostThem || "we lost them!";
+      showBanner(triumphMsg, C_TEAL, 1800);
+      // burst of teal sparks across the screen
+      for (let _b = 0; _b < 8; _b++) {
+        burstGood(Util.randInt(4, W - 4), Util.randInt(A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1), C_TEAL, 8);
+      }
+      triggerFlashGood();
+    }
+
+    // ── Bystander triggers: when player passes one, mutter for 2.2s ──
+    const pwxRun = s4RunWX + s4RunPX;
+    for (const b of s4RunBystanders) {
+      if (!b.triggered && Math.abs(b.wx - pwxRun) < 6) {
+        b.triggered = true;
+        b.msgT = b.msgMax;
+        audio.play("paper");
+      }
+      if (b.msgT > 0) b.msgT -= dt;
+    }
+
+    // ── Continuous sparkle trail on player + crew (only after triumph beat) ──
+    if (s4RunTriumphShown) {
+      s4RunSparkleT -= dt;
+      if (s4RunSparkleT <= 0) {
+        s4RunSparkleT = 90; // ms between spawns
+        const sparkChars = ["*", "✦", "·", "+"];
+        const sparkCols = ["#fff", "#ffd700", C_TEAL, C_PLAYER];
+        // Player trail
+        sparks.push({
+          x: Math.round(s4RunPX) + Util.randInt(-1, 1),
+          y: Math.round(s4RunPY) + Util.randInt(-1, 1),
+          dx: -0.005 + (Math.random() - 0.5) * 0.004,
+          dy: -0.008 - Math.random() * 0.004,
+          ch: Util.pick(sparkChars),
+          color: Util.pick(sparkCols),
+          life: 600 + Math.random() * 300,
+        });
+        // One crew member at random
+        if (a2Crew.length > 0) {
+          const ci = Util.randInt(0, a2Crew.length - 1);
+          const baseOX = -2 - Math.floor(ci / 3) * 2;
+          const cx = Math.round(s4RunPX + baseOX);
+          const cy = Math.round(s4RunPY);
+          const crewCol = (a2Crew[ci] && a2Crew[ci].col) || C_TEAL;
+          sparks.push({
+            x: cx,
+            y: cy + Util.randInt(-1, 1),
+            dx: -0.006 + (Math.random() - 0.5) * 0.004,
+            dy: -0.007 - Math.random() * 0.004,
+            ch: Util.pick(sparkChars),
+            color: crewCol,
+            life: 500 + Math.random() * 300,
+          });
+        }
+      }
+
+      // (Player celebration floats removed — bystanders + sparkles carry it)
+    }
+
+    // ── Player movement ──
     const ms = 0.025;
     const tapStep = 2;
     if (input.isDown("up")) s4RunPY -= ms * dt;
@@ -4704,18 +4866,31 @@ const sY = Math.floor(H * 0.62);
     s4RunPY = Util.clamp(s4RunPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
     s4RunPX = Util.clamp(s4RunPX, 3, W - 4);
 
-    // Banner appears once mid-run
-    if (!s4RunBannerShown && s4RunT > 1500) {
+    // Banner appears once mid-run (after triumph)
+    if (!s4RunBannerShown && s4RunT > 7000) {
       s4RunBannerShown = true;
       showBanner(window.LANG.bannerBackToHood, C_TEAL, 2500);
     }
 
-    // When the fridge is centered, stop scrolling and let crew gather in front
-if (!s4RunDone && s4RunFridgeX - s4RunWX <= Math.floor(W * 0.65)) {
-      s4RunDone = true;
-      s4RunSpd = 0;
-      // Wait for crew to gather in front of fridge (handled in render)
-      setTimeout(() => initAct5(), 2400);
+    // ── Fridge collision: only fire when player is actually next to fridge ──
+    // Slow scroll once fridge is fully on screen so the player can catch up to it.
+    const fridgeSX = s4RunFridgeX - s4RunWX;
+    if (!s4RunDone) {
+      if (fridgeSX <= W - 12) {
+        // fridge is visible — slow the world to a crawl so player can run up to it
+        s4RunSpd = 0.0015;
+      }
+      // Only complete when the player is within ~4 cells of the fridge horizontally
+      if (Math.abs(s4RunPX - fridgeSX - 8) < 5 && fridgeSX < W - 6) {
+        s4RunDone = true;
+        s4RunSpd = 0;
+        // Big celebration on arrival
+        for (let _b = 0; _b < 6; _b++) {
+          burstGood(Math.round(fridgeSX) + Util.randInt(0, 16), Util.randInt(A2B_ROAD_Y1 + 2, A2B_ROAD_Y2 - 1), C_TEAL, 10);
+        }
+        triggerFlashGood();
+        setTimeout(() => initAct5(), 2400);
+      }
     }
   }
 
@@ -4815,11 +4990,46 @@ if (!s4RunDone && s4RunFridgeX - s4RunWX <= Math.floor(W * 0.65)) {
     _pFrame[1] = Math.floor(s4RunT / 180) % 2 === 0 ? _pFrame[1] : "\u20B3";
     grid.art(_pFrame, Math.round(s4RunPX), Math.round(s4RunPY), playerPulseColor(s4RunT));
 
-    // Mid-sized community fridge — fits in the road, readable from a distance
+    // Cops chasing — visibly falling behind
+    for (const c of s4RunCops) {
+      const csx = Math.round(c.wx - s4RunWX);
+      if (csx < -3 || csx > W + 3) continue;
+      const _copLeg = Math.floor(s4RunT / 160 + c.bobPhase * 30) % 2 === 0 ? "\u03C6" : "\u20B3";
+      const _copHead = Math.floor(s4RunT / 200) % 2 === 0 ? "!" : "\u00A7";
+      const _copCol = Math.floor(s4RunT / 120) % 2 === 0 ? C_DANGER : "#a44";
+      grid.art([_copHead, _copLeg], csx, Math.round(c.wy), _copCol);
+    }
+
+    // Bystanders + their mutters
+    for (const b of s4RunBystanders) {
+      const bsx = Math.round(b.wx - s4RunWX);
+      if (bsx < -3 || bsx > W + 3) continue;
+      const npcArt = Util.pick(window.GAME_DATA.npcArts);
+      // pick once and stash so the sprite doesn't flicker
+      if (!b._art) b._art = window.GAME_DATA.npcArts[Math.floor(b.wx) % window.GAME_DATA.npcArts.length];
+      grid.art(b._art, bsx, b.wy, b.col);
+      // Mutter box
+      if (b.msgT > 0) {
+        const txt = b.line;
+        const bw = txt.length + 4;
+        const bx = Util.clamp(bsx - Math.floor(bw / 2), 0, W - bw);
+        const by = b.wy - 3;
+        if (by >= 0 && by + 2 < H) {
+          for (let yy = by; yy <= by + 2; yy++)
+            for (let xx = bx; xx < bx + bw; xx++)
+              if (xx >= 0 && xx < W) grid.set(xx, yy, " ", null);
+          grid.text(DIALOG_BOX.tl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.tr, bx, by, b.col);
+          grid.text(DIALOG_BOX.v + " " + txt + " " + DIALOG_BOX.v, bx, by + 1, b.col);
+          grid.text(DIALOG_BOX.bl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.br, bx, by + 2, b.col);
+        }
+      }
+    }
+
+    // Community fridge — clean and readable, gentle teal
     if (s4RunWX > s4RunFridgeX - W - 10) {
       const fsx = Math.round(s4RunFridgeX - s4RunWX);
       if (fsx < W + 10) {
-        const miniFridge = [
+        const fridgeBody = [
           "╔═══════════════╗",
           "║  FRIGO        ║",
           "║  COMMUN       ║",
@@ -4829,8 +5039,9 @@ if (!s4RunDone && s4RunFridgeX - s4RunWX <= Math.floor(W * 0.65)) {
           "║ ◉   ◉   ◉   ◉ ║",
           "╚═══════════════╝",
         ];
-const aisleH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
-const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        grid.art(miniFridge, fsx, fY, C_TEAL);
+        const aisleH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
+        const fY = A2B_ROAD_Y1 + Math.floor((aisleH - fridgeBody.length) / 2);
+        grid.art(fridgeBody, fsx, fY, C_TEAL);
       }
     }
 
@@ -5227,26 +5438,33 @@ const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        gr
     hudScore.textContent = "";
     hudStatus.textContent = "";
     a5Crew = [];
-    const rc = Math.min(a2CrewCount, 8);
+    const rc = a2CrewCount; // show ALL crew, no cap
     // Fridge higher
     const fridgeW = FRIDGE[0].length;
     const fx = Math.floor((W - fridgeW) / 2);
     const fy = Math.floor(H / 2) - 10;
     const lineY = fy + FRIDGE.length + 1;
+    // Wrap into rows if too many for one row
+    const slotW = 3; // horizontal cells per character
+    const usableW = W - 4;
+    const slotsPerRow = Math.max(3, Math.floor(usableW / slotW));
     const totalSlots = rc + 1; // crew + player
-    const playerSlot = Math.floor(totalSlots / 2);
-    const lineStartX = Math.floor(W / 2) - Math.floor((totalSlots * 3) / 2);
+    const playerSlot = Math.floor(Math.min(slotsPerRow, totalSlots) / 2); // player roughly centered in first row
     let crewIdx = 0;
     for (let slot = 0; slot < totalSlots; slot++) {
       if (slot === playerSlot) continue; // player slot, handled in render
-      const targetX = lineStartX + slot * 3;
-      // Store crew art/col directly on a5Crew elements
+      const row = Math.floor(slot / slotsPerRow);
+      const idxInRow = slot % slotsPerRow;
+      const itemsInRow = Math.min(slotsPerRow, totalSlots - row * slotsPerRow);
+      const rowStartX = Math.floor((W - itemsInRow * slotW) / 2);
+      const targetX = rowStartX + idxInRow * slotW;
+      const targetY = lineY + row * 2;
       const cs = a2Crew[crewIdx] || {};
       a5Crew.push({
-        x: crewIdx % 2 === 0 ? -3 - crewIdx * 5 : W + 3 + crewIdx * 5,
-        y: lineY,
+        x: crewIdx % 2 === 0 ? -3 - crewIdx * 4 : W + 3 + crewIdx * 4,
+        y: targetY,
         tx: Util.clamp(targetX, 2, W - 5),
-        ty: lineY,
+        ty: targetY,
         arrived: false,
         item: Util.pick(window.LANG.crewItems),
         art: cs.art,
@@ -5254,8 +5472,10 @@ const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        gr
       });
       crewIdx++;
     }
-    // Store player X for render
-    a5Crew._playerX = Util.clamp(lineStartX + playerSlot * 3, 2, W - 5);
+    // Store player X for render — player stays in first row
+    const firstRowItems = Math.min(slotsPerRow, totalSlots);
+    const firstRowStart = Math.floor((W - firstRowItems * slotW) / 2);
+    a5Crew._playerX = Util.clamp(firstRowStart + playerSlot * slotW, 2, W - 5);
     a5Crew._playerY = lineY;
     // Neighbours arrive after food is placed — centred around the fridge
     const shuffled = Util.shuffle(END_NAMES.slice());
@@ -5392,6 +5612,10 @@ const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        gr
 
     if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
       renderTapPrompt(window.LANG.act5TapContinue, H - 2, "#fff", C_TEAL);
+    // Tap-to-deposit prompt — only shows during the deposit window (a5P === 2)
+    if (a5P === 2) {
+      renderTapPrompt(window.LANG.act5TapFood, H - 2, "#fff", C_TEAL);
+    }
     // Food appearing in fridge — real food art reused from Act 4
     if (a5P >= 3) {
       /* New fridge layout (width 37, height 18):
@@ -6094,170 +6318,98 @@ const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        gr
     Music.play("music_act1");
     startGame();
   });
-  // DEV: number keys jump between acts
+
+  // DEV: scene-nav buttons jump to any act using the same path as hotkeys
   document.querySelectorAll("#scene-nav button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const act = btn.dataset.act;
-      try {
-        loop.stop();
-      } catch (_) {}
-      overlay.classList.add("hidden");
-      floats.length = 0;
-      sparks.length = 0;
-      dialogStack = [];
-      convReset();
-      bannerTimer = 0;
-      bannerText = "";
-      clickPending = false;
-      a2TN = null;
-      const jmp = {
-        1: () => initAct1(),
-        2: () => initAct2(),
-        3: () => initAct2b(),
-        4: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          initAct3();
-        },
-        5: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          initAct4();
-        },
-        6: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          initAct4();
-          initAct4Exit();
-        },
-        7: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          initAct4();
-          initAct4Run();
-        },
-        8: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          s4AlyScore = s4AlyScore || 0;
-          initAct5();
-        },
-        9: () => {
-          a2CrewCount = Math.max(a2CrewCount, 5);
-          s4AlyScore = s4AlyScore || 0;
-          state.reset({
-            score: 80,
-          });
-          initEnd();
-        },
-        0: () => initCTA(),
-      };
-      if (jmp[act]) {
-        jmp[act]();
-        loop.start();
-      }
+      jumpToAct(btn.dataset.act);
     });
   });
 
-  window.addEventListener("keydown", function (e) {
-    const jumps = {
-      1: () =>
-        initInter(
-          [
-            {
-              t: window.LANG.bannerIsThisALife,
-              c: "#9ab0cc",
-              d: 3000,
-            },
-          ],
-          initAct1,
-          0,
-        ),
-      2: () =>
-        initInter(
-          [
-            { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
-            { pause: true, d: 800 },
-            { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2500 },
-          ],
-          initAct2,
-          1,
-          window.LANG.controlsAct2,
-        ),
-      3: () =>
-        initInter(
-          [
-            { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
-            { pause: true, d: 800 },
-            { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2500 },
-          ],
-          initAct2b,
-          2,
-          window.LANG.controlsAct2b,
-        ),
-      4: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        initInter(
-          [
-            { t: a2CrewCount + " Robins", c: C_DANGER, d: 1200 },
-            { pause: true, d: 700 },
-            { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
-            { pause: true, d: 700 },
-            { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
-          ],
-          initAct3,
-          3,
-          null,
-        );
-      },
-      5: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        initInter(
-          [
-            { t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 },
-            { pause: true, d: 800 },
-            { t: window.LANG.bannerAvoidSecurity, c: C_WARN, d: 2500 },
-          ],
-          initAct4,
-          4,
-          window.LANG.controlsAct4,
-        );
-      },
-      6: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        initAct4();
-        initAct4Exit();
-      },
-      7: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        initAct4();
-        initAct4Run();
-      },
-      8: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        s4AlyScore = s4AlyScore || 0;
-        initInter(
-          [
-            {
-              t: window.LANG.bannerShareBounty,
-              c: C_SUCCESS,
-              d: 2500,
-            },
-          ],
-          initAct5,
-          5,
-          null,
-        );
-      },
-      9: () => {
-        a2CrewCount = Math.max(a2CrewCount, 5);
-        s4AlyScore = s4AlyScore || 0;
-        state.reset({
-          score: 80,
-        });
-        initEnd();
-      },
-      0: () => initCTA(),
-    };
-    if (!jumps[e.key]) return;
+ 
+  // ── ACT JUMP TABLE ────────────────────────────────────────────
+  // Single source of truth for jumping to any act. Each entry must
+  // exactly mirror what happens in the real game flow.
+  const ACT_JUMPS = {
+    "1": () => {
+      Music.play("music_act1");
+      initAct1();
+    },
+    "2": () =>
+      initInter(
+        [
+          { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
+          { pause: true, d: 800 },
+          { t: window.LANG.bannerWatchNarcs, c: C_ORANGE, d: 2500 },
+        ],
+        initAct2,
+        0,
+        Device.isMobile ? window.LANG.controlsAct2Mobile : window.LANG.controlsAct2,
+      ),
+    "3": () =>
+      initInter(
+        [
+          { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
+          { pause: true, d: 800 },
+          { t: window.LANG.bannerAvoidNarcs, c: C_ORANGE, d: 2500 },
+        ],
+        initAct2b,
+        1,
+        Device.isMobile ? window.LANG.controlsAct2bMobile : window.LANG.controlsAct2b,
+      ),
+    "4": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      ensureCrew();
+      initAct3();
+    },
+    "5": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      ensureCrew();
+      initInter(
+        [
+          { t: window.LANG.bannerGrabEverything, c: C_PLAYER, d: 2500 },
+          { pause: true, d: 800 },
+          { t: window.LANG.bannerAvoidSecurity, c: C_WARN, d: 2500 },
+        ],
+        initAct4,
+        3,
+        Device.isMobile ? window.LANG.controlsAct4Mobile : window.LANG.controlsAct4,
+      );
+    },
+    "6": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      ensureCrew();
+      initAct4();
+      initAct4Exit();
+    },
+    "7": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      ensureCrew();
+      initAct4();
+      initAct4Run();
+    },
+    "8": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      s4AlyScore = s4AlyScore || 0;
+      ensureCrew();
+      initAct5();
+    },
+    "9": () => {
+      a2CrewCount = Math.max(a2CrewCount, 5);
+      s4AlyScore = s4AlyScore || 0;
+      ensureCrew();
+      state.reset({ score: 80 });
+      initEnd();
+    },
+    "0": () => initCTA(),
+  };
+
+  function jumpToAct(key) {
+    if (!ACT_JUMPS[key]) return;
     try {
       loop.stop();
     } catch (_) {}
+    Music.stop();
     overlay.classList.add("hidden");
     floats.length = 0;
     sparks.length = 0;
@@ -6267,8 +6419,12 @@ const fY = A2B_ROAD_Y1 + Math.floor((aisleH - miniFridge.length) / 2);        gr
     bannerText = "";
     clickPending = false;
     a2TN = null;
-    jumps[e.key]();
+    ACT_JUMPS[key]();
     loop.start();
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (ACT_JUMPS[e.key]) jumpToAct(e.key);
   });
 
   function boot() {

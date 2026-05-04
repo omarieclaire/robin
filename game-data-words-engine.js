@@ -36,8 +36,7 @@ const DM = (() => {
   // Item helpers
   // ─────────────────────────────────────────
 
-  const isPair  = (x) => x && typeof x === "object" && "join" in x && "consent" in x;
-  const isTagged = (d) => d.src.length > 0 && typeof d.src[0] !== "string" && !isPair(d.src[0]);
+  const isTagged = (d) => d.src.length > 0 && typeof d.src[0] !== "string";
   const tagsOf  = (x) => x?.tags ?? [];
   const textOf  = (x) => (typeof x === "string" ? x : x.t);
 
@@ -65,10 +64,10 @@ const DM = (() => {
   function draw(deck, matchTags = []) {
     if (!deck.pile.length) deck._fill();
 
-    // Untagged / pair decks — just pop
+    // Untagged decks — just pop
     if (!isTagged(deck)) {
       const item = deck.pop();
-      return isPair(item) ? item : textOf(item);
+      return textOf(item);
     }
 
     let pool = [];
@@ -88,7 +87,7 @@ const DM = (() => {
     const pick = pool[Math.floor(Math.random() * pool.length)];
     const item = deck.take(pick.i);
     lastTags = tagsOf(item);
-    return isPair(item) ? item : textOf(item);
+    return textOf(item);
   }
 
   // ─────────────────────────────────────────
@@ -104,7 +103,7 @@ const DM = (() => {
       const item = deck.pop();
       const tags = tagsOf(item);
       lastTags = tags;
-      return { text: isPair(item) ? item : textOf(item), tags, tone: tags[0] ?? null };
+      return { text: textOf(item), tags, tone: tags[0] ?? null };
     }
 
     let pool = [];

@@ -90,8 +90,8 @@ window.LANG_EN = {
           ],
           hold: 3000, // setup — quick into the joke
         },
-        { who: "n", text: "idk\n but I have an app for coupons", hold: 4500 }, // mini- give it a beat
-        { who: "n", text: "and I have another app |pause|that helps me buy rotting food", hold: 5500 }, // punch — let it land
+        { who: "n", text: "idk\n but I have an app for coupons\n\n", hold: 4500 }, // mini- give it a beat
+        { who: "n", text: "and I have another app \n|pause|that helps me buy rotting food", hold: 5500 }, // punch — let it land
         {
           who: "p",
           texts: ["um,|pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],
@@ -234,7 +234,7 @@ window.LANG_EN = {
   promptTap: "[ tap ]",
   promptTapToPlaceFood: "[ TAP TO PLACE FOOD ]",
   urgencyCopsEnRoute: ">> COPS EN ROUTE <<",
-  urgencyFindExit: "!! FIND AN EXIT !!",
+  urgencyFindExit: "!! FIND THE EXIT !!",
 
   controlsAct2: "arrow keys or tap to move",
   controlsAct2b: "arrow keys or tap to move",
@@ -258,7 +258,7 @@ window.LANG_EN = {
   recruitProgress1: "{ord} down — {rem} to go",
   recruitProgressRemaining: " to go!",
   recruitProgressComplete: "★ CREW COMPLETE ★",
-choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
+  choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
   choiceRecruitHungry: "(•‿•) recruit them",
   choiceWalkAwayShort: "( ._.) walk away",
   act3TapHat: "▶ tap to give everyone a hat ◀",
@@ -287,17 +287,18 @@ choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
   tapToContinue: "tap to continue",
 
   hudRecruit: "RECRUIT",
-  hudTime: "TIME",
+  hudTime: "TIME LEFT",
   hudNarcs: "NARCS",
   hudRally: "RALLY",
   hudMob: "MOB",
 
-  hudCops: "COPS",
+  hudCops: "TIME REMAINING",
   hudHaul: "HAUL",
 
   hudAvoidNarcs: "avoid narcs",
   muteMute: "mute",
   muteMuted: "muted",
+  quitBtn: "quit",
   act1AmbMutters: ["ugh", ":(", "sigh", "...", "pfft", "oy", "bruh", "why me", "$$$", "so tired", "rent...", "bills"],
 
   catLines: [
@@ -313,8 +314,14 @@ choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
     { amount: "+$0.25", quip: "a quarter. groundbreaking." },
     { amount: "+$5.00", quip: "dépanneur tonight." },
     { amount: "+$0.05", quip: "lol. a nickel." },
-{ amount: "+$20.00", quip: "fake. invitation to church on the back." },  ],
+    { amount: "+$20.00", quip: "fake. invitation to church on the back." },
+  ],
 
-bannerEscaped: "ESCAPED!",
+  bannerEscaped: "ESCAPED!",
   bannerBackToHood: "back to the neighbourhood.",
+
+  bannerWeLostThem: "we lost them!",
+bannerWeLostThem: "we lost them!",
+runBystanderLines: ["didn't see a thing", "never saw 'em", "good for you", "go on, run", "saw what now?"],
+act5TapDeposit: "tap to share the food",
 };
