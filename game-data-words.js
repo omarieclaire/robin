@@ -402,7 +402,7 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "we've all been there.", tags: ["dep"] },
   { t: "well at least that crosses entertainment off the budget list.", tags: ["spaghetti"] },
   { t: "you can't save a banana. the banana has its own timeline.", tags: ["banana"] },
-  { t: "excellent advice. you might be surprised at how much you can control.", tags: ["therapy"] },
+  { t: "huh. well, you might be surprised at how much you can control\n especially when you are desperate", tags: ["therapy"] },
   { t: "potato haul. this is what it's come to.", tags: ["potato"] },
   { t: "it's good to feed the squirrels but you need to eat too.", tags: ["garden"] },
   { t: "sober? oh no.", tags: ["chow-mein"] },
@@ -445,7 +445,7 @@ const DECK_BAD_READ = new DM.Deck([
   { t: "what are you even talking about?", tags: ["diving"] },
   { t: "oh, so you have an employee discount? can you hook me up?", tags: ["work"] },
   { t: "you'd be surprised what a positive attitude can change.", tags: [] },
-  { t: "well at least YOU can afford therapy.", tags: ["therapy"] },
+  { t: "oh whatever who can afford therapy anymore", tags: ["therapy"] },
   { t: "we need more than cartoons and fairy tales", tags: ["robin-hood"] },
   { t: "enough with the gossip. you're just jealous.", tags: ["castle"] },
   { t: "enough with the imagination aristotle", tags: ["invisible-hand"] },
@@ -807,6 +807,8 @@ const DECK_MISMATCH_TOO_LITERAL = new DM.Deck([
 
 const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   { t: "right. except", tags: ["work"] },
+    { t: "that's the thing\nI actually can't anymore\nwhatever.", tags: ["work"] },
+
   { t: "I tried to rob from the rich. turns out they have a lot of security. that's how they got rich, probably.", tags: ["robin-hood"] },
   { t: "I know that. I just need to eat, now.", tags: [] },
   { t: "that's a lot of theory for an empty stomach.", tags: [] },
@@ -979,7 +981,7 @@ const D_INVITE = [
 
 const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "sure I can't be here.", tags: ["treat"] },
-  { t: "oh nevermind.", tags: ["therapy"] },
+  { t: "tell me how you really feel? \n wait, actually don't", tags: ["therapy"] },
   { t: "what you felt was recognition. what he felt was pity.", tags: ["racoon"] },
   { t: "what are you even talking about?", tags: ["invisible-hand"] },
   { t: "I'm not a numbers person this is boring.", tags: ["dynamic-pricing"] },
@@ -1071,7 +1073,7 @@ const D_BACK_OFF_EARLY = new DM.Deck([
 ]);
 
 const DECK_BAIL_RESPONSE = new DM.Deck([
-  { t: "ugh whatever. tschüss", tags: ["invisible-hand"] },
+  { t: "ugh whatever", tags: ["invisible-hand"] },
   { t: "...okay then.", tags: ["market", "points-card", "treat"] },
   { t: "sure. whatever.", tags: ["food-lines", "robin-hood", "fair-cap"] },
   { t: "okay. bye I guess.", tags: ["wasted-food", "pigs", "boycott", "plat-hoch"] },
@@ -1086,7 +1088,7 @@ const DECK_BAIL_RESPONSE = new DM.Deck([
   { t: "good luck with that.", tags: ["budget"] },
   { t: "the economy DOESN'T NEED YOU it has ROBOTS", tags: ["great-econ"] },
   { t: "typical.", tags: ["avocado"] },
-  { t: "fine.", tags: ["fine"] },
+  { t: "fine. tschüss", tags: ["fine"] },
   { t: "you are the PROBLEM.", tags: ["mindset"] },
   { t: "it WILL.", tags: ["self-corrects"] },
   { t: "BYE.", tags: ["market-econ"] },
