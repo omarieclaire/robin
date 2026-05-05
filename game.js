@@ -2652,6 +2652,8 @@
   let a2WX, a2T, a2Ht, a2Spd;
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
   let a2NPCsSpawned;
+  let a2CatSpawned;       // has any cat NPC been generated yet
+  let a2CatRecruited;     // does the player already have a cat companion
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
   let a2TN, a2TP, a2TT, a2TalkCD;
@@ -2774,11 +2776,12 @@
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
 
-        // how likely you are to encounter a narc
-       // Spawn type balancing.
+      
+        // Spawn type balancing.
         // - 1st NPC ever: forced narc (teaches the threat)
         // - 2nd NPC ever: forced non-narc (lets player recruit + learn tone-matching)
         // - 3rd onward: weighted random, with no 2 narcs in a row.
+        // - If no cat has spawned by spawn 5, force one between spawns 5–8.
         let tp, tl;
         if (a2NPCsSpawned === 0) {
           tp = "narc";
@@ -2786,40 +2789,52 @@
         } else if (a2NPCsSpawned === 1) {
           tp = Math.random() < 0.5 ? "norm" : "coin";
           tl = tp === "norm" ? 1 : 0;
+        } else if (!a2CatSpawned && a2NPCsSpawned >= 5 && a2NPCsSpawned <= 8) {
+          tp = "cat";
+          tl = 0;
         } else {
           const r = Math.random();
           if (r < 0.30) {
             tp = "narc";
             tl = 0;
-          } else if (r < 0.37) {
+          } else if (r < 0.40) {
             tp = "cat";
             tl = 0;
-          } else if (r < 0.62) {
+          } else if (r < 0.65) {
             tp = "coin";
             tl = 0;
-          } else if (r < 0.67) {
-            tp = "resist";
-            tl = 1;
           } else {
             tp = "norm";
             tl = 1;
           }
         }
-        // Stricter narc spacing: never 2 narcs in a row.
-        // Other types: prevent 3-in-a-row only.
+        // Spacing checks based on world position, not spawn order.
+        // The spawn loop fills lane-by-lane, so spawn-order != player-encounter-order.
+        // We look at NPCs whose wx is "near" this spawn's nx across all lanes.
+        const SPACING_X = 80; // world units to consider "nearby"
+        const nearbyNPCs = a2NPCs.filter((other) => Math.abs(other.wx - nx) < SPACING_X);
+
         if (tp === "narc") {
-          const lastNPC = a2NPCs[a2NPCs.length - 1];
-          if (lastNPC && lastNPC.tp === "narc") {
+          // Never two narcs within SPACING_X of each other.
+          if (nearbyNPCs.some((other) => other.tp === "narc")) {
             tp = "norm";
             tl = 1;
           }
-        } else if (tp === "cat" || tp === "coin") {
-          const recent = a2NPCs.slice(-2).map((n) => n.tp);
-          if (recent.length === 2 && recent[0] === tp && recent[1] === tp) {
+        } else if (tp === "cat") {
+          // Never two cats within SPACING_X of each other.
+          if (nearbyNPCs.some((other) => other.tp === "cat")) {
+            tp = "norm";
+            tl = 1;
+          }
+        } else if (tp === "coin") {
+          // Allow two coins near each other but not three.
+          const nearbyCoins = nearbyNPCs.filter((other) => other.tp === "coin").length;
+          if (nearbyCoins >= 2) {
             tp = "norm";
             tl = 1;
           }
         }
+        if (tp === "cat") a2CatSpawned = true;
         a2NPCsSpawned++;
 
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
@@ -2936,6 +2951,8 @@
     a2Clouds = [];
     a2Gen = 0;
     a2NPCsSpawned = 0;
+    a2CatSpawned = false;
+    a2CatRecruited = false;
     a2HudFlashT = 0;
     a2HudFlashMsg = "";
     a2TimeWarned = false;
@@ -3606,26 +3623,40 @@
             a2TalkCD = 800;
             break;
           }
+   
           if (n.tp === "cat") {
-            n.cd = 9999;
-            // Don't set n.st = "done" — keep cat visible in its color
-            audio.play("bump");
-            spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
-            convReset();
-            convAnchorPX = Math.round(a2PX);
-            convAnchorNX = Math.round(n.wx - a2WX);
-            convAnchorY = Math.round(a2PY);
-            convNPCColor = "#ee8833";
-            convVisible = true;
-            const catLine = Util.pick(window.LANG.catLines);
-            convAddLine(catLine.cat, "them", "#ee8833");
-            setTimeout(() => {
-              if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
-            }, 1800);
-            convResetLater(4500);
-            a2TalkCD = 4800;
-            break;
-          }
+              n.cd = 9999;
+              audio.play("bump");
+              spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
+              convReset();
+              convAnchorPX = Math.round(a2PX);
+              convAnchorNX = Math.round(n.wx - a2WX);
+              convAnchorY = Math.round(a2PY);
+              convNPCColor = "#ee8833";
+              convVisible = true;
+              const catLine = Util.pick(window.LANG.catLines);
+              convAddLine(catLine.cat, "them", "#ee8833");
+              setTimeout(() => {
+                if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
+              }, 1800);
+              convResetLater(4500);
+              a2TalkCD = 4800;
+              // First cat you greet joins as a companion (doesn't count toward recruit goal).
+              if (!a2CatRecruited) {
+                a2CatRecruited = true;
+                n.st = "rec"; // hide the world cat — the trailing cat is now our companion
+                a2Crew.push({
+                  b: Math.random() * 6,
+                  ru: n.ru,
+                  art: n.art,
+                  col: n.col,
+                  isCat: true,
+                });
+                audio.play("recruit");
+                spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 8);
+              }
+              break;
+            }
           // regular NPC conversation
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
@@ -3720,15 +3751,22 @@
       ppy = Math.round(a2PY);
     for (let i = 0; i < a2Crew.length; i++) {
       const r = a2Crew[i];
-      /* Per-robin phase so they bob independently */
       const phase = r.b;
-      /* Small y-offset alternates robins above/below the line (±1) */
-      const yOff = (i % 2 === 0 ? -1 : 1) * 0.6;
-      /* Gentle x-jitter so spacing isn't perfectly uniform */
-      const xJit = Math.sin(Date.now() / 700 + phase * 1.7) * 0.5;
-      const bob = Math.sin(Date.now() / 350 + phase) * 0.6;
-      const cx2 = Math.round(ppx - 3 - i * 3 + xJit);
-      const cy2 = Math.round(ppy + yOff + bob);
+      let cx2, cy2;
+      if (r.isCat) {
+        /* Cat prowls side-to-side, no vertical bob */
+        const prowl = Math.sin(Date.now() / 400 + phase) * 1.4;
+        cx2 = Math.round(ppx - 3 - i * 3 + prowl);
+        cy2 = Math.round(ppy);
+      } else {
+        /* Small y-offset alternates robins above/below the line (±1) */
+        const yOff = (i % 2 === 0 ? -1 : 1) * 0.6;
+        /* Gentle x-jitter so spacing isn't perfectly uniform */
+        const xJit = Math.sin(Date.now() / 700 + phase * 1.7) * 0.5;
+        const bob = Math.sin(Date.now() / 350 + phase) * 0.6;
+        cx2 = Math.round(ppx - 3 - i * 3 + xJit);
+        cy2 = Math.round(ppy + yOff + bob);
+      }
       const crewCol = r.col || "#3a9a3a";
       if (cx2 >= 0 && cx2 + 3 < W) grid.art(r.art || A2_ROB, cx2, cy2, crewCol);
     }
@@ -3873,6 +3911,7 @@
         /* Preserve original color from Act 2 recruit */
         col: c.col || A2B_NPC_COL[i % A2B_NPC_COL.length],
         b: c.b || Math.random() * 6,
+        isCat: !!c.isCat,
       });
     }
 
@@ -4167,18 +4206,28 @@
       ppy = Math.round(a2bPY);
     for (let i = 0; i < a2bMob.length; i++) {
       const m = a2bMob[i];
-      // Katamari-style: tight orbit around a rolling cluster center
-      // Each robin has its own phase so they tumble independently
-      const clusterR = 2; // tight cluster radius — increase to spread out
-      const angle = a2bT / 600 + m.b; // slow tumble — increase divisor to slow further
-      const orbitX = Math.sin(angle + i) * clusterR;
-      const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
-      const baseOX = -2 - Math.floor(i / 3) * 2;
-      const mx = Math.round(ppx + baseOX + orbitX);
-      const my = Math.round(ppy + orbitY);
-      if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
-        const _mobFrame = [...(m.art || [m.ch, "\u03C6"])];
+      let mx, my, _mobFrame;
+      if (m.isCat) {
+        // Cat doesn't tumble — it pads alongside the mob
+        const prowl = Math.sin(a2bT / 400 + m.b) * 1.4;
+        const baseOX = -2 - Math.floor(i / 3) * 2;
+        mx = Math.round(ppx + baseOX + prowl);
+        my = Math.round(ppy);
+        _mobFrame = [...(m.art || [m.ch, "\u03C6"])];
+        // No leg toggle for cat
+      } else {
+        // Katamari-style: tight orbit around a rolling cluster center
+        const clusterR = 2;
+        const angle = a2bT / 600 + m.b;
+        const orbitX = Math.sin(angle + i) * clusterR;
+        const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
+        const baseOX = -2 - Math.floor(i / 3) * 2;
+        mx = Math.round(ppx + baseOX + orbitX);
+        my = Math.round(ppy + orbitY);
+        _mobFrame = [...(m.art || [m.ch, "\u03C6"])];
         _mobFrame[1] = Math.floor(a2bT / 200 + m.b * 30) % 2 === 0 ? _mobFrame[1] : "\u20B3";
+      }
+      if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
         let col = m.col || "#3a9a3a";
         if (m.popT && m.popT > 100) col = "#fff";
         grid.art(_mobFrame, mx, my, col);
@@ -4536,14 +4585,21 @@
     /* Robins on either side — use their preserved art + color */
     const maxSlots = Math.max(1, Math.ceil(rc / 2));
     const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
+    
     for (let i = 0; i < rc; i++) {
       if (!a3CrewOffsets[i]) continue;
       const rx = Math.round(a3CrewOffsets[i].cx);
       const baseTY = a3CrewOffsets[i].ty || ly;
       const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
       const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
+      const isCat = a2Crew[i] && a2Crew[i].isCat;
       if (rx >= 0 && rx + 3 < W && baseTY + 3 < H) {
-        const ry = a3Entering ? Math.round(a3CrewOffsets[i].cy) : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
+        // Cat sits still in line — no bob. Robins do a tiny bob.
+        const ry = a3Entering
+          ? Math.round(a3CrewOffsets[i].cy)
+          : isCat
+            ? baseTY
+            : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
@@ -4758,7 +4814,7 @@
 
     /* ── Ally robins — trail behind player in the aisle ── */
     s4Alys = [];
-    const ac = Math.min(a2CrewCount - 1, 6);
+    const ac = Math.min(a2CrewCount - 1 + (a2CatRecruited ? 1 : 0), 6);
     for (let i = 0; i < ac; i++) {
       s4Alys.push({
         behindDist: 5 + i * 4,
@@ -5232,28 +5288,24 @@
 
     // Crew running alongside — keep hats on
     // When run is done (at fridge), crew clusters in front of fridge
+    
+    // Crew running alongside — keep hats on
+    // When run is done (at fridge), crew clusters in front of fridge
     for (let i = 0; i < a2Crew.length; i++) {
       const c = a2Crew[i];
       let mx, my;
       if (s4RunDone) {
         // Freeze where they stopped — no movement
-        if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
-        if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
+        if (c._gatherX === undefined) c._gatherX = s4RunPX + (-2 - Math.floor(i / 3) * 2);
+        if (c._gatherY === undefined) c._gatherY = s4RunPY;
         mx = Math.round(c._gatherX);
         my = Math.round(c._gatherY);
-        // Cluster in front of fridge: spread out symmetrically
-        // const fridgeSX = Math.round(s4RunFridgeX - s4RunWX);
-        // const sideSign = i % 2 === 0 ? -1 : 1;
-        // const slot = Math.floor(i / 2);
-        // const targetX = fridgeSX - 3 - i * 2;
-        // const targetY = A2B_ROAD_Y2 - 1;
-        // // Lerp toward gather position
-        // if (c._gatherX === undefined) c._gatherX = s4RunPX + (-2 - Math.floor(i / 3) * 2);
-        // if (c._gatherY === undefined) c._gatherY = s4RunPY;
-        // c._gatherX = Util.lerp(c._gatherX, targetX, 0.08);
-        // c._gatherY = Util.lerp(c._gatherY, targetY, 0.06);
-        // mx = Math.round(c._gatherX);
-        // my = Math.round(c._gatherY);
+      } else if (c.isCat) {
+        // Cat pads alongside, no orbit, no vertical bob
+        const prowl = Math.sin(s4RunT / 400 + (c.b || i)) * 1.4;
+        const baseOX = -2 - Math.floor(i / 3) * 2;
+        mx = Math.round(s4RunPX + baseOX + prowl);
+        my = Math.round(s4RunPY);
       } else {
         const clusterR = 2;
         const angle = s4RunT / 600 + (c.b || i);
@@ -5265,7 +5317,9 @@
       }
       if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
         const _frame = [...(c.art || A2_ROB)];
-        _frame[1] = Math.floor(s4RunT / 200 + (c.b || 0) * 30) % 2 === 0 ? _frame[1] : "\u20B3";
+        if (!c.isCat) {
+          _frame[1] = Math.floor(s4RunT / 200 + (c.b || 0) * 30) % 2 === 0 ? _frame[1] : "\u20B3";
+        }
         grid.art(_frame, mx, my, c.col || C_TEAL);
       }
     }
@@ -5539,21 +5593,30 @@
     /* ── Robins trailing behind player — spread out, organic ── */
     for (let i = 0; i < s4Alys.length; i++) {
       const al = s4Alys[i];
-      /* Wider spacing so individual robins read clearly */
+      const src = a2Crew[i];
+      const isCat = src && src.isCat;
       const baseDist = 5 + i * 4;
-      /* Independent x-drift per robin */
-      const xDrift = Math.sin(s4GT * 1.5 + al.bobPhase * 1.3) * 1.2;
-      const rx = Math.round(s4PX2 - baseDist + xDrift);
-      /* More varied y-offset — each robin finds its own lane */
-      const yBase = al.oy * 1.5;
-      const yBob = Math.sin(s4GT * 2.5 + al.bobPhase) * 0.8;
-      const ry = Math.round(s4PY2 + yBase + yBob);
-      if (rx >= 0 && rx < W && ry >= S4_AISLE_TOP && ry <= S4_AISLE_BOT) {
-        const src = a2Crew[i];
-        const rArt = (src && src.art) || A2_ROB;
-        const rCol = (src && src.col) || C_TEAL;
-        const _a4RFrame = [...rArt];
+      let rx, ry, _a4RFrame;
+      const rArt = (src && src.art) || A2_ROB;
+      const rCol = (src && src.col) || C_TEAL;
+      if (isCat) {
+        // Cat prowls beside the player, no vertical bob, no leg toggle
+        const prowl = Math.sin(s4GT * 2.5 + al.bobPhase) * 1.4;
+        rx = Math.round(s4PX2 - baseDist + prowl);
+        ry = Math.round(s4PY2 + al.oy * 0.8);
+        _a4RFrame = [...rArt];
+      } else {
+        /* Independent x-drift per robin */
+        const xDrift = Math.sin(s4GT * 1.5 + al.bobPhase * 1.3) * 1.2;
+        rx = Math.round(s4PX2 - baseDist + xDrift);
+        /* More varied y-offset — each robin finds its own lane */
+        const yBase = al.oy * 1.5;
+        const yBob = Math.sin(s4GT * 2.5 + al.bobPhase) * 0.8;
+        ry = Math.round(s4PY2 + yBase + yBob);
+        _a4RFrame = [...rArt];
         _a4RFrame[1] = Math.floor((s4GT * 1000) / 200 + i * 1.7) % 2 === 0 ? _a4RFrame[1] : "\u20B3";
+      }
+      if (rx >= 0 && rx < W && ry >= S4_AISLE_TOP && ry <= S4_AISLE_BOT) {
         grid.art(_a4RFrame, rx, ry, rCol);
       }
     }
@@ -5663,7 +5726,7 @@
     hudScore.textContent = "";
     hudStatus.textContent = "";
     a5Crew = [];
-    const rc = a2CrewCount; // show ALL crew, no cap
+    const rc = a2CrewCount + (a2CatRecruited ? 1 : 0); // show ALL crew, no cap
     // Fridge higher
     const fridgeW = FRIDGE[0].length;
     const fx = Math.floor((W - fridgeW) / 2);
