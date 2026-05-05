@@ -231,7 +231,7 @@ window.LANG_EN = {
   endGameTimedOutTitle: "BUSTED!",
   endGameTimedOutSub: "The narcs reported you. Next time work faster.",
 
-  bannerHatsOn: "hats on.",
+  bannerHatsOn: "hats on",
 
   choiceCommiserateAngry: "(╯°□°)╯ agree",
   choiceCommiserateHungry: "(っ◔◡◔)っ commiserate",

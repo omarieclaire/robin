@@ -357,7 +357,10 @@ const DECK_ANGRY_PITCH = new DM.Deck([
     t: "life got priced out of life. |pause||pause|it packed iteself up and moved to saguenay to forage blueberries off crown land.",
     tags: ["life"],
   },
-  { t: "Loblaws fixed bread prices for fourteen years. the fine was five hundred thousand dollars.\n\nthey made that back before lunch.", tags: ["price-fixing"] },
+  {
+    t: "Loblaws fixed bread prices for fourteen years. the fine was five hundred thousand dollars.\n\nthey made that back before lunch.",
+    tags: ["price-fixing"],
+  },
   { t: "well, Galen testified before parliament. got a raise the same quarter.", tags: ["bread-scandal"] },
   { t: "empire, metro, loblaws — one cartel, three logos.", tags: ["three-co", "cartel"] },
   { t: "I mean, oligopoly is just monopoly with better branding.", tags: ["fair-cap"] },
@@ -417,7 +420,7 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "we've all been there.", tags: ["dep"] },
   { t: "well at least that crosses entertainment off the budget list.", tags: ["spaghetti"] },
   { t: "you can't save a banana.\n\nthe banana has its own timeline.", tags: ["banana"] },
-  { t: ".well, you might be surprised at how much you can control\n\n", tags: ["therapy"] },
+  { t: ".well, you might be surprised at how much you can control [*wink*]", tags: ["therapy"] },
   { t: "potato haul. respect", tags: ["potato"] },
   { t: "it's good to feed the squirrels but you need to eat too.", tags: ["garden"] },
   { t: "sober? oh no.", tags: ["chow-mein"] },
@@ -426,7 +429,7 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "you don't seem too salty about it.", tags: ["ramen"] },
   { t: "nutrition via humiliation.", tags: ["market"] },
   { t: "yeah I've been priced out of the compost bins of olives", tags: ["segals"] },
-  { t: "yeah my job math is doing something weird too. it's not addition.", tags: ["3-jobs"] },
+  { t: "yeah my job math isn't working either. the only thing compounding is my exhaustion", tags: ["3-jobs"] },
   { t: "very lean. very clean. like a machine.", tags: ["clean"] },
   { t: "i know.|pause|we all know.|pause|the art is not the reason anyone is here.", tags: ["art"] },
   { t: "I will not apologize for that. |pause||pause|please don't eat me.", tags: ["smell"] },
@@ -455,7 +458,7 @@ const DECK_NARC_AGREE = new DM.Deck([
 ]);
 
 // const DECK_BAD_READ = new DM.Deck([
-  
+
 //   //   { t: "I like to treat myself too!", tags: ["treat"] },
 // //   { t: "what are you even talking about?", tags: ["diving"] },
 // //   { t: "oh, so you get a discount? can I get in on that?", tags: ["work"] },
@@ -533,7 +536,6 @@ const DECK_NARC_AGREE = new DM.Deck([
 // //   { t: "a points card doesn't help if you can't afford the groceries.", tags: ["free-points-card"] },
 // //   { t: "maybe you read it on tiktok?", tags: ["competition"] },
 
-
 // //   { t: "ah, spyware.", tags: ["optimum"] },
 
 // // { t: "ooh take me with you, I love their bread.", tags: ["ritz"] },
@@ -554,7 +556,6 @@ const DECK_NARC_AGREE = new DM.Deck([
 // //   { t: "ooh what's your username, let's connect.", tags: ["optimum"] },
 
 // ]);
-
 
 const DECK_BAD_READ = new DM.Deck([
   { t: "I like to treat myself too!", tags: ["treat"] },
@@ -623,7 +624,7 @@ const DECK_BAD_READ = new DM.Deck([
   { t: "you can't budget your way out of a $200 grocery bill and a $150 paycheque.", tags: ["budget"] },
   { t: "great for who exactly.", tags: ["great-econ"] },
   { t: "maybe Loblaws could just stop price-fixing?", tags: ["avocado"] },
-  { t: "kids are going to school without eating breakfast in montreal so maybe it's not fine?", tags: ["fine"] },
+  { t: "kids are going to school without breakfast so maybe it's NOT fine?", tags: ["fine"] },
   { t: "tell that to someone working three jobs.", tags: ["mindset"] },
   { t: "yeah it self-corrected right into a housing crisis.", tags: ["self-corrects"] },
   { t: "the market economy is why people are eating less.", tags: ["market-econ"] },
@@ -632,8 +633,6 @@ const DECK_BAD_READ = new DM.Deck([
   { t: "a points card doesn't help if you can't afford the groceries.", tags: ["free-points-card"] },
   { t: "maybe you read it on tiktok?", tags: ["competition"] },
   { t: "ah, spyware.", tags: ["optimum"] },
-
-
 ]);
 
 const DECK_MISMATCH_TOO_LITERAL = new DM.Deck([
@@ -668,22 +667,18 @@ const DECK_MISMATCH_TOO_LITERAL = new DM.Deck([
 
 const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   // { t: "right. except", tags: ["work"] },
-  { t: "that's the thing\nI actually can't anymore\nwhatever.", tags: [""] },
+  { t: "yeah, that's the thing\nI actually can't anymore", tags: ["therapy"] },
   { t: "I'm working on it", tags: ["dumpster"] },
-
   { t: "no I cannot.", tags: ["work"] },
-
   { t: "that's really not how bananas are made", tags: ["banana"] },
-
-
-    { t: "are you sure?", tags: ["samples"] },
+  { t: "are you sure?", tags: ["samples"] },
+  { t: "right.", tags: ["no-breaky"] },
 
   { t: "I'm putting my headphones back on", tags: ["aids-wolf"] },
-
   { t: "I tried to rob from the rich. turns out they have a lot of security. that's how they got rich, probably.", tags: ["robin-hood"] },
   { t: "I know that. I just need to eat, now.", tags: [] },
-  { t: "that's a lot of theory for an empty stomach.", tags: [] },
-  { t: "very compelling. but my children are eating ketchup packets for dinner.", tags: [] },
+  { t: "that's a lot of theory for an empty stomach.", tags: ["3-jobs"] },
+  { t: "yes, it was very compelling. but my children are eating ketchup packets for dinner.", tags: ["art"] },
   { t: "I appreciate the politics but I'm past that.", tags: [] },
   { t: "I'm not looking for a manifesto. I'm looking for dinner.", tags: [] },
   { t: "I'm just trying to get through today.", tags: [] },
@@ -694,9 +689,7 @@ const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   { t: "I'll be angry tomorrow. tonight I need to eat.", tags: [] },
   { t: "I believe you. I just need to get through tonight first.", tags: [] },
   { t: "sure. but also — do you have any food?", tags: [] },
-
   { t: "my intuition is telling me to back away now.", tags: ["bite"] },
-
   { t: "your analysis is correct. my fridge is still empty.", tags: [] },
   { t: "I want the revolution. I also want it to come with food.", tags: [] },
   { t: "very compelling. I still haven't eaten.", tags: [] },
@@ -704,8 +697,64 @@ const DECK_MISMATCH_TOO_STRUCTURAL = new DM.Deck([
   { t: "my stomach doesn't care about the oligopoly.", tags: ["three-co"] },
   { t: "yeah the system is broken. also my kids are hungry right now.", tags: ["kids"] },
   { t: "that's rich. I bet you don't even have one job", tags: ["kids"] },
-]);
 
+  { t: "nothing in my house stays uneaten overnight", tags: ["cereal-water"] },
+  // { t: "life-changing? did it fix your credit too.", tags: ["delux-choco-peanut"] },
+
+  { t: "I do sometimes go to mile end, just to ask for the sesame seed sweepings", tags: ["chow-mein"] },
+  { t: "mile end? great, I’ll just refinance lunch.", tags: ["mile-end"] },
+
+  { t: "I’m on a strict ‘whatever’s cheapest’ plan.", tags: ["clean"] },
+
+  { t: "sometimes I whisk grass with water, does that count?", tags: ["coffee"] },
+
+  { t: "a calorie is a calorie", tags: ["condiment"] },
+
+  { t: "I barely qualify for errands, let alone sober ones", tags: ["dep"] },
+
+  { t: "you wouldn't understand", tags: ["diving"] },
+  { t: "I’m making perfect sense, you’re just well-fed.", tags: ["diving-reply"] },
+
+  { t: "raised beds? I’m barely my own body in the morning", tags: ["garden"] },
+
+  { t: "hochelaga builds character whether you like it or not.", tags: ["hochelaga"] },
+
+  { t: "I've tried all the windows", tags: ["fasting"] },
+
+  { t: "this conversation is proving that it doesn't", tags: ["joke"] },
+
+  { t: "yeah, you would", tags: ["meal-prep"] },
+
+  { t: "sure. whatever.", tags: ["no-brekkie"] },
+
+  { t: "I used to think eating garbage was gross too", tags: ["peace"] },
+
+  { t: "I'm not really at that point in my life", tags: ["potato"] },
+
+  { t: "do NOT even start with that", tags: ["raccoon"] },
+
+  { t: "microplastics? finally, something in my diet with structure.", tags: ["ramen"] },
+
+  { t: "I already argue with myself for free.", tags: ["rent"] },
+
+  { t: "I don't think we are living in the same reality", tags: ["sandwich"] },
+
+  { t: "bulk shopping requires bulk money.", tags: ["saver"] },
+
+  { t: "provigo is where I go to feel poor on purpose.", tags: ["segals"] },
+
+  { t: "I will literally eat anything", tags: ["sink-crackers"] },
+
+  { t: "no, it's not lush that I smell", tags: ["smell"] },
+
+  { t: "no but I did see a dead squirrel in the park", tags: ["snap"] },
+
+  { t: "I'm just trying to lift my own body out of bed", tags: ["soup"] },
+
+  { t: "no, this is filler.", tags: ["spaghetti"] },
+
+  { t: "a cleanse?", tags: ["traffic-cone"] },
+]);
 
 const D_SAY_MORE_WARM = new DM.Deck([
   { t: "how does that work?", tags: ["life"] },
@@ -762,11 +811,11 @@ const D_SAY_MORE_WARM = new DM.Deck([
   { t: "$36 billion?", tags: ["stat-36b"], follows: "stat-36b" },
   { t: "say it slower. for the many layers of my hungry brain.", tags: ["work"] },
   { t: "what are we solving for?", tags: ["bite"] },
-  { t: "wow, that's dark\nwhat exactly are you asking me to do?", tags: ["3-jobs"] },
+  { t: "what kind of balancing are you asking me to do?", tags: ["3-jobs"] },
   { t: "okay how many aisles?", tags: ["condiment"] },
   { t: "no testimony. okay. what are we doing", tags: ["sandwich"] },
   { t: "am I really worse off than a raccoon?", tags: ["raccoon"] },
-  { t: "my therapist would say this is exactly the kind of thinking we're working on.", tags: ["therapy"] },
+  { t: "yeah, and it's funny that corporations are legally people\n\nbut we can't diagnose them with personality disorders", tags: ["therapy"] },
   { t: "I'm listening. tell me about the machine.", tags: ["clean"] },
   { t: "Metro's open how late?", tags: ["hochelaga"] },
   { t: "I'd like to be a king for an evening.", tags: ["cereal-water"] },
@@ -881,10 +930,7 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "I kept thinking someone else would do something.\nbut i guess it's us. and this is it", tags: ["points-card"] },
   // { t: "I'm done waiting for things to change\nI'm with you.", tags: ["wasted-food"] },
 
-    { t: "a billion dollars of food and I'm eating whatever didn't sell", tags: ["wasted-food"] },
-
-  
-
+  { t: "a billion dollars of food and I'm eating whatever didn't sell", tags: ["wasted-food"] },
 
   { t: "okay Robin Hood.\nlet's ride.", tags: [] },
   { t: "don't have to ask me twice\nyalla", tags: [] },
@@ -908,18 +954,18 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "enough.\ncâline. let's go.", tags: [] },
   { t: "I'd rather chef than be an onion.\nlet's get cooking.", tags: ["work"] },
   { t: "okay. let's round up", tags: ["bite"] },
-  { t: "that's dark.|pause|count me in", tags: ["3-jobs"] },
+  { t: "sure.|pause|count me in", tags: ["3-jobs"] },
   { t: "groceries, not revolution. I can do that.\nlet's go shopping.", tags: ["condiment"] },
   { t: "I'll testify to nothing. let's go.\nI never saw you.", tags: ["sandwich"] },
   { t: "I can't have a raccoon pitying me.\nlet's go be bandits in the night", tags: ["raccoon"] },
-  { t: "my therapist would not approve. I'm in.\nthis is the breakthrough.", tags: ["therapy"] },
+  { t: "I'm in.\nthis is the breakthrough.", tags: ["therapy"] },
   { t: "the machine deserves to be stolen from.\nlet's break some warranties.", tags: ["clean"] },
   { t: "Metro won't participate. we will.\nwith style.", tags: ["hochelaga"] },
   { t: "let's go be deposed kings.\nlong live us.", tags: ["cereal-water"] },
   { t: "halving forever ends tonight.\nwhole meal. whole heist.", tags: ["meal-prep"] },
   { t: "let's go to the bins with our own names.\nrespectfully.", tags: ["segals"] },
   { t: "okay. enough soup. real food.\nwith chunks.", tags: ["snap"] },
-  { t: "count me in\n\nIhave a van", tags: ["aids-wolf"] },
+  { t: "count me in\n\nlet's thrash", tags: ["aids-wolf"] },
   { t: "follow the cones.\nthey were right all along.", tags: ["traffic-cone"] },
   { t: "hunger's had the stage long enough. let's go.", tags: ["spaghetti"] },
   { t: "the dep was practice. let's go pro.\nthe dep was the audition.", tags: ["dep"] },
@@ -960,8 +1006,6 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "the food bank deserves better than us.\ntonight we BE better than us.", tags: ["food-bank"] },
   { t: "the dumpsters wait. we don't.\nopen at the front.", tags: ["dumpsters"] },
 ];
-
-
 
 const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "when the economy doesn't serve the people, the economy needs to be torn down", tags: ["fire"] },
@@ -1015,11 +1059,11 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "the Competition Bureau shrugged. we don't have to.", tags: ["three-co"], follows: "audit" },
   { t: "I'm saying that we have the power to make people cry", tags: ["work"] },
   { t: "price-per-bite is a unit of measurement that shouldn't exist\br\brtheir math is wrong. we're just showing our work.", tags: ["bite"] },
-  { t: "well, we're robbing a grocery store.\n it's basically just a 4th job. you were gonna get one anyway", tags: ["3-jobs"] },
+  { t: "well, we're moving some numbers around.\n \n think of it as a very rewarding 4th job", tags: ["3-jobs"] },
   { t: "we're not asking for revolution. we're asking for the next aisle over.", tags: ["condiment"] },
   { t: "you said crimes. I'm holding you to that.", tags: ["sandwich"] },
   { t: "the raccoon takes what he needs. tonight so do we.", tags: ["raccoon"] },
-  { t: "control what you can. you can control what's in your bag tonight.", tags: ["therapy"] },
+  { t: "right... well, back to control. follow me and we'll control what's in your belly tonight.", tags: ["therapy"] },
   { t: "the machine has no remorse. neither do we, tonight.", tags: ["clean"] },
   { t: "Hochelaga doesn't get the deals. Hochelaga makes its own.", tags: ["hochelaga"] },
   { t: "kings don't eat cereal with water. tonight we eat like we used to.", tags: ["cereal-water"] },
@@ -1037,7 +1081,10 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "fasting isn't intermittent if it's permanent. tonight we end it.", tags: ["fasting"] },
   { t: "the joke isn't that we're hungry. the joke is that we agreed to be.", tags: ["joke"] },
   { t: "one avocado as a treat is one avocado too few. tonight: the whole bin.", tags: ["treat"] },
-  { t: "you've spent a week learning which vendors look away first. samples are a tease. tonight we take the whole tray. no eye contact required.", tags: ["samples"] },
+  {
+    t: "you've spent a week learning which vendors look away first. samples are a tease. tonight we take the whole tray. no eye contact required.",
+    tags: ["samples"],
+  },
   { t: "you went to three stores to save four dollars. tonight we save four hundred.", tags: ["saver"] },
   { t: "coffee was breakfast and lunch. tonight: dinner. real dinner.", tags: ["coffee"] },
   { t: "rent eats first. groceries eat second. tonight, second eats first.", tags: ["rent"] },
@@ -1123,7 +1170,7 @@ const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "oh, um nevermind.", tags: ["honk"] },
   { t: "forget I said anything.", tags: [] },
   { t: "I'm leaving, goodbye.", tags: [""] },
-    { t: "sorry. I got nervous when it got good", tags: ["price-fixing"] },
+  { t: "sorry. I got nervous when it got good", tags: ["price-fixing"] },
 
   { t: "oh pretend I said nothing.", tags: ["castle"] },
   { t: "oh nevermind.", tags: ["robin-hood"] },
@@ -1160,7 +1207,7 @@ const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "too intense, bye.", tags: ["sandwich"] },
   { t: "the sink seems like it has things under control", tags: ["sink-crackers"] },
   { t: "I can't with the stomach updates.", tags: ["spaghetti"] },
-    { t: "I wasn't prepared for the setlist", tags: ["spaghetti"] },
+  { t: "I wasn't prepared for the setlist", tags: ["spaghetti"] },
 
   { t: "I respect the cone. I'm not ready to follow it.", tags: ["traffic-cone"] },
   { t: "okay, eat well, bye.", tags: [] },
@@ -1282,12 +1329,12 @@ const D_BACK_OFF_LATE = new DM.Deck([
   { t: "I was doing a bit. I'm going to leave now.", tags: ["castle"] },
   { t: "on reflection, I'm walking away from this conversation.", tags: ["robin-hood"] },
   { t: "my future lawyer would like me to stop talking.", tags: ["dynamic-pricing"] },
-    { t: "I just remembered I have points expiring. I should go check that", tags: ["points-card"] },
+  { t: "I just remembered I have points expiring. I should go check that", tags: ["points-card"] },
 
   // { t: "I'm going to need you to forget the last two minutes.", tags: ["points-card"] },
   // { t: "low blood sugar talking. forget it.", tags: ["work"] },
 
-    { t: "I forgot you work there. this was a mistake.", tags: ["work"] },
+  { t: "I forgot you work there. this was a mistake.", tags: ["work"] },
 
   { t: "I was doing the math wrong. anyway.", tags: ["bite"] },
   { t: "oh I was just running the numbers. forget about it", tags: ["3-jobs"] },
@@ -1400,8 +1447,8 @@ const D_NOT_NOW = [
   { t: "my heart says yes, my anxiety says no", tags: ["honk"] },
   { t: "I need to think", tags: [] },
   { t: "I have work tomorrow", tags: ["robin-hood"] },
- { t: "they fine you more for taking from the bin than for filling it", tags: ["wasted-food"] },
-    // { t: "I'm scared of getting caught.", tags: [""] },
+  { t: "they fine you more for taking from the bin than for filling it", tags: ["wasted-food"] },
+  // { t: "I'm scared of getting caught.", tags: [""] },
 
   { t: "ask me again in an hour", tags: [] },
   { t: "let me think about it", tags: ["market"] },
@@ -1423,7 +1470,7 @@ const D_NOT_NOW = [
   { t: "I want to. I just need a real meal first.", tags: ["condiment"] },
   { t: "I might testify. I shouldn't go.", tags: ["sandwich"] },
   { t: "the raccoon would judge me. tomorrow.", tags: ["raccoon"] },
-  { t: "my therapist would frown. give me a day.", tags: ["therapy"] },
+  { t: "my therapist would not approve. give me a day.", tags: ["therapy"] },
   { t: "the machine is in my head still. let me sleep.", tags: ["clean"] },
   { t: "I have to walk back to Hochelaga. tomorrow.", tags: ["hochelaga"] },
   { t: "kings sleep first. I'll be a king tomorrow.", tags: ["cereal-water"] },
@@ -1501,10 +1548,10 @@ const D_NO_BYE = [
   { t: "not your content.", tags: ["spaghetti"] },
   { t: "a cleanse. wow.", tags: ["traffic-cone"] },
   { t: "keep the cones.", tags: ["traffic-cone"] },
-  { t: "go buy soap.", tags: ["smell"] },
+  { t: "it's the food particles in your teeth", tags: ["smell"] },
   { t: "house hacking, sure.", tags: ["rent"] },
   { t: "not the sugar.", tags: ["condiment"] },
-  { t: "open bar. lol.", tags: ["art"] },
+  { t: "small ones", tags: ["art"] },
   { t: "they were free.", tags: ["art"] },
   { t: "keto. okay.", tags: ["clean"] },
   { t: "passion doesn't pay.", tags: ["3-jobs"] },
@@ -1528,7 +1575,7 @@ const D_NO_BYE = [
   { t: "Hochelaga is fine.", tags: ["hochelaga"] },
   { t: "manifestation, lol.", tags: ["joke"] },
   { t: "breakfast is a meal.", tags: ["no-breaky"] },
-  { t: "therapy is $200/hr.", tags: ["therapy"] },
+  { t: "and I can't handle this either", tags: ["therapy"] },
 ];
 
 const D_RETURN = [
@@ -1540,7 +1587,7 @@ const D_RETURN = [
   { t: "tomorrow might never come. let's do this.", tags: ["price-fixing"] },
   // { t: "I'm still scared, but I'm in.", tags: [""] },
 
-    { t: "the fine is probably less than my grocery bill. I'm in.", tags: ["wasted-food"] },
+  { t: "the fine is probably less than my grocery bill. I'm in.", tags: ["wasted-food"] },
 
   { t: "tomorrow is too far away. I'm here now.", tags: ["castle"] },
   { t: "hey — I changed my mind. I'm in.", tags: ["invisible-hand"] },
@@ -1566,7 +1613,7 @@ const D_RETURN = [
   { t: "had a real meal. now I'm angry. I'm in.", tags: ["condiment"] },
   { t: "I will not testify. I'm in.", tags: ["sandwich"] },
   { t: "the raccoon stayed. I will too.", tags: ["raccoon"] },
-  { t: "my therapist would call this growth. I'm in.", tags: ["therapy"] },
+  { t: "actually, this is growth. I'm in.", tags: ["therapy"] },
   { t: "the machine kept lying. I'm in.", tags: ["clean"] },
   { t: "took the metro back. I'm in.", tags: ["hochelaga"] },
   { t: "ate cereal with water again. I'm in.", tags: ["cereal-water"] },
@@ -1617,7 +1664,8 @@ const D_F_INVITE = [
   { t: "89 cents at segals and $2.49 at metro. time to balance the scales.", tags: ["treat"] },
   { t: "hunger isn't a personal failure. I know who failed who here and I'm ready to make it right.", tags: ["no-breaky"] },
   { t: "you're calculating price-per-bite. they're calculating price-per-yacht. someone's math is wrong.", tags: ["bite"] },
-  { t: "yeah well they call it a living wage|pause| because the alternative is too on the nose. \n\n c'mon?", tags: ["3-jobs"] },
+  { t: "that was dark\n\n c'mon, let's balance the books?", tags: ["3-jobs"] },
+
   { t: "these days at work we burn more calories than we can afford to replace.", tags: [] },
   { t: "you didn't choose this. but you can choose what we do tonight.", tags: [] },
   { t: "we keep waiting for someone to fix it. I'm done waiting. you?", tags: [] },
@@ -1627,7 +1675,7 @@ const D_F_INVITE = [
     t: "they made it illegal to steal bread. then made it impossible to afford bread. then sold tickets to the musical. let's go.",
     tags: ["sandwich"],
   },
-  { t: 'funny how "focus on what you can control" never turns into "so let\'s talk about who controls everything else."', tags: ["therapy"] },
+  { t: '"focus on what you can control" never turns into "so let\'s talk about who controls everything else."', tags: ["therapy"] },
   { t: "does it matter? they got a subsidy. we got a $25 gift card that we can only use in their store", tags: ["bread-scandal"] },
   {
     t: "since we have our hoodies pulled up over our faces, maybe we could grab a couple other things while we are there?",
@@ -1661,7 +1709,7 @@ const D_F_INVITE = [
   { t: "time to make change? there will be no fingerprints.", tags: ["invisible-hand"] },
   { t: "the Ritz is nice. so is eating in general. maybe we all deserve to eat?", tags: ["ritz"] },
   // { t: "you know the system better than anyone. you know how it works and how it doesn't. what if we broke it open?", tags: ["system"] },
-    { t: "someone who knows the rules that well knows which ones are optional.", tags: ["system"] },
+  { t: "someone who knows the rules that well knows which ones are optional.", tags: ["system"] },
 
   { t: "no problems|pause|pretty nice! maybe you have time to help us solve our problems then?", tags: ["no-prob"] },
   { t: "sure, that's all we need. but what about what we want? want to intend something different with us?", tags: ["intended"] },
@@ -1741,7 +1789,8 @@ const D_FILLER = [
   { t: "the olive oil lady knows something is wrong but she keeps pouring because eye contact was made and now there are rules.", tags: ["samples"] },
   { t: "what about the garbage bins of dried beans? how low can we sink?", tags: ["segals"] },
   { t: "my soup has been thinned to the point of philosophy. we are eating an idea of soup. the idea is also running low.", tags: ["snap"] },
-  { t: "maybe subtraction? division? \n\n the only thing compounding is my exhaustion.", tags: ["3-jobs"] },
+  { t: "yeah well they call it a living wage|pause| because the alternative is too on the nose", tags: ["3-jobs"] },
+
   { t: "the stomach has sent three formal letters. they have gone unanswered. it is now making calls.", tags: [] },
   { t: "the mustard really holds it together", tags: ["condiment"] },
   { t: "traffic cones are shaped like a piece of pizza which I think is cruel under the circumstances.", tags: ["traffic-cone"] },
@@ -1754,7 +1803,7 @@ const D_FILLER = [
   },
   { t: "the dumpster recognized me. this has happened before. the dumpster does not forget.", tags: ["peace"] },
   { t: "yeah I don't know why they bother with the nametags I'm as replaceable as an onion.", tags: ["work"] },
-  { t: "I've been trying but it never seems like enough.", tags: ["therapy"] },
+  { t: "oh so...nothing?", tags: ["therapy"] },
   { t: "there are two Galen Westons. which one?", tags: ["bread-scandal"] },
   { t: "can't wait to pull my hoody over my face to get a better price on beans.", tags: ["dynamic-pricing"] },
   { t: "yeah don't pass go --|pause|and go to bed hungry", tags: ["fair-cap"] },
@@ -1806,7 +1855,7 @@ const D_FILLER = [
   { t: "I keep going back. shame is cheaper than groceries.", tags: ["chow-mein"] },
   { t: "yeah, basically a hot drink with ambition.", tags: ["soup"] },
   { t: "I don't seem salty? come closer.", tags: ["ramen"] },
-  { t: "I won't. probably not?", tags: ["smell"] },
+  { t: "I won't.\n\nprobably not?", tags: ["smell"] },
   { t: "while I'm confessing...I ate my little sister's macaroni art", tags: ["art"] },
   { t: "that's not business. that's spite.", tags: ["diving"] },
   { t: "yeah but I feel like I failed. failed to feed myself, failed to feed my family.", tags: ["no-breaky"] },

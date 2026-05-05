@@ -225,7 +225,7 @@ window.LANG_FR = {
 
   endGameTimedOutTitle: "POGNÉ!",
   endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite.",
-  bannerHatsOn: "chapeaux.",
+  bannerHatsOn: "chapeaux",
 
   choiceCommiserateAngry: "(╯°□°)╯ mets-en",
   choiceCommiserateHungry: "(っ◔◡◔)っ compatir",

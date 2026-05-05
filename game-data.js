@@ -3424,7 +3424,7 @@ console.log("LANG at STORE init:", window.LANG === window.LANG_FR ? "FR" : "EN")
 const STORE = window.LANG === window.LANG_FR
     ? window.GAME_DATA.storeArtFR
     : window.GAME_DATA.storeArtEN;
-const STO_W = STORE[0].length,
+let STO_W = STORE[0].length,
     STO_H = STORE.length;
 
 /* ── SHARED: city grid (Act 1) ─────────────────────────── */

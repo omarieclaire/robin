@@ -202,7 +202,7 @@
   if (Device.isMobile) {
     const _origJP = input.justPressed.bind(input);
     input.justPressed = function (keyOrAction) {
-      if (phase === "act2" || phase === "act2b" || phase === "act4") {
+      if (phase === "act2" || phase === "act2b" || phase === "act4" || phase === "act4run") {
         if (keyOrAction === "up" && _mob.pendingUp) {
           _mob.pendingUp = false;
           return true;
@@ -742,10 +742,11 @@
       if (cur) lines.push(cur);
     }
     const tH = lines.length + 2,
-      startY = phase === "inter" ? Math.max(1, Math.floor(H / 3 - tH / 2)) : Math.max(1, Math.floor(H / 6 - tH / 2));
+      startY = phase === "inter" ? Math.max(1, Math.floor(H / 3 - tH / 2)) : Math.max(1, Math.floor(H / 4 - tH / 2));
     const boxW = Math.min(W, Math.max(...lines.map((l) => l.length)) + 8),
       bx = Math.floor((W - boxW) / 2);
     // Clear behind banner area
+    let STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtEN : window.GAME_DATA.storeArtEN;
     for (let y = startY - 1; y < startY + tH + 1 && y < H; y++)
       for (let x = bx - 1; x < bx + boxW + 1 && x < W; x++) if (x >= 0 && y >= 0) grid.set(x, y, " ", null);
     // Top border
@@ -1172,7 +1173,7 @@
         audio.play("hint", { volume: 0.3 });
       }
       // Word-wrap the hint
-     
+
       // Word-wrap the hint — split on · into phrases, blank line between each
       const innerW = Math.min(W - 10, 32);
       const phrases = interControlsHint.split(" · ");
@@ -1198,7 +1199,7 @@
       const boxW = Math.min(W - 4, contentW + 6);
       const boxH = hintLines.length + 4; // top + label + line + lines + bottom
       const bx = Math.floor((W - boxW) / 2);
-      const by = Math.floor(H * 0.72) - Math.floor(boxH / 2);
+      const by = Math.floor(H * (Device.isMobile ? 0.55 : 0.72)) - Math.floor(boxH / 2);
       const borderCol = "#7a8aaa";
       const labelCol = "#aab8cc";
       const hintCol = Math.sin(Date.now() / 600) > 0 ? "#fff" : "#dde4f0";
@@ -1215,9 +1216,8 @@
       // // Re-color just the label bright
       // grid.text(hintLabel, bx + topLeft.length, by, labelCol);
 
- 
-      const KEY_COL  = "#dde4f0"; // arrows — slightly brighter
-      const TEXT_COL = "#ffef7a";    // everything else — calm, understated
+      const KEY_COL = "#dde4f0"; // arrows — slightly brighter
+      const TEXT_COL = "#ffef7a"; // everything else — calm, understated
       const KEY_TOKENS = new Set(["←", "↑", "→", "↓"]);
 
       function tokenColor(word) {
@@ -1250,7 +1250,7 @@
       // grid.text("\u2514" + "\u2500".repeat(boxW - 2) + "\u2518", bx, by + boxH - 1, borderCol);
 
       if (interT > 10000) {
-        renderTapPrompt(window.LANG.tapToContinue, by + boxH + 2, "#fff", C_PLAYER);
+        renderTapPrompt(window.LANG.tapToContinue, by + boxH + (Device.isMobile ? 8 : 2), "#fff", C_PLAYER);
       }
     } else if (!interControlsHint && _allLinesDone && interT > 10000) {
       renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", C_PLAYER);
@@ -1942,8 +1942,16 @@
 
   let STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
 
-  let D_INTERCOM_TICKER = window.LANG.intercoms;
+  let D_INTERCOM_TICKER = [];
+  // let s4TickerNextIdx = 0;
 
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
   let NQ = window.LANG === window.LANG_FR ? window.GAME_DATA.narrativeQuotesFR : window.GAME_DATA.narrativeQuotesEN;
 
   //  A1_LOOP_MSGS = window.LANG === window.LANG_FR
@@ -2643,6 +2651,7 @@
 
   let a2WX, a2T, a2Ht, a2Spd;
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
+  let a2NPCsSpawned;
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
   let a2TN, a2TP, a2TT, a2TalkCD;
@@ -2746,7 +2755,19 @@
     const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
     const MIN_NPC_GAP = 55,
       MAX_NPC_GAP = 90;
+    // Force the very first NPC into the player's starting lane so they
+    // actually meet the forced narc. Only matters on the first chunk
+    // (when nothing has spawned yet).
+    const playerLane = (typeof a2PRu === "number") ? a2PRu : null;
+    const firstSpawnLane = (a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane)
+      ? playerLane
+      : null;
+    const laneOrder = [];
+    if (firstSpawnLane !== null) laneOrder.push(firstSpawnLane);
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
+      if (ri !== firstSpawnLane) laneOrder.push(ri);
+    }
+    for (const ri of laneOrder) {
       const laneOffset = (ri - mobileMinLane) * 18;
       for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) {
         let onRoad = false;
@@ -2754,32 +2775,53 @@
         if (onRoad) continue;
 
         // how likely you are to encounter a narc
-        const r = Math.random();
+       // Spawn type balancing.
+        // - 1st NPC ever: forced narc (teaches the threat)
+        // - 2nd NPC ever: forced non-narc (lets player recruit + learn tone-matching)
+        // - 3rd onward: weighted random, with no 2 narcs in a row.
         let tp, tl;
-        if (r < 0.25) {
+        if (a2NPCsSpawned === 0) {
           tp = "narc";
           tl = 0;
-        } else if (r < 0.32) {
-          tp = "cat";
-          tl = 0;
-        } else if (r < 0.48) {
-          tp = "coin";
-          tl = 0;
-        } else if (r < 0.55) {
-          tp = "resist";
-          tl = 1;
+        } else if (a2NPCsSpawned === 1) {
+          tp = Math.random() < 0.5 ? "norm" : "coin";
+          tl = tp === "norm" ? 1 : 0;
         } else {
-          tp = "norm";
-          tl = 1;
+          const r = Math.random();
+          if (r < 0.30) {
+            tp = "narc";
+            tl = 0;
+          } else if (r < 0.37) {
+            tp = "cat";
+            tl = 0;
+          } else if (r < 0.62) {
+            tp = "coin";
+            tl = 0;
+          } else if (r < 0.67) {
+            tp = "resist";
+            tl = 1;
+          } else {
+            tp = "norm";
+            tl = 1;
+          }
         }
-        // Prevent same interactable type appearing 3+ times in a row
-        if (tp === "cat" || tp === "coin" || tp === "narc") {
+        // Stricter narc spacing: never 2 narcs in a row.
+        // Other types: prevent 3-in-a-row only.
+        if (tp === "narc") {
+          const lastNPC = a2NPCs[a2NPCs.length - 1];
+          if (lastNPC && lastNPC.tp === "narc") {
+            tp = "norm";
+            tl = 1;
+          }
+        } else if (tp === "cat" || tp === "coin") {
           const recent = a2NPCs.slice(-2).map((n) => n.tp);
           if (recent.length === 2 && recent[0] === tp && recent[1] === tp) {
             tp = "norm";
             tl = 1;
           }
         }
+        a2NPCsSpawned++;
+
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
 
         const ambLine =
@@ -2893,6 +2935,7 @@
     a2Crew = [];
     a2Clouds = [];
     a2Gen = 0;
+    a2NPCsSpawned = 0;
     a2HudFlashT = 0;
     a2HudFlashMsg = "";
     a2TimeWarned = false;
@@ -3093,7 +3136,7 @@
       // ── TP 142: wait for invite/walk away choice ──────────────
       // ACT 2 TIMING: how long the NPC's filler line holds before recruit/walk-away choices appear.
       // Raise the number to give the player time to read the filler. Default min 5000ms.
-      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 6000) && _convChunkQueue.length === 0) {
+      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 4000) && _convChunkQueue.length === 0) {
         const inviteLabel = a2TN.kind === "angry" ? window.LANG.choiceRecruitAngry : window.LANG.choiceRecruitHungry;
         a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
         const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
@@ -3935,7 +3978,8 @@
               showBanner(window.LANG.bannerTooManyNarcs || "TOO MANY NARCS", C_DANGER, 1500);
               audio.play("bust");
               triggerChromatic(1200);
-              const _ppx = Math.round(a2bPX), _ppy = Math.round(a2bPY);
+              const _ppx = Math.round(a2bPX),
+                _ppy = Math.round(a2bPY);
               for (let _b = 0; _b < 6; _b++) {
                 spark(_ppx + Util.randInt(-4, 4), _ppy + Util.randInt(-2, 2), C_DANGER, 18);
               }
@@ -4451,19 +4495,28 @@
     if (scx + STO_W + 8 < W) grid.art(sb, scx + STO_W + 1, sY - sb.length, "#555");
     // Render STORE row by row: structure in dim, label rows bright
     const storeFlash = Math.sin(Date.now() / 500) > 0;
+    const _treeChars = new Set(["^", "/", "\\", "|"]);
+    const _rawStoreW = STO_W - (Device.isMobile ? 4 : 0); // 2 tree chars on each side
+    const _treeOffset = Device.isMobile ? 2 : 0;
     for (let ri = 0; ri < STORE.length; ri++) {
       const row = STORE[ri];
-      // Heuristic: rows with letters A-Z are label rows
       const hasLetter = /[A-Za-z]/.test(row);
       const rowCol = hasLetter
         ? storeFlash
           ? "#fff"
-          : C_ORANGE // label: white <-> orange
+          : C_ORANGE
         : storeFlash
           ? C_PLAYER
-          : "#a44"; // structure: orange <-> red
+          : "#a44";
       for (let ci = 0; ci < row.length; ci++) {
-        if (row[ci] !== " ") grid.set(scx + ci, stY + ri, row[ci], rowCol);
+        if (row[ci] === " ") continue;
+        if (Device.isMobile && (ci < _treeOffset || ci >= _treeOffset + _rawStoreW)) {
+          // tree character — draw in green
+          const treeDepth = ri < 2 ? 0 : 1;
+          grid.set(scx + ci, stY + ri, row[ci], treeDepth === 0 ? "#3a7a3a" : "#2a5a2a");
+        } else {
+          grid.set(scx + ci, stY + ri, row[ci], rowCol);
+        }
       }
     }
     const dc = scx + Math.floor(STO_W / 2),
@@ -4495,22 +4548,70 @@
       }
     }
 
-    // if (a3T > 1500) {
-    //   const tapFlash = Math.sin(Date.now() / 300) > 0;
-    //   const tapY = Math.min(H - 2, ly + 5);
-    //   const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
-    //   const tapMsg = a3HatsOn && a3PlayerHatted ? "[ tap to enter store ]" : hatsAnimating ? "" : "[ tap to put on hats ]";
-    //   const tapCol = a3HatsOn && a3PlayerHatted ? (tapFlash ? "#fff" : C_PLAYER) : tapFlash ? "#fff" : C_ORANGE;
-    //   grid.textCenter(tapMsg, tapY, tapCol);
-    // }
+    // ─────────────────────────────────────────────
+    // Ground reference (shared by store, trees, buildings)
+    const storeBottom = stY + STORE.length;
 
-    // Trees flanking store
+    // ─────────────────────────────────────────────
+    // BUILDINGS (background layer)
+
+    const buildings = window.GAME_DATA.buildings;
+    function pickBuilding(i) {
+      return buildings[i % buildings.length];
+    }
+
+    function drawBuilding(b, x, col, depthOffset = 0) {
+      const art = b.art;
+      const h = art.length;
+
+      // bottom-align + slight lift for depth
+      const y = storeBottom - h - 1 - depthOffset;
+
+      for (let ri = 0; ri < art.length; ri++) {
+        const row = art[ri];
+        for (let ci = 0; ci < row.length; ci++) {
+          const ch = row[ci];
+          if (ch !== " ") {
+            grid.set(x + ci, y + ri, ch, col);
+          }
+        }
+      }
+    }
+
+    // LEFT building
+    if (scx > 18) {
+      const b = pickBuilding(a2CrewCount);
+      const bw = b.art[0].length;
+      const bx = scx - (bw + 10);
+
+      // ensure no overlap with store
+      if (bx + bw < scx) {
+        drawBuilding(b, bx, "#160f3e", 0);
+      }
+    }
+
+    // RIGHT building
+    if (scx + STO_W + 18 < W) {
+      const b = pickBuilding(a2CrewCount + 1);
+      const bx = scx + STO_W + 10;
+
+      drawBuilding(b, bx, "#3a2f4f", 1); // slight depth variation
+    }
+
+    // ─────────────────────────────────────────────
+    // TREES (foreground layer — AFTER buildings)
+
     const treeCol = "#3a7a3a";
     const treeArt = ["  ^  ", " /^\\ ", "/_|_\\", "  |  "];
-    if (scx > 6) grid.art(treeArt, scx - 6, stY, treeCol);
-    if (scx > 11) grid.art(treeArt, scx - 11, stY + 1, "#2a6a2a");
-    if (scx + STO_W + 6 < W) grid.art(treeArt, scx + STO_W + 2, stY, treeCol);
-    if (scx + STO_W + 11 < W) grid.art(treeArt, scx + STO_W + 7, stY + 1, "#2a6a2a");
+
+    // bottom-aligned trees
+    const treeY = storeBottom - treeArt.length;
+
+    if (scx > 6) grid.art(treeArt, scx - 6, treeY, treeCol);
+    if (scx > 11) grid.art(treeArt, scx - 11, treeY + 1, "#2a6a2a");
+
+    if (scx + STO_W + 6 < W) grid.art(treeArt, scx + STO_W + 2, treeY, treeCol);
+    if (scx + STO_W + 11 < W) grid.art(treeArt, scx + STO_W + 7, treeY + 1, "#2a6a2a");
 
     // Wait until robins have arrived AND banner has cleared before any prompt
     const _allArrived = a3CrewOffsets && a3CrewOffsets.every((c) => c.arrived);
@@ -4741,7 +4842,7 @@
     // hudStatus.style.color = C_TEAL;
     // showBanner(window.LANG.bannerGrabEverything, C_PLAYER, 2500);
 
-    s4TickerMsg = D_INTERCOM_TICKER[0];
+    s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx];
     s4TickerX = W; // starts off right edge
     s4TickerNextIdx = 1;
   }
@@ -4762,8 +4863,7 @@
     }
     s4Alys = [];
     audio.play("exit");
-    Music.transition("music_act3"); // run-home music
-    audio.preload(["music_act6"]); // preload act5 music for smooth transition later
+    audio.preload(["music_act3"]);
     showBanner(window.LANG.bannerEscaped, C_TEAL, 1500);
   }
 
@@ -4826,6 +4926,7 @@
   let s4RunCops, s4RunBystanders, s4RunSparkleT, s4RunFloatT, s4RunTriumphShown;
   function initAct4Run() {
     phase = "act4run";
+    Music.transition("music_act3"); // run-home music starts now
     audio.preload(["music_act6"]); // pre-warm act5 drop-off music
     a2bCalcLayout(); // reuse Act 2b layout helpers
     s4RunT = 0;
@@ -4852,7 +4953,7 @@
       s4RunCops.push({
         wx: 2 + i * 1.5, // visible on screen at start
         wy: midY + Util.randInt(-2, 2),
-        vx: 0.0058 + Math.random() * 0.0008, // slower than s4RunSpd (0.008) — they fall behind, but not too fast
+        vx: 0.0065 + Math.random() * 0.0008, // slightly slower than s4RunSpd (0.008) — they linger but eventually fall behind
         bobPhase: Math.random() * 6,
       });
     }
@@ -4891,11 +4992,11 @@
       const c = s4RunCops[i];
       c.wx += c.vx * dt;
       // Once they're off-screen left (relative to world scroll), drop them
-      if (c.wx - s4RunWX < -4) s4RunCops.splice(i, 1);
+      if (c.wx - s4RunWX < -20) s4RunCops.splice(i, 1);
     }
 
     // ── Triumph beat: when all cops are gone (or after 4.5s as fallback), show banner ──
-    if (!s4RunTriumphShown && (s4RunCops.length === 0 || s4RunT > 4500)) {
+    if (!s4RunTriumphShown && (s4RunCops.length === 0 || s4RunT > 6000)) {
       s4RunTriumphShown = true;
       const triumphMsg = window.LANG.bannerWeLostThem || "we lost them!";
       showBanner(triumphMsg, C_TEAL, 1800);
@@ -4970,12 +5071,10 @@
 
     if (clickPending && phase === "act4run") {
       clickPending = false;
-      if (!Device.isMobile) {
-        if (clickSY < s4RunPY - 2) s4RunPY -= 3;
-        else if (clickSY > s4RunPY + 2) s4RunPY += 3;
-        if (clickSX < s4RunPX - 3) s4RunPX -= 3;
-        else if (clickSX > s4RunPX + 3) s4RunPX += 3;
-      }
+      if (clickSY < s4RunPY - 2) s4RunPY -= 3;
+      else if (clickSY > s4RunPY + 2) s4RunPY += 3;
+      if (clickSX < s4RunPX - 3) s4RunPX -= 3;
+      else if (clickSX > s4RunPX + 3) s4RunPX += 3;
     }
 
     s4RunPY = Util.clamp(s4RunPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
@@ -5073,48 +5172,8 @@
       grid.art(sp.art, sx, A2B_ROAD_Y2 + 1, sp.col);
     }
 
-    // Crew running alongside — keep hats on
-    // When run is done (at fridge), crew clusters in front of fridge
-    for (let i = 0; i < a2Crew.length; i++) {
-      const c = a2Crew[i];
-      let mx, my;
-      if (s4RunDone) {
-        // Freeze where they stopped — no movement
-        if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
-        if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
-        mx = Math.round(c._gatherX);
-        my = Math.round(c._gatherY);
-        // Cluster in front of fridge: spread out symmetrically
-        // const fridgeSX = Math.round(s4RunFridgeX - s4RunWX);
-        // const sideSign = i % 2 === 0 ? -1 : 1;
-        // const slot = Math.floor(i / 2);
-        // const targetX = fridgeSX - 3 - i * 2;
-        // const targetY = A2B_ROAD_Y2 - 1;
-        // // Lerp toward gather position
-        // if (c._gatherX === undefined) c._gatherX = s4RunPX + (-2 - Math.floor(i / 3) * 2);
-        // if (c._gatherY === undefined) c._gatherY = s4RunPY;
-        // c._gatherX = Util.lerp(c._gatherX, targetX, 0.08);
-        // c._gatherY = Util.lerp(c._gatherY, targetY, 0.06);
-        // mx = Math.round(c._gatherX);
-        // my = Math.round(c._gatherY);
-      } else {
-        const clusterR = 2;
-        const angle = s4RunT / 600 + (c.b || i);
-        const orbitX = Math.sin(angle + i) * clusterR;
-        const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
-        const baseOX = -2 - Math.floor(i / 3) * 2;
-        mx = Math.round(s4RunPX + baseOX + orbitX);
-        my = Math.round(s4RunPY + orbitY);
-      }
-      if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
-        const _frame = [...(c.art || A2_ROB)];
-        _frame[1] = Math.floor(s4RunT / 200 + (c.b || 0) * 30) % 2 === 0 ? _frame[1] : "\u20B3";
-        grid.art(_frame, mx, my, c.col || C_TEAL);
-      }
-    }
-
     // Player running
-    const _pFrame = [...A2_PA[Math.floor(s4RunT / 10) % 2]];
+    const _pFrame = [...(A2_PA[Math.floor((s4RunT || 0) / 10) % 2] || A2_PA[0])];
     _pFrame[1] = Math.floor(s4RunT / 180) % 2 === 0 ? _pFrame[1] : "\u20B3";
     grid.art(_pFrame, Math.round(s4RunPX), Math.round(s4RunPY), playerPulseColor(s4RunT));
 
@@ -5168,6 +5227,46 @@
         const aisleH = A2B_ROAD_Y2 - A2B_ROAD_Y1;
         const fY = A2B_ROAD_Y1 + Math.floor((aisleH - fridgeBody.length) / 2);
         grid.art(fridgeBody, fsx, fY, C_TEAL);
+      }
+    }
+
+    // Crew running alongside — keep hats on
+    // When run is done (at fridge), crew clusters in front of fridge
+    for (let i = 0; i < a2Crew.length; i++) {
+      const c = a2Crew[i];
+      let mx, my;
+      if (s4RunDone) {
+        // Freeze where they stopped — no movement
+        if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
+        if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
+        mx = Math.round(c._gatherX);
+        my = Math.round(c._gatherY);
+        // Cluster in front of fridge: spread out symmetrically
+        // const fridgeSX = Math.round(s4RunFridgeX - s4RunWX);
+        // const sideSign = i % 2 === 0 ? -1 : 1;
+        // const slot = Math.floor(i / 2);
+        // const targetX = fridgeSX - 3 - i * 2;
+        // const targetY = A2B_ROAD_Y2 - 1;
+        // // Lerp toward gather position
+        // if (c._gatherX === undefined) c._gatherX = s4RunPX + (-2 - Math.floor(i / 3) * 2);
+        // if (c._gatherY === undefined) c._gatherY = s4RunPY;
+        // c._gatherX = Util.lerp(c._gatherX, targetX, 0.08);
+        // c._gatherY = Util.lerp(c._gatherY, targetY, 0.06);
+        // mx = Math.round(c._gatherX);
+        // my = Math.round(c._gatherY);
+      } else {
+        const clusterR = 2;
+        const angle = s4RunT / 600 + (c.b || i);
+        const orbitX = Math.sin(angle + i) * clusterR;
+        const orbitY = Math.cos(angle + i) * (clusterR * 0.35);
+        const baseOX = -2 - Math.floor(i / 3) * 2;
+        mx = Math.round(s4RunPX + baseOX + orbitX);
+        my = Math.round(s4RunPY + orbitY);
+      }
+      if (mx >= 0 && mx < W && my > A2B_ROAD_Y1 && my < A2B_ROAD_Y2) {
+        const _frame = [...(c.art || A2_ROB)];
+        _frame[1] = Math.floor(s4RunT / 200 + (c.b || 0) * 30) % 2 === 0 ? _frame[1] : "\u20B3";
+        grid.art(_frame, mx, my, c.col || C_TEAL);
       }
     }
 
@@ -5376,10 +5475,10 @@
       s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx % D_INTERCOM_TICKER.length];
       s4TickerNextIdx++;
       s4TickerX = W + 2;
-      if (bannerTimer <= 0) showBanner(s4TickerMsg, "#6a8a9a", 2200, true);
+      showBanner(s4TickerMsg, "#6a8a9a", 2200, true);
     }
-    /* Re-fire exit reminder once per 12-second window after it opens */
-    if (s4ExitPinned && bannerTimer <= 0 && s4GT > 12 && Math.floor(s4GT / 12) > Math.floor((s4GT - dt / 1000) / 12)) {
+    /* Re-fire exit reminder once per 20-second window after it opens */
+    if (s4ExitPinned && bannerTimer <= 0 && s4GT > 20 && Math.floor(s4GT / 12) > Math.floor((s4GT - dt / 1000) / 20)) {
       showBanner(window.LANG.bannerExitOpen, C_TEAL, 2500, true);
     }
 
@@ -5573,7 +5672,7 @@
     // Mirrors the math in drawCommunityFridge: frameTop = fy-4, headerH=3, hearts band adds 1
     const _numShelves = Device.isMobile ? 2 : 3;
     const _shelfH = 6;
-    const _fridgeBot = (fy - 4) + 3 + _numShelves * _shelfH + 1;
+    const _fridgeBot = fy - 4 + 3 + _numShelves * _shelfH + 1;
     const lineY = _fridgeBot + 3; // crew sits 2 rows below fridge
     // Wrap into rows if too many for one row
     const slotW = 3; // horizontal cells per character
@@ -5620,7 +5719,7 @@
       const nx = fromRight ? W + 3 + i * 6 : -3 - i * 6;
       // Neighbours sit a few rows below the crew row
       // const ty = lineY + 4 + Math.floor(i / 2) * 2;
-const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Symmetrically distribute around fridge center */
+      const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2; /* Symmetrically distribute around fridge center */
       const pairIdx = Math.floor(i / 2); /* 0,0,1,1 */
       const side = fromRight ? 1 : -1;
       // Neighbours: mobile-safe positioning + pre-assign colour -- no good because it changes the neighbour position on desktop too
@@ -5639,14 +5738,11 @@ const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Sy
       //   msgShow: false,
       // });
 
-
-
-//       + 7 controls how far below the crew row they appear (bigger = lower)
-// 4 + pairIdx * 4 controls horizontal spread (smaller first number = more centered)
-
+      //       + 7 controls how far below the crew row they appear (bigger = lower)
+      // 4 + pairIdx * 4 controls horizontal spread (smaller first number = more centered)
 
       const offset = Device.isMobile
-        ? 7 + pairIdx * 4  // a bit wider spread on mobile
+        ? 7 + pairIdx * 4 // a bit wider spread on mobile
         : Math.floor(fridgeWidth / 2) + 2 + pairIdx * 4;
       const tx = fridgeCX + side * offset;
       a5Neighbours.push({
@@ -5731,7 +5827,6 @@ const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Sy
     if (a5P === 5 && a5T > 2000) initEnd();
   }
 
-
   // Desktop fridge — bigger ASCII fridge built procedurally to match the
   // existing fridgeArt style: header band, shelves, hearts row at bottom.
   function drawCommunityFridge(fx, fy) {
@@ -5764,9 +5859,10 @@ const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Sy
       for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, frameTop, "═", C_TEAL);
     }
     // Header band — two text rows in teal (matches mobile FRIDGE art)
-    const headerLines = window.LANG === window.LANG_FR
-      ? ["~ FRIGO COMMUNAUTAIRE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ nourrissez vos voisins"]
-      : ["~ COMMUNITY FRIDGE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ feed your neighbours"];
+    const headerLines =
+      window.LANG === window.LANG_FR
+        ? ["~ FRIGO COMMUNAUTAIRE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ nourrissez vos voisins"]
+        : ["~ COMMUNITY FRIDGE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ feed your neighbours"];
     for (let i = 0; i < headerLines.length; i++) {
       const txt = headerLines[i];
       const tx = frameLeft + 2 + Math.max(0, Math.floor((innerW - 4 - txt.length) / 2));
@@ -5821,8 +5917,8 @@ const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Sy
     return {
       frameLeft,
       frameRight,
-      frameTop: shelvesTop,   // food layout uses shelvesTop as its top
-      frameBot: shelvesBot,   // and shelvesBot as its bottom
+      frameTop: shelvesTop, // food layout uses shelvesTop as its top
+      frameBot: shelvesBot, // and shelvesBot as its bottom
       slotW,
       SLOTS_PER_SHELF,
       NUM_SHELVES,
@@ -5858,13 +5954,13 @@ const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Sy
     }
     // Food appearing in fridge — real food art reused from Act 4
 
-if (a5P >= 3) {
+    if (a5P >= 3) {
       // Pick fridge size based on device. Mobile uses the existing ASCII art (8 slots).
       // Desktop uses a code-drawn larger frame (24 slots).
       const isDesktop = !Device.isMobile;
-      
+
       const SLOTS_PER_SHELF = Device.isMobile ? 4 : 6;
-        const NUM_SHELVES = Device.isMobile ? 2 : 3;
+      const NUM_SHELVES = Device.isMobile ? 2 : 3;
       const TOTAL_SLOTS = SLOTS_PER_SHELF * NUM_SHELVES;
       const SHELF_H = 6; // rows per shelf
 
@@ -5879,11 +5975,10 @@ if (a5P >= 3) {
         a5FoodTotalPlaced = 0;
       }
 
-     
       // Layout — desktop reuses the metrics from drawDesktopFridge so the food
       // sits inside the same frame the player sees from the start.
       let frameLeft, frameRight, frameTop, frameBot, slotW;
-     
+
       const m = drawCommunityFridge(fx, fy);
       frameLeft = m.frameLeft;
       frameRight = m.frameRight;
@@ -5894,7 +5989,7 @@ if (a5P >= 3) {
       // Compute slot positions: slot 0 = bottom-left, increases left-to-right then up.
       // (So filling looks like stacking from the bottom — but you can flip if you prefer top-down.)
       function slotBounds(idx) {
-        const shelf = Math.floor(idx / SLOTS_PER_SHELF);   // 0 = bottom shelf
+        const shelf = Math.floor(idx / SLOTS_PER_SHELF); // 0 = bottom shelf
         const col = idx % SLOTS_PER_SHELF;
         // Bottom shelf bottom row sits just above frameBot
         const shelfBot = frameBot - 2 - shelf * SHELF_H;
@@ -5916,7 +6011,7 @@ if (a5P >= 3) {
           const startY = fy + Util.randInt(-2, FRIDGE.length + 4);
 
           // Fill phase: first empty slot. Otherwise: random replace.
-          const claimed = new Set(a5FlyingItems.map(f => f.slotIdx));
+          const claimed = new Set(a5FlyingItems.map((f) => f.slotIdx));
           let slotIdx = a5FoodPlacements.findIndex((s, i) => !s.food && !claimed.has(i));
           if (slotIdx === -1) {
             // All full (or all claimed) — pick a random slot to replace
@@ -5931,8 +6026,14 @@ if (a5P >= 3) {
           const targetY = shelfBot - food.a.length + 1;
 
           a5FlyingItems.push({
-            food, col, x: startX, y: startY, tx: targetX, ty: targetY,
-            slotIdx, life: 600,
+            food,
+            col,
+            x: startX,
+            y: startY,
+            tx: targetX,
+            ty: targetY,
+            slotIdx,
+            life: 600,
           });
         }
       }
@@ -5941,8 +6042,8 @@ if (a5P >= 3) {
       // No overlap: the slot data is overwritten, the old item disappears the same frame.
       for (let i = a5FlyingItems.length - 1; i >= 0; i--) {
         const fi = a5FlyingItems[i];
-        fi.x = Util.lerp(fi.x, fi.tx, 0.10);
-        fi.y = Util.lerp(fi.y, fi.ty, 0.10);
+        fi.x = Util.lerp(fi.x, fi.tx, 0.1);
+        fi.y = Util.lerp(fi.y, fi.ty, 0.1);
         fi.life -= 16;
         if (Math.abs(fi.x - fi.tx) < 0.6 && Math.abs(fi.y - fi.ty) < 0.6) {
           // Clean swap — old food is replaced by new
@@ -5955,8 +6056,6 @@ if (a5P >= 3) {
           a5FlyingItems.splice(i, 1);
         }
       }
-
-    
 
       // Draw food in slots — strictly clipped to slot bounds so neighbouring items never overlap
       for (let i = 0; i < a5FoodPlacements.length; i++) {
@@ -6007,8 +6106,8 @@ if (a5P >= 3) {
       if (a5FoodTotalPlaced > 0) {
         const counterTxt = "+" + a5FoodTotalPlaced + window.LANG.foodCounterSuffix;
         const cx = Math.floor((frameLeft + frameRight) / 2) - Math.floor(counterTxt.length / 2);
-        const cy = Math.max(1, (isDesktop ? frameTop - 4 : fy - 2));
-        const flashCol = a5T - a5LastCounterFlash < 150 ? "#fff" : C_TEAL;
+        const cy = Math.max(1, isDesktop ? frameTop - 4 : fy - 2);
+        const flashCol = a5T - a5LastCounterFlash < 150 ? "#2abff5" : C_TEAL;
         grid.text(counterTxt, cx, cy, flashCol);
         if (a5FoodTotalPlaced !== a5LastCounterValue) {
           a5LastCounterValue = a5FoodTotalPlaced;
@@ -6081,20 +6180,20 @@ if (a5P >= 3) {
     endD.lines.push({
       t,
       text: window.LANG.endCrewBrought(tot),
-      col: C_DANGER,
+      col: C_TEAL,
     });
     t += GAP;
     endD.lines.push({
       t,
       text: window.LANG.endYouCarried(my || 0),
-      col: "#bbb",
+      col: "#70a6f2",
     });
     t += GAP + 400;
     for (let i = 0; i < vig.length; i++) {
       endD.lines.push({
         t,
         text: vig[i],
-        col: C_DIM,
+        col: "#b4dbff",
       });
       t += GAP;
     }
@@ -6102,13 +6201,13 @@ if (a5P >= 3) {
     endD.lines.push({
       t,
       text: window.LANG.endPeopleAte(fed || 68),
-      col: C_SUCCESS,
+      col: C_TEAL,
     });
     t += 1100;
     endD.lines.push({
       t,
       text: window.LANG.endYouAte,
-      col: "#bbb",
+      col: "#5592ed",
       extraGap: 1,
     });
     endD.doneT = t + 1600;
@@ -6233,7 +6332,7 @@ if (a5P >= 3) {
 
     const CTA_STORY = window.LANG.ctaStory.map((s, i) => ({
       ...s,
-      col: [C_PLAYER, C_TEAL, C_DANGER, "#4dbb88", C_MID, "#e06060", C_MID, C_DIM, C_PLAYER, C_MID, C_ORANGE][i],
+      col: [C_PLAYER, C_TEAL, C_TEAL, "#4dbb88", "#b428eb", "#b428eb", "#b428eb", C_TEAL, C_PLAYER, "#b428eb", C_ORANGE][i],
       ...(i === 8
         ? {
             flash: true,
@@ -6607,13 +6706,31 @@ if (a5P >= 3) {
 
   function startGame() {
     // re-read language-dependent art now that language is chosen
-    STORE = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
+    const _rawStore = window.LANG === window.LANG_FR ? window.GAME_DATA.storeArtFR : window.GAME_DATA.storeArtEN;
+    if (Device.isMobile) {
+      const _treeL = ["^ ", "/\\", "||"];
+      const _treeR = [" ^", "/\\", "||"];
+      const _storeH = _rawStore.length;
+      STORE = _rawStore.map((row, i) => {
+        const fromBottom = _storeH - 1 - i;
+        if (fromBottom >= 3) return "  " + row + "  ";
+        const tL = _treeL[2 - fromBottom];
+        const tR = _treeR[2 - fromBottom];
+        return tL + row + tR;
+      });
+    } else {
+      STORE = _rawStore;
+    }
+    STO_W = STORE[0].length;
+    STO_H = STORE.length;
+
     FRIDGE = window.LANG === window.LANG_FR ? window.GAME_DATA.fridgeArtFR : window.GAME_DATA.fridgeArtEN;
     NQ = window.LANG === window.LANG_FR ? window.GAME_DATA.narrativeQuotesFR : window.GAME_DATA.narrativeQuotesEN;
 
     A1E = window.LANG.a1Encounters;
     END_NAMES = window.LANG.endNames;
-    D_INTERCOM_TICKER = window.LANG.intercoms;
+    D_INTERCOM_TICKER = shuffle([...window.LANG.intercoms]); // clone + shuffle
+    s4TickerNextIdx = 0;
 
     FOODS = window.LANG === window.LANG_FR ? window.GAME_DATA.foodsFR : window.GAME_DATA.foods;
 
