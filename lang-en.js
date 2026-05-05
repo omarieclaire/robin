@@ -277,6 +277,8 @@ recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to 
   hudCops: "TIME REMAINING",
   hudHaul: "HAUL",
 
+  foodCounterSuffix: " ITEMS",
+
 
   // Control hints — one pair per act. Each act has a desktop string (keyboard / mouse focus)
   // and a mobile string (touch focus). The renderer picks based on Device.isMobile.

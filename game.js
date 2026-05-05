@@ -302,8 +302,7 @@
     grab: "grab.mp3", // Act 4 food grab
     bust: "bust.mp3", // game over
     prompt: "click.mp3", // subtle chime when tap-prompts appear; swap file later
-    hint: "click.mp3",   // softer chime when control-hints appear; swap file later
-
+    hint: "click.mp3", // softer chime when control-hints appear; swap file later
   });
 
   const Music = {
@@ -373,19 +372,19 @@
     if (code < 0x0300) return false;
     /* Known problem ranges */
     return (
-      (code >= 0x0B80 && code <= 0x0BFF) || /* Tamil (cat ஹ) */
-      (code >= 0x1100 && code <= 0x115F) || /* Hangul Jamo */
-      (code >= 0x2E80 && code <= 0x303E) || /* CJK Radicals, Kangxi */
-      (code >= 0x3041 && code <= 0x33FF) || /* Hiragana, Katakana, CJK symbols */
-      (code >= 0x3400 && code <= 0x4DBF) || /* CJK Extension A */
-      (code >= 0x4E00 && code <= 0x9FFF) || /* CJK Unified Ideographs */
-      (code >= 0xA000 && code <= 0xA4CF) || /* Yi */
-      (code >= 0xAC00 && code <= 0xD7A3) || /* Hangul Syllables */
-      (code >= 0xF900 && code <= 0xFAFF) || /* CJK Compatibility Ideographs */
-      (code >= 0xFE30 && code <= 0xFE4F) || /* CJK Compatibility Forms */
-      (code >= 0xFF00 && code <= 0xFF60) || /* Fullwidth Forms */
-      (code >= 0xFFE0 && code <= 0xFFE6) || /* Fullwidth Signs */
-      code >= 0xD800 /* Surrogates (emoji + supplementary planes) */
+      (code >= 0x0b80 && code <= 0x0bff) /* Tamil (cat ஹ) */ ||
+      (code >= 0x1100 && code <= 0x115f) /* Hangul Jamo */ ||
+      (code >= 0x2e80 && code <= 0x303e) /* CJK Radicals, Kangxi */ ||
+      (code >= 0x3041 && code <= 0x33ff) /* Hiragana, Katakana, CJK symbols */ ||
+      (code >= 0x3400 && code <= 0x4dbf) /* CJK Extension A */ ||
+      (code >= 0x4e00 && code <= 0x9fff) /* CJK Unified Ideographs */ ||
+      (code >= 0xa000 && code <= 0xa4cf) /* Yi */ ||
+      (code >= 0xac00 && code <= 0xd7a3) /* Hangul Syllables */ ||
+      (code >= 0xf900 && code <= 0xfaff) /* CJK Compatibility Ideographs */ ||
+      (code >= 0xfe30 && code <= 0xfe4f) /* CJK Compatibility Forms */ ||
+      (code >= 0xff00 && code <= 0xff60) /* Fullwidth Forms */ ||
+      (code >= 0xffe0 && code <= 0xffe6) /* Fullwidth Signs */ ||
+      code >= 0xd800 /* Surrogates (emoji + supplementary planes) */
     );
   }
 
@@ -603,7 +602,11 @@
   let a2CrewCount = 0,
     s4AlyScore = 0,
     a5FoodCycleT = 0,
-    a5FoodTotalPlaced = 0;
+    a5FoodTotalPlaced = 0,
+    a5FlyingItems = null,
+    a5GroundPile = null,
+    a5LastCounterValue = 0,
+    a5LastCounterFlash = 0;
   const sparks = [];
   let chromaticT = 0;
 
@@ -1000,19 +1003,18 @@
   let convAnchorNX = 10;
   let convAnchorY = 10;
   let convEncounterIndex = 0; // Track which encounter this is for positioning adjustments
-let convChoiceY1 = 0,
+  let convChoiceY1 = 0,
     convChoiceY2 = 0,
     convChoiceBX = 0,
     convChoiceBW = 0,
     convChoiceHover = -1,
     convChoicePicked = -1,
     convChoiceYs = []; // start row of each choice
-    convChoiceSelected = -1,
-    convChoiceSelectedT = 0;
+  ((convChoiceSelected = -1), (convChoiceSelectedT = 0));
   let convReveal = [];
   let _convTypeTimer = 0;
 
-function convReset() {
+  function convReset() {
     convLog = [];
     convChoices = null;
     convVisible = false;
@@ -1196,8 +1198,7 @@ function convReset() {
       const hintCol = Math.sin(Date.now() / 600) > 0 ? "#fff" : "#dde4f0";
 
       // Clear background
-      for (let y = by; y < by + boxH && y < H; y++)
-        for (let x = bx; x < bx + boxW && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
+      for (let y = by; y < by + boxH && y < H; y++) for (let x = bx; x < bx + boxW && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
 
       // Top border with embedded label: ┌─ controls ─────┐
       const topLeft = "\u250C\u2500 ";
@@ -1305,9 +1306,7 @@ function convReset() {
     // Treat \n and \n\n as implicit pause markers, same as |pause|.
     // Preserve them in the output by inserting a sentinel that survives the trim.
     // Chunks that come from a \n boundary are marked silent (pause but no sound).
-    const normalized = text
-      .replace(/\n\n/g, "|pause|__BREAK2__")
-      .replace(/\n/g, "|pause|__BREAK1__");
+    const normalized = text.replace(/\n\n/g, "|pause|__BREAK2__").replace(/\n/g, "|pause|__BREAK1__");
     const rawChunks = normalized.split("|pause|").map((s) => s.trim());
     const restored = rawChunks.map((s) => s.replace(/^__BREAK2__/, "\n\n").replace(/^__BREAK1__/, "\n"));
     // Fold any pure-newline chunks (just \n or \n\n with nothing else) onto the
@@ -1619,14 +1618,7 @@ function convReset() {
               if (convChoicePicked === choiceIdx) {
                 lineCol = Math.floor(Date.now() / 600) % 2 === 0 ? "#ffd700" : "rgb(150, 112, 9)";
               } else {
-                lineCol =
-                  phase === "act1"
-                    ? choiceIdx === 0
-                      ? "#c8a070"
-                      : "#8a9ab0"
-                    : convChoiceHover === choiceIdx
-                      ? "#fff"
-                      : "#888";
+                lineCol = phase === "act1" ? (choiceIdx === 0 ? "#c8a070" : "#8a9ab0") : convChoiceHover === choiceIdx ? "#fff" : "#888";
               }
               const bulletCol = choiceMutedColors[choiceIdx % choiceMutedColors.length];
               const rendered = box.lines[li];
@@ -2239,7 +2231,7 @@ function convReset() {
           a1ES++;
           a1ST2 = 0;
         }
-      // pause after last conversational line
+        // pause after last conversational line
       } else if (a1ST2 > (turns[turns.length - 1]?.hold ?? 3500)) {
         // ACT 1 TIMING: how long the LAST line stays before the conversation
         // closes and the player walks on. Uses the last turn's `hold:` value.
@@ -2276,7 +2268,7 @@ function convReset() {
       if (a1ST2 > 800 && clickPending) {
         clickPending = false;
         /* Only act on clicks within the choice box Y range. Clicks outside = ignore. */
-      
+
         if (convChoiceY2 > 0 && clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
           const splitY = Math.floor((convChoiceY1 + convChoiceY2) / 2);
           audio.play("click");
@@ -2731,7 +2723,7 @@ function convReset() {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
-       
+
         // how likely you are to encounter a narc
         const r = Math.random();
         let tp, tl;
@@ -2760,27 +2752,26 @@ function convReset() {
           }
         }
         const npcKind = Math.random() < 0.5 ? "hungry" : "angry";
-        
-        const ambLine = tp === "narc"   ? drawAmb(DECK_AMB_NARC)
-                      : tp === "cat"    ? Util.pick(["miaou...", "prrrr", "mrrrow"])
-                      : tp === "coin"   ? ""
-                      : npcKind === "hungry" ? drawAmb(DECK_AMB_HUNGRY) : drawAmb(DECK_AMB_ANGRY);
+
+        const ambLine =
+          tp === "narc"
+            ? drawAmb(DECK_AMB_NARC)
+            : tp === "cat"
+              ? Util.pick(["miaou...", "prrrr", "mrrrow"])
+              : tp === "coin"
+                ? ""
+                : npcKind === "hungry"
+                  ? drawAmb(DECK_AMB_HUNGRY)
+                  : drawAmb(DECK_AMB_ANGRY);
 
         const narcHeads = ["$", "€", "£", "¥", "₿", "₽"];
         const narcHead = Util.pick(narcHeads);
         const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
-        const npcArt = tp === "narc" ? [narcHead, narcBody]
-                     : tp === "cat"  ? [" ", "ஹ"]
-                     : tp === "coin" ? [" ", "\u25CE"]
-                     : Util.pick(A2_NPC_ARTS);
+        const npcArt = tp === "narc" ? [narcHead, narcBody] : tp === "cat" ? [" ", "ஹ"] : tp === "coin" ? [" ", "\u25CE"] : Util.pick(A2_NPC_ARTS);
 
-        
-                    //  const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
-                    const narcCols = ["#cc6688", "#bb5577", "#dd5599", "#aa4488", "#cc4477"];
-        const npcCol = tp === "narc" ? Util.pick(narcCols)
-                     : tp === "cat"  ? "#ee8833"
-                     : tp === "coin" ? "#c8a800"
-                     : Util.pick(A2_NPC_COLORS);
+        //  const narcCols = ["#ffaa44", "#ff8866", "#ffcc33", "#ff9955", "#ffbb55"];
+        const narcCols = ["#cc6688", "#bb5577", "#dd5599", "#aa4488", "#cc4477"];
+        const npcCol = tp === "narc" ? Util.pick(narcCols) : tp === "cat" ? "#ee8833" : tp === "coin" ? "#c8a800" : Util.pick(A2_NPC_COLORS);
         a2NPCs.push({
           wx: nx,
           ru: ri,
@@ -2902,7 +2893,7 @@ function convReset() {
     bannerTimer = 0;
   }
 
-/* Pick a prefix from a pool, preferring entries whose vibes overlap
+  /* Pick a prefix from a pool, preferring entries whose vibes overlap
      with the hello line's vibes. Backwards-compatible: plain strings
      in the pool are treated as untagged (always eligible).
      - pool: array of strings or {t, vibes:[...]} objects
@@ -2910,17 +2901,13 @@ function convReset() {
      Returns the prefix text (no trailing space), or "" if pool empty. */
   function pickPrefix(pool, helloVibes) {
     if (!pool || pool.length === 0) return "";
-    const norm = pool.map(p => typeof p === "string" ? { t: p, vibes: [] } : p);
-    let matching = norm.filter(p =>
-      p.vibes.length === 0 ||
-      p.vibes.some(v => (helloVibes || []).includes(v))
-    );
+    const norm = pool.map((p) => (typeof p === "string" ? { t: p, vibes: [] } : p));
+    let matching = norm.filter((p) => p.vibes.length === 0 || p.vibes.some((v) => (helloVibes || []).includes(v)));
     if (matching.length === 0) matching = norm;
     return matching[Math.floor(Math.random() * matching.length)].t;
   }
 
   function updateAct2(dt) {
-    
     if (!a2TN) a2T += dt;
     updateBanner(dt);
     dialogUpdate(dt);
@@ -3058,7 +3045,7 @@ function convReset() {
         }
       }
 
-// ── TP 141: route after first pitch ──────────────────────
+      // ── TP 141: route after first pitch ──────────────────────
       // ACT 2 TIMING: how long the player's pitch line holds before the NPC's filler reply appears.
       // Raise the number to give the player's punchline more room. Default min 3000ms.
       else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
@@ -3074,7 +3061,7 @@ function convReset() {
         a2TT = 0;
       }
 
-   // ── TP 142: wait for invite/walk away choice ──────────────
+      // ── TP 142: wait for invite/walk away choice ──────────────
       // ACT 2 TIMING: how long the NPC's filler line holds before recruit/walk-away choices appear.
       // Raise the number to give the player time to read the filler. Default min 5000ms.
       else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 6000) && _convChunkQueue.length === 0) {
@@ -3123,15 +3110,14 @@ function convReset() {
         }
       }
 
-// ── TP 14: check match, route ─────────────────────────────
+      // ── TP 14: check match, route ─────────────────────────────
       // ACT 2 TIMING: how long the player's invite line holds before the NPC's say-more reply appears.
       // Raise the number to give the invite room to land. Default min 2400ms.
       else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 2400) && _convChunkQueue.length === 0) {
         const matched = a2Choice === 0;
         if (a2TN.tp === "narc") {
-      const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
-a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
-          
+          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
+          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
 
           convAddLine(skeptResult.text, "them", convNPCColor);
           a2TP = 15;
@@ -3159,7 +3145,7 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
         a2TT = 0;
       }
 
-  // ── TP 15: show second round choices ─────────────────────
+      // ── TP 15: show second round choices ─────────────────────
       // ACT 2 TIMING: how long the NPC's say-more line holds before try-harder/walk-away choices appear.
       // Raise the number to give the player time to read the NPC's deeper question. Default min 3000ms.
       else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
@@ -3297,9 +3283,7 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
           // French elision: "plus que une" → "plus qu'une" before vowel-initial words
           const _firstChar = _remOrd.charAt(0).toLowerCase();
           const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
-          const _que = window.LANG === window.LANG_FR
-            ? (_isVowel ? "PLUS QU'" : "PLUS QUE ")
-            : "";
+          const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
           _progressMsg = window.LANG.recruitProgress1
             .replace("{ord}", _haveOrd.toUpperCase())
             .replace("{que} ", _que)
@@ -3401,7 +3385,8 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
       // After fade completes, fire the celebration
       if (!a2SDFired && a2SDT > convFadeDuration + 200) {
         a2SDFired = true;
-        const ppx = Math.round(a2PX), ppy = Math.round(a2PY);
+        const ppx = Math.round(a2PX),
+          ppy = Math.round(a2PY);
         // Big simultaneous burst centered on the player
         for (let _bi = 0; _bi < 5; _bi++) {
           burstGood(ppx + Util.randInt(-6, 6), ppy + Util.randInt(-3, 3), C_TEAL, 14);
@@ -3538,36 +3523,37 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
         if (n.st !== "idle" || n.cd > 0 || n.ru !== a2PRu) continue;
         if (Math.abs(n.wx - pwx) < 3) {
           a2PX = n.wx - a2WX - 3;
-         
+
           if (n.tp === "coin") {
-              n.st = "gone"; n.cd = 9999;
-              audio.play("click");
-              spark(Math.round(a2PX), Math.round(a2PY), "#c8a800", 6);
-              const coin = Util.pick(window.LANG.coinPickups);
-              addFloat(coin.amount + " — " + coin.quip, 0, 0, "#c8a800");
-              a2TalkCD = 800;
-              break;
-            }
-            if (n.tp === "cat") {
-              n.cd = 9999;
-              // Don't set n.st = "done" — keep cat visible in its color
-              audio.play("bump");
-              spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
-              convReset();
-              convAnchorPX = Math.round(a2PX);
-              convAnchorNX = Math.round(n.wx - a2WX);
-              convAnchorY = Math.round(a2PY);
-              convNPCColor = "#ee8833";
-              convVisible = true;
-              const catLine = Util.pick(window.LANG.catLines);
-              convAddLine(catLine.cat, "them", "#ee8833");
-              setTimeout(() => {
-                if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
-              }, 1800);
-              convResetLater(4500);
-              a2TalkCD = 4800;
-              break;
-            }
+            n.st = "gone";
+            n.cd = 9999;
+            audio.play("click");
+            spark(Math.round(a2PX), Math.round(a2PY), "#c8a800", 6);
+            const coin = Util.pick(window.LANG.coinPickups);
+            addFloat(coin.amount + " — " + coin.quip, 0, 0, "#c8a800");
+            a2TalkCD = 800;
+            break;
+          }
+          if (n.tp === "cat") {
+            n.cd = 9999;
+            // Don't set n.st = "done" — keep cat visible in its color
+            audio.play("bump");
+            spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
+            convReset();
+            convAnchorPX = Math.round(a2PX);
+            convAnchorNX = Math.round(n.wx - a2WX);
+            convAnchorY = Math.round(a2PY);
+            convNPCColor = "#ee8833";
+            convVisible = true;
+            const catLine = Util.pick(window.LANG.catLines);
+            convAddLine(catLine.cat, "them", "#ee8833");
+            setTimeout(() => {
+              if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
+            }, 1800);
+            convResetLater(4500);
+            a2TalkCD = 4800;
+            break;
+          }
           // regular NPC conversation
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
@@ -3633,7 +3619,7 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
         }
     }
 
-// NPCs — hide recruited ones (they're now in the crew trail) and picked-up coins
+    // NPCs — hide recruited ones (they're now in the crew trail) and picked-up coins
     for (const n of a2NPCs) {
       if (n.st === "rec" || n.st === "gone") continue;
       const sx = Math.round(n.wx - a2WX),
@@ -4263,7 +4249,7 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
 
     // Build walk-in animation: robins slide in from off-screen edges
     {
-const sY = Math.floor(H * 0.62);
+      const sY = Math.floor(H * 0.62);
       const scx = Math.floor((W - STO_W) / 2);
       const dc = scx + Math.floor(STO_W / 2);
       const ly = sY + 3;
@@ -4287,7 +4273,7 @@ const sY = Math.floor(H * 0.62);
           tx,
           cy: ty,
           ty,
-          delay: 9500 + i * 280
+          delay: 9500 + i * 280,
         });
       }
     }
@@ -4465,9 +4451,7 @@ const sY = Math.floor(H * 0.62);
       const crewArt = a2Crew[i] && a2Crew[i].art ? a2Crew[i].art : RA2;
       const crewCol = (a2Crew[i] && a2Crew[i].col) || C_TEAL;
       if (rx >= 0 && rx + 3 < W && baseTY + 3 < H) {
-        const ry = a3Entering
-          ? Math.round(a3CrewOffsets[i].cy)
-          : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
+        const ry = a3Entering ? Math.round(a3CrewOffsets[i].cy) : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
@@ -4599,7 +4583,7 @@ const sY = Math.floor(H * 0.62);
     s4GrabBursts = []; /* per-grab starburst effects */
     s4RobinCheerT = 4000; /* countdown to next robin cheer */
 
-/* ── Compute layout from screen height ──
+    /* ── Compute layout from screen height ──
                          Shelf area sized to fit exactly 4 rows of food.
                          Aisle gets all remaining vertical space.
                          Bottom: floor line + exit row */
@@ -4762,7 +4746,10 @@ const sY = Math.floor(H * 0.62);
     for (let i = 0; i < s4ExitCrewX.length; i++) {
       const c = s4ExitCrewX[i];
       const delay = i * 300;
-      if (s4ExitT < delay) { allIn = false; continue; }
+      if (s4ExitT < delay) {
+        allIn = false;
+        continue;
+      }
       c.x = Util.lerp(c.x, s4ExitTargetX, 0.03);
       c.y = Util.lerp(c.y, S4_AISLE_BOT - 2, 0.03);
       if (Math.abs(c.x - s4ExitTargetX) > 1 || Math.abs(c.y - (S4_AISLE_BOT - 2)) > 1) allIn = false;
@@ -4824,9 +4811,9 @@ const sY = Math.floor(H * 0.62);
       // Player is at screen x ~12, world wx = s4RunWX + 12 ≈ 12 at t=0.
       // Spawn cops at screen x 2..8 (behind & around the player), staggered.
       s4RunCops.push({
-        wx: 2 + i * 1.5,                               // visible on screen at start
+        wx: 2 + i * 1.5, // visible on screen at start
         wy: midY + Util.randInt(-2, 2),
-        vx: 0.0058 + Math.random() * 0.0008,           // slower than s4RunSpd (0.008) — they fall behind, but not too fast
+        vx: 0.0058 + Math.random() * 0.0008, // slower than s4RunSpd (0.008) — they fall behind, but not too fast
         bobPhase: Math.random() * 6,
       });
     }
@@ -4854,7 +4841,6 @@ const sY = Math.floor(H * 0.62);
     s4RunSparkleT = 0;
     s4RunFloatT = 1500; // first celebration float fires ~1.5s in
   }
-
 
   function updateAct4Run(dt) {
     s4RunT += dt;
@@ -4988,7 +4974,8 @@ const sY = Math.floor(H * 0.62);
     // Mountain parallax (same as Act 2b)
     const mtScrollX = s4RunWX * 0.04;
     const mtBaseY = A2B_TOP_H - 1;
-    let peakScreenX = -1, peakScreenY = 99999;
+    let peakScreenX = -1,
+      peakScreenY = 99999;
     for (let x = 0; x < W; x++) {
       const wx = x + mtScrollX;
       const period = 220;
@@ -4998,17 +4985,29 @@ const sY = Math.floor(H * 0.62);
       const shoulder = Math.exp(-Math.pow((norm - 0.62) * 5.0, 2)) * 0.35;
       const hillH = Math.round((dome + shoulder) * (A2B_TOP_H * 0.6));
       const topY = mtBaseY - hillH;
-      if (topY < peakScreenY) { peakScreenY = topY; peakScreenX = x; }
+      if (topY < peakScreenY) {
+        peakScreenY = topY;
+        peakScreenX = x;
+      }
       const tallestBuilding = Math.max(...s4RunTopParts.map((sp) => sp.art.length));
       const hillFloor = A2B_TOP_H - tallestBuilding - 1;
       for (let dy = topY; dy <= Math.min(mtBaseY, hillFloor); dy++) {
         if (dy < 0 || dy >= H) continue;
         const depth = dy - topY;
         let ch, col;
-        if (depth === 0) { ch = "\u0BF3"; col = "#27371c"; }
-        else if (depth < 2) { ch = "\u0B70"; col = "#213417"; }
-        else if (depth < 5) { ch = "\u2592"; col = "#0e170a"; }
-        else { ch = "\u2591"; col = "#12200c"; }
+        if (depth === 0) {
+          ch = "\u0BF3";
+          col = "#27371c";
+        } else if (depth < 2) {
+          ch = "\u0B70";
+          col = "#213417";
+        } else if (depth < 5) {
+          ch = "\u2592";
+          col = "#0e170a";
+        } else {
+          ch = "\u2591";
+          col = "#12200c";
+        }
         grid.set(x, dy, ch, col);
       }
     }
@@ -5042,10 +5041,10 @@ const sY = Math.floor(H * 0.62);
       let mx, my;
       if (s4RunDone) {
         // Freeze where they stopped — no movement
-  if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
-  if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
-  mx = Math.round(c._gatherX);
-  my = Math.round(c._gatherY);
+        if (c._gatherX === undefined) c._gatherX = mx ?? s4RunPX + (-2 - Math.floor(i / 3) * 2);
+        if (c._gatherY === undefined) c._gatherY = my ?? s4RunPY;
+        mx = Math.round(c._gatherX);
+        my = Math.round(c._gatherY);
         // Cluster in front of fridge: spread out symmetrically
         // const fridgeSX = Math.round(s4RunFridgeX - s4RunWX);
         // const sideSign = i % 2 === 0 ? -1 : 1;
@@ -5105,9 +5104,7 @@ const sY = Math.floor(H * 0.62);
         const bx = Util.clamp(bsx - Math.floor(bw / 2), 0, W - bw);
         const by = b.wy - 3;
         if (by >= 0 && by + 2 < H) {
-          for (let yy = by; yy <= by + 2; yy++)
-            for (let xx = bx; xx < bx + bw; xx++)
-              if (xx >= 0 && xx < W) grid.set(xx, yy, " ", null);
+          for (let yy = by; yy <= by + 2; yy++) for (let xx = bx; xx < bx + bw; xx++) if (xx >= 0 && xx < W) grid.set(xx, yy, " ", null);
           grid.text(DIALOG_BOX.tl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.tr, bx, by, b.col);
           grid.text(DIALOG_BOX.v + " " + txt + " " + DIALOG_BOX.v, bx, by + 1, b.col);
           grid.text(DIALOG_BOX.bl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.br, bx, by + 2, b.col);
@@ -5275,23 +5272,17 @@ const sY = Math.floor(H * 0.62);
           const rY = S4_SHELF_TOP + 1 + it.row * S4_SHELF_ROW_H;
           const sY = rY + S4_SHELF_ROW_H - 1;
           const aY = sY - it.food.a.length;
-         
+
           if (clickSX >= ix - 1 && clickSX < ix + S4_SLOT_W && clickSY >= aY && clickSY < sY) {
-              it.grabbed = true;
-              audio.play("grab");
-              state.set("score", state.get("score") + it.food.p);
-              burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, 9);
-              s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
-              popupPush(
-                it.food.n + " +$" + it.food.p,
-                ix + Math.floor(S4_SLOT_W / 2) + Util.randInt(-2, 2),
-                aY + Util.randInt(-2, -1),
-                it.color,
-                500,
-              );
-              grabbedItem = true;
-              break outer4;
-            }
+            it.grabbed = true;
+            audio.play("grab");
+            state.set("score", state.get("score") + it.food.p);
+            burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, 9);
+            s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
+            popupPush(it.food.n + " +$" + it.food.p, ix + Math.floor(S4_SLOT_W / 2) + Util.randInt(-2, 2), aY + Util.randInt(-2, -1), it.color, 500);
+            grabbedItem = true;
+            break outer4;
+          }
         }
       }
 
@@ -5521,8 +5512,12 @@ const sY = Math.floor(H * 0.62);
     a5P = 0;
     a5NI = 0;
     a5FoodPlacements = null;
+    a5FlyingItems = null;
+    a5GroundPile = null;
     a5FoodCycleT = 0;
     a5FoodTotalPlaced = 0;
+    a5LastCounterValue = 0;
+    a5LastCounterFlash = 0;
     bannerTimer = 0;
     dialogStack = [];
     hudLabel.textContent = "";
@@ -5534,7 +5529,7 @@ const sY = Math.floor(H * 0.62);
     const fridgeW = FRIDGE[0].length;
     const fx = Math.floor((W - fridgeW) / 2);
     const fy = Math.floor(H / 2) - 10;
-    const lineY = fy + FRIDGE.length + 1;
+    const lineY = fy + FRIDGE.length + 6;
     // Wrap into rows if too many for one row
     const slotW = 3; // horizontal cells per character
     const usableW = W - 4;
@@ -5549,7 +5544,7 @@ const sY = Math.floor(H * 0.62);
       const itemsInRow = Math.min(slotsPerRow, totalSlots - row * slotsPerRow);
       const rowStartX = Math.floor((W - itemsInRow * slotW) / 2);
       const targetX = rowStartX + idxInRow * slotW;
-const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row * 2` to stack upward (gang behind leader)
+      const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row * 2` to stack upward (gang behind leader)
       const cs = a2Crew[crewIdx] || {};
       a5Crew.push({
         x: crewIdx % 2 === 0 ? -3 - crewIdx * 4 : W + 3 + crewIdx * 4,
@@ -5707,51 +5702,95 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
       renderTapPrompt(window.LANG.act5TapDeposit, H - 2, "#fff", C_PLAYER);
     }
     // Food appearing in fridge — real food art reused from Act 4
-   
-    
-if (a5P >= 3) {
-      // Initialize 8 slots — these get RE-FILLED with new food over time
-      // so it visually feels like an avalanche of food, not just 8 items.
+
+    if (a5P >= 3) {
+      // First-time setup: 8 fridge slots + flying items pool + ground pile
       if (!a5FoodPlacements) {
         a5FoodPlacements = [];
         for (let i = 0; i < 8; i++) {
           a5FoodPlacements.push({ food: null, col: FC[i % FC.length], placedAt: -1 });
         }
+        a5FlyingItems = []; // items in flight from offscreen → fridge
+        a5GroundPile = []; // overflow items resting on the floor
         a5FoodCycleT = 0;
         a5FoodTotalPlaced = 0;
       }
 
-      // Phase 3 = active filling. Each tick, place a new food in a slot.
-      // First pass: fill empty slots in order (0..7) so it visibly stacks left-to-right top-to-bottom.
-      // After all 8 are filled, keep replacing random slots — same total count visible (8)
-      // but the IDENTITY of items keeps changing, reading as more arriving.
+      // Phase 3: spawn flying items rapidly. Each one targets either a fridge slot
+      // or a spot on the ground (once fridge is "full enough").
       if (a5P === 3) {
         a5FoodCycleT += 1;
-        const placeEvery = 8; // frames between placements (~133ms at 60fps) — tighter = more frantic
-        if (a5FoodCycleT >= placeEvery) {
+
+        const fridgeFilled = a5FoodPlacements.filter((s) => s.food).length;
+        const claimedSlots = new Set(a5FlyingItems.filter((f) => !f.isGround).map((f) => f.slotIdx));
+        const freeSlot = a5FoodPlacements.findIndex((s, i) => !s.food && !claimedSlots.has(i));
+        const wantGround = freeSlot === -1;
+        const spawnEvery = fridgeFilled < 8 ? 22 : 6;
+        if (a5FoodCycleT >= spawnEvery && a5T < 6500) {
           a5FoodCycleT = 0;
-          let slotIdx = a5FoodPlacements.findIndex((s) => s.food === null);
-          if (slotIdx === -1) slotIdx = Math.floor(Math.random() * 8); // all full → replace random
-          a5FoodPlacements[slotIdx].food = Util.pick(FOODS);
-          a5FoodPlacements[slotIdx].col = Util.pick(FC);
-          a5FoodPlacements[slotIdx].placedAt = a5T;
+          const food = Util.pick(FOODS);
+          const col = Util.pick(FC);
+          const fromLeft = Math.random() < 0.5;
+          const startX = fromLeft ? -3 : W + 3;
+          const startY = fy + Util.randInt(-2, FRIDGE.length + 2);
+
+          let targetX,
+            targetY,
+            slotIdx = -1;
+          if (wantGround) {
+            const groundY = fy + FRIDGE.length + 1;
+            targetX = Util.clamp(fx + Util.randInt(0, fridgeW - 2), fx, fx + fridgeW - 2);
+            targetY = groundY + Util.randInt(0, 2);
+          } else {
+            slotIdx = freeSlot;
+            const slotsPerShelf = 4;
+            const shelfInnerW = fridgeW - 2;
+            const slotW = Math.floor(shelfInnerW / slotsPerShelf);
+            const shelf = Math.floor(slotIdx / slotsPerShelf);
+            const slotCol = slotIdx % slotsPerShelf;
+            targetX = fx + 1 + slotCol * slotW + Math.floor((slotW - 7) / 2);
+            targetY = (shelf === 0 ? fy + 8 : fy + 14) - food.a.length + 1;
+          }
+          a5FlyingItems.push({
+            food,
+            col,
+            x: startX,
+            y: startY,
+            tx: targetX,
+            ty: targetY,
+            slotIdx,
+            isGround: wantGround,
+            life: 600,
+          });
+        }
+      }
+
+      // Update flying items — fast lerp, then commit on arrival
+      for (let i = a5FlyingItems.length - 1; i >= 0; i--) {
+        const fi = a5FlyingItems[i];
+        fi.x = Util.lerp(fi.x, fi.tx, 0.08);
+        fi.y = Util.lerp(fi.y, fi.ty, 0.08);
+        fi.life -= 16;
+        if (Math.abs(fi.x - fi.tx) < 0.6 && Math.abs(fi.y - fi.ty) < 0.6) {
+          if (fi.isGround) {
+            a5GroundPile.push({ food: fi.food, col: fi.col, x: fi.tx, y: fi.ty, placedAt: performance.now() });
+          } else if (fi.slotIdx >= 0) {
+            a5FoodPlacements[fi.slotIdx].food = fi.food;
+            a5FoodPlacements[fi.slotIdx].col = fi.col;
+            a5FoodPlacements[fi.slotIdx].placedAt = performance.now();
+          }
           a5FoodTotalPlaced++;
-          // Sparkle on placement
-          const slotsPerShelf = 4;
-          const shelfInnerW = fridgeW - 2;
-          const slotW = Math.floor(shelfInnerW / slotsPerShelf);
-          const shelf = Math.floor(slotIdx / slotsPerShelf);
-          const slotCol = slotIdx % slotsPerShelf;
-          const ix = fx + 1 + slotCol * slotW + Math.floor((slotW - 7) / 2);
-          const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
-          spark(ix + 3, shelfBot - 2, a5FoodPlacements[slotIdx].col, 3);
-          if (a5FoodTotalPlaced % 4 === 0) audio.play("drop");
+          spark(Math.round(fi.tx) + 2, Math.round(fi.ty), fi.col, 3);
+          if (a5FoodTotalPlaced % 5 === 0) audio.play("drop");
+          a5FlyingItems.splice(i, 1);
         }
       }
 
       const slotsPerShelf = 4;
       const shelfInnerW = fridgeW - 2;
       const slotW = Math.floor(shelfInnerW / slotsPerShelf);
+
+      // Draw settled fridge contents
       for (let i = 0; i < a5FoodPlacements.length; i++) {
         const fp = a5FoodPlacements[i];
         if (!fp.food) continue;
@@ -5762,12 +5801,44 @@ if (a5P >= 3) {
         const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
         const artH = fp.food.a.length;
         const iy = shelfBot - artH + 1;
-        // Brief flash when newly placed
-        const age = a5T - fp.placedAt;
-        const col = age < 200 ? "#fff" : fp.col;
+        const age = performance.now() - fp.placedAt;
+        const col = age < 80 ? "#fff" : fp.col;
         for (let r = 0; r < artH; r++) {
           const line = fp.food.a[r].substring(0, slotW - 1);
           grid.text(line, ix, iy + r, col);
+        }
+      }
+
+      // Draw ground overflow pile
+      for (const gp of a5GroundPile) {
+        const age = performance.now() - gp.placedAt;
+        const col = age < 80 ? "#fff" : gp.col;
+        const artH = gp.food.a.length;
+        for (let r = 0; r < artH; r++) {
+          const line = gp.food.a[r];
+          grid.text(line, Math.round(gp.x), Math.round(gp.y) - artH + 1 + r, col);
+        }
+      }
+
+      // Draw flying items (last so they're on top)
+      for (const fi of a5FlyingItems) {
+        const artH = fi.food.a.length;
+        for (let r = 0; r < artH; r++) {
+          const line = fi.food.a[r];
+          grid.text(line, Math.round(fi.x), Math.round(fi.y) + r, fi.col);
+        }
+      }
+
+      // Big counter — scales with total placed, cleanly readable above fridge
+      if (a5FoodTotalPlaced > 0) {
+        const counterTxt = "+" + a5FoodTotalPlaced + window.LANG.foodCounterSuffix;
+        const cx = fx + Math.floor(fridgeW / 2) - Math.floor(counterTxt.length / 2);
+        const cy = Math.max(1, fy - 2);
+        const flashCol = a5T - a5LastCounterFlash < 150 ? "#fff" : C_TEAL;
+        grid.text(counterTxt, cx, cy, flashCol);
+        if (a5FoodTotalPlaced !== a5LastCounterValue) {
+          a5LastCounterValue = a5FoodTotalPlaced;
+          a5LastCounterFlash = a5T;
         }
       }
     }
@@ -5781,7 +5852,7 @@ if (a5P >= 3) {
           if (!nb.art) nb.art = window.GAME_DATA.npcArts[i % window.GAME_DATA.npcArts.length];
           grid.art(nb.art, nx, nb.ty, nb.col || C_TEAL);
           if (nb.arrived) {
-            grid.text(nb.name, Util.clamp(nx - 1, 0, W - nb.name.length), nb.ty - 1, nb.col || C_TEAL);
+            grid.text(nb.name, Util.clamp(nx - Math.floor(nb.name.length / 2), 0, W - nb.name.length), nb.ty - 1, nb.col || C_TEAL);
           }
         }
       }
@@ -6351,7 +6422,7 @@ if (a5P >= 3) {
       gs.classList.add("flash-good");
       flashGoodT = 0;
     }
-   if (flashGoldT > 0) {
+    if (flashGoldT > 0) {
       console.log("RENDER applying flash-gold, phase=", phase);
       gs.classList.remove("flash-gold");
       void gs.offsetWidth;
@@ -6430,16 +6501,15 @@ if (a5P >= 3) {
     });
   });
 
- 
   // ── ACT JUMP TABLE ────────────────────────────────────────────
   // Single source of truth for jumping to any act. Each entry must
   // exactly mirror what happens in the real game flow.
   const ACT_JUMPS = {
-    "1": () => {
+    1: () => {
       Music.play("music_act1");
       initAct1();
     },
-    "2": () =>
+    2: () =>
       initInter(
         [
           { t: window.LANG.bannerRecruitCrew, c: C_ORANGE, d: 2000 },
@@ -6450,7 +6520,7 @@ if (a5P >= 3) {
         0,
         Device.isMobile ? window.LANG.controlsAct2Mobile : window.LANG.controlsAct2,
       ),
-    "3": () =>
+    3: () =>
       initInter(
         [
           { t: window.LANG.bannerRallyNeighbourhood, c: C_ORANGE, d: 2000 },
@@ -6461,12 +6531,12 @@ if (a5P >= 3) {
         1,
         Device.isMobile ? window.LANG.controlsAct2bMobile : window.LANG.controlsAct2b,
       ),
-    "4": () => {
+    4: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       ensureCrew();
       initAct3();
     },
-    "5": () => {
+    5: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       ensureCrew();
       initInter(
@@ -6480,32 +6550,32 @@ if (a5P >= 3) {
         Device.isMobile ? window.LANG.controlsAct4Mobile : window.LANG.controlsAct4,
       );
     },
-    "6": () => {
+    6: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       ensureCrew();
       initAct4();
       initAct4Exit();
     },
-    "7": () => {
+    7: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       ensureCrew();
       initAct4();
       initAct4Run();
     },
-    "8": () => {
+    8: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       s4AlyScore = s4AlyScore || 0;
       ensureCrew();
       initAct5();
     },
-    "9": () => {
+    9: () => {
       a2CrewCount = Math.max(a2CrewCount, 5);
       s4AlyScore = s4AlyScore || 0;
       ensureCrew();
       state.reset({ score: 80 });
       initEnd();
     },
-    "0": () => initCTA(),
+    0: () => initCTA(),
   };
 
   function jumpToAct(key) {

@@ -272,6 +272,8 @@ window.LANG_FR = {
   hudCops: "COPS",
   hudHaul: "HAUL",
 
+  foodCounterSuffix: " ITEMS",
+
   act3TapHat: "appuie pour mettre des chapeaux",
   act3HattingInProgress: "on met les chapeaux...",
   act3HattingWait: "...",
