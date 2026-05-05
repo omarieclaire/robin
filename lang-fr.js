@@ -1,13 +1,9 @@
 window.LANG_FR = {
   test: "Bonjour de la version française",
   playBtn: "JOUER",
-  overlayTitle: "ROBIN  DES RUELLES",
+  overlayTitle: "ROBINS DES RUELLES",
   overlaySub: "promène-toi et parle à tes voisins n'importe quoi peut arriver<br><br>",
-  overlayHint: "\u25B2\u25BC pour changer de rangée<br>Marche vers les gens pour leur parler<br><br>",
-  hudCrewLabel: "ÉQUIPE",
-  hudAct2Status: "Appuie \u25B2\u25BC pour bouger!",
-  hudHaulLabel: "BUTIN",
-  hudAct4Status: "CLIQUE SUR LA NOURRITURE!",
+  // hudHaulLabel: "BUTIN",
 
   // banners
   bannerIsThisALife: "c'est ça, la vie?",
@@ -19,7 +15,6 @@ window.LANG_FR = {
   bannerRallyNeighbourhood: "rallie le quartier!",
   bannerAvoidNarcs: "évite les mouchards",
   bannerYouHaveACrew: "ta petite équipe est au complet !",
-  bannerTimeToRally: "temps de rallier tout le quartier",
   bannerCopsCircling: "Les flics rôdent. Dépêche-toi.",
   bannerGoodCallNarc: "bonne décision. c'était un mouchard.",
   bannerExitOpen: "SORTIE OUVERTE \u2014 EN BAS À DROITE!",
@@ -28,7 +23,9 @@ window.LANG_FR = {
   bannerAvoidSecurity: "évite la sécurité.",
   bannerFoodGloriousFood: "de la bouffe, enfin.",
   bannerShareBounty: "partageons le butin",
-  bannerNarc: "\u26A0 MOUCHARD! \u26A0",
+  // bannerNarc: "\u26A0 MOUCHARD! \u26A0",
+    bannerHitNarc: "tu as heurté un narc — attention!",
+
 
   // act 4 urgency stages
   urgencyCopsCalled: "FLICS APPELÉS",
@@ -37,6 +34,16 @@ window.LANG_FR = {
   urgencyGetOut: "SORS D'ICI!",
   urgencyLastChance: "DERNIÈRE CHANCE",
   urgencyTooLate: "TROP TARD",
+
+  // Indications de commandes — une paire par acte (bureau / mobile).
+  controlsAct2:        "utilise ← ↑ → ↓ pour marcher · arrête-toi pour parler",
+  controlsAct2Mobile:  "glisse pour marcher · arrête-toi pour parler",
+  controlsAct2b:       "utilise ← ↑ → ↓ pour traverser la foule",
+  controlsAct2bMobile: "glisse pour traverser la foule",
+  controlsAct4:        "utilise ← ↑ → ↓ · clique sur la bouffe pour la prendre",
+  controlsAct4Mobile:  "glisse · touche la bouffe pour la prendre",
+    hintLabel: "commandes",
+
 
   // floats
   floatReadTheRoom: "lis la situation",
@@ -66,9 +73,7 @@ window.LANG_FR = {
   endGameBustedTitle: "POGNÉ!",
   endGameBustedSub: "trop de mouchards",
   endGameCaughtTitle: "POGNÉ!",
-  endGameCaughtEmpty: "POGNÉ LES MAINS VIDES",
   endGameCaughtSub: "Les flics t'ont eu.\nles robins sont partis avec $",
-  endGameCaughtSubEmpty: "la prochaine fois.",
   endGameTryAgain: "RÉESSAYER",
   endGameGiveUp: "ABANDONNER POUR TOUJOURS",
 
@@ -215,20 +220,12 @@ window.LANG_FR = {
   bannerOneStore: " une épicerie.",
   bannerLetsEat: " on mange.",
 
-  tapToEnter: "[ APPUIE POUR ENTRER ]",
-  promptTap: "[ toucher ]",
-  promptTapToPlaceFood: "[ TOUCHER POUR DÉPOSER ]",
   urgencyCopsEnRoute: ">> FLICS EN ROUTE <<",
   urgencyFindExit: "!! TROUVE LA SORTIE !!",
-
-  controlsAct2: "flèches ou touche pour bouger",
-  controlsAct2b: "flèches ou touche pour bouger",
-  controlsAct4: "flèches pour bouger — clique pour prendre la bouffe",
 
   endGameTimedOutTitle: "POGNÉ!",
   endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite.",
   bannerHatsOn: "chapeaux.",
-  bannerPutOnHats: "on met tous nos chapeaux de Robin des Bois.",
 
   choiceCommiserateAngry: "(╯°□°)╯ mets-en",
   choiceCommiserateHungry: "(っ◔◡◔)っ compatir",
@@ -245,14 +242,10 @@ window.LANG_FR = {
   choiceRecruitAngry: "(ง'̀-'́)ง les recruter",
   choiceRecruitHungry: "(•‿•) les recruter",
   choiceWalkAwayShort: "( ._.) se défiler",
-  act3TapHat: "▶ appuie pour mettre des chapeaux ◀",
   act3HattingInProgress: "on met les chapeaux...",
   act3HattingWait: "...",
-  act3TapEnter: "▶ appuie pour entrer dans le magasin ◀",
   act3HatsOnEnter: "chapeaux mis. on y va.",
   act4ExitLabel: "SORTIE",
-  act5TapFood: "APPUIE POUR DÉPOSER LA BOUFFE",
-  act5TapContinue: "APPUIE POUR CONTINUER",
   ctaChoiceYes: "oui — dis-moi comment",
   ctaChoiceMaybe: "peut-être un jour",
   ctaEndYes: "alors ça commence par toi.",
@@ -278,6 +271,13 @@ window.LANG_FR = {
 
   hudCops: "COPS",
   hudHaul: "HAUL",
+
+  act3TapHat: "appuie pour mettre des chapeaux",
+  act3HattingInProgress: "on met les chapeaux...",
+  act3HattingWait: "...",
+  act3TapEnter: "appuie pour entrer dans le magasin",
+  act5TapContinue: "appuie pour continuer",
+  act5TapDeposit: "appuie pour partager la bouffe",
 
   hudAvoidNarcs: "évite les narcs",
   muteMute: "son",

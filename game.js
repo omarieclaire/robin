@@ -246,7 +246,6 @@
     ovTitle.textContent = window.LANG.overlayTitle;
     ovTitle.style.color = C_PLAYER;
     ovSub.innerHTML = window.LANG.overlaySub;
-    // ovHint.innerHTML = window.LANG.overlayHint;
     startBtn.textContent = window.LANG.playBtn;
     startBtn.style.display = "";
   });
@@ -302,6 +301,9 @@
     narc: "narc.mp3", // narc reveal
     grab: "grab.mp3", // Act 4 food grab
     bust: "bust.mp3", // game over
+    prompt: "click.mp3", // subtle chime when tap-prompts appear; swap file later
+    hint: "click.mp3",   // softer chime when control-hints appear; swap file later
+
   });
 
   const Music = {
@@ -599,7 +601,9 @@
   let loop, phase;
   const floats = [];
   let a2CrewCount = 0,
-    s4AlyScore = 0;
+    s4AlyScore = 0,
+    a5FoodCycleT = 0,
+    a5FoodTotalPlaced = 0;
   const sparks = [];
   let chromaticT = 0;
 
@@ -754,10 +758,20 @@
     grid.text(BANNER_BOX.bl + BANNER_BOX.h.repeat(boxW - 2) + BANNER_BOX.br, bx, by, bannerColor);
   }
 
+  let _lastPromptKey = null;
+  let _lastHintShown = null;
   function renderTapPrompt(msg, y, col1, col2) {
+    // Play a one-time chime when a NEW prompt appears (not every frame).
+    // Key combines phase + message so a different prompt in the same phase
+    // re-chimes, but the same prompt held on screen does not.
+    const key = phase + "::" + msg;
+    if (_lastPromptKey !== key) {
+      _lastPromptKey = key;
+      audio.play("prompt", { volume: 0.4 });
+    }
     const flash = Math.sin(Date.now() / 300) > 0;
     const c = flash ? col1 || "#fff" : col2 || C_PLAYER;
-    grid.textCenter("[ " + msg + " ]", y, c);
+    grid.textCenter("\u25B6 " + msg + " \u25C0", y, c);
   }
 
   function handleTapWithParticles(condition, onTap, particleCol, particleX, particleY, big) {
@@ -1150,22 +1164,63 @@ function convReset() {
     renderBanner();
     const _allLinesDone = interLines && interLI >= interLines.length;
     if (interControlsHint && _allLinesDone && interT > 2500) {
-      const hintCol = Math.sin(Date.now() / 600) > 0 ? "#ddd" : "#aaa";
-      const maxW = W - 6;
+      // Play hint chime once, on first appearance
+      if (!_lastHintShown || _lastHintShown !== interControlsHint) {
+        _lastHintShown = interControlsHint;
+        audio.play("hint", { volume: 0.3 });
+      }
+      // Word-wrap the hint
+      const innerW = Math.min(W - 10, 36);
       const words = interControlsHint.split(" ");
       const hintLines = [];
       let cur = "";
       for (const w of words) {
-        if (cur.length + w.length + 1 > maxW) {
+        if (cur.length + w.length + 1 > innerW) {
           hintLines.push(cur);
           cur = w;
         } else cur = cur ? cur + " " + w : w;
       }
       if (cur) hintLines.push(cur);
-      const hintY = Math.floor(H * 0.72) - Math.floor(hintLines.length / 2);
-      hintLines.forEach((l, i) => grid.textCenter(l, hintY + i, hintCol));
+
+      // Render as a bordered card — distinct from banner (double-line) and dialog (round corners).
+      // Single-line square corners says "instructions" / "system message".
+      const hintLabel = window.LANG.hintLabel || "controls";
+      const labelLen = hintLabel.length + 2; // " controls "
+      const contentW = Math.max(...hintLines.map((l) => l.length), labelLen);
+      const boxW = Math.min(W - 4, contentW + 6);
+      const boxH = hintLines.length + 4; // top + label + line + lines + bottom
+      const bx = Math.floor((W - boxW) / 2);
+      const by = Math.floor(H * 0.72) - Math.floor(boxH / 2);
+      const borderCol = "#7a8aaa";
+      const labelCol = "#aab8cc";
+      const hintCol = Math.sin(Date.now() / 600) > 0 ? "#fff" : "#dde4f0";
+
+      // Clear background
+      for (let y = by; y < by + boxH && y < H; y++)
+        for (let x = bx; x < bx + boxW && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
+
+      // Top border with embedded label: ┌─ controls ─────┐
+      const topLeft = "\u250C\u2500 ";
+      const topAfter = " \u2500";
+      const fillLen = boxW - topLeft.length - hintLabel.length - topAfter.length - 1;
+      const topRow = topLeft + hintLabel + topAfter + "\u2500".repeat(Math.max(0, fillLen)) + "\u2510";
+      grid.text(topRow.substring(0, boxW), bx, by, borderCol);
+      // Re-color just the label bright
+      grid.text(hintLabel, bx + topLeft.length, by, labelCol);
+
+      // Sides + content
+      for (let i = 0; i < hintLines.length; i++) {
+        const ly = by + 2 + i;
+        grid.text("\u2502" + " ".repeat(boxW - 2) + "\u2502", bx, ly, borderCol);
+        const pad = Math.floor((boxW - 2 - hintLines[i].length) / 2);
+        grid.text(hintLines[i], bx + 1 + pad, ly, hintCol);
+      }
+
+      // Bottom border
+      grid.text("\u2514" + "\u2500".repeat(boxW - 2) + "\u2518", bx, by + boxH - 1, borderCol);
+
       if (interT > 10000) {
-        renderTapPrompt(window.LANG.tapToContinue, hintY + hintLines.length + 3, "#fff", C_PLAYER);
+        renderTapPrompt(window.LANG.tapToContinue, by + boxH + 2, "#fff", C_PLAYER);
       }
     } else if (!interControlsHint && _allLinesDone && interT > 10000) {
       renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", C_PLAYER);
@@ -1839,6 +1894,8 @@ function convReset() {
     clickSX = Math.floor((e.clientX - r.left) / cellW);
     clickSY = Math.floor((e.clientY - r.top) / cellH);
     clickPending = true;
+    // Universal click feedback — small spark wherever you tap
+    spark(clickSX, clickSY, "#9c9c9ca0", 4);
   });
 
   /* ══════════════════════════════════════════════════════════
@@ -3849,6 +3906,7 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
             spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 24);
             triggerChromatic(600);
             a2bHt++;
+            showBanner(window.LANG.bannerHitNarc, C_DANGER, 1800);
             popupPush(window.LANG.floatNarc, Math.round(n.wx - a2bWX), n.wy, C_DANGER, 700);
             popupPush(
               Util.pick([window.LANG.floatOops, window.LANG.floatOhNo, window.LANG.floatExclaim]),
@@ -4194,11 +4252,11 @@ a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.invite
     // Show the rally summary as a banner sequence over the storefront
     showBannerSequence(
       [
-        { t: a2CrewCount + " Robins", c: C_DANGER, d: 2000 },
+        { t: a2CrewCount + " Robins", c: C_PLAYER, d: 2000 },
         { pause: true, d: 700 },
-        { t: window.LANG.bannerOneStore.trim(), c: C_DANGER, d: 2000 },
+        { t: window.LANG.bannerOneStore.trim(), c: C_PLAYER, d: 2000 },
         { pause: true, d: 700 },
-        { t: window.LANG.bannerLetsEat.trim(), c: C_DANGER, d: 2500 },
+        { t: window.LANG.bannerLetsEat.trim(), c: C_PLAYER, d: 2500 },
       ],
       false,
     );
@@ -4299,6 +4357,7 @@ const sY = Math.floor(H * 0.62);
       if (allIn && Math.abs(a3PlayerX - dc) < 1) {
         if (!a3EntryBurst) {
           a3EntryBurst = true;
+          audio.play("exit");
           // Particle burst as crew enters store
           const _entryStY = Math.floor(H * 0.62);
           for (let _b = 0; _b < 10; _b++) {
@@ -4424,34 +4483,27 @@ const sY = Math.floor(H * 0.62);
 
     // Trees flanking store
     const treeCol = "#3a7a3a";
-    const treeArt = [" ^ ", "/|\\", " | "];
-    if (scx > 6) grid.art(treeArt, scx - 5, stY + 1, treeCol);
-    if (scx > 10) grid.art(treeArt, scx - 9, stY + 2, "#2a6a2a");
-    if (scx + STO_W + 5 < W) grid.art(treeArt, scx + STO_W + 2, stY + 1, treeCol);
-    if (scx + STO_W + 9 < W) grid.art(treeArt, scx + STO_W + 6, stY + 2, "#2a6a2a");
+    const treeArt = ["  ^  ", " /^\\ ", "/_|_\\", "  |  "];
+    if (scx > 6) grid.art(treeArt, scx - 6, stY, treeCol);
+    if (scx > 11) grid.art(treeArt, scx - 11, stY + 1, "#2a6a2a");
+    if (scx + STO_W + 6 < W) grid.art(treeArt, scx + STO_W + 2, stY, treeCol);
+    if (scx + STO_W + 11 < W) grid.art(treeArt, scx + STO_W + 7, stY + 1, "#2a6a2a");
 
     // Wait until robins have arrived AND banner has cleared before any prompt
     const _allArrived = a3CrewOffsets && a3CrewOffsets.every((c) => c.arrived);
     const _bannerClear = bannerTimer <= 0 && !_bannerSeq;
     if (_allArrived && _bannerClear && a3T > 12000 && !a3Entering) {
-      const tapFlash = Math.sin(Date.now() / 300) > 0;
       const tapY = Math.min(H - 2, ly + 5);
       const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
-      let tapMsg, tapCol;
       if (!a3HatsOn && !hatsAnimating) {
-        tapMsg = window.LANG.act3TapHat;
-        tapCol = tapFlash ? "#fff" : C_ORANGE;
+        renderTapPrompt(window.LANG.act3TapHat, tapY, "#fff", C_ORANGE);
       } else if (hatsAnimating) {
-        tapMsg = window.LANG.act3HattingInProgress;
-        tapCol = C_DIM;
+        grid.textCenter(window.LANG.act3HattingInProgress, tapY, C_DIM);
       } else if (a3HatsOn && !a3PlayerHatted) {
-        tapMsg = window.LANG.act3HattingWait;
-        tapCol = C_DIM;
+        grid.textCenter(window.LANG.act3HattingWait, tapY, C_DIM);
       } else {
-        tapMsg = window.LANG.act3TapEnter;
-        tapCol = tapFlash ? "#fff" : C_PLAYER;
+        renderTapPrompt(window.LANG.act3TapEnter, tapY, "#fff", C_PLAYER);
       }
-      grid.textCenter(tapMsg, tapY, tapCol);
     }
     renderBanner();
   }
@@ -4543,7 +4595,7 @@ const sY = Math.floor(H * 0.62);
     state.reset({ score: 0 });
     s4AlyScore = 0;
     s4ExitPinned = false;
-    s4ExitScreenX = W - 5; /* tight to right edge */
+    s4ExitScreenX = W - 7; /* room for wider arch */
     s4GrabBursts = []; /* per-grab starburst effects */
     s4RobinCheerT = 4000; /* countdown to next robin cheer */
 
@@ -4646,7 +4698,7 @@ const sY = Math.floor(H * 0.62);
     /* ── Remaining state ── */
     // s4Ex = [];
     // s4ExitPinned = false;
-    // s4ExitScreenX = W - 5; /* tight to right edge */
+    // s4ExitScreenX = W - 7; /* room for wider arch */
     // s4ExitAisle = -1;
 
     s4As = [
@@ -4659,11 +4711,11 @@ const sY = Math.floor(H * 0.62);
     ];
     s4GE = 0;
 
-    hudLabel.textContent = window.LANG.hudHaulLabel;
-    hudScore.textContent = "$0";
-    hudScore.style.color = C_PLAYER;
-    hudStatus.textContent = window.LANG.hudAct4Status;
-    hudStatus.style.color = C_TEAL;
+    // hudLabel.textContent = window.LANG.hudHaulLabel;
+    // hudScore.textContent = "$0";
+    // hudScore.style.color = C_PLAYER;
+    // hudStatus.textContent = window.LANG.hudAct4Status;
+    // hudStatus.style.color = C_TEAL;
     // showBanner(window.LANG.bannerGrabEverything, C_PLAYER, 2500);
 
     s4TickerMsg = D_INTERCOM_TICKER[0];
@@ -4688,6 +4740,7 @@ const sY = Math.floor(H * 0.62);
     s4Alys = [];
     audio.play("exit");
     Music.transition("music_act3"); // run-home music
+    audio.preload(["music_act6"]); // preload act5 music for smooth transition later
     showBanner(window.LANG.bannerEscaped, C_TEAL, 1500);
   }
 
@@ -4747,6 +4800,7 @@ const sY = Math.floor(H * 0.62);
   let s4RunCops, s4RunBystanders, s4RunSparkleT, s4RunFloatT, s4RunTriumphShown;
   function initAct4Run() {
     phase = "act4run";
+    audio.preload(["music_act6"]); // pre-warm act5 drop-off music
     a2bCalcLayout(); // reuse Act 2b layout helpers
     s4RunT = 0;
     s4RunSpd = 0.008; // slower so the run feels more substantial
@@ -5202,7 +5256,7 @@ const sY = Math.floor(H * 0.62);
 
     if (clickPending && phase === "act4") {
       /* Check exit FIRST before anything else consumes the click */
-      if (s4ExitPinned && clickSX >= s4ExitScreenX - 3 && clickSX <= s4ExitScreenX + 3 && clickSY >= S4_AISLE_BOT - 4 && clickSY <= S4_FLOOR_Y) {
+      if (s4ExitPinned && clickSX >= s4ExitScreenX - 5 && clickSX <= s4ExitScreenX + 5 && clickSY >= S4_AISLE_TOP && clickSY <= S4_FLOOR_Y) {
         clickPending = false;
         endGame("escaped");
         return;
@@ -5253,7 +5307,7 @@ const sY = Math.floor(H * 0.62);
     /* Exit collision — walk into it OR click it to leave */
 
     if (s4ExitPinned) {
-      if (Math.abs(s4PX2 - s4ExitScreenX) < 4) endGame("escaped");
+      if (Math.abs(s4PX2 - s4ExitScreenX) < 5) endGame("escaped");
     }
 
     /* ── Guard movement + collision ── */
@@ -5405,9 +5459,9 @@ const sY = Math.floor(H * 0.62);
       const _exitCol = C_TEAL;
       const _dimCol = "#1a5a4a";
 
-      const archTop = S4_AISLE_BOT - 2;
+      const archTop = S4_AISLE_TOP + 1;
       const archBot = S4_FLOOR_Y;
-      const archW = 2;
+      const archW = 4;
       const lx = exSX - archW;
       const rx = exSX + archW;
 
@@ -5460,7 +5514,6 @@ const sY = Math.floor(H * 0.62);
 
   function initAct5() {
     audio.play("level");
-    Music.transition("music_act6"); // drop-off, warmth
     audio.preload(["music_act7"]);
     phase = "act5";
     ensureCrew();
@@ -5468,6 +5521,8 @@ const sY = Math.floor(H * 0.62);
     a5P = 0;
     a5NI = 0;
     a5FoodPlacements = null;
+    a5FoodCycleT = 0;
+    a5FoodTotalPlaced = 0;
     bannerTimer = 0;
     dialogStack = [];
     hudLabel.textContent = "";
@@ -5494,7 +5549,8 @@ const sY = Math.floor(H * 0.62);
       const itemsInRow = Math.min(slotsPerRow, totalSlots - row * slotsPerRow);
       const rowStartX = Math.floor((W - itemsInRow * slotW) / 2);
       const targetX = rowStartX + idxInRow * slotW;
-const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row * 2` to stack upward (gang behind leader)      const cs = a2Crew[crewIdx] || {};
+const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row * 2` to stack upward (gang behind leader)
+      const cs = a2Crew[crewIdx] || {};
       a5Crew.push({
         x: crewIdx % 2 === 0 ? -3 - crewIdx * 4 : W + 3 + crewIdx * 4,
         y: targetY,
@@ -5575,6 +5631,7 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
       }
       if (allArrived && a5T > 1500) {
         // showBanner(window.LANG.bannerShareBounty, "#d4a030  ", 3000);
+        Music.transition("music_act6"); // drop-off music starts now, not on init
         a5P = 1;
         a5T = 0;
       }
@@ -5595,8 +5652,8 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
       a5T = 0;
       showBanner(window.LANG.bannerFoodGloriousFood, C_SUCCESS, 2000);
     }
-    if (a5P === 3 && a5T > 4000) {
-      // longer to let the full fill animation play
+    if (a5P === 3 && a5T > 7500) {
+      // longer — lets the fridge fill, then re-fill multiple times
       a5P = 4;
       a5T = 0;
     }
@@ -5645,49 +5702,59 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
     const plY = a5Crew._playerY || fy + FRIDGE.length + 1;
     grid.art(A2_PA[Math.floor(a5T / 250) % 2], plX, plY + (a5P >= 3 ? -1 : 0), playerPulseColor(a5T));
 
-    if (a5P === 4 && a5Neighbours.length > 0 && a5Neighbours.every((nb) => nb.arrived) && a5T > 6000)
-      renderTapPrompt(window.LANG.act5TapContinue, H - 2, "#fff", C_TEAL);
     // Tap-to-deposit prompt — only shows during the deposit window (a5P === 2)
     if (a5P === 2) {
-      renderTapPrompt(window.LANG.act5TapFood, H - 2, "#fff", C_TEAL);
+      renderTapPrompt(window.LANG.act5TapDeposit, H - 2, "#fff", C_PLAYER);
     }
     // Food appearing in fridge — real food art reused from Act 4
-    if (a5P >= 3) {
-      /* New fridge layout (width 37, height 18):
-                           Rows 0-3 = header + divider
-                           Rows 4-8 = top shelf (interior rows 4,5,6,7,8)
-                           Row 9 = divider
-                           Rows 10-14 = bottom shelf
-                           Row 15-17 = divider + footer + border
-                           4 slots per shelf. */
+   
+    
+if (a5P >= 3) {
+      // Initialize 8 slots — these get RE-FILLED with new food over time
+      // so it visually feels like an avalanche of food, not just 8 items.
       if (!a5FoodPlacements) {
         a5FoodPlacements = [];
-
-        const numToPlace = 8; // always fill both shelves regardless of crew count
-
-        for (let i = 0; i < numToPlace; i++)
-          a5FoodPlacements.push({
-            food: Util.pick(FOODS),
-            col: Util.pick(FC),
-          });
-      }
-      let showCount;
-      if (a5P === 3) {
-        if (a5T < 2400) {
-          showCount = Math.min(a5FoodPlacements.length, Math.floor(a5T / 300));
-        } else {
-          // Fast second pass — flash all items in
-          showCount = a5FoodPlacements.length;
+        for (let i = 0; i < 8; i++) {
+          a5FoodPlacements.push({ food: null, col: FC[i % FC.length], placedAt: -1 });
         }
-      } else {
-        showCount = a5FoodPlacements.length;
+        a5FoodCycleT = 0;
+        a5FoodTotalPlaced = 0;
+      }
+
+      // Phase 3 = active filling. Each tick, place a new food in a slot.
+      // First pass: fill empty slots in order (0..7) so it visibly stacks left-to-right top-to-bottom.
+      // After all 8 are filled, keep replacing random slots — same total count visible (8)
+      // but the IDENTITY of items keeps changing, reading as more arriving.
+      if (a5P === 3) {
+        a5FoodCycleT += 1;
+        const placeEvery = 8; // frames between placements (~133ms at 60fps) — tighter = more frantic
+        if (a5FoodCycleT >= placeEvery) {
+          a5FoodCycleT = 0;
+          let slotIdx = a5FoodPlacements.findIndex((s) => s.food === null);
+          if (slotIdx === -1) slotIdx = Math.floor(Math.random() * 8); // all full → replace random
+          a5FoodPlacements[slotIdx].food = Util.pick(FOODS);
+          a5FoodPlacements[slotIdx].col = Util.pick(FC);
+          a5FoodPlacements[slotIdx].placedAt = a5T;
+          a5FoodTotalPlaced++;
+          // Sparkle on placement
+          const slotsPerShelf = 4;
+          const shelfInnerW = fridgeW - 2;
+          const slotW = Math.floor(shelfInnerW / slotsPerShelf);
+          const shelf = Math.floor(slotIdx / slotsPerShelf);
+          const slotCol = slotIdx % slotsPerShelf;
+          const ix = fx + 1 + slotCol * slotW + Math.floor((slotW - 7) / 2);
+          const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
+          spark(ix + 3, shelfBot - 2, a5FoodPlacements[slotIdx].col, 3);
+          if (a5FoodTotalPlaced % 4 === 0) audio.play("drop");
+        }
       }
 
       const slotsPerShelf = 4;
       const shelfInnerW = fridgeW - 2;
       const slotW = Math.floor(shelfInnerW / slotsPerShelf);
-      for (let i = 0; i < showCount; i++) {
+      for (let i = 0; i < a5FoodPlacements.length; i++) {
         const fp = a5FoodPlacements[i];
+        if (!fp.food) continue;
         const shelf = Math.floor(i / slotsPerShelf);
         const slotCol = i % slotsPerShelf;
         if (shelf > 1) break;
@@ -5695,13 +5762,16 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
         const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
         const artH = fp.food.a.length;
         const iy = shelfBot - artH + 1;
-        // console.log("I get an error here that food is not defined");
+        // Brief flash when newly placed
+        const age = a5T - fp.placedAt;
+        const col = age < 200 ? "#fff" : fp.col;
         for (let r = 0; r < artH; r++) {
           const line = fp.food.a[r].substring(0, slotW - 1);
-          grid.text(line, ix, iy + r, FC[i % FC.length]);
+          grid.text(line, ix, iy + r, col);
         }
       }
     }
+
     // Neighbours — use NPC art pool for visual variety, preserve color
     if (a5P >= 4) {
       for (let i = 0; i < a5Neighbours.length; i++) {
@@ -6341,7 +6411,6 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
   }
   ovTitle.textContent = window.LANG.overlayTitle;
   ovSub.innerHTML = window.LANG.overlaySub;
-  // ovHint.innerHTML = window.LANG.overlayHint;
   startBtn.textContent = window.LANG.playBtn;
   // startBtn.addEventListener("click", startGame);
 

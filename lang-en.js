@@ -3,11 +3,7 @@ window.LANG_EN = {
   playBtn: "PLAY",
   overlayTitle: "ROBIN  DES RUELLES",
   overlaySub: "walk around and talk to your neighbours anything could happen<br><br>",
-  overlayHint: "\u25B2\u25BC to move between rows<br>Walk into people to talk<br><br>",
-  hudCrewLabel: "CREW",
-  hudAct2Status: "Tap \u25B2\u25BC to move!",
-  hudHaulLabel: "HAUL",
-  hudAct4Status: "TAP FOOD TO GRAB!",
+  // hudHaulLabel: "HAUL",
 
   // banners
   bannerIsThisALife: "is this a life?",
@@ -19,7 +15,6 @@ window.LANG_EN = {
   bannerRallyNeighbourhood: "rally the neighbourhood!",
   bannerAvoidNarcs: "avoid narcs",
   bannerYouHaveACrew: "tiny crew assembled!",
-  bannerTimeToRally: "time to rally the whole neighbourhood",
   bannerCopsCircling: "Cops are circling. Wrap it up.",
   bannerGoodCallNarc: "good call. that was a narc.",
   bannerExitOpen: "EXIT OPEN \u2014 BOTTOM RIGHT!",
@@ -28,7 +23,8 @@ window.LANG_EN = {
   bannerAvoidSecurity: "avoid security.",
   bannerFoodGloriousFood: "food glorious food.",
   bannerShareBounty: "share the bounty?",
-  bannerNarc: "\u26A0 NARC! \u26A0",
+  // bannerNarc: "\u26A0 NARC! \u26A0",
+  bannerHitNarc: "you hit a narc — watch out!",
 
   // act 4 urgency stages
   urgencyCopsCalled: "COPS CALLED",
@@ -66,9 +62,7 @@ window.LANG_EN = {
   endGameBustedTitle: "BUSTED!",
   endGameBustedSub: "too many narcs",
   endGameCaughtTitle: "CAUGHT!",
-  endGameCaughtEmpty: "CAUGHT EMPTY",
   endGameCaughtSub: "Cops got you.\nrobins escaped with $",
-  endGameCaughtSubEmpty: "next time.",
   endGameTryAgain: "TRY AGAIN",
   endGameGiveUp: "GIVE UP FOREVER",
 
@@ -124,7 +118,7 @@ window.LANG_EN = {
           ],
           hold: 4000, // emotional beat
         },
-        { who: "p", text: "just humiliating", hold: 4500 }, // last line — heavy, let it sit
+        { who: "p", text: "just|pause|humiliating", hold: 4500 }, // last line — heavy, let it sit
       ],
     },
     {
@@ -140,7 +134,7 @@ window.LANG_EN = {
           ],
           hold: 3500, // setup
         },
-        { who: "n", text: "you know,\nstealing from a thief\nisn't theft", hold: 6000 }, // the THESIS of the game — let it really land
+        { who: "n", text: "you know,\nstealing from a thief|pause|\nisn't theft", hold: 6000 }, // the THESIS of the game — let it really land
         {
           who: "p",
           texts: ["what?|pause|", "...WTF?", "ostie... what does that mean", "WHAT ARE YOU SAYING?", "TABARNAK! say that again!"],
@@ -152,14 +146,14 @@ window.LANG_EN = {
 
   a1LoopMsgs: [
     { t: "nothing changes...", c: "#999" },
-    { t: "...câline, encore ça", c: "#aaa" },
-    { t: "ostie. encore.", c: "#b09abf" },
-    { t: "crisse, pis quoi encore", c: "#b080c0" },
-    { t: "ostie. ENCORE LA MÊME CHOSE", c: "#c060a0" },
+    { t: "...câline, encore ça?", c: "#aaa" },
+    { t: "ostie. encore?", c: "#b09abf" },
+    { t: "crisse, pis quoi encore?", c: "#b080c0" },
+    { t: "ostie. ENCORE LA MÊME CHOSE?", c: "#c060a0" },
     { t: "OSTIE DE CÂLICE. vraiment??", c: "#c84080" },
     { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
     { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
-    { t: "OSTIE CÂLICE CRISSE TABARNAK", c: "#dd0020" },
+    { t: "OSTIE CÂLICE CRISSE TABARNAK !", c: "#dd0020" },
     { t: "TABARNAK CÂLICE CRISSE VIARGE OSTIE DE...", c: "#ff0000" },
   ],
 
@@ -230,21 +224,14 @@ window.LANG_EN = {
 
   bannerOneStore: " one store",
   bannerLetsEat: " let's eat",
-  tapToEnter: "[ TAP TO ENTER ]",
-  promptTap: "[ tap ]",
-  promptTapToPlaceFood: "[ TAP TO PLACE FOOD ]",
   urgencyCopsEnRoute: ">> COPS EN ROUTE <<",
   urgencyFindExit: "!! FIND THE EXIT !!",
 
-  controlsAct2: "arrow keys or tap to move",
-  controlsAct2b: "arrow keys or tap to move",
-  controlsAct4: "arrow keys / click to grab food",
-
+  
   endGameTimedOutTitle: "BUSTED!",
   endGameTimedOutSub: "The narcs reported you. Next time work faster.",
 
   bannerHatsOn: "hats on.",
-  bannerPutOnHats: "let's all put on Robin Hood hats.",
 
   choiceCommiserateAngry: "(╯°□°)╯ agree",
   choiceCommiserateHungry: "(っ◔◡◔)っ commiserate",
@@ -260,14 +247,10 @@ recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to 
   choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
   choiceRecruitHungry: "(•‿•) recruit them",
   choiceWalkAwayShort: "( ._.) walk away",
-  act3TapHat: "▶ tap to give everyone a hat ◀",
   act3HattingInProgress: "putting on hats...",
   act3HattingWait: "...",
-  act3TapEnter: "▶ tap to enter the store ◀",
   act3HatsOnEnter: "hats on. time to go.",
   act4ExitLabel: "EXIT",
-  act5TapFood: "TAP TO PLACE FOOD",
-  act5TapContinue: "TAP TO CONTINUE",
   ctaChoiceYes: "yes — tell me how",
   ctaChoiceMaybe: "maybe someday",
   ctaEndYes: "then it starts with you.",
@@ -293,6 +276,23 @@ recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to 
 
   hudCops: "TIME REMAINING",
   hudHaul: "HAUL",
+
+
+  // Control hints — one pair per act. Each act has a desktop string (keyboard / mouse focus)
+  // and a mobile string (touch focus). The renderer picks based on Device.isMobile.
+  controlsAct2:        "use ← ↑ → ↓ to walk · stop next to someone to talk",
+  controlsAct2Mobile:  "drag to walk · stop next to someone to talk",
+  controlsAct2b:       "use ← ↑ → ↓ to push through the crowd",
+  controlsAct2bMobile: "drag to push through the crowd",
+  controlsAct4:        "use ← ↑ → ↓ to walk · click food to grab it",
+  controlsAct4Mobile:  "drag to walk · tap food to grab it",
+  hintLabel: "controls",
+
+
+  act3TapHat: "tap to give everyone a hat",
+  act3TapEnter: "tap to enter the store",
+  act5TapDeposit: "tap to share the food",
+  act5TapContinue: "tap to continue",
 
   hudAvoidNarcs: "avoid narcs",
   muteMute: "mute",
