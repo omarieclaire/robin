@@ -186,7 +186,7 @@ window.LANG_EN = {
     { n: "Mei", p: "her" },
     { n: "Amadou", p: "his" },
     { n: "Sophie", p: "her" },
-    { n: "Youssef", p: "his" },
+    { n: "Ali", p: "his" },
   ],
 
   endCrewBrought: (tot) => "your crew brought home $" + tot + " of groceries",
@@ -241,6 +241,7 @@ window.LANG_EN = {
   choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
   choiceWalkAway: "( ._.) walk away",
 
+  bannerTooManyNarcs: "TOO MANY NARCS",   // EN
   // EN
 recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to go!",
   recruitProgressComplete: "★ CREW COMPLETE ★",

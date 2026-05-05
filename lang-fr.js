@@ -183,7 +183,7 @@ window.LANG_FR = {
     { n: "Mei", p: "sa" },
     { n: "Amadou", p: "sa" },
     { n: "Sophie", p: "sa" },
-    { n: "Youssef", p: "sa" },
+    { n: "Ali", p: "sa" },
   ],
 
   endCrewBrought: (tot) => "votre équipe a rapporté " + tot + "$ en épicerie",
@@ -256,6 +256,9 @@ window.LANG_FR = {
   loopGiveUpTitle: "non",
   loopGiveUpSub: "tu as continué à vivre comme ça\njusqu'à ne plus pouvoir",
   loopTryAgain: "réessayer ?",
+
+bannerTooManyNarcs: "TROP DE NARCS",    // FR
+
 
   floatOhNo: "oh non",
   floatExclaim: "!!",

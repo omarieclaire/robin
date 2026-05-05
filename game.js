@@ -3931,7 +3931,17 @@
               600,
             );
             if (a2bHt >= A2B_MH) {
-              setTimeout(() => quickBust("busted", initAct2b), 1500);
+              // Final hit — heavier feedback, faster bust
+              showBanner(window.LANG.bannerTooManyNarcs || "TOO MANY NARCS", C_DANGER, 1500);
+              audio.play("bust");
+              triggerChromatic(1200);
+              const _ppx = Math.round(a2bPX), _ppy = Math.round(a2bPY);
+              for (let _b = 0; _b < 6; _b++) {
+                spark(_ppx + Util.randInt(-4, 4), _ppy + Util.randInt(-2, 2), C_DANGER, 18);
+              }
+              spark(Math.round(W / 2), Math.round(H / 2), C_DANGER, 36);
+              a2bSpd = 0; // freeze the world
+              setTimeout(() => quickBust("busted", initAct2b), 800);
               return;
             }
           } else {
@@ -5540,9 +5550,10 @@
     a5T = 0;
     a5P = 0;
     a5NI = 0;
+    let a5OnTop = null;
     a5FoodPlacements = null;
     a5FlyingItems = null;
-    a5GroundPile = null;
+    a5OnTop = null;
     a5FoodCycleT = 0;
     a5FoodTotalPlaced = 0;
     a5LastCounterValue = 0;
@@ -5558,7 +5569,12 @@
     const fridgeW = FRIDGE[0].length;
     const fx = Math.floor((W - fridgeW) / 2);
     const fy = Math.floor(H / 2) - 10;
-    const lineY = fy + FRIDGE.length + 6;
+    // Compute the actual bottom Y of the code-drawn fridge — depends on mobile vs desktop
+    // Mirrors the math in drawCommunityFridge: frameTop = fy-4, headerH=3, hearts band adds 1
+    const _numShelves = Device.isMobile ? 2 : 3;
+    const _shelfH = 6;
+    const _fridgeBot = (fy - 4) + 3 + _numShelves * _shelfH + 1;
+    const lineY = _fridgeBot + 3; // crew sits 2 rows below fridge
     // Wrap into rows if too many for one row
     const slotW = 3; // horizontal cells per character
     const usableW = W - 4;
@@ -5602,8 +5618,9 @@
       const nm = shuffled[i];
       const fromRight = i % 2 === 0;
       const nx = fromRight ? W + 3 + i * 6 : -3 - i * 6;
-      const ty = lineY + 4 + Math.floor(i / 2);
-      /* Symmetrically distribute around fridge center */
+      // Neighbours sit a few rows below the crew row
+      // const ty = lineY + 4 + Math.floor(i / 2) * 2;
+const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2;      /* Symmetrically distribute around fridge center */
       const pairIdx = Math.floor(i / 2); /* 0,0,1,1 */
       const side = fromRight ? 1 : -1;
       // Neighbours: mobile-safe positioning + pre-assign colour -- no good because it changes the neighbour position on desktop too
@@ -5622,7 +5639,15 @@
       //   msgShow: false,
       // });
 
-      const offset = Math.floor(fridgeWidth / 2) + 2 + pairIdx * 4;
+
+
+//       + 7 controls how far below the crew row they appear (bigger = lower)
+// 4 + pairIdx * 4 controls horizontal spread (smaller first number = more centered)
+
+
+      const offset = Device.isMobile
+        ? 7 + pairIdx * 4  // a bit wider spread on mobile
+        : Math.floor(fridgeWidth / 2) + 2 + pairIdx * 4;
       const tx = fridgeCX + side * offset;
       a5Neighbours.push({
         x: nx,
@@ -5676,7 +5701,7 @@
       a5T = 0;
       showBanner(window.LANG.bannerFoodGloriousFood, C_SUCCESS, 2000);
     }
-    if (a5P === 3 && a5T > 7500) {
+    if (a5P === 3 && a5T > 9500) {
       // longer — lets the fridge fill, then re-fill multiple times
       a5P = 4;
       a5T = 0;
@@ -5705,12 +5730,113 @@
     }
     if (a5P === 5 && a5T > 2000) initEnd();
   }
+
+
+  // Desktop fridge — bigger ASCII fridge built procedurally to match the
+  // existing fridgeArt style: header band, shelves, hearts row at bottom.
+  function drawCommunityFridge(fx, fy) {
+    const SLOTS_PER_SHELF = Device.isMobile ? 4 : 6;
+    const NUM_SHELVES = Device.isMobile ? 2 : 3;
+    const SHELF_H = 6;
+    // Compute width to fit slots cleanly
+    const desktopW = Math.min(W - 6, SLOTS_PER_SHELF * 8 + 2);
+    const slotW = Math.floor((desktopW - 2) / SLOTS_PER_SHELF);
+    const frameLeft = Math.floor((W - desktopW) / 2);
+    const frameRight = frameLeft + desktopW - 1;
+    const innerW = desktopW - 2;
+    const headerH = 3; // rows for ╠ ... ╣ header band: top border + 2 text rows
+    const heartsH = 2; // rows for hearts band: hearts row + ╠ divider
+    const frameTop = fy - 4; // your value
+    const shelvesTop = frameTop + headerH;
+    const shelvesBot = shelvesTop + NUM_SHELVES * SHELF_H;
+    const heartsRowY = shelvesBot;
+    const frameBot = heartsRowY + 1; // ╚════╝ closing row
+
+    // Side walls
+    for (let y = frameTop; y <= frameBot; y++) {
+      if (frameLeft >= 0 && frameLeft < W) grid.set(frameLeft, y, "║", C_TEAL);
+      if (frameRight >= 0 && frameRight < W) grid.set(frameRight, y, "║", C_TEAL);
+    }
+    // Top border
+    if (frameTop >= 0 && frameTop < H) {
+      grid.set(frameLeft, frameTop, "╔", C_TEAL);
+      grid.set(frameRight, frameTop, "╗", C_TEAL);
+      for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, frameTop, "═", C_TEAL);
+    }
+    // Header band — two text rows in teal (matches mobile FRIDGE art)
+    const headerLines = window.LANG === window.LANG_FR
+      ? ["~ FRIGO COMMUNAUTAIRE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ nourrissez vos voisins"]
+      : ["~ COMMUNITY FRIDGE ~ ~ ~ ~ ~ ~", "~ ~ ~ ~ ~ feed your neighbours"];
+    for (let i = 0; i < headerLines.length; i++) {
+      const txt = headerLines[i];
+      const tx = frameLeft + 2 + Math.max(0, Math.floor((innerW - 4 - txt.length) / 2));
+      const ty = frameTop + 1 + i;
+      if (ty < H) grid.text(txt, tx, ty, C_TEAL);
+    }
+    // Divider below header
+    const headerDivY = frameTop + headerH;
+    if (headerDivY < H) {
+      grid.set(frameLeft, headerDivY, "╠", C_TEAL);
+      grid.set(frameRight, headerDivY, "╣", C_TEAL);
+      for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, headerDivY, "═", C_TEAL);
+    }
+    // Internal shelf dividers (between shelves only — top one is the header div above)
+    for (let s = 1; s < NUM_SHELVES; s++) {
+      const dy = shelvesTop + s * SHELF_H;
+      if (dy >= shelvesTop && dy < H) {
+        grid.set(frameLeft, dy, "╠", C_TEAL);
+        grid.set(frameRight, dy, "╣", C_TEAL);
+        for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, dy, "═", C_TEAL);
+      }
+    }
+    // Divider above hearts row
+    if (heartsRowY < H) {
+      grid.set(frameLeft, heartsRowY - 1, "╠", C_TEAL);
+      grid.set(frameRight, heartsRowY - 1, "╣", C_TEAL);
+      for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, heartsRowY - 1, "═", C_TEAL);
+    }
+    // Hearts band — row of ♥ ♥ ♥ between dividers
+    if (heartsRowY < H) {
+      const heartCount = Math.max(3, Math.floor(innerW / 4));
+      const heartLine = Array(heartCount).fill("♥").join("  ");
+      const hx = frameLeft + 2 + Math.max(0, Math.floor((innerW - 4 - heartLine.length) / 2));
+      grid.text(heartLine, hx, heartsRowY, C_TEAL);
+    }
+    // Bottom border
+    if (frameBot < H) {
+      grid.set(frameLeft, frameBot, "╚", C_TEAL);
+      grid.set(frameRight, frameBot, "╝", C_TEAL);
+      for (let x = frameLeft + 1; x < frameRight; x++) grid.set(x, frameBot, "═", C_TEAL);
+    }
+
+    // Door handle on the right
+    const handleY = Math.floor((frameTop + frameBot) / 2);
+    if (handleY >= 0 && handleY < H && frameRight + 1 < W) {
+      grid.set(frameRight + 1, handleY, "│", C_TEAL);
+      grid.set(frameRight + 1, handleY + 1, "│", C_TEAL);
+    }
+
+    // Return the metrics the food layout needs.
+    // shelvesTop and shelvesBot bracket the area where slots live.
+    return {
+      frameLeft,
+      frameRight,
+      frameTop: shelvesTop,   // food layout uses shelvesTop as its top
+      frameBot: shelvesBot,   // and shelvesBot as its bottom
+      slotW,
+      SLOTS_PER_SHELF,
+      NUM_SHELVES,
+      SHELF_H,
+    };
+  }
+
   function renderAct5() {
     // Fridge higher
     const fridgeW = FRIDGE[0].length;
     const fx = Math.floor((W - fridgeW) / 2),
       fy = Math.floor(H / 2) - 10;
-    grid.art(FRIDGE, fx, fy, C_TEAL);
+
+    drawCommunityFridge(fx, fy);
     let crewDrawIdx = 0;
     for (const c of a5Crew) {
       if (typeof c !== "object" || c._playerX !== undefined) continue;
@@ -5732,82 +5858,97 @@
     }
     // Food appearing in fridge — real food art reused from Act 4
 
-    if (a5P >= 3) {
-      // First-time setup: 8 fridge slots + flying items pool + ground pile
+if (a5P >= 3) {
+      // Pick fridge size based on device. Mobile uses the existing ASCII art (8 slots).
+      // Desktop uses a code-drawn larger frame (24 slots).
+      const isDesktop = !Device.isMobile;
+      
+      const SLOTS_PER_SHELF = Device.isMobile ? 4 : 6;
+        const NUM_SHELVES = Device.isMobile ? 2 : 3;
+      const TOTAL_SLOTS = SLOTS_PER_SHELF * NUM_SHELVES;
+      const SHELF_H = 6; // rows per shelf
+
+      // First-time setup
       if (!a5FoodPlacements) {
         a5FoodPlacements = [];
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < TOTAL_SLOTS; i++) {
           a5FoodPlacements.push({ food: null, col: FC[i % FC.length], placedAt: -1 });
         }
-        a5FlyingItems = []; // items in flight from offscreen → fridge
-        a5GroundPile = []; // overflow items resting on the floor
+        a5FlyingItems = [];
         a5FoodCycleT = 0;
         a5FoodTotalPlaced = 0;
       }
 
-      // Phase 3: spawn flying items rapidly. Each one targets either a fridge slot
-      // or a spot on the ground (once fridge is "full enough").
+     
+      // Layout — desktop reuses the metrics from drawDesktopFridge so the food
+      // sits inside the same frame the player sees from the start.
+      let frameLeft, frameRight, frameTop, frameBot, slotW;
+     
+      const m = drawCommunityFridge(fx, fy);
+      frameLeft = m.frameLeft;
+      frameRight = m.frameRight;
+      frameTop = m.frameTop;
+      frameBot = m.frameBot;
+      slotW = m.slotW;
+
+      // Compute slot positions: slot 0 = bottom-left, increases left-to-right then up.
+      // (So filling looks like stacking from the bottom — but you can flip if you prefer top-down.)
+      function slotBounds(idx) {
+        const shelf = Math.floor(idx / SLOTS_PER_SHELF);   // 0 = bottom shelf
+        const col = idx % SLOTS_PER_SHELF;
+        // Bottom shelf bottom row sits just above frameBot
+        const shelfBot = frameBot - 2 - shelf * SHELF_H;
+        const left = frameLeft + 1 + col * slotW;
+        const right = left + slotW;
+        return { left, right, shelfBot };
+      }
+
+      // Spawn items
       if (a5P === 3) {
         a5FoodCycleT += 1;
-
-        const fridgeFilled = a5FoodPlacements.filter((s) => s.food).length;
-        const claimedSlots = new Set(a5FlyingItems.filter((f) => !f.isGround).map((f) => f.slotIdx));
-        const freeSlot = a5FoodPlacements.findIndex((s, i) => !s.food && !claimedSlots.has(i));
-        const wantGround = freeSlot === -1;
-        const spawnEvery = fridgeFilled < 8 ? 22 : 6;
-        if (a5FoodCycleT >= spawnEvery && a5T < 6500) {
+        const spawnEvery = 8;
+        if (a5FoodCycleT >= spawnEvery && a5T < 8500) {
           a5FoodCycleT = 0;
           const food = Util.pick(FOODS);
           const col = Util.pick(FC);
           const fromLeft = Math.random() < 0.5;
           const startX = fromLeft ? -3 : W + 3;
-          const startY = fy + Util.randInt(-2, FRIDGE.length + 2);
+          const startY = fy + Util.randInt(-2, FRIDGE.length + 4);
 
-          let targetX,
-            targetY,
-            slotIdx = -1;
-          if (wantGround) {
-            const groundY = fy + FRIDGE.length + 1;
-            targetX = Util.clamp(fx + Util.randInt(0, fridgeW - 2), fx, fx + fridgeW - 2);
-            targetY = groundY + Util.randInt(0, 2);
-          } else {
-            slotIdx = freeSlot;
-            const slotsPerShelf = 4;
-            const shelfInnerW = fridgeW - 2;
-            const slotW = Math.floor(shelfInnerW / slotsPerShelf);
-            const shelf = Math.floor(slotIdx / slotsPerShelf);
-            const slotCol = slotIdx % slotsPerShelf;
-            targetX = fx + 1 + slotCol * slotW + Math.floor((slotW - 7) / 2);
-            targetY = (shelf === 0 ? fy + 8 : fy + 14) - food.a.length + 1;
+          // Fill phase: first empty slot. Otherwise: random replace.
+          const claimed = new Set(a5FlyingItems.map(f => f.slotIdx));
+          let slotIdx = a5FoodPlacements.findIndex((s, i) => !s.food && !claimed.has(i));
+          if (slotIdx === -1) {
+            // All full (or all claimed) — pick a random slot to replace
+            slotIdx = Math.floor(Math.random() * TOTAL_SLOTS);
           }
+
+          const { left, right, shelfBot } = slotBounds(slotIdx);
+          const artW = food.a[0].length;
+          let targetX = left + Math.max(0, Math.floor((slotW - artW) / 2));
+          targetX = Math.min(targetX, right - artW);
+          targetX = Math.max(targetX, left);
+          const targetY = shelfBot - food.a.length + 1;
+
           a5FlyingItems.push({
-            food,
-            col,
-            x: startX,
-            y: startY,
-            tx: targetX,
-            ty: targetY,
-            slotIdx,
-            isGround: wantGround,
-            life: 600,
+            food, col, x: startX, y: startY, tx: targetX, ty: targetY,
+            slotIdx, life: 600,
           });
         }
       }
 
-      // Update flying items — fast lerp, then commit on arrival
+      // Update flying items — when one arrives, it INSTANTLY replaces the slot's contents.
+      // No overlap: the slot data is overwritten, the old item disappears the same frame.
       for (let i = a5FlyingItems.length - 1; i >= 0; i--) {
         const fi = a5FlyingItems[i];
-        fi.x = Util.lerp(fi.x, fi.tx, 0.08);
-        fi.y = Util.lerp(fi.y, fi.ty, 0.08);
+        fi.x = Util.lerp(fi.x, fi.tx, 0.10);
+        fi.y = Util.lerp(fi.y, fi.ty, 0.10);
         fi.life -= 16;
         if (Math.abs(fi.x - fi.tx) < 0.6 && Math.abs(fi.y - fi.ty) < 0.6) {
-          if (fi.isGround) {
-            a5GroundPile.push({ food: fi.food, col: fi.col, x: fi.tx, y: fi.ty, placedAt: performance.now() });
-          } else if (fi.slotIdx >= 0) {
-            a5FoodPlacements[fi.slotIdx].food = fi.food;
-            a5FoodPlacements[fi.slotIdx].col = fi.col;
-            a5FoodPlacements[fi.slotIdx].placedAt = performance.now();
-          }
+          // Clean swap — old food is replaced by new
+          a5FoodPlacements[fi.slotIdx].food = fi.food;
+          a5FoodPlacements[fi.slotIdx].col = fi.col;
+          a5FoodPlacements[fi.slotIdx].placedAt = performance.now();
           a5FoodTotalPlaced++;
           spark(Math.round(fi.tx) + 2, Math.round(fi.ty), fi.col, 3);
           if (a5FoodTotalPlaced % 5 === 0) audio.play("drop");
@@ -5815,54 +5956,58 @@
         }
       }
 
-      const slotsPerShelf = 4;
-      const shelfInnerW = fridgeW - 2;
-      const slotW = Math.floor(shelfInnerW / slotsPerShelf);
+    
 
-      // Draw settled fridge contents
+      // Draw food in slots — strictly clipped to slot bounds so neighbouring items never overlap
       for (let i = 0; i < a5FoodPlacements.length; i++) {
         const fp = a5FoodPlacements[i];
         if (!fp.food) continue;
-        const shelf = Math.floor(i / slotsPerShelf);
-        const slotCol = i % slotsPerShelf;
-        if (shelf > 1) break;
-        const ix = fx + 1 + slotCol * slotW + Math.floor((slotW - 7) / 2);
-        const shelfBot = shelf === 0 ? fy + 8 : fy + 14;
+        const { left, right, shelfBot } = slotBounds(i);
         const artH = fp.food.a.length;
+        const slotInteriorW = right - left; // cells available for art (interior of slot)
+        // Find widest row of this art
+        let widestRow = 0;
+        for (const row of fp.food.a) widestRow = Math.max(widestRow, row.length);
+        // Effective draw width = min(art width, slot interior). Anything wider gets truncated per-row.
+        const effW = Math.min(widestRow, slotInteriorW);
+        const ix = left + Math.max(0, Math.floor((slotInteriorW - effW) / 2));
         const iy = shelfBot - artH + 1;
+
+        // Clear strictly inside slot bounds before drawing
+        for (let cy = iy; cy < iy + artH; cy++) {
+          for (let cx = left; cx < right; cx++) {
+            if (cx >= 0 && cx < W && cy >= 0 && cy < H) grid.set(cx, cy, " ", null);
+          }
+        }
+
         const age = performance.now() - fp.placedAt;
-        const col = age < 80 ? "#fff" : fp.col;
+        const col = age < 150 ? "#fff" : fp.col;
         for (let r = 0; r < artH; r++) {
-          const line = fp.food.a[r].substring(0, slotW - 1);
+          // Truncate this row to fit inside the slot — never spills past `right - 1`
+          const maxW = Math.max(0, right - ix);
+          if (maxW <= 0) continue;
+          const line = fp.food.a[r].substring(0, maxW);
           grid.text(line, ix, iy + r, col);
         }
       }
 
-      // Draw ground overflow pile
-      for (const gp of a5GroundPile) {
-        const age = performance.now() - gp.placedAt;
-        const col = age < 80 ? "#fff" : gp.col;
-        const artH = gp.food.a.length;
-        for (let r = 0; r < artH; r++) {
-          const line = gp.food.a[r];
-          grid.text(line, Math.round(gp.x), Math.round(gp.y) - artH + 1 + r, col);
-        }
-      }
-
-      // Draw flying items (last so they're on top)
+      // Flying items on top — clip to fridge interior so they don't poke out the sides while flying
       for (const fi of a5FlyingItems) {
         const artH = fi.food.a.length;
+        const drawX = Math.round(fi.x);
         for (let r = 0; r < artH; r++) {
-          const line = fi.food.a[r];
-          grid.text(line, Math.round(fi.x), Math.round(fi.y) + r, fi.col);
+          // Clip rightmost overhang based on fridge frame's right wall
+          const maxW = Math.max(0, frameRight - drawX);
+          if (maxW <= 0) continue;
+          grid.text(fi.food.a[r].substring(0, maxW), drawX, Math.round(fi.y) + r, fi.col);
         }
       }
 
-      // Big counter — scales with total placed, cleanly readable above fridge
+      // Counter — above the fridge
       if (a5FoodTotalPlaced > 0) {
         const counterTxt = "+" + a5FoodTotalPlaced + window.LANG.foodCounterSuffix;
-        const cx = fx + Math.floor(fridgeW / 2) - Math.floor(counterTxt.length / 2);
-        const cy = Math.max(1, fy - 2);
+        const cx = Math.floor((frameLeft + frameRight) / 2) - Math.floor(counterTxt.length / 2);
+        const cy = Math.max(1, (isDesktop ? frameTop - 4 : fy - 2));
         const flashCol = a5T - a5LastCounterFlash < 150 ? "#fff" : C_TEAL;
         grid.text(counterTxt, cx, cy, flashCol);
         if (a5FoodTotalPlaced !== a5LastCounterValue) {

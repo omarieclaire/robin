@@ -637,13 +637,17 @@ function renderForTag(tag,kind){
   renderTree(result.hello);
 }
 
-function setKind(k){curKind=k;document.getElementById("npcSel").value=k;renderForTag(allTags[curIdx],k);}
-
+function setKind(k){
+  curKind=k;
+  document.getElementById("npcSel").value=k;
+  try{localStorage.setItem("tw_kind",k);}catch(e){}
+  renderForTag(allTags[curIdx],k);
+}
 function goTo(idx){
   curIdx=idx;const tag=allTags[idx];
   if(!helloHasTag(curKind,tag)){curKind=bestKind(tag);document.getElementById("npcSel").value=curKind;}
   document.getElementById("tagSel").value=tag;
-  try{localStorage.setItem("tw_tag",tag);}catch(e){}
+try{localStorage.setItem("tw_tag",tag);localStorage.setItem("tw_kind",curKind);}catch(e){}
   renderForTag(tag,curKind);
 }
 function nextTag(){if(allTags.length)goTo((curIdx+1)%allTags.length);}
@@ -822,11 +826,16 @@ function boot(){
       else if(e.key==="ArrowLeft"){prevTag();e.preventDefault();}
       else if(e.key==="r"||e.key==="R"){randomTag();e.preventDefault();}
     });
+   
     const savedTag=(()=>{try{return localStorage.getItem("tw_tag");}catch(e){return null;}})();
-    const savedIdx=savedTag?allTags.indexOf(savedTag):-1;
-    curKind=bestKind(allTags[savedIdx>=0?savedIdx:0]);
-    document.getElementById("npcSel").value=curKind;
-    goTo(savedIdx>=0?savedIdx:0);
+const savedKind=(()=>{try{return localStorage.getItem("tw_kind");}catch(e){return null;}})();
+const savedIdx=savedTag?allTags.indexOf(savedTag):-1;
+const startIdx=savedIdx>=0?savedIdx:0;
+const startTag=allTags[startIdx];
+curKind=(savedKind&&["angry","hungry","narc"].includes(savedKind)&&helloHasTag(savedKind,startTag))
+  ?savedKind:bestKind(startTag);
+document.getElementById("npcSel").value=curKind;
+goTo(startIdx);
   }catch(err){
     const b=document.getElementById("error-box");b.style.display="block";
     b.textContent="error: "+err.message+"\n"+(err.stack||"");
