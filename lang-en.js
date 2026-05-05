@@ -19,8 +19,8 @@ window.LANG_EN = {
   bannerGoodCallNarc: "good call. that was a narc.",
   bannerExitOpen: "EXIT OPEN \u2014 BOTTOM RIGHT!",
   bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
-  bannerGrabEverything: "click and grab everything you can!",
-  bannerAvoidSecurity: "avoid security.",
+  bannerGrabEverything: "click to grab food!",
+  bannerAvoidSecurity: "avoid security",
   bannerFoodGloriousFood: "food glorious food.",
   bannerShareBounty: "share the bounty?",
   // bannerNarc: "\u26A0 NARC! \u26A0",
@@ -282,12 +282,12 @@ recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to 
 
   // Control hints — one pair per act. Each act has a desktop string (keyboard / mouse focus)
   // and a mobile string (touch focus). The renderer picks based on Device.isMobile.
-  controlsAct2:        "use ← ↑ → ↓ to walk · stop next to someone to talk",
-  controlsAct2Mobile:  "drag to walk · stop next to someone to talk",
-  controlsAct2b:       "use ← ↑ → ↓ to push through the crowd",
-  controlsAct2bMobile: "drag to push through the crowd",
-  controlsAct4:        "use ← ↑ → ↓ to walk · click food to grab it",
-  controlsAct4Mobile:  "drag to walk · tap food to grab it",
+controlsAct2:        "use arrow keys to walk · stop next to someone to talk",
+controlsAct2Mobile:  "drag to walk · stop next to someone to talk",
+controlsAct2b:       "use arrow keys to run around",
+controlsAct2bMobile: "drag to run around",
+controlsAct4:        "use arrow keys · grab food when you see it",
+controlsAct4Mobile:  "drag to walk · tap food to grab it",
   hintLabel: "controls",
 
 
@@ -318,7 +318,7 @@ recruitProgress1: "{ord} down — {rem} to go",  recruitProgressRemaining: " to 
     { amount: "+$20.00", quip: "fake. invitation to church on the back." },
   ],
 
-  bannerEscaped: "ESCAPED!",
+  bannerEscaped: "ESCAPE!",
   bannerBackToHood: "back to the neighbourhood.",
 
   bannerWeLostThem: "we lost them!",

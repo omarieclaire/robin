@@ -1172,17 +1172,23 @@
         audio.play("hint", { volume: 0.3 });
       }
       // Word-wrap the hint
-      const innerW = Math.min(W - 10, 36);
-      const words = interControlsHint.split(" ");
+     
+      // Word-wrap the hint — split on · into phrases, blank line between each
+      const innerW = Math.min(W - 10, 32);
+      const phrases = interControlsHint.split(" · ");
       const hintLines = [];
-      let cur = "";
-      for (const w of words) {
-        if (cur.length + w.length + 1 > innerW) {
-          hintLines.push(cur);
-          cur = w;
-        } else cur = cur ? cur + " " + w : w;
+      for (let pi = 0; pi < phrases.length; pi++) {
+        const words = phrases[pi].split(" ");
+        let cur = "";
+        for (const w of words) {
+          if (cur.length + w.length + 1 > innerW) {
+            hintLines.push(cur);
+            cur = w;
+          } else cur = cur ? cur + " " + w : w;
+        }
+        if (cur) hintLines.push(cur);
+        if (pi < phrases.length - 1) hintLines.push(""); // blank line between phrases
       }
-      if (cur) hintLines.push(cur);
 
       // Render as a bordered card — distinct from banner (double-line) and dialog (round corners).
       // Single-line square corners says "instructions" / "system message".
@@ -1200,25 +1206,48 @@
       // Clear background
       for (let y = by; y < by + boxH && y < H; y++) for (let x = bx; x < bx + boxW && x < W; x++) if (x >= 0) grid.set(x, y, " ", null);
 
-      // Top border with embedded label: ┌─ controls ─────┐
-      const topLeft = "\u250C\u2500 ";
-      const topAfter = " \u2500";
-      const fillLen = boxW - topLeft.length - hintLabel.length - topAfter.length - 1;
-      const topRow = topLeft + hintLabel + topAfter + "\u2500".repeat(Math.max(0, fillLen)) + "\u2510";
-      grid.text(topRow.substring(0, boxW), bx, by, borderCol);
-      // Re-color just the label bright
-      grid.text(hintLabel, bx + topLeft.length, by, labelCol);
+      // // Top border with embedded label: ┌─ controls ─────┐
+      // const topLeft = "\u250C\u2500 ";
+      // const topAfter = " \u2500";
+      // const fillLen = boxW - topLeft.length - hintLabel.length - topAfter.length - 1;
+      // const topRow = topLeft + hintLabel + topAfter + "\u2500".repeat(Math.max(0, fillLen)) + "\u2510";
+      // grid.text(topRow.substring(0, boxW), bx, by, borderCol);
+      // // Re-color just the label bright
+      // grid.text(hintLabel, bx + topLeft.length, by, labelCol);
 
-      // Sides + content
+ 
+      const KEY_COL  = "#dde4f0"; // arrows — slightly brighter
+      const TEXT_COL = "#ffef7a";    // everything else — calm, understated
+      const KEY_TOKENS = new Set(["←", "↑", "→", "↓"]);
+
+      function tokenColor(word) {
+        if (KEY_TOKENS.has(word)) return KEY_COL;
+        return TEXT_COL;
+      }
+
       for (let i = 0; i < hintLines.length; i++) {
         const ly = by + 2 + i;
-        grid.text("\u2502" + " ".repeat(boxW - 2) + "\u2502", bx, ly, borderCol);
-        const pad = Math.floor((boxW - 2 - hintLines[i].length) / 2);
-        grid.text(hintLines[i], bx + 1 + pad, ly, hintCol);
+        // grid.text("│" + " ".repeat(boxW - 2) + "│", bx, ly, borderCol);
+        if (hintLines[i] === "") {
+          continue;
+        }
+        const pad = Math.floor((boxW - hintLines[i].length) / 2);
+        let cx = bx + pad;
+        const parts = hintLines[i].split(" ");
+        for (let j = 0; j < parts.length; j++) {
+          const word = parts[j];
+          const col = tokenColor(word);
+          grid.text(word, cx, ly, col);
+          cx += word.length;
+          if (j < parts.length - 1) {
+            grid.text(" ", cx, ly, TEXT_COL);
+            cx += 1;
+          }
+        }
       }
 
       // Bottom border
-      grid.text("\u2514" + "\u2500".repeat(boxW - 2) + "\u2518", bx, by + boxH - 1, borderCol);
+      // grid.text("\u2514" + "\u2500".repeat(boxW - 2) + "\u2518", bx, by + boxH - 1, borderCol);
 
       if (interT > 10000) {
         renderTapPrompt(window.LANG.tapToContinue, by + boxH + 2, "#fff", C_PLAYER);
@@ -2730,7 +2759,7 @@
         if (r < 0.25) {
           tp = "narc";
           tl = 0;
-        } else if (r < 0.42) {
+        } else if (r < 0.32) {
           tp = "cat";
           tl = 0;
         } else if (r < 0.48) {
