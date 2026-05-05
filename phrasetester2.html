@@ -44,6 +44,8 @@ button{background:var(--ink);border:1px solid var(--ink);color:#fff;
 button:hover{background:#2d3548;}
 button.sec{background:var(--bg-card);border:1px solid var(--rule);color:var(--ink);}
 button.sec:hover{background:var(--bg-soft);border-color:var(--ink-ghost);}
+button.export-btn{background:var(--teal-bg);border:1px solid var(--teal-line);color:var(--teal);}
+button.export-btn:hover{background:var(--teal-line);}
 
 .legend{font-size:10px;color:var(--ink-soft);display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
 .legend span{display:inline-flex;align-items:center;}
@@ -141,6 +143,7 @@ button.sec:hover{background:var(--bg-soft);border-color:var(--ink-ghost);}
     <div class="ctrl"><label>&nbsp;</label><button class="sec" onclick="prevTag()">◀ prev</button></div>
     <div class="ctrl"><label>&nbsp;</label><button class="sec" onclick="nextTag()">next ▶</button></div>
     <div class="ctrl"><label>&nbsp;</label><button class="sec" id="walkBtn" onclick="walkAllTags()">▶▶ walk all</button></div>
+    <div class="ctrl"><label>&nbsp;</label><button class="export-btn" onclick="exportCurrentTagTXT()">⬇ export txt</button></div>
   </div>
   <div class="legend">
     <span><span class="sw" style="background:#cce5d8"></span>match</span>
@@ -203,19 +206,13 @@ const getDeck=n=>getDM()[n]||null;
 
 /* ── prefix pool enumeration ── */
 function flattenPrefixPool(npcKind,helloVibes){
-  // Returns flat array of { tone, text, vibes, matched } for ALL tones,
-  // filtered to entries whose vibes overlap with helloVibes.
-  // matched = true means the entry would be eligible at runtime.
   if(typeof HELLO_PREFIX==="undefined")return[];
   const out=[];
   for(const tone of ["casual","concerned","direct"]){
     const pool=HELLO_PREFIX[tone]?.[npcKind];
     if(!pool?.length)continue;
-    // Normalize entries (string OR {t,vibes})
     const norm=pool.map(p=>typeof p==="string"?{t:p,vibes:[]}:p);
-    // Eligible: untagged OR vibe overlap
     const eligible=norm.filter(p=>p.vibes.length===0||p.vibes.some(v=>(helloVibes||[]).includes(v)));
-    // If filter rejected everything, fall back to full pool (matches runtime)
     const finalPool=eligible.length?eligible:norm;
     const isFallback=eligible.length===0&&norm.length>0;
     for(const e of finalPool){
@@ -323,23 +320,13 @@ function buildSayMore(deckName,inputTags,npcKind){
   return smN;
 }
 
-/* ── LAYOUT ─────────────────────────────────────────────────────────────
-   Strategy:
-   1. Walk tree, assign each node a depth (row) and a preferred cx
-      (center-x) = same as parent's cx initially.
-   2. Collect all nodes into rows.
-   3. For each row left→right, nudge nodes apart if they overlap.
-      When a node is nudged, shift its entire subtree with it.
-   4. After all positions settled, render cards and draw SVG lines.
-────────────────────────────────────────────────────────────────────── */
-
-const CW=300;   // card width
-const HPAD=24;  // min horizontal gap between cards
-const VGAP=88;  // vertical gap between rows (connector space)
+/* ── LAYOUT ── */
+const CW=300;
+const HPAD=24;
+const VGAP=88;
 
 function buildLayout(root){
-  // Flatten tree into items with depth + preferred cx
-  const rows=[];   // rows[depth] = array of items
+  const rows=[];
   const items=[];
 
   function walk(node,depth,preferredCx,parentItem,lbl){
@@ -349,28 +336,22 @@ function buildLayout(root){
     items.push(item);
     if(parentItem)parentItem.children.push(item);
 
-    // Preferred cx for children: spread evenly around this node's cx
     const ch=node.children||[];
     if(!ch.length)return;
     const n=ch.length;
-    // Space children evenly: total span = n*(CW+HPAD) - HPAD
     const totalSpan=(CW+HPAD)*n - HPAD;
     const startCx=preferredCx - totalSpan/2 + CW/2;
     ch.forEach((c,i)=>walk(c.node,depth+1,startCx+i*(CW+HPAD),item,c.lbl));
   }
 
-  // Root starts centered; we'll shift everything after layout
   walk(root,0,0,null,"");
 
-  // For each row, sort by cx, then nudge overlapping nodes rightward,
-  // carrying their subtrees with them.
   function subtreeItems(item){
     const out=[item];
     for(const c of item.children)out.push(...subtreeItems(c));
     return out;
   }
 
-  // Pass 1: nudge overlapping siblings rightward (carrying subtrees)
   for(const row of rows){
     if(!row)continue;
     row.sort((a,b)=>a.cx-b.cx);
@@ -385,8 +366,6 @@ function buildLayout(root){
     }
   }
 
-  // Pass 2: ensure nothing goes left of a small margin (8px).
-  // Process rows in depth order so parent shifts propagate before children.
   const depthOrder=[...rows.keys()].filter(d=>rows[d]);
   for(const d of depthOrder){
     const row=rows[d];
@@ -433,7 +412,6 @@ function cardHTML(node,id){
   }else if(!card){
     inner+=`<div class="ctext" id="${id}-t">(unavailable)</div>`;
   }else if(node.isHello){
-    // Hello card with combined prefix + hello text + prefix carousel
     inner+=`<div class="ctext" id="${id}-t">${cardContent(card,node)}</div>`;
   }else{
     inner+=`<div class="ctext" id="${id}-t">${cardContent(card,node)}</div>`;
@@ -441,7 +419,7 @@ function cardHTML(node,id){
 
   if(node.outcome)inner+=`<div class="outcome ${node.outcome}">${esc(olabel(node.outcome))}</div>`;
 
-if(!node.silent){
+  if(!node.silent){
     const tags=card?tagsOf(card):[];
     let tc="",ts;
     if(node.mode==="untagged")ts="(untagged)";
@@ -456,7 +434,6 @@ if(!node.silent){
       <span class="ctags ${tc}" id="${id}-g" title="${esc(ts)}">${esc(ts)}</span>
     </div>`;
 
-    // Prefix carousel — only on hello cards
     if(node.isHello && card){
       const helloVibes=tagsOf(card);
       const ppool=flattenPrefixPool(node.npcKind,helloVibes);
@@ -478,7 +455,6 @@ if(!node.silent){
 function cardContent(card,node,prefixIdx){
   if(!card)return"";
   let h="";
-  // Hello cards prepend the currently-selected prefix
   if(node.isHello){
     const helloVibes=tagsOf(card);
     const ppool=flattenPrefixPool(node.npcKind,helloVibes);
@@ -505,7 +481,6 @@ function cycleN(id,dir){
   const e=nodeReg.get(id);if(!e)return;
   const tot=e.node.pool?.length||0;if(tot<=1)return;
   e.idx=(e.idx+dir+tot)%tot;
-  // Reset prefix carousel when hello cycles
   if(e.node.isHello)e.prefixIdx=0;
   const card=e.node.pool[e.idx];
   const t=document.getElementById(id+"-t");
@@ -514,7 +489,6 @@ function cycleN(id,dir){
   if(t)t.innerHTML=cardContent(card,e.node,e.prefixIdx??0);
   if(p)p.textContent=(e.idx+1)+" / "+tot;
   if(g&&e.node.mode==="tagged"){const tags=tagsOf(card);const s=tags.length?"["+tags.join(", ")+"]":"(no tags)";g.textContent=s;g.title=s;}
-  // Refresh prefix carousel UI (pool changed with new hello)
   if(e.node.isHello)refreshPrefixCarousel(id);
 }
 
@@ -525,7 +499,6 @@ function cyclePrefix(id,dir){
   const ppool=flattenPrefixPool(e.node.npcKind,helloVibes);
   if(ppool.length<=1)return;
   e.prefixIdx=((e.prefixIdx??0)+dir+ppool.length)%ppool.length;
-  // Refresh hello text (prefix is part of it)
   const t=document.getElementById(id+"-t");
   if(t)t.innerHTML=cardContent(card,e.node,e.prefixIdx);
   refreshPrefixCarousel(id);
@@ -553,7 +526,6 @@ function renderTree(root){
 
   const{items,rows}=buildLayout(root);
 
-  // Inject cards (off-screen for measurement)
   for(const item of items){
     const id="n"+(idCounter++);
     item.id=id;
@@ -564,12 +536,9 @@ function renderTree(root){
     area.appendChild(item.el);
   }
 
-  // Measure heights, position cards
   requestAnimationFrame(()=>{
-    // Row heights
     const rowH=rows.map(row=>row?Math.max(...row.map(i=>i.el?.offsetHeight||100)):0);
 
-    // Cumulative y per row
     const rowY=[];
     let y=0;
     for(let d=0;d<rows.length;d++){
@@ -577,7 +546,6 @@ function renderTree(root){
       y+=rowH[d]+VGAP;
     }
 
-    // Position each card
     for(const item of items){
       const cardLeft=item.cx-CW/2;
       item.el.style.left=cardLeft+"px";
@@ -587,7 +555,6 @@ function renderTree(root){
       item.cardBot=rowY[item.depth]+(item.el.offsetHeight||100);
     }
 
-    // Size the area
     const totalW=Math.max(...items.map(i=>i.cx+CW/2))+20;
     const totalH=y+20;
     area.style.width=totalW+"px";
@@ -596,7 +563,6 @@ function renderTree(root){
     svg.style.height=totalH+"px";
     svg.setAttribute("viewBox",`0 0 ${totalW} ${totalH}`);
 
-    // Draw connectors
     const STROKE="#d4d8de";
     let s="";
 
@@ -609,22 +575,17 @@ function renderTree(root){
         const ch=item.children[0];
         const cx=f(ch.cardCx);
         const cy=f(ch.cardTop);
-        // elbow: go 60% of the way down, turn, then finish
         const my=f(item.cardBot+(ch.cardTop-item.cardBot)*0.6);
         s+=`<path d="M${px},${py} V${my} H${cx} V${cy}" fill="none" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`;
         const lbl=(ch.lbl||"").toUpperCase();
         if(lbl){
-          // label sits just above the horizontal elbow turn
           s+=`<text x="${cx}" y="${f(parseFloat(my)-7)}" text-anchor="middle" font-size="11" font-family="system-ui,sans-serif" fill="#8792a2" letter-spacing="0.8">${esc(lbl)}</text>`;
         }
       }else{
-        // Long stem: go 65% of the gap, place junction there
         const jy=f(item.cardBot+(VGAP)*0.65);
         s+=`<line x1="${px}" y1="${py}" x2="${px}" y2="${jy}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
-        // horizontal bar spanning all children
         const xs=item.children.map(c=>f(c.cardCx));
         s+=`<line x1="${Math.min(...xs)}" y1="${jy}" x2="${Math.max(...xs)}" y2="${jy}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
-        // short drop to each child + label just above the junction
         for(const ch of item.children){
           const cx=f(ch.cardCx);
           s+=`<line x1="${cx}" y1="${jy}" x2="${cx}" y2="${f(ch.cardTop)}" stroke="${STROKE}" stroke-width="1.3" stroke-linecap="round"/>`;
@@ -682,6 +643,7 @@ function goTo(idx){
   curIdx=idx;const tag=allTags[idx];
   if(!helloHasTag(curKind,tag)){curKind=bestKind(tag);document.getElementById("npcSel").value=curKind;}
   document.getElementById("tagSel").value=tag;
+  try{localStorage.setItem("tw_tag",tag);}catch(e){}
   renderForTag(tag,curKind);
 }
 function nextTag(){if(allTags.length)goTo((curIdx+1)%allTags.length);}
@@ -695,6 +657,153 @@ function walkAllTags(){
   btn.textContent="■ stop";
   walkH=setInterval(()=>{nextTag();if(curIdx===0){clearInterval(walkH);walkH=null;btn.textContent="▶▶ walk all";}},3000);
   nextTag();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EXPORT — enumerate all root-to-leaf paths, format as readable
+   dialogue transcript, download as .txt
+════════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns an array of paths, where each path is an array of
+ * { node, inLabel } objects from root to leaf.
+ */
+function enumeratePaths(root){
+  const paths=[];
+  function walk(node,inLabel,steps){
+    const newSteps=[...steps,{node,inLabel}];
+    if(!node.children||node.children.length===0){paths.push(newSteps);return;}
+    for(const child of node.children)walk(child.node,child.lbl||"",newSteps);
+  }
+  walk(root,"",[]); return paths;
+}
+
+/** Plain text of a card (no HTML). Prepends prefix for hello nodes. */
+function plainCardText(card,node){
+  if(!card)return"(unavailable)";
+  let t="";
+  if(node.isHello){
+    const helloVibes=tagsOf(card);
+    const ppool=flattenPrefixPool(node.npcKind,helloVibes);
+    if(ppool.length) t+=ppool[0].text+" ";
+  }
+  t+=textOf(card).replace(/\|pause\|/g,"…");
+  return t;
+}
+
+/** Word-wrap a string to maxWidth, indenting continuation lines. */
+function wrapText(text,maxWidth,hangIndent){
+  const words=text.split(/\s+/).filter(Boolean);
+  const lines=[];let line="";
+  for(const w of words){
+    if(line&&line.length+1+w.length>maxWidth){lines.push(line);line=hangIndent+w;}
+    else{line=line?line+" "+w:w;}
+  }
+  if(line)lines.push(line);
+  return lines.join("\n");
+}
+
+/** Format one path (array of {node,inLabel}) as a readable script block. */
+function formatOnePath(steps,pathIdx,totalPaths){
+  const BAR="═".repeat(64);
+  const lines=[];
+
+  // Path header: collect non-empty edge labels
+  const edgeLabels=steps.map(s=>s.inLabel).filter(Boolean);
+  const pathDesc=edgeLabels.length?edgeLabels.join(" → "):"direct";
+  const lastNode=steps[steps.length-1].node;
+  const outcomeSuffix=lastNode.outcome?`  [${olabel(lastNode.outcome).toUpperCase()}]`:"";
+
+  lines.push(BAR);
+  lines.push(`PATH ${pathIdx+1} / ${totalPaths}:  ${pathDesc}${outcomeSuffix}`);
+  lines.push(BAR);
+  lines.push("");
+
+  for(const{node}of steps){
+    // Silent terminal (player walked away late — no NPC reply)
+    if(node.silent){
+      lines.push("  ( NPC does not reply — floats away )");
+      lines.push("");
+      continue;
+    }
+
+    const card=node.pool?.[0];
+
+    // Nodes with no speaker (shouldn't happen but guard anyway)
+    if(!node.speaker){
+      if(node.outcome)lines.push(`  ▸ ${olabel(node.outcome).toUpperCase()}`);
+      lines.push("");
+      continue;
+    }
+
+    const spkLabel=node.speaker==="npc"?"NPC   ":"PLAYER";
+    const indent=" ".repeat(spkLabel.length+2);  // "NPC   : " = 8 chars
+    const rawText=card?plainCardText(card,node):"(no card — unavailable)";
+    const wrapped=wrapText(rawText,70,indent);
+
+    lines.push(`${spkLabel}: ${wrapped}`);
+
+    // Follow-up consent line attached to some terminal nodes
+    if(node.followPool?.length){
+      const followText=textOf(node.followPool[0]).replace(/\|pause\|/g,"…");
+      const wrappedFollow=wrapText(followText,68,indent+"  ");
+      lines.push(`${indent}[ ${wrappedFollow} ]`);
+    }
+
+    if(node.outcome){
+      lines.push("");
+      lines.push(`  ▸ ${olabel(node.outcome).toUpperCase()}`);
+    }
+
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+/** Main export entry point — called by the button. */
+function exportCurrentTagTXT(){
+  const tag=allTags[curIdx];
+  const kind=curKind;
+
+  const result=buildTree(tag,kind);
+  if(!result.available){
+    alert(`No ${kind} hello has tag "${tag}" — nothing to export.`);
+    return;
+  }
+
+  const paths=enumeratePaths(result.hello);
+  const now=new Date().toLocaleString("en-CA",{hour12:false}).replace(",","");
+
+  const headerLines=[
+    "TAG WALKER — DIALOGUE EXPORT",
+    "═".repeat(64),
+    `Tag:      ${tag}`,
+    `NPC kind: ${kind}`,
+    `Exported: ${now}`,
+    `Paths:    ${paths.length}`,
+    "═".repeat(64),
+    "",
+    "Each PATH block shows one complete conversation from greeting",
+    "to outcome. Cards shown are the first tagged match for this tag.",
+    "(NPC prefix shown is the first eligible prefix for that hello.)",
+    "",
+    "",
+  ];
+
+  const blocks=paths.map((steps,i)=>formatOnePath(steps,i,paths.length));
+  const full=headerLines.join("\n")+blocks.join("\n\n");
+
+  const blob=new Blob([full],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`dialogue-${tag}-${kind}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  navigator.clipboard?.writeText(full).catch(()=>{});
 }
 
 function boot(){
@@ -713,9 +822,11 @@ function boot(){
       else if(e.key==="ArrowLeft"){prevTag();e.preventDefault();}
       else if(e.key==="r"||e.key==="R"){randomTag();e.preventDefault();}
     });
-    curKind=bestKind(allTags[0]);
+    const savedTag=(()=>{try{return localStorage.getItem("tw_tag");}catch(e){return null;}})();
+    const savedIdx=savedTag?allTags.indexOf(savedTag):-1;
+    curKind=bestKind(allTags[savedIdx>=0?savedIdx:0]);
     document.getElementById("npcSel").value=curKind;
-    goTo(0);
+    goTo(savedIdx>=0?savedIdx:0);
   }catch(err){
     const b=document.getElementById("error-box");b.style.display="block";
     b.textContent="error: "+err.message+"\n"+(err.stack||"");
@@ -726,4 +837,4 @@ if(document.readyState==="complete"||document.readyState==="interactive")setTime
 else document.addEventListener("DOMContentLoaded",boot);
 </script>
 </body>
-</html>
+</html> 

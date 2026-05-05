@@ -402,7 +402,7 @@ const DECK_HUNGRY_PITCH = new DM.Deck([
   { t: "we've all been there.", tags: ["dep"] },
   { t: "well at least that crosses entertainment off the budget list.", tags: ["spaghetti"] },
   { t: "you can't save a banana. the banana has its own timeline.", tags: ["banana"] },
-  { t: "huh. well, you might be surprised at how much you can control\n especially when you are desperate", tags: ["therapy"] },
+  { t: "huh. well, you might be surprised at how much you can control\n\n especially when you're desperate", tags: ["therapy"] },
   { t: "potato haul. this is what it's come to.", tags: ["potato"] },
   { t: "it's good to feed the squirrels but you need to eat too.", tags: ["garden"] },
   { t: "sober? oh no.", tags: ["chow-mein"] },
@@ -981,7 +981,7 @@ const D_INVITE = [
 
 const D_BACK_OFF_EARLY = new DM.Deck([
   { t: "sure I can't be here.", tags: ["treat"] },
-  { t: "tell me how you really feel? \n wait, actually don't", tags: ["therapy"] },
+  { t: "tell me how you really feel?\n\nwait, actually don't", tags: ["therapy"] },
   { t: "what you felt was recognition. what he felt was pity.", tags: ["racoon"] },
   { t: "what are you even talking about?", tags: ["invisible-hand"] },
   { t: "I'm not a numbers person this is boring.", tags: ["dynamic-pricing"] },
