@@ -1610,8 +1610,16 @@
         const kind = !P.npcType || P.npcType === "narc" ? "narc" : P.npcType;
         const prefixDN = `PREFIX_${tone}_${kind}`;
         const prefixArr = D[prefixDN] || [];
+        // Normalize prefix entries to {t, tags} for the editor.
+        // Source data uses `vibes` (game-data-words.js); editor reads `tags`.
+        // We migrate vibes → tags in-place. On export we'll write back to vibes.
         prefixArr.forEach((p, i) => {
           if (typeof p === "string") prefixArr[i] = { t: p, tags: [] };
+          else if (p.vibes && !p.tags) {
+            prefixArr[i] = { t: p.t, tags: [...p.vibes] };
+          } else if (!p.tags) {
+            prefixArr[i] = { t: p.t, tags: [] };
+          }
         });
         cols.push({
           id: "prefix",
@@ -2642,7 +2650,18 @@ const smSkep = scoreAndSort(
           const tone = P.tone || "casual";
           const kind = P.npcType === "narc" ? "narc" : P.npcType || "hungry";
           const prefixPool = D[`PREFIX_${tone}_${kind}`] || [];
-          const prefixText = prefixPool.length ? (prefixPool[0].t || prefixPool[0]) + " — " : "";
+          // Pick a vibe-matching prefix the same way the runtime would.
+          let prefixText = "";
+          if (prefixPool.length) {
+            const norm = prefixPool.map(p => typeof p === "string" ? { t: p, tags: [] } : p);
+            const helloVibesArr = helloTags || [];
+            const eligible = norm.filter(p =>
+              !p.tags || p.tags.length === 0 ||
+              p.tags.some(v => helloVibesArr.includes(v))
+            );
+            const pick = (eligible.length ? eligible : norm)[0];
+            if (pick) prefixText = (pick.t || pick) + " — ";
+          }
           body.appendChild(spLine("npc", prefixText + helloText, "", helloTags, prevTags));
           prevTags = helloTags;
         }
@@ -3378,9 +3397,12 @@ const smSkep = scoreAndSort(
       }
 
       // format a single item as a JS object literal line (mirrors the full-export format)
-      function _itemLine(x) {
+      // If `deckName` starts with PREFIX_, the tag field is named `vibes` (source format).
+      function _itemLine(x, deckName) {
         if (x == null) return "null";
-        const ts = (tags) => (tags && tags.length ? `, tags: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, tags: []`);
+        const isPrefix = (deckName || "").startsWith("PREFIX_");
+        const tagField = isPrefix ? "vibes" : "tags";
+        const ts = (tags) => (tags && tags.length ? `, ${tagField}: [${tags.map((t) => `"${t}"`).join(", ")}]` : `, ${tagField}: []`);
         const fs = (f) => (f ? `, follows: "${f}"` : "");
         if (typeof x === "string") return JSON.stringify(x);
         const t = x.t || "";
@@ -3414,7 +3436,14 @@ const smSkep = scoreAndSort(
           out += `  ${tone}: {\n`;
           ["angry", "hungry", "narc"].forEach((k) => {
             const arr = D[`PREFIX_${tone}_${k}`];
-            out += `    ${k}: [${arr.map((x) => JSON.stringify(x.t || x)).join(", ")}],\n`;
+            out += `    ${k}: [\n`;
+            arr.forEach((x) => {
+              const txt = typeof x === "string" ? x : x.t;
+              const vibes = (typeof x === "object" && x.tags) ? x.tags : [];
+              const vibesStr = vibes.length ? `, vibes: [${vibes.map(v => JSON.stringify(v)).join(", ")}]` : `, vibes: []`;
+              out += `      { t: ${JSON.stringify(txt)}${vibesStr} },\n`;
+            });
+            out += `    ],\n`;
           });
           out += `  },\n`;
         });
@@ -3494,12 +3523,12 @@ const smSkep = scoreAndSort(
           entries.forEach((e) => {
             if (e.kind === "changed") {
               out += `  // idx ${e.idx} — CHANGED\n`;
-              out += `  // OLD: ${_itemLine(e.before)},\n`;
-              out += `  ${_itemLine(e.after)},  // NEW\n`;
+              out += `  // OLD: ${_itemLine(e.before, dn)},\n`;
+              out += `  ${_itemLine(e.after, dn)},  // NEW\n`;
             } else if (e.kind === "added") {
-              out += `  ${_itemLine(e.item)},  // ADDED at idx ${e.idx}\n`;
+              out += `  ${_itemLine(e.item, dn)},  // ADDED at idx ${e.idx}\n`;
             } else if (e.kind === "removed") {
-              out += `  // REMOVED at idx ${e.idx}: ${_itemLine(e.item)},\n`;
+              out += `  // REMOVED at idx ${e.idx}: ${_itemLine(e.item, dn)},\n`;
             }
           });
 

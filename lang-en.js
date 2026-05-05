@@ -90,8 +90,8 @@ window.LANG_EN = {
           ],
           hold: 3000, // setup — quick into the joke
         },
-        { who: "n", text: "idk\n but I have an app for coupons\n\n", hold: 4500 }, // mini- give it a beat
-        { who: "n", text: "and I have another app \n|pause|that helps me buy rotting food", hold: 5500 }, // punch — let it land
+        { who: "n", text: "idk\n but I have an app for coupons", hold: 4500 }, // mini- give it a beat
+        { who: "n", text: "\n\nand I have another app \n|pause|that helps me buy rotting food", hold: 5500 }, // punch — let it land
         {
           who: "p",
           texts: ["um,|pause|ok", "what are you even SAYING?", "what are you talking about, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"],

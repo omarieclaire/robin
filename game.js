@@ -1249,13 +1249,31 @@ function convReset() {
   function convAddLine(text, side, color) {
     // Treat \n and \n\n as implicit pause markers, same as |pause|.
     // Preserve them in the output by inserting a sentinel that survives the trim.
+    // Chunks that come from a \n boundary are marked silent (pause but no sound).
     const normalized = text
       .replace(/\n\n/g, "|pause|__BREAK2__")
       .replace(/\n/g, "|pause|__BREAK1__");
-    const chunks = normalized
-      .split("|pause|")
-      .map((s) => s.trim())
-      .map((s) => s.replace(/^__BREAK2__/, "\n\n").replace(/^__BREAK1__/, "\n"));
+    const rawChunks = normalized.split("|pause|").map((s) => s.trim());
+    const restored = rawChunks.map((s) => s.replace(/^__BREAK2__/, "\n\n").replace(/^__BREAK1__/, "\n"));
+    // Fold any pure-newline chunks (just \n or \n\n with nothing else) onto the
+    // FRONT of the next chunk, so the line break appears together with the next
+    // text after the pause — not by itself before the pause. Trailing pure-break
+    // chunks get appended to the last real chunk so they still render.
+    const chunks = [];
+    let pendingPrefix = "";
+    for (let i = 0; i < restored.length; i++) {
+      const c = restored[i];
+      const isPureBreak = /^\n+$/.test(c) || c === "";
+      if (isPureBreak && i < restored.length - 1) {
+        pendingPrefix += c;
+        continue;
+      }
+      chunks.push(pendingPrefix + c);
+      pendingPrefix = "";
+    }
+    if (pendingPrefix && chunks.length > 0) {
+      chunks[chunks.length - 1] = chunks[chunks.length - 1] + pendingPrefix;
+    }
     if (chunks.length === 1) {
       audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
       const last = convLog[convLog.length - 1];
@@ -6312,9 +6330,9 @@ const targetY = lineY + row * 2; // rows stack downward; change to `lineY - row 
         [
           { t: window.LANG.bannerIsThisALife, c: "#9ab0cc", d: 2500 },
           { pause: true, d: 800 },
-          { t: window.LANG.bannerWhoIsInControl, c: "#9ab0cc", d: 3000 },
+          { t: window.LANG.bannerWhoIsInControl, c: "#7c94b2", d: 3000 },
           { pause: true, d: 1000 },
-          { t: window.LANG.bannerYouControlNothing || "(it sure isn't you)", c: "#9ab0cc", d: 4500 },
+          { t: window.LANG.bannerYouControlNothing || "(it sure isn't you)", c: "#7c8ca2", d: 4500 },
         ],
         true,
       );
