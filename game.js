@@ -2652,8 +2652,8 @@
   let a2WX, a2T, a2Ht, a2Spd;
   let a2Blocks, a2Roads, a2NPCs, a2Crew, a2Clouds;
   let a2NPCsSpawned;
-  let a2CatSpawned;       // has any cat NPC been generated yet
-  let a2CatRecruited;     // does the player already have a cat companion
+  let a2CatSpawned; // has any cat NPC been generated yet
+  let a2CatRecruited; // does the player already have a cat companion
   let a2PX, a2PY, a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
   let a2TN, a2TP, a2TT, a2TalkCD;
@@ -2760,10 +2760,8 @@
     // Force the very first NPC into the player's starting lane so they
     // actually meet the forced narc. Only matters on the first chunk
     // (when nothing has spawned yet).
-    const playerLane = (typeof a2PRu === "number") ? a2PRu : null;
-    const firstSpawnLane = (a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane)
-      ? playerLane
-      : null;
+    const playerLane = typeof a2PRu === "number" ? a2PRu : null;
+    const firstSpawnLane = a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane ? playerLane : null;
     const laneOrder = [];
     if (firstSpawnLane !== null) laneOrder.push(firstSpawnLane);
     for (let ri = mobileMinLane; ri < A2_NUM_LANES; ri++) {
@@ -2776,7 +2774,6 @@
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
 
-      
         // Spawn type balancing.
         // - 1st NPC ever: forced narc (teaches the threat)
         // - 2nd NPC ever: forced non-narc (lets player recruit + learn tone-matching)
@@ -2794,10 +2791,10 @@
           tl = 0;
         } else {
           const r = Math.random();
-          if (r < 0.30) {
+          if (r < 0.3) {
             tp = "narc";
             tl = 0;
-          } else if (r < 0.40) {
+          } else if (r < 0.4) {
             tp = "cat";
             tl = 0;
           } else if (r < 0.65) {
@@ -3623,40 +3620,40 @@
             a2TalkCD = 800;
             break;
           }
-   
+
           if (n.tp === "cat") {
-              n.cd = 9999;
-              audio.play("bump");
-              spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
-              convReset();
-              convAnchorPX = Math.round(a2PX);
-              convAnchorNX = Math.round(n.wx - a2WX);
-              convAnchorY = Math.round(a2PY);
-              convNPCColor = "#ee8833";
-              convVisible = true;
-              const catLine = Util.pick(window.LANG.catLines);
-              convAddLine(catLine.cat, "them", "#ee8833");
-              setTimeout(() => {
-                if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
-              }, 1800);
-              convResetLater(4500);
-              a2TalkCD = 4800;
-              // First cat you greet joins as a companion (doesn't count toward recruit goal).
-              if (!a2CatRecruited) {
-                a2CatRecruited = true;
-                n.st = "rec"; // hide the world cat — the trailing cat is now our companion
-                a2Crew.push({
-                  b: Math.random() * 6,
-                  ru: n.ru,
-                  art: n.art,
-                  col: n.col,
-                  isCat: true,
-                });
-                audio.play("recruit");
-                spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 8);
-              }
-              break;
+            n.cd = 9999;
+            audio.play("bump");
+            spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 4);
+            convReset();
+            convAnchorPX = Math.round(a2PX);
+            convAnchorNX = Math.round(n.wx - a2WX);
+            convAnchorY = Math.round(a2PY);
+            convNPCColor = "#ee8833";
+            convVisible = true;
+            const catLine = Util.pick(window.LANG.catLines);
+            convAddLine(catLine.cat, "them", "#ee8833");
+            setTimeout(() => {
+              if (convVisible) convAddLine(catLine.you, "you", C_PLAYER);
+            }, 1800);
+            convResetLater(4500);
+            a2TalkCD = 4800;
+            // First cat you greet joins as a companion (doesn't count toward recruit goal).
+            if (!a2CatRecruited) {
+              a2CatRecruited = true;
+              n.st = "rec"; // hide the world cat — the trailing cat is now our companion
+              a2Crew.push({
+                b: Math.random() * 6,
+                ru: n.ru,
+                art: n.art,
+                col: n.col,
+                isCat: true,
+              });
+              audio.play("recruit");
+              spark(Math.round(a2PX), Math.round(a2PY), "#ee8833", 8);
             }
+            break;
+          }
           // regular NPC conversation
           audio.play("bump");
           spark(Math.round(a2PX), Math.round(a2PY), C_DIM, 6);
@@ -4550,13 +4547,7 @@
     for (let ri = 0; ri < STORE.length; ri++) {
       const row = STORE[ri];
       const hasLetter = /[A-Za-z]/.test(row);
-      const rowCol = hasLetter
-        ? storeFlash
-          ? "#fff"
-          : C_ORANGE
-        : storeFlash
-          ? C_PLAYER
-          : "#a44";
+      const rowCol = hasLetter ? (storeFlash ? "#fff" : C_ORANGE) : storeFlash ? C_PLAYER : "#a44";
       for (let ci = 0; ci < row.length; ci++) {
         if (row[ci] === " ") continue;
         if (Device.isMobile && (ci < _treeOffset || ci >= _treeOffset + _rawStoreW)) {
@@ -4585,7 +4576,7 @@
     /* Robins on either side — use their preserved art + color */
     const maxSlots = Math.max(1, Math.ceil(rc / 2));
     const spacing = Math.max(2, Math.floor((W / 2 - 3) / maxSlots));
-    
+
     for (let i = 0; i < rc; i++) {
       if (!a3CrewOffsets[i]) continue;
       const rx = Math.round(a3CrewOffsets[i].cx);
@@ -4595,11 +4586,7 @@
       const isCat = a2Crew[i] && a2Crew[i].isCat;
       if (rx >= 0 && rx + 3 < W && baseTY + 3 < H) {
         // Cat sits still in line — no bob. Robins do a tiny bob.
-        const ry = a3Entering
-          ? Math.round(a3CrewOffsets[i].cy)
-          : isCat
-            ? baseTY
-            : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
+        const ry = a3Entering ? Math.round(a3CrewOffsets[i].cy) : isCat ? baseTY : baseTY + Math.round(Math.sin(Date.now() / 400 + i * 0.7) * 0.3);
         grid.art(crewArt, rx, ry, crewCol);
       }
     }
@@ -5288,7 +5275,7 @@
 
     // Crew running alongside — keep hats on
     // When run is done (at fridge), crew clusters in front of fridge
-    
+
     // Crew running alongside — keep hats on
     // When run is done (at fridge), crew clusters in front of fridge
     for (let i = 0; i < a2Crew.length; i++) {
