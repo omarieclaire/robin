@@ -1401,6 +1401,9 @@ const D_BACK_OFF_LATE = new DM.Deck([
   { t: "I have a dedicated PC Optimum email too actually.", tags: ["optimum"] },
 ]);
 
+
+
+
 const D_NARC_REVEAL = [
   { t: "my husband is a COP", tags: [] },
   { t: "I OWN Loblaws stock", tags: [] },

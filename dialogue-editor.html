@@ -1942,6 +1942,29 @@
             onSelect: () => {},
           });
           cols.push({
+            id: "no_bye",
+            label: "5b² · npc no/bye",
+            deckName: "D_NO_BYE",
+            role: "npc",
+            tc: null,
+            stepNote: "D_NO_BYE · appended after mismatch · 'no thanks / goodbye' closer",
+            pathNote: "bad",
+            pathNoteText: "path B: appended to mismatch line",
+            items: scoreAndSort(
+              D.D_NO_BYE.map((x, i) => ({
+                key: `D_NO_BYE:${i}`,
+                text: x.t,
+                tags: x.tags || [],
+                idx: i,
+                selected: false,
+                threadClass: "thread-terminal",
+              })),
+              P.pitchTags || [],
+            ),
+            splitByScore: true,
+            onSelect: () => {},
+          });
+          cols.push({
             id: "end_mismatch",
             label: "— conversation ends —",
             deckName: null,
@@ -1950,7 +1973,7 @@
             items: [
               {
                 key: "end_mismatch",
-                text: "mismatch · npc says no/bye · read the room float · conversation ends",
+                text: "mismatch + no/bye plays as one line · read the room float · conversation ends",
                 tags: [],
                 isEnd: true,
                 endBad: true,

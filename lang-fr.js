@@ -22,10 +22,8 @@ window.LANG_FR = {
   bannerGrabEverything: "clique pour attraper la nourriture!",
   bannerAvoidSecurity: "évite la sécurité",
   bannerFoodGloriousFood: "de la bouffe, enfin.",
-  bannerShareBounty: "partageons le butin",
-  // bannerNarc: "\u26A0 MOUCHARD! \u26A0",
-    bannerHitNarc: "tu as heurté un narc — attention!",
-
+  bannerShareBounty: "partageons le butin?",  // FIX: added missing question mark
+  bannerHitNarc: "tu as heurté un mouchard — attention!",  // FIX: mouchard for consistency
 
   // act 4 urgency stages
   urgencyCopsCalled: "FLICS APPELÉS",
@@ -42,16 +40,15 @@ window.LANG_FR = {
   controlsAct2bMobile: "glisse pour embarquer la foule",
   controlsAct4:        "utilise ← ↑ → ↓ · clique sur la bouffe pour la prendre",
   controlsAct4Mobile:  "glisse · touche la bouffe pour la prendre",
-    hintLabel: "commandes",
-
+  hintLabel: "commandes",
 
   // floats
-  floatReadTheRoom: "lis la situation",
+  floatReadTheRoom: "lis la pièce",  // FIX: more natural QC expression
   floatListenBetter: "t'as besoin de mieux écouter",
   floatWrongEnergy: "mauvaise énergie",
   floatTooCautious: "peut-être un peu trop prudent?",
   floatGiveChance: "donne une chance aux gens",
-  floatNeverChange: "rien changera si on n'essaie pas",
+  floatNeverChange: "rien ne changera si on n'essaie pas",  // FIX: added missing "ne"
   floatGoodCallSmelled: "bonne décision. ça sentait le mouchard",
   floatNewRobin: "Nouveau Robin!",
   floatTheyreIn: "Dans l'équipe!",
@@ -94,7 +91,8 @@ window.LANG_FR = {
             "CÂLICE. comment c'est devenu aussi cher??",
           ],
         },
-        { who: "n", text: "j'utilise une app de coupons" },
+        { who: "n", text: "j'sais pas\n mais j'ai une app de coupons" },  // FIX: restored casual opener
+        { who: "n", text: "\n\net j'ai une autre app\n|pause|qui m'aide à acheter de la bouffe pourrie" },  // FIX: was missing entirely
         { who: "p", texts: ["ok...", "de quoi tu parles??", "qu'est-ce que tu racontes, estine?", "ugh crisse", "J'M'EN CALICE DES APPS"] },
       ],
     },
@@ -121,6 +119,7 @@ window.LANG_FR = {
             "TABARNAK. personne devrait avoir à vivre comme ça",
           ],
         },
+        { who: "p", text: "juste|pause|humiliant", hold: 4500 },  // FIX: was missing entirely
       ],
     },
     {
@@ -161,17 +160,18 @@ window.LANG_FR = {
     { t: 3300, text: "et ont donné la nourriture aux affamés" },
     { t: 4600, text: "" },
     { t: 5400, text: "en février 2026, ils ont recommencé" },
-    { t: 6700, text: "" },
-    { t: 7500, text: "ils se sont appelés" },
+    { t: 6700, text: "et encore en mai" },  // FIX: was missing entirely
+    { t: 7500, text: "ils s'appellent" },  // FIX: changed past tense to present to match EN
     { t: 8600, text: "ROBINS DES RUELLES" },
     { t: 9900, text: "" },
     { t: 10700, text: "est-ce que ton quartier est le prochain?" },
   ],
+
   vigTemplates: [
     (nm) => nm.n + " a mangé pour la première fois aujourd'hui",
     (nm) => nm.n + " prépare le pâté chinois de " + nm.p + " mère ce soir",
-    (nm) => nm.n + " a apporté une soupe pour " + nm.p + " amis",
-    (nm) => nm.n + " a du pain pour " + nm.p + " enfants",
+    (nm) => nm.n + " a apporté une soupe pour ses amis",       // FIX: hardcoded "ses" (plural — nm.p "sa" was wrong)
+    (nm) => nm.n + " a du pain pour ses enfants",              // FIX: hardcoded "ses" (plural — nm.p "sa" was wrong)
     (nm) => nm.n + " a partagé la moitié avec un inconnu en rentrant",
     (nm) => nm.n + " cuisine un vrai souper pour " + nm.p + " grand-mère",
   ],
@@ -191,7 +191,7 @@ window.LANG_FR = {
   endPeopleAte: (fed) => fed + " personnes ont mangé ce soir",
   endYouAte: "(toi aussi tu as mangé)",
 
-  act1Choices: ["(>_<) j'en ai assez", "(o_O)  qu'est-ce que je peux faire? Je vais juste continuer comme ça"],
+  act1Choices: ["(>_<) j'en ai assez", "(o_O) qu'est-ce que j'peux faire?"],  // FIX: shortened to avoid UI overflow
 
   neighbourMsgs: ["merci", "mes enfants mangent ce soir", "enfin", "avec amour!", "merci beaucoup", "thank you"],
   intercoms: [
@@ -224,7 +224,7 @@ window.LANG_FR = {
   urgencyFindExit: "!! TROUVE LA SORTIE !!",
 
   endGameTimedOutTitle: "POGNÉ!",
-  endGameTimedOutSub: "Les narcs t'ont dénoncé. La prochaine fois, fais ça vite.",
+  endGameTimedOutSub: "Les mouchards t'ont dénoncé. La prochaine fois, fais ça vite.",  // FIX: mouchard for consistency
   bannerHatsOn: "chapeaux",
 
   choiceCommiserateAngry: "(╯°□°)╯ mets-en",
@@ -235,8 +235,7 @@ window.LANG_FR = {
   choiceTryHarderHungry: "(｡•́︿•̀｡) insister",
   choiceWalkAway: "( ._.) partir",
 
-  // FR
-  recruitProgress1: "{ord} DE MOINS — {que} {rem}",
+  recruitProgress1: "{ord} DE MOINS — {rem} à aller",  // FIX: removed phantom {que} variable
   recruitProgressRemaining: " à aller !",
   recruitProgressComplete: "★ ÉQUIPE COMPLÈTE ★",
   choiceRecruitAngry: "(ง'̀-'́)ง les recruter",
@@ -257,8 +256,7 @@ window.LANG_FR = {
   loopGiveUpSub: "tu as continué à vivre comme ça\njusqu'à ne plus pouvoir",
   loopTryAgain: "réessayer ?",
 
-bannerTooManyNarcs: "TROP DE NARCS",    // FR
-
+  bannerTooManyNarcs: "TROP DE MOUCHARDS",  // FIX: mouchard for consistency
 
   floatOhNo: "oh non",
   floatExclaim: "!!",
@@ -272,19 +270,17 @@ bannerTooManyNarcs: "TROP DE NARCS",    // FR
   hudRally: "RASSEMBLEMENT",
   hudMob: "FOULE",
 
-  hudCops: "COPS",
-  hudHaul: "HAUL",
+  hudCops: "TEMPS RESTANT",  // FIX: was "COPS" — should match EN "TIME REMAINING"
+  hudHaul: "BUTIN",          // FIX: was untranslated "HAUL"
 
   foodCounterSuffix: " ITEMS",
 
   act3TapHat: "appuie pour mettre des chapeaux",
-  act3HattingInProgress: "on met les chapeaux...",
-  act3HattingWait: "...",
   act3TapEnter: "appuie pour entrer dans le magasin",
   act5TapContinue: "appuie pour continuer",
   act5TapDeposit: "appuie pour partager la bouffe",
 
-  hudAvoidNarcs: "évite les narcs",
+  hudAvoidNarcs: "évite les mouchards",
   muteMute: "son",
   muteMuted: "muet",
   quitBtn: "quitter",
@@ -311,5 +307,4 @@ bannerTooManyNarcs: "TROP DE NARCS",    // FR
 
   bannerWeLostThem: "on les a perdus!",
   runBystanderLines: ["j'ai rien vu", "vu personne moi", "bonne chance!", "courez, courez", "vu quoi?"],
-  act5TapDeposit: "appuyez pour partager",
 };
