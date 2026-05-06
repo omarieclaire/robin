@@ -600,13 +600,7 @@
   let loop, phase;
   const floats = [];
   let a2CrewCount = 0,
-    s4AlyScore = 0,
-    a5FoodCycleT = 0,
-    a5FoodTotalPlaced = 0,
-    a5FlyingItems = null,
-    a5GroundPile = null,
-    a5LastCounterValue = 0,
-    a5LastCounterFlash = 0;
+    s4AlyScore = 0;
   const sparks = [];
   let chromaticT = 0;
 
@@ -869,9 +863,7 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────
-   readDelay(text, min?)
    Dynamic read time based on word count. Replaces the old
-   readDelay() that was defined inside updateAct2.
    ───────────────────────────────────────────────────────────────── */
   function readDelay(text, min) {
     const words = (text || "").trim().split(/\s+/).length;
@@ -879,14 +871,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════
-   Seq — lightweight in-update sequencer
-   ══════════════════════════════════════════════════════════════════
 
-   Replaces all timing-sensitive setTimeout chains. Runs inside
-   your existing update(dt) loop — just call seq.update(dt).
-
-   STEP TYPES
-   ─────────────────────────────────────────────────────────────────
    () => { ... }            — run immediately, advance
    { wait: ms }             — hold for N milliseconds
    { waitFor: () => bool }  — hold until predicate returns true
@@ -894,8 +879,6 @@
    [ step, step, ... ]      — nested array runs all in parallel
                               (advances when ALL sub-steps done)
 
-   USAGE
-   ─────────────────────────────────────────────────────────────────
    const mySeq = new Seq([
      () => showBanner("Hello.", C_PLAYER, T.hold),
      { waitFor: () => bannerTimer <= 0 },
@@ -1011,7 +994,6 @@
     convChoiceHover = -1,
     convChoicePicked = -1,
     convChoiceYs = []; // start row of each choice
-  ((convChoiceSelected = -1), (convChoiceSelectedT = 0));
   let convReveal = [];
   let _convTypeTimer = 0;
 
@@ -1025,8 +1007,7 @@
     convChoiceY2 = 0;
     convChoiceHover = -1;
     convChoicePicked = -1;
-    convChoiceSelected = -1;
-    convChoiceSelectedT = 0;
+
     _convChunkQueue = [];
     _convChunkTimer = 0;
     convReveal = [];
@@ -2666,8 +2647,6 @@
   let a2Gen;
   let a2HudFlashT, a2HudFlashMsg;
   let a2TimeWarned;
-  let a2MobileMoveX, a2MobileMoveT;
-  let a2bMobileMoveX, a2bMobileMoveT;
 
   /* ── Act 2: conversation timing constants ────────────────────────
    All expressed through T.* — change T values above to retune.
@@ -2966,8 +2945,7 @@
     a2TP = 0;
     a2TT = 0;
     a2TalkCD = 0;
-    a2MobileMoveX = 0;
-    a2MobileMoveT = 0;
+
     a2SV = false;
     a2SW = 500;
     a2SD = false;
@@ -3371,10 +3349,10 @@
           const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
           const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
           _progressMsg = window.LANG.recruitProgress1
-            .replace("{ord}", _haveOrd.toUpperCase())
+            .replace("{ord}", _haveOrd)
             .replace("{que} ", _que)
             .replace("{que}", _que.trim())
-            .replace("{rem}", _remOrd.toUpperCase())
+            .replace("{rem}", _remOrd)
             .replace("{remaining}", window.LANG.recruitProgressRemaining);
         } else {
           _progressMsg = window.LANG.recruitProgressComplete;
@@ -3489,14 +3467,19 @@
           audio.play("recruit");
         }, 350);
         setTimeout(() => {
-          for (let _bi = 0; _bi < 4; _bi++) {
-            burstGood(Util.randInt(4, W - 4), Util.randInt(2, H - 4), C_TEAL, 8);
+          // Burst around each crew member
+          for (let _ci = 0; _ci < a2Crew.length; _ci++) {
+            const _cx = Math.round(ppx - 3 - _ci * 3);
+            const _cy = Math.round(ppy + (_ci % 2 === 0 ? -1 : 1));
+            burstGood(_cx, _cy, a2Crew[_ci].col || C_TEAL, 8);
           }
           triggerFlashGood();
         }, 700);
         setTimeout(() => {
+          // Final flourish — tight around player and nearest crew
+          const _crewSpan = Math.min(a2Crew.length * 3, 12);
           for (let _bi = 0; _bi < 3; _bi++) {
-            burstGood(ppx + Util.randInt(-10, 10), ppy + Util.randInt(-3, 3), C_TEAL, 8);
+            burstGood(ppx + Util.randInt(-_crewSpan, 2), ppy + Util.randInt(-2, 2), C_TEAL, 8);
           }
           triggerFlashGold();
         }, 1100);
@@ -3816,8 +3799,8 @@
   let a2bWX, a2bT, a2bSpd, a2bPX, a2bPY, a2bNPCs, a2bMob, a2bHt;
 
   let a2bTopParts, a2bBotParts;
-  let a2bStoreX, a2bDone, a2bFloats;
-  let a2bBursts; /* expanding ring effects on collision */
+
+  let a2bStoreX, a2bDone;
   const A2B_MH = 3;
 
   /* Layout constants — computed from H */
@@ -3913,10 +3896,7 @@
     }
 
     a2bHt = 0;
-    a2bMobileMoveX = 0;
-    a2bMobileMoveT = 0;
-    a2bFloats = [];
-    a2bBursts = [];
+
     a2bDone = false;
     a2bStoreX = Math.floor(45000 * 0.007) + W; // ~45s at base speed 0.007
 
@@ -3972,12 +3952,7 @@
 
     a2bPY = Util.clamp(a2bPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
     a2bPX = Util.clamp(a2bPX, 3, W - 4);
-    /* Floats */
-    for (let i = a2bFloats.length - 1; i >= 0; i--) {
-      a2bFloats[i].life -= dt;
-      a2bFloats[i].y -= 0.002 * dt;
-      if (a2bFloats[i].life <= 0) a2bFloats.splice(i, 1);
-    }
+
     /* Shout timers */
     for (const n of a2bNPCs) {
       if (n.shoutT > 0) n.shoutT -= dt;
@@ -3988,8 +3963,8 @@
     if (a2bT > 1000) {
       for (const n of a2bNPCs) {
         if (n.st !== "idle") continue;
-        const hitW = Device.isMobile ? 3 : 6;
-        const hitH = Device.isMobile ? 1.5 : 3;
+        const hitW = Device.isMobile ? 1.5 : 2.5;
+        const hitH = Device.isMobile ? 1.0 : 1.5;
         if (Math.abs(n.wx - pwx) < hitW && Math.abs(n.wy - a2bPY) < hitH) {
           if (n.narc) {
             n.st = "narc";
@@ -4185,19 +4160,6 @@
       grid.art(_a2bNpcFrame, sx, n.wy, _a2bNpcCol);
     }
 
-    /* ── Bursts (expanding rings of glyphs) ── */
-    for (const b of a2bBursts) {
-      const progress = 1 - b.t / b.max;
-      const radius = Math.floor(progress * 6) + 1;
-      const steps = 8 + radius * 2;
-      for (let s = 0; s < steps; s++) {
-        const a = (s / steps) * Math.PI * 2;
-        const bx = Math.round(b.x + Math.cos(a) * radius);
-        const by = Math.round(b.y + Math.sin(a) * radius * 0.6);
-        if (bx >= 0 && bx < W && by >= 0 && by < H) grid.set(bx, by, b.glyph, b.col);
-      }
-    }
-
     /* ── Mob trailing player ── */
     const ppx = Math.round(a2bPX),
       ppy = Math.round(a2bPY);
@@ -4268,16 +4230,6 @@
           grid.text(lines[li], tx + 1, ty + 1 + li, n.col);
         }
         grid.text(DIALOG_BOX.bl + DIALOG_BOX.h.repeat(bw - 2) + DIALOG_BOX.br, tx, ty + 1 + lines.length, n.col);
-      }
-    }
-
-    /* ── Floats ── */
-    for (const f of a2bFloats) {
-      if (f.life < 100) continue;
-      for (let i = 0; i < f.text.length; i++) {
-        const fx = Math.round(f.x) + i,
-          fy = Math.round(f.y);
-        if (fx >= 0 && fx < W && fy >= 0 && fy < H) grid.set(fx, fy, f.text[i], f.col);
       }
     }
 
@@ -4686,13 +4638,13 @@
   const SLH = 3;
 
   let s4WX, s4Sp, s4Ug, s4UR, s4GT, s4LM, s4IT;
-  let s4As, s4Gs, s4Ex, s4PX2, s4PY2, s4St2;
+  let s4As, s4Gs, s4PX2, s4PY2, s4St2;
   let s4Alys, s4GE, s4CM;
   let s4ExitPinned, s4ExitAisle, s4PlayerAisle;
   /* Combo system: consecutive grabs within window = multiplier */
 
   let s4GrabBursts, s4RobinCheerT;
-  let s4TickerX, s4TickerMsg, s4TickerNextIdx;
+  let s4TickerMsg, s4TickerNextIdx;
   /* ── LAYOUT CONSTANTS (computed in init from H) ── */
   let S4_SHELF_ROWS /* how many shelf rows in the unit */,
     S4_SHELF_ROW_H /* height per shelf row (food art height + divider) */,
@@ -4786,7 +4738,6 @@
     /* ── Player starts left-center of aisle ── */
     s4PX2 = Math.floor(W * 0.35);
     s4PY2 = Math.floor((S4_AISLE_TOP + S4_AISLE_BOT) / 2);
-    s4PlayerAisle = 0;
 
     /* ── Security guards — spawn ahead off-screen ── */
     s4Gs = [];
@@ -4863,10 +4814,6 @@
 
     // findme
     /* ── Remaining state ── */
-    // s4Ex = [];
-    // s4ExitPinned = false;
-    // s4ExitScreenX = W - 7; /* room for wider arch */
-    // s4ExitAisle = -1;
 
     s4As = [
       {
@@ -4885,8 +4832,7 @@
     // hudStatus.style.color = C_TEAL;
     // showBanner(window.LANG.bannerGrabEverything, C_PLAYER, 2500);
 
-    s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx];
-    s4TickerX = W; // starts off right edge
+    s4TickerMsg = D_INTERCOM_TICKER[0];
     s4TickerNextIdx = 1;
   }
 
@@ -5509,13 +5455,9 @@
         vx: -0.006 - Math.random() * 0.004,
       });
     }
-
-    // Intercom messages fire as banners — ticker removed
-    s4TickerX -= 0.01 * dt;
-    if (s4TickerX + s4TickerMsg.length < 0) {
+    if (Math.floor((s4GT * 1000) / 8000) > Math.floor((s4GT * 1000 - dt) / 8000)) {
       s4TickerMsg = D_INTERCOM_TICKER[s4TickerNextIdx % D_INTERCOM_TICKER.length];
       s4TickerNextIdx++;
-      s4TickerX = W + 2;
       showBanner(s4TickerMsg, "#6a8a9a", 2200, true);
     }
     /* Re-fire exit reminder once per 20-second window after it opens */
@@ -6603,7 +6545,6 @@
         convReset();
       }
     } else if (phase === "inter") updateInter(dt);
-    if (convChoiceSelected >= 0) convChoiceSelectedT += dt;
 
     for (let i = floats.length - 1; i >= 0; i--) {
       floats[i].life -= dt;
