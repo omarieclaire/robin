@@ -520,6 +520,7 @@
   };
   /* Main character color COLOURS */
   const C_PLAYER = "#f5a032";
+  const C_SIDEWALK = "#b0a898";
   const C_DANGER = "#c44"; // narcs, heat, bust, security
   const C_TEAL = "#5cbdbd"; // crew, fridge, info, success moments
   const C_ORANGE = "#e8944a"; // rally banners, CTA accent
@@ -1500,22 +1501,7 @@
     // clamp topY so it never goes above row 2
     const rawTopY = lastBoxTop - totalPriorHeight;
     const topY = phase === "act2" ? Math.max(2, rawTopY) : rawTopY;
-    // if (convLog.length <= 3) {
-    //   console.log(
-    //     "RENDER: charY=" +
-    //       charY +
-    //       " lastBoxH=" +
-    //       lastBoxH +
-    //       " boxes=" +
-    //       boxesToShow.length +
-    //       " -> topY=" +
-    //       topY +
-    //       " lastBoxTop=" +
-    //       lastBoxTop +
-    //       " lastBoxBottom=" +
-    //       lastBoxBottom,
-    //   );
-    // }
+
     // Center horizontally between player and NPC
     const psx = convAnchorPX;
     const nsx = convAnchorNX;
@@ -2736,9 +2722,7 @@
     const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
     const MIN_NPC_GAP = 55,
       MAX_NPC_GAP = 90;
-    // Force the very first NPC into the player's starting lane so they
-    // actually meet the forced narc. Only matters on the first chunk
-    // (when nothing has spawned yet).
+ 
     const playerLane = typeof a2PRu === "number" ? a2PRu : null;
     const firstSpawnLane = a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane ? playerLane : null;
     const laneOrder = [];
@@ -3771,16 +3755,7 @@
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-    // No tap prompt — auto-advances after celebration holds
-    // if (Device.isMobile && a2T < 5000 && !a2TN) {
-    //   const fade = a2T > 3500 ? 1 - (a2T - 3500) / 1500 : 1;
-    //   const hintCol = fade > 0.6 ? C_DIM : "#444";
-    //   // Position hints just above and below the player
-    //   const px = Math.round(a2PX),
-    //     py = Math.round(a2PY);
-    //   grid.textCenter("swipe ↑↓ to change lane", Math.max(1, py - 4), hintCol);
-    //   grid.textCenter("hold ◀ ▶ sides to move", Math.min(H - 2, py + 4), hintCol);
-    // }
+  
 
     renderBanner();
   }
@@ -3908,12 +3883,7 @@
     bannerTimer = 0;
     // showBanner(window.LANG.bannerRallyNeighbourhood, C_ORANGE, 6000);
 
-    // setTimeout(() => {
-    //   if (phase === "act2b") {
-    //     bannerText += "\n\n" + window.LANG.bannerAvoidNarcs;
-    //     bannerTimer = Math.max(bannerTimer, 4000);
-    //   }
-    // }, 2000);
+
 
     _updateDomHud();
   }
@@ -4123,7 +4093,7 @@
     }
     /* Top sidewalk */
     for (let x = 0; x < W; x++) {
-      grid.set(x, A2B_ROAD_Y1, "\u2550", "#b0a898");
+      grid.set(x, A2B_ROAD_Y1, "\u2550", C_SIDEWALK);
     }
 
     /* ── Road zone — clean, no dots ── */
@@ -4136,7 +4106,7 @@
 
     /* ── Bottom sidewalk ── */
     for (let x = 0; x < W; x++) {
-      grid.set(x, A2B_ROAD_Y2, "\u2550", "#b0a898");
+      grid.set(x, A2B_ROAD_Y2, "\u2550", C_SIDEWALK);
     }
 
     /* ── Bottom building row (1× scroll) ── */
@@ -4640,7 +4610,7 @@
   let s4WX, s4Sp, s4Ug, s4UR, s4GT, s4LM, s4IT;
   let s4As, s4Gs, s4PX2, s4PY2, s4St2;
   let s4Alys, s4GE, s4CM;
-  let s4ExitPinned, s4ExitAisle, s4PlayerAisle;
+  let s4ExitPinned;
   /* Combo system: consecutive grabs within window = multiplier */
 
   let s4GrabBursts, s4RobinCheerT;
@@ -4824,13 +4794,6 @@
       },
     ];
     s4GE = 0;
-
-    // hudLabel.textContent = window.LANG.hudHaulLabel;
-    // hudScore.textContent = "$0";
-    // hudScore.style.color = C_PLAYER;
-    // hudStatus.textContent = window.LANG.hudAct4Status;
-    // hudStatus.style.color = C_TEAL;
-    // showBanner(window.LANG.bannerGrabEverything, C_PLAYER, 2500);
 
     s4TickerMsg = D_INTERCOM_TICKER[0];
     s4TickerNextIdx = 1;
@@ -5151,8 +5114,8 @@
       const by = A2B_TOP_H - sp.art.length;
       grid.art(sp.art, sx, Math.max(0, by), sp.col);
     }
-    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y1, "\u2550", "#b0a898");
-    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y2, "\u2550", "#b0a898");
+    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y1, "\u2550", C_SIDEWALK);
+    for (let x = 0; x < W; x++) grid.set(x, A2B_ROAD_Y2, "\u2550", C_SIDEWALK);
 
     // Bottom buildings
     for (const sp of s4RunBotParts) {
@@ -5337,13 +5300,6 @@
       showBanner(window.LANG.bannerExitOpen, C_TEAL, 3000);
     }
 
-    /* Intercom */
-    // s4IT += dt;
-    // if (s4IT > 20000 && s4Ug > 0.1) {
-    //   s4IT = 0;
-    //   showBanner(Util.pick(D_INTERCOM), C_DANGER, 2000, true);
-    // }
-
     /* Robin floats */
     for (let i = s4RobinFloats.length - 1; i >= 0; i--) {
       s4RobinFloats[i].life -= dt;
@@ -5501,14 +5457,6 @@
       }
     }
 
-    /* ── AISLE — floor tiles scroll with world ── */
-    // for (let y = S4_AISLE_TOP; y <= S4_AISLE_BOT; y++) {
-    //   for (let x = 0; x < W; x++) {
-    //     const wx = x + ox;
-    //     if (wx % 4 === 0) grid.set(x, y, "\u2502", "#1a1a1a");
-    //   }
-    // }
-
     /* ── Security guards — 2 chars wide, same scale as player/NPCs ── */
     for (const g of s4Gs) {
       const sx = Math.round(g.wx - s4WX),
@@ -5550,15 +5498,6 @@
       }
     }
 
-    /* ── Robin grab floats ── */
-    // for (const f of s4RobinFloats) {
-    //   if (f.life < 100) continue;
-    //   for (let i = 0; i < f.text.length; i++) {
-    //     const fx = Math.round(f.x) + i,
-    //       fy = Math.round(f.y);
-    //     if (fx >= 0 && fx < W && fy >= 0 && fy < H) grid.set(fx, fy, f.text[i], f.col);
-    //   }
-    // }
 
     /* ── Player ── */
     if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
@@ -5640,11 +5579,9 @@
     ensureCrew();
     a5T = 0;
     a5P = 0;
-    a5NI = 0;
-    let a5OnTop = null;
+    
     a5FoodPlacements = null;
     a5FlyingItems = null;
-    a5OnTop = null;
     a5FoodCycleT = 0;
     a5FoodTotalPlaced = 0;
     a5LastCounterValue = 0;
@@ -5714,24 +5651,7 @@
       const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2; /* Symmetrically distribute around fridge center */
       const pairIdx = Math.floor(i / 2); /* 0,0,1,1 */
       const side = fromRight ? 1 : -1;
-      // Neighbours: mobile-safe positioning + pre-assign colour -- no good because it changes the neighbour position on desktop too
-      // const offset = Math.min(3 + pairIdx * 3, Math.floor(W * 0.2));
-      // const tx = fridgeCX + side * offset;
-      // const nCol = window.GAME_DATA.npcColors[(i + 3) % window.GAME_DATA.npcColors.length];
-      // a5Neighbours.push({
-      //   x: nx,
-      //   y: ty,
-      //   tx: Util.clamp(tx, 6, W - 10),
-      //   ty,
-      //   name: nm.n,
-      //   col: nCol,
-      //   msg: Util.pick(["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"]),
-      //   arrived: false,
-      //   msgShow: false,
-      // });
-
-      //       + 7 controls how far below the crew row they appear (bigger = lower)
-      // 4 + pairIdx * 4 controls horizontal spread (smaller first number = more centered)
+     
 
       const offset = Device.isMobile
         ? 7 + pairIdx * 4 // a bit wider spread on mobile

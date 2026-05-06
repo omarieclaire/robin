@@ -56,7 +56,7 @@
         --c-warn: #d4a030; /* heat, warnings */
         --c-info: #5cbdbd; /* info banners, fridge */
         --c-narc: #c44; /* narc reveal */
-        --c-bg: #111; /* game background */
+        --c-bg: #000000; /* game background */
         --c-bg-hud: #1a1a1a; /* hud background */
         --c-text-dim: #888; /* muted text */
         --c-text-mid: #aaa; /* medium text */
@@ -257,7 +257,7 @@
         flex: 1;
         position: relative;
         overflow: hidden;
-        background: #111;
+        background: #000000;
       }
       #game-screen {
         font-family: "Courier New", "Consolas", "Monaco", monospace;
@@ -270,7 +270,7 @@
         word-spacing: 0;
         white-space: pre;
         line-height: 1;
-        background: #111;
+        background: #000000;
         overflow: hidden;
         padding: 0;
         margin: 0;
@@ -291,7 +291,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(ellipse at center, #0d0a11 0%, #0a0a0f 100%);
+        background: radial-gradient(ellipse at center, #0c0a0c 0%, #050505 100%);
         z-index: 20;
         text-align: center;
         gap: 14px;
@@ -334,6 +334,8 @@
         white-space: pre;
         margin: 10px 0;
         color: var(--c-accent);
+        text-align: center;
+        width: 100%;
         /* text-shadow: 0 0 12px rgba(137, 87, 255, 0.6); */
         animation: artblink 1.2s ease-in-out infinite;
       }
