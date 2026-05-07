@@ -307,4 +307,7 @@ window.LANG_FR = {
 
   bannerWeLostThem: "on les a perdus!",
   runBystanderLines: ["j'ai rien vu", "vu personne moi", "bonne chance!", "courez, courez", "vu quoi?"],
+
+  tapToWalk: "touche pour marcher",  
+
 };

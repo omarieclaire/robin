@@ -326,4 +326,6 @@ controlsAct4Mobile:  "drag to walk · tap food to grab it",
 bannerWeLostThem: "we lost them!",
 runBystanderLines: ["didn't see a thing", "never saw 'em", "good for you", "go on, run", "saw what now?"],
 act5TapDeposit: "tap to share the food",
+
+tapToWalk: "tap to walk",  
 };

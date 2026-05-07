@@ -1048,11 +1048,15 @@
     interT += dt;
     updateBanner(dt);
 
-    // append next line to existing banner box
-    if (interLI < interLines.length && interT > interLines[interLI - 1].d) {
+    const INTER_TAP_MIN_MS = 350;
+    const _tapped = clickPending || input.justPressed("action");
+
+    // Tap to append the next line, or to dismiss after the last line.
+    if (interLI < interLines.length && _tapped && interT > INTER_TAP_MIN_MS) {
+      clickPending = false;
       const nextLine = interLines[interLI];
       if (nextLine.pause) {
-        // silent beat — just wait, don't append anything
+        // silent beat — append nothing, just advance
         interLI++;
         interT = 0;
       } else {
@@ -1063,21 +1067,14 @@
         audio.play("trumpet");
       }
     }
-    // auto-advance after last line
-    if (!interDone && interLI >= interLines.length && interT > 25000) {
+
+    // Once all lines are shown, the controls hint appears (rendered in renderInter).
+    // A further tap dismisses the screen and proceeds to the next act.
+    if (!interDone && interLI >= interLines.length && _tapped && interT > INTER_TAP_MIN_MS) {
+      clickPending = false;
       interDone = true;
       bannerTimer = 0;
       interNext();
-    }
-    // tap to skip
-    const _tapAllowed = interLI >= interLines.length && interT > 5000;
-    if (clickPending && _tapAllowed) {
-      clickPending = false;
-      if (!interDone) {
-        interDone = true;
-        bannerTimer = 0;
-        interNext();
-      }
     }
   }
 
@@ -1148,7 +1145,8 @@
     renderInterFrame();
     renderBanner();
     const _allLinesDone = interLines && interLI >= interLines.length;
-    if (interControlsHint && _allLinesDone && interT > 2500) {
+
+    if (interControlsHint && _allLinesDone) {
       // Play hint chime once, on first appearance
       if (!_lastHintShown || _lastHintShown !== interControlsHint) {
         _lastHintShown = interControlsHint;
@@ -1231,10 +1229,10 @@
       // Bottom border
       // grid.text("\u2514" + "\u2500".repeat(boxW - 2) + "\u2518", bx, by + boxH - 1, borderCol);
 
-      if (interT > 10000) {
-        renderTapPrompt(window.LANG.tapToContinue, by + boxH + (Device.isMobile ? 8 : 2), "#fff", C_PLAYER);
-      }
-    } else if (!interControlsHint && _allLinesDone && interT > 10000) {
+      // Once the controls card is visible, the tap-to-continue prompt
+      // appears immediately — the player paces themselves.
+      renderTapPrompt(window.LANG.tapToContinue, by + boxH + (Device.isMobile ? 8 : 2), "#fff", C_PLAYER);
+    } else if (!interControlsHint && _allLinesDone) {
       renderTapPrompt(window.LANG.tapToContinue, Math.floor(H * 0.78), "#fff", C_PLAYER);
     }
   }
@@ -1314,6 +1312,24 @@
   }
 
   function convAddLine(text, side, color) {
+    // Act 1 collapses chunks into a single line — the player paces with their
+    // taps, so author-imposed |pause| beats inside a turn are redundant.
+    if (phase === "act1") {
+      const cleaned = text
+        .replace(/\|pause\|/g, " ")
+        .replace(/\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      audio.play(side === "you" ? "playertxtbox" : "npctxtbox");
+      const last = convLog[convLog.length - 1];
+      if (last && last.side === side) {
+        last.text = last.text + "\n\n" + cleaned;
+      } else {
+        convLog.push({ text: cleaned, side, color });
+        convReveal.push(0);
+      }
+      return;
+    }
     // Treat \n and \n\n as implicit pause markers, same as |pause|.
     // Preserve them in the output by inserting a sentinel that survives the trim.
     // Chunks that come from a \n boundary are marked silent (pause but no sound).
@@ -1500,7 +1516,7 @@
 
     // clamp topY so it never goes above row 2
     const rawTopY = lastBoxTop - totalPriorHeight;
-    const topY = phase === "act2" ? Math.max(2, rawTopY) : rawTopY;
+    const topY = phase === "act1" || phase === "act2" ? Math.max(2, rawTopY) : rawTopY;
 
     // Center horizontally between player and NPC
     const psx = convAnchorPX;
@@ -1895,6 +1911,8 @@
   let a1IdleTimer, a1LoopCount; // for auto-advance on inactivity
   let a1DescPath, a1DescPI; // for road-following descent
   let a1PauseT; // for silent pauses between narrative banners
+  let a1WalkArmed; // true while walk is actively playing; false while waiting for tap
+  let a1WalkPromptT; // ms accumulator so the prompt only appears after a brief settle
   const A1_PSX_RATIO = 0.5,
     A1_PSY_RATIO = 0.55;
 
@@ -2011,6 +2029,8 @@
     a1DescPath = null;
     a1DescPI = 0;
     a1PauseT = 0;
+    a1WalkArmed = false;
+    a1WalkPromptT = 0;
     dialogStack = [];
     // Ambient NPCs
     a1AmbNPCs = [];
@@ -2082,11 +2102,32 @@
   }
   function updateAct1(dt) {
     a1T += dt;
+    if (clickPending) {
+      console.log(
+        "[act1]",
+        a1St,
+        "ES:",
+        a1ES,
+        "ST2:",
+        Math.floor(a1ST2),
+        "chunks:",
+        _convChunkQueue.length,
+        "logLen:",
+        convLog.length,
+        "lastSide:",
+        convLog[convLog.length - 1]?.side,
+        "lastText:",
+        convLog[convLog.length - 1]?.text?.substring(0, 40),
+      );
+    }
     a1CX = Util.lerp(a1CX, a1PX - Math.floor(W * A1_PSX_RATIO), 0.06);
     if (a1St !== "descend") a1CY = Util.lerp(a1CY, a1PY - Math.floor(H * A1_PSY_RATIO), 0.06);
     updateBanner(dt);
     dialogUpdate(dt);
-    if (clickPending && phase === "act1" && a1St !== "tap") clickPending = false;
+
+    // if (clickPending && phase === "act1" && a1St !== "tap" && a1St !== "enc" && a1St !== "nar" && a1St !== "outro") clickPending = false;
+
+    if (clickPending && phase === "act1" && a1St !== "tap" && a1St !== "enc" && a1St !== "walk") clickPending = false;
     // Update ambient NPCs
     for (const an of a1AmbNPCs) {
       an.x += an.dx * an.sp * dt;
@@ -2106,6 +2147,8 @@
         a1St = "walk";
         a1ST2 = 0;
         a1IdleTimer = 0;
+        a1WalkArmed = false;
+        a1WalkPromptT = 0;
       }
       return;
     }
@@ -2118,6 +2161,7 @@
       if (a1PI >= a1Path.length - 1) {
         if (a1EI < a1NPCs.length) {
           a1St = "enc";
+          clickPending = false;
           audio.play("bump");
           const _encOX = Math.floor(a1CX),
             _encOY = Math.floor(a1CY);
@@ -2125,6 +2169,7 @@
           a1ES = 0;
           a1ST2 = 0;
           a1EncNPC = a1NPCs[a1EI];
+          a1WalkArmed = false;
         } else if (a1NP === 0 && a1St !== "tap") {
           a1St = "tap";
           a1ST2 = 0;
@@ -2140,6 +2185,18 @@
           a1ST2 = 0;
         }
         return;
+      }
+      // Wait for the player to tap before walking. Once armed, the walk plays
+      // out on its own. Tapping during the walk is ignored.
+      if (!a1WalkArmed) {
+        a1WalkPromptT += dt;
+        if (clickPending && a1WalkPromptT > 200) {
+          clickPending = false;
+          a1WalkArmed = true;
+          a1WalkPromptT = 0;
+        } else {
+          return;
+        }
       }
       const tg = a1Path[a1PI + 1],
         dx = tg.x - a1PX,
@@ -2194,7 +2251,9 @@
         }
       }
     } else if (a1St === "enc") {
-      /* Array-of-turns encounter engine using conv panel */
+      /* Array-of-turns encounter engine using conv panel — tap to advance.
+         Tapping a line that has chunks drains one chunk per tap; once chunks
+         are exhausted, the next tap advances to the next turn. */
       a1ST2 += dt;
       // Update conv anchors X as camera moves, but freeze Y once set
       if (convVisible && a1EncNPC) {
@@ -2204,9 +2263,15 @@
       }
       const e = A1E[a1EI];
       const turns = e.turns;
+      // Minimum dwell so a fast tapper can't skip a line before it's typed
+      const A1_TAP_MIN_MS = 250;
+      const _tapped = clickPending || input.justPressed("action");
+      const _hasChunksPending = _convChunkQueue.length > 0;
       if (a1ES < turns.length) {
         if (a1ES === 0 && !convVisible && a1ST2 > 600) {
-          // Wait 600ms for camera to settle before showing first dialogue
+          // Wait 600ms for camera to settle before showing first dialogue.
+          // The player's first line auto-displays — arriving at an NPC IS the
+          // gesture that opens the conversation.
           dialogStack = [];
           convReset();
           convAnchorPX = psx;
@@ -2223,52 +2288,59 @@
           convAddLine(txt, side, col);
           a1ES = 1;
           a1ST2 = 0;
-        } else if (a1ST2 > (turns[a1ES - 1]?.hold ?? 3500)) {
-          // ACT 1 TIMING: how long the previous line stays on screen
-          // before this one appears. Set per-line via `hold:` in lang data.
-          // Default (no `hold` set) = 3500ms.
-          const t = turns[a1ES];
-          const side = t.who === "p" ? "you" : "them";
-          const col = t.who === "p" ? C_PLAYER : convNPCColor;
-          const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
-          convAddLine(txt, side, col);
-          a1ES++;
-          a1ST2 = 0;
+        } else if (_tapped && a1ES > 0) {
+          clickPending = false;
+          if (a1ST2 > A1_TAP_MIN_MS) {
+            if (_hasChunksPending) {
+              // A pause-marked chunk is queued for the current line — flush
+              // the next chunk and wait for another tap.
+              _convChunkFlush();
+              _convChunkTimer = 999999; // disable auto-flush; tap drives it now
+            } else {
+              // Chunks for the current line are exhausted — advance to next turn.
+              const t = turns[a1ES];
+              const side = t.who === "p" ? "you" : "them";
+              const col = t.who === "p" ? C_PLAYER : convNPCColor;
+              const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
+              convAddLine(txt, side, col);
+              a1ES++;
+            }
+            a1ST2 = 0;
+          }
         }
-        // pause after last conversational line
-      } else if (a1ST2 > (turns[turns.length - 1]?.hold ?? 3500)) {
-        // ACT 1 TIMING: how long the LAST line stays before the conversation
-        // closes and the player walks on. Uses the last turn's `hold:` value.
-        // Default (no `hold` set) = 3500ms.
-        // All turns done, move on
-        const np = a1PA[a1EI];
-        a1EI++;
-        a1EncNPC = null;
-        dialogStack = [];
-        convStartFade();
-        a1Path = [
-          {
-            x: a1PX,
-            y: a1PY,
-          },
-          ...np,
-        ];
-        a1PI = 0;
-        if (a1EI >= a1NPCs.length) a1NP = 0;
-        a1St = "walk";
+        // pause after last conversational line — wait for tap to walk on
+      } else if (_tapped) {
+        clickPending = false;
+        if (a1ST2 > A1_TAP_MIN_MS) {
+          if (_hasChunksPending) {
+            // Final line still has chunks pending — drain them first.
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a1ST2 = 0;
+          } else {
+            const np = a1PA[a1EI];
+            a1EI++;
+            a1EncNPC = null;
+            dialogStack = [];
+            convStartFade();
+            a1Path = [
+              {
+                x: a1PX,
+                y: a1PY,
+              },
+              ...np,
+            ];
+            a1PI = 0;
+            if (a1EI >= a1NPCs.length) a1NP = 0;
+            a1St = "walk";
+            a1WalkArmed = false;
+            a1WalkPromptT = 0;
+          }
+        }
       }
     } else if (a1St === "tap") {
       a1ST2 += dt;
-      a1IdleTimer += dt;
-      if (a1IdleTimer > 15000) {
-        convStartFade();
-        a1St = "outro";
-        a1ST2 = 0;
-        a1NP = 0;
-        showBanner(NQ[0].t, NQ[0].c, NQ[0].d);
-        a1NP = 1;
-        return;
-      }
+      // Idle timeout removed — the choice waits as long as the player needs.
       if (a1ST2 > 800 && clickPending) {
         clickPending = false;
         /* Only act on clicks within the choice box Y range. Clicks outside = ignore. */
@@ -2564,6 +2636,12 @@
       convVisible = true;
       convShowChoices(window.LANG.act1Choices);
     }
+    // Tap-to-walk prompt: shows when waiting for the player to start the walk.
+    // Appears after a brief settle (300ms) so it doesn't flash when arriving.
+
+  if (a1St === "walk" && !a1WalkArmed && a1WalkPromptT > 300 && bannerTimer <= 0) {
+      renderTapPrompt(window.LANG.tapToWalk, H - 2, "#fff", C_PLAYER);
+    }
     renderBanner();
   }
   /////////////////////
@@ -2722,7 +2800,7 @@
     const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
     const MIN_NPC_GAP = 55,
       MAX_NPC_GAP = 90;
- 
+
     const playerLane = typeof a2PRu === "number" ? a2PRu : null;
     const firstSpawnLane = a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane ? playerLane : null;
     const laneOrder = [];
@@ -2936,6 +3014,7 @@
     a2SDT = null;
     a2SDFired = false;
     dialogStack = [];
+    _convChunkTimer = 0;
     a2GenChunk(0, W * 3);
     _updateDomHud();
     bannerTimer = 0;
@@ -2961,6 +3040,16 @@
     dialogUpdate(dt);
     if (a2TalkCD > 0) a2TalkCD -= dt;
     if (a2HudFlashT > 0) a2HudFlashT -= dt;
+
+    // Tap-to-advance helper for Act 2 dialogue. A tap counts as "advance
+    // the conversation" only if it lands outside the choice rows — clicks
+    // inside choice rows are handled by the per-state choice logic.
+    const A2_TAP_MIN_MS = 250;
+
+    const _a2ChoicePending = convChoices && convChoicePicked >= 0;
+    const _a2DialogueTap =
+      (clickPending || input.justPressed("action")) && !(convChoices && !_a2ChoicePending && clickSY >= convChoiceY1 && clickSY <= convChoiceY2);
+    const _a2HasChunks = _convChunkQueue.length > 0;
     for (const n of a2NPCs) {
       if (n.spT > 0) n.spT -= dt;
       if (n.cd > 0) n.cd -= dt;
@@ -2975,6 +3064,7 @@
      The core logic is unchanged — only the timing comparisons
      now read from T.* and A2.* instead of scattered literals.
      ─────────────────────────────────────────────────────────── */
+
     if (a2TN) {
       const _lastFullyTyped = convLog.length === 0 || convReveal[convLog.length - 1] >= convLog[convLog.length - 1].text.length;
       if (_convChunkQueue.length === 0 && _lastFullyTyped) a2TT += dt;
@@ -2986,7 +3076,7 @@
       convAnchorNX = nsx;
       convAnchorY = psy;
 
-      // ── TP 0: open conv, fire greet ───────────────────────────
+      // ── TP 0: open conv, fire greet (auto)
       if (a2TP === 0 && a2TT > T.beat) {
         dialogStack = [];
         convReset();
@@ -3004,53 +3094,79 @@
         a2TT = 0;
       }
 
-      // ── TP 2: immediate join after match ──────────────────────
-      else if (a2TP === 2 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.helloTags ?? []);
-        convAddLine(joinLine, "them", convNPCColor);
-        a2TP = 8;
-        a2TT = 0;
+      // ── TP 2: immediate join after match (tap) ───────────────
+      else if (a2TP === 2 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.helloTags ?? []);
+            convAddLine(joinLine, "them", convNPCColor);
+            a2TP = 8;
+            a2TT = 0;
+          }
+        }
       }
 
-      // ── TP 12: wait before NPC replies ───────────────────────
-      else if (a2TP === 12 && a2TT > A2.GREET_DELAY && _convChunkQueue.length === 0) {
-        let helloDeck;
-        if (a2TN.tp === "narc") helloDeck = DECK_NARC_HELLO;
-        else if (a2TN.kind === "angry") helloDeck = DECK_ANGRY_HELLO;
-        else helloDeck = DECK_HUNGRY_HELLO;
+      // ── TP 12: NPC replies (tap) ─────────────────────────────
+      else if (a2TP === 12 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            let helloDeck;
+            if (a2TN.tp === "narc") helloDeck = DECK_NARC_HELLO;
+            else if (a2TN.kind === "angry") helloDeck = DECK_ANGRY_HELLO;
+            else helloDeck = DECK_HUNGRY_HELLO;
 
-        DM.clearLastTags();
-        const { text: line, tags } = DM.drawWithTags(helloDeck);
-        a2TN.helloTags = tags;
+            DM.clearLastTags();
+            const { text: line, tags } = DM.drawWithTags(helloDeck);
+            a2TN.helloTags = tags;
 
-        const tone = a2TN.greetTone ?? "casual";
-        const npcType = a2TN.tp === "narc" ? "narc" : a2TN.kind;
-        const prefixPool = HELLO_PREFIX[tone]?.[npcType] ?? [];
-        const prefixText = pickPrefix(prefixPool, tags);
-        const prefix = prefixText ? prefixText + " " : "";
-        convAddLine(prefix + line, "them", convNPCColor);
-        a2TP = 13;
-        a2TT = 0;
+            const tone = a2TN.greetTone ?? "casual";
+            const npcType = a2TN.tp === "narc" ? "narc" : a2TN.kind;
+            const prefixPool = HELLO_PREFIX[tone]?.[npcType] ?? [];
+            const prefixText = pickPrefix(prefixPool, tags);
+            const prefix = prefixText ? prefixText + " " : "";
+            convAddLine(prefix + line, "them", convNPCColor);
+            a2TP = 13;
+            a2TT = 0;
+          }
+        }
       }
 
-      // ── TP 13: show first pitch choices ──────────────────────
-      else if (a2TP === 13 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        // const prefix = a2TN.tp === "narc" ? DM.draw(DECK_ACK_NARC) + " " : "";
-        const matchResult = DM.drawWithTags(
-          a2TN.tp === "narc" ? DECK_NARC_AGREE : a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH,
-          a2TN.helloTags ?? [],
-        );
-        const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
-        const bailResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.helloTags ?? []);
-        a2ChoiceTags = [matchResult.tags, badReadResult.tags, bailResult.tags];
-        a2PitchLines = [matchResult.text, badReadResult.text, bailResult.text];
-        DM.clearLastTags();
-        const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
-        a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
-        convShowChoices(a2ChoiceLabels);
-        a2Choice = -1;
-        a2TP = 1;
-        a2TT = 0;
+      // ── TP 13: show first pitch choices (tap) ────────────────
+      else if (a2TP === 13 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            const matchResult = DM.drawWithTags(
+              a2TN.tp === "narc" ? DECK_NARC_AGREE : a2TN.kind === "angry" ? DECK_ANGRY_PITCH : DECK_HUNGRY_PITCH,
+              a2TN.helloTags ?? [],
+            );
+            const badReadResult = DM.drawWithTags(DECK_BAD_READ, a2TN.helloTags ?? []);
+            const bailResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.helloTags ?? []);
+            a2ChoiceTags = [matchResult.tags, badReadResult.tags, bailResult.tags];
+            a2PitchLines = [matchResult.text, badReadResult.text, bailResult.text];
+            DM.clearLastTags();
+            const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
+            a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
+            convShowChoices(a2ChoiceLabels);
+            a2Choice = -1;
+            a2TP = 1;
+            a2TT = 0;
+          }
+        }
       }
 
       // ── TP 1: wait for first pitch choice ────────────────────
@@ -3086,6 +3202,7 @@
             convHideChoices();
             convAddLine(_line, "you", convPlayerColor);
           }, 600);
+
           if (_picked === 2) a2TP = 25;
           else if (_picked === 1 && a2TN.tp !== "narc") a2TP = 14;
           else a2TP = 141;
@@ -3093,37 +3210,51 @@
         }
       }
 
-      // ── TP 141: route after first pitch ──────────────────────
-      // ACT 2 TIMING: how long the player's pitch line holds before the NPC's filler reply appears.
-      // Raise the number to give the player's punchline more room. Default min 3000ms.
-      else if (a2TP === 141 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
-        const matched = a2Choice === 0;
-        if (matched) {
-          const fillerResult = DM.drawWithTags(DECK_FILLER, a2ChoiceTags[a2Choice] ?? []);
-          a2TN.fillerTags = fillerResult.tags;
-          convAddLine(fillerResult.text, "them", convNPCColor);
-          a2TP = 142;
-        } else {
-          a2TP = 14;
+      // ── TP 141: route after first pitch (tap) ────────────────
+      else if (a2TP === 141 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            const matched = a2Choice === 0 && a2TN.tp !== "narc";
+            if (matched) {
+              const fillerResult = DM.drawWithTags(DECK_FILLER, a2ChoiceTags[a2Choice] ?? []);
+              a2TN.fillerTags = fillerResult.tags;
+              convAddLine(fillerResult.text, "them", convNPCColor);
+              a2TP = 142;
+            } else {
+              a2TP = 14;
+            }
+            a2TT = 0;
+          }
         }
-        a2TT = 0;
       }
 
-      // ── TP 142: wait for invite/walk away choice ──────────────
-      // ACT 2 TIMING: how long the NPC's filler line holds before recruit/walk-away choices appear.
-      // Raise the number to give the player time to read the filler. Default min 5000ms.
-      else if (a2TP === 142 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 4000) && _convChunkQueue.length === 0) {
-        const inviteLabel = a2TN.kind === "angry" ? window.LANG.choiceRecruitAngry : window.LANG.choiceRecruitHungry;
-        a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
-        const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
-        a2TN.inviteTags = inviteResult.tags;
-        const bailLateResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.fillerTags ?? []);
-        a2TN.bailLateTags = bailLateResult.tags;
-        a2PitchLines = [inviteResult.text, bailLateResult.text];
-        convShowChoices(a2ChoiceLabels);
-        a2Choice = -1;
-        a2TP = 143;
-        a2TT = 0;
+      // ── TP 142: wait for invite/walk away choice (tap) ───────
+      else if (a2TP === 142 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            const inviteLabel = a2TN.kind === "angry" ? window.LANG.choiceRecruitAngry : window.LANG.choiceRecruitHungry;
+            a2ChoiceLabels = [inviteLabel, window.LANG.choiceWalkAwayShort];
+            const inviteResult = DM.drawWithTags(DECK_F_INVITE, a2TN.fillerTags ?? []);
+            a2TN.inviteTags = inviteResult.tags;
+            const bailLateResult = DM.drawWithTags(DECK_BACK_OFF_EARLY, a2TN.fillerTags ?? []);
+            a2TN.bailLateTags = bailLateResult.tags;
+            a2PitchLines = [inviteResult.text, bailLateResult.text];
+            convShowChoices(a2ChoiceLabels);
+            a2Choice = -1;
+            a2TP = 143;
+            a2TT = 0;
+          }
+        }
       }
 
       // ── TP 143: wait for invite/walk away input ───────────────
@@ -3153,61 +3284,75 @@
             convAddLine(_line, "you", convPlayerColor);
           }, 600);
           if (_picked === 1) a2ChoiceTags[2] = a2TN.bailLateTags ?? [];
-          a2TP = _picked === 1 ? 25 : 14;
+          a2TP = _picked === 1 ? 25 : 8;
           a2TT = -600;
         }
       }
 
-      // ── TP 14: check match, route ─────────────────────────────
-      // ACT 2 TIMING: how long the player's invite line holds before the NPC's say-more reply appears.
-      // Raise the number to give the invite room to land. Default min 2400ms.
-      else if (a2TP === 14 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 2400) && _convChunkQueue.length === 0) {
-        const matched = a2Choice === 0;
-        if (a2TN.tp === "narc") {
-          const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
-          a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
-
-          convAddLine(skeptResult.text, "them", convNPCColor);
-          a2TP = 15;
-        } else if (!matched) {
-          const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
-          const badReadTags = a2ChoiceTags[1] ?? [];
-          convAddLine(DM.draw(mismatchDeck, badReadTags) + " " + DM.draw(DECK_NO_BYE, badReadTags), "them", convNPCColor);
-          setTimeout(
-            () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
-            convFadeDuration + 800,
-          );
-          a2TP = 7;
-        } else {
-          if (Math.random() < 0.8) {
-            const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.inviteTags ?? []);
-            convAddLine(joinLine, "them", convNPCColor);
-            a2TP = 8;
+      // ── TP 14: check match, route (tap) ──────────────────────
+      else if (a2TP === 14 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
           } else {
-            const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.inviteTags ?? []);
-            a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.inviteTags ?? []);
-            convAddLine(warmResult.text, "them", convNPCColor);
-            a2TP = 15;
+            const matched = a2Choice === 0;
+            if (a2TN.tp === "narc") {
+              const skeptResult = DM.drawWithTags(DECK_SAY_MORE_SKEPTICAL, a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
+              a2TN.sayMoreTags = skeptResult.tags.length > 0 ? skeptResult.tags : (a2TN.inviteTags ?? a2ChoiceTags[a2Choice] ?? []);
+              convAddLine(skeptResult.text, "them", convNPCColor);
+              a2TP = 15;
+            } else if (!matched) {
+              const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
+              const badReadTags = a2ChoiceTags[1] ?? [];
+              convAddLine(DM.draw(mismatchDeck, badReadTags) + " " + DM.draw(DECK_NO_BYE, badReadTags), "them", convNPCColor);
+              setTimeout(
+                () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
+                convFadeDuration + 800,
+              );
+              a2TP = 7;
+            } else {
+              if (Math.random() < 0.8) {
+                const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.inviteTags ?? []);
+                convAddLine(joinLine, "them", convNPCColor);
+                a2TP = 8;
+              } else {
+                const warmResult = DM.drawWithTags(DECK_SAY_MORE_WARM, a2TN.inviteTags ?? []);
+                a2TN.sayMoreTags = warmResult.tags.length > 0 ? warmResult.tags : (a2TN.inviteTags ?? []);
+                convAddLine(warmResult.text, "them", convNPCColor);
+                a2TP = 15;
+              }
+            }
+            a2TT = 0;
           }
         }
-        a2TT = 0;
       }
 
-      // ── TP 15: show second round choices ─────────────────────
-      // ACT 2 TIMING: how long the NPC's say-more line holds before try-harder/walk-away choices appear.
-      // Raise the number to give the player time to read the NPC's deeper question. Default min 3000ms.
-      else if (a2TP === 15 && a2TT > readDelay(convLog[convLog.length - 1]?.text, 3000) && _convChunkQueue.length === 0) {
-        const pitchTags = a2TN.sayMoreTags ?? [];
-        const strongerResult = DM.drawWithTags(DECK_STRONGER_PITCH, pitchTags);
-        a2TN.strongerTags = strongerResult.tags.length > 0 ? strongerResult.tags : pitchTags;
-        a2PitchLines = [strongerResult.text, DM.draw(DECK_BACK_OFF_LATE, pitchTags)];
-        const tryHarderLabel = a2TN.kind === "angry" ? window.LANG.choiceTryHarderAngry : window.LANG.choiceTryHarderHungry;
-        a2ChoiceLabels = [tryHarderLabel, window.LANG.choiceWalkAway];
-        convShowChoices(a2ChoiceLabels);
-        a2Choice = -1;
-        a2TP = 23;
-        a2TT = 0;
+      // ── TP 15: show second round choices (tap) ───────────────
+      else if (a2TP === 15 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            const pitchTags = a2TN.sayMoreTags ?? [];
+            const strongerResult = DM.drawWithTags(DECK_STRONGER_PITCH, pitchTags);
+            a2TN.strongerTags = strongerResult.tags.length > 0 ? strongerResult.tags : pitchTags;
+            a2PitchLines = [strongerResult.text, DM.draw(DECK_BACK_OFF_LATE, pitchTags)];
+            const tryHarderLabel = a2TN.kind === "angry" ? window.LANG.choiceTryHarderAngry : window.LANG.choiceTryHarderHungry;
+            a2ChoiceLabels = [tryHarderLabel, window.LANG.choiceWalkAway];
+            convShowChoices(a2ChoiceLabels);
+            a2Choice = -1;
+            a2TP = 23;
+            a2TT = 0;
+          }
+        }
       }
+
       // ── TP 23: wait for second choice ────────────────────────
       else if (a2TP === 23 && a2TT > A2.CHOICE_LOCK) {
         if (clickPending) {
@@ -3238,185 +3383,242 @@
         }
       }
 
-      // ── TP 24: resolve second choice ─────────────────────────
-      else if (a2TP === 24 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        if (a2Choice === 1) {
-          DM.endConv();
-          const wasNarc = a2TN.tp === "narc";
-          a2TN.st = "done";
-          a2TN.cd = 9999;
-          a2TN = null;
-          a2TalkCD = 500;
-          if (wasNarc) showBanner(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold);
-          else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
-          convEndWhenDone(A2.RECRUIT_CLOSE, () => {
-            dialogStack = [];
-            convStartFade();
-          });
-        } else if (a2TN.tp === "narc") {
-          convAddLine(DM.draw(DECK_NARC_REV, a2TN.strongerTags ?? []), "them", C_DANGER);
-          a2TP = 9;
-          a2TT = 0;
-        } else {
-          if (Math.random() < 0.6) {
-            const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.strongerTags ?? []);
-            convAddLine(joinLine, "them", convNPCColor);
-            a2TP = 8;
+      // ── TP 24: resolve second choice (tap) ───────────────────
+      else if (a2TP === 24 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
           } else {
-            const notNowResult = DM.drawWithTags(DECK_NOT_NOW, a2TN.strongerTags ?? []);
-            a2TN.notNowTags = notNowResult.tags.length > 0 ? notNowResult.tags : (a2TN.strongerTags ?? []);
-            convAddLine(notNowResult.text, "them", convNPCColor);
-            a2TP = 10;
-          }
-          a2TT = 0;
-        }
-      }
-
-      // ── TP 25: player bailed first round ─────────────────────
-      else if (a2TP === 25 && a2TT > T.hold && _convChunkQueue.length === 0) {
-        convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2ChoiceTags[2] ?? []), "them", convNPCColor);
-        a2TP = 251;
-        a2TT = 0;
-      }
-
-      // ── TP 251: close after bail ──────────────────────────────
-      else if (a2TP === 251 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.BAIL_CLOSE) && _convChunkQueue.length === 0) {
-        DM.endConv();
-        const wasNarc = a2TN.tp === "narc";
-        a2TN.st = "done";
-        a2TN.cd = 9999;
-        a2TN = null;
-        a2TalkCD = 500;
-        if (wasNarc) addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
-        else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
-        convEndWhenDone(T.exit, () => {
-          dialogStack = [];
-          convStartFade();
-        });
-      }
-
-      // ── TP 7: NPC declined ────────────────────────────────────
-      else if (a2TP === 7 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.MISMATCH_CLOSE) && _convChunkQueue.length === 0) {
-        DM.endConv();
-        a2TN.st = "done";
-        a2TN.cd = 9999;
-        a2TN = null;
-        a2TalkCD = 500;
-        convEndWhenDone(T.exit, () => {
-          dialogStack = [];
-          convStartFade();
-        });
-      }
-
-      // ── TP 8: recruit! ────────────────────────────────────────────
-      else if (a2TP === 8 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        DM.endConv();
-        const n = a2TN;
-        n.st = "rec";
-        a2CrewCount++;
-        audio.play("recruit");
-        // addFloat(Util.pick([window.LANG.floatNewRobin, window.LANG.floatTheyreIn, window.LANG.floatCrewGrows]), 0, 0, C_TEAL);
-
-        // Big celebration sparks
-        for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
-        triggerFlashGood();
-        a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-        // Progress message
-        const _rem = A2_MIN - a2CrewCount;
-        let _progressMsg;
-        if (_rem > 0) {
-          const _ordinals = window.LANG.recruitOrdinals;
-          const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
-          const _remOrd = _ordinals[_rem - 1] || String(_rem);
-          // French elision: "plus que une" → "plus qu'une" before vowel-initial words
-          const _firstChar = _remOrd.charAt(0).toLowerCase();
-          const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
-          const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
-          _progressMsg = window.LANG.recruitProgress1
-            .replace("{ord}", _haveOrd)
-            .replace("{que} ", _que)
-            .replace("{que}", _que.trim())
-            .replace("{rem}", _remOrd)
-            .replace("{remaining}", window.LANG.recruitProgressRemaining);
-        } else {
-          _progressMsg = window.LANG.recruitProgressComplete;
-        }
-
-        if (!_progressMsg || _progressMsg.trim() === "") _progressMsg = a2CrewCount + "/" + A2_MIN;
-        // Only show progress float for non-final recruits — final recruit gets the big celebration instead
-        if (_rem > 0) {
-          setTimeout(() => addFloat(_progressMsg, 0, 0, C_ORANGE), convFadeDuration + 400);
-        }
-        a2TN.cd = 1000;
-        a2TN = null;
-        a2TalkCD = 500;
-        convEndWhenDone(A2.RECRUIT_CLOSE, () => {
-          dialogStack = [];
-          convStartFade();
-        });
-      }
-
-      // ── TP 9: narc reveal consequence ─────────────────────────
-      else if (a2TP === 9 && a2TT > readDelay(convLog[convLog.length - 1]?.text, A2.NARC_PAUSE) && _convChunkQueue.length === 0) {
-        DM.endConv();
-        const n = a2TN;
-        n.st = "angry";
-        n.col = C_DANGER;
-        a2Ht++;
-        audio.play("narc");
-        addFloat(window.LANG.floatNarc, 0, 0, C_DANGER);
-
-        spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
-        triggerChromatic(500);
-        for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
-        spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
-        if (a2Ht >= A2_MH) setTimeout(() => quickBust("busted", initAct2), 2000);
-        a2TN.cd = 1000;
-        a2TN = null;
-        a2TalkCD = 500;
-        convEndWhenDone(T.exit, () => {
-          dialogStack = [];
-          convReset();
-        });
-      }
-
-      // ── TP 10: NPC defers ─────────────────────────────────────
-      else if (a2TP === 10 && a2TT > readDelay(convLog[convLog.length - 1]?.text) && _convChunkQueue.length === 0) {
-        DM.endConv();
-        const n = a2TN;
-        n.st = "maybe";
-        n.cd = 9999;
-        addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, "#a80");
-        a2TN = null;
-        a2TalkCD = 500;
-        convEndWhenDone(T.exit, () => {
-          dialogStack = [];
-          convStartFade();
-        });
-        setTimeout(
-          () => {
-            if (n.st === "maybe" && !a2TN) {
-              n.st = "rec";
-              a2CrewCount++;
-              audio.play("recruit");
-              a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
-              convReset();
-              convAnchorPX = Math.round(a2PX);
-              convAnchorNX = Math.round(n.wx - a2WX);
-              convAnchorY = Math.round(a2PY);
-              convPlayerColor = C_PLAYER;
-              convNPCColor = n.col;
-              convVisible = true;
-              convAddLine(DM.draw(DECK_RETURN, n.notNowTags ?? []), "them", n.col);
-              convEndWhenDone(T.exit, () => {
+            if (a2Choice === 1) {
+              DM.endConv();
+              const wasNarc = a2TN.tp === "narc";
+              a2TN.st = "done";
+              a2TN.cd = 9999;
+              a2TN = null;
+              a2TalkCD = 500;
+              if (wasNarc) showBanner(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold);
+              else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+              convEndWhenDone(A2.RECRUIT_CLOSE, () => {
                 dialogStack = [];
                 convStartFade();
               });
-              hudScore.textContent = a2CrewCount;
+            } else if (a2TN.tp === "narc") {
+              convAddLine(DM.draw(DECK_NARC_REV, a2TN.strongerTags ?? []), "them", C_DANGER);
+              a2TP = 9;
+              a2TT = 0;
+            } else {
+              if (Math.random() < 0.6) {
+                const joinLine = DM.draw(DECK_JOIN_CONSENT, a2TN.strongerTags ?? []);
+                convAddLine(joinLine, "them", convNPCColor);
+                a2TP = 8;
+              } else {
+                const notNowResult = DM.drawWithTags(DECK_NOT_NOW, a2TN.strongerTags ?? []);
+                a2TN.notNowTags = notNowResult.tags.length > 0 ? notNowResult.tags : (a2TN.strongerTags ?? []);
+                convAddLine(notNowResult.text, "them", convNPCColor);
+                a2TP = 10;
+              }
+              a2TT = 0;
             }
-          },
-          4000 + Math.random() * 3000,
-        );
+          }
+        }
+      }
+
+      // ── TP 25: player bailed first round (tap) ───────────────
+      else if (a2TP === 25 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            convAddLine(DM.draw(DECK_BAIL_RESPONSE, a2ChoiceTags[2] ?? []), "them", convNPCColor);
+            a2TP = 251;
+            a2TT = 0;
+          }
+        }
+      }
+
+      // ── TP 251: close after bail (tap) ───────────────────────
+      else if (a2TP === 251 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            DM.endConv();
+            const wasNarc = a2TN.tp === "narc";
+            a2TN.st = "done";
+            a2TN.cd = 9999;
+            a2TN = null;
+            a2TalkCD = 500;
+            if (wasNarc) addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
+            else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+            convEndWhenDone(T.exit, () => {
+              dialogStack = [];
+              convStartFade();
+            });
+          }
+        }
+      }
+
+      // ── TP 7: NPC declined (tap) ─────────────────────────────
+      else if (a2TP === 7 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            DM.endConv();
+            a2TN.st = "done";
+            a2TN.cd = 9999;
+            a2TN = null;
+            a2TalkCD = 500;
+            convEndWhenDone(T.exit, () => {
+              dialogStack = [];
+              convStartFade();
+            });
+          }
+        }
+      }
+
+      // ── TP 8: recruit! (tap) ─────────────────────────────────
+      else if (a2TP === 8 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            DM.endConv();
+            const n = a2TN;
+            n.st = "rec";
+            a2CrewCount++;
+            audio.play("recruit");
+            for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
+            triggerFlashGood();
+            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
+            const _rem = A2_MIN - a2CrewCount;
+            let _progressMsg;
+            if (_rem > 0) {
+              const _ordinals = window.LANG.recruitOrdinals;
+              const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
+              const _remOrd = _ordinals[_rem - 1] || String(_rem);
+              const _firstChar = _remOrd.charAt(0).toLowerCase();
+              const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
+              const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
+              _progressMsg = window.LANG.recruitProgress1
+                .replace("{ord}", _haveOrd)
+                .replace("{que} ", _que)
+                .replace("{que}", _que.trim())
+                .replace("{rem}", _remOrd)
+                .replace("{remaining}", window.LANG.recruitProgressRemaining);
+            } else {
+              _progressMsg = window.LANG.recruitProgressComplete;
+            }
+
+            if (!_progressMsg || _progressMsg.trim() === "") _progressMsg = a2CrewCount + "/" + A2_MIN;
+            if (_rem > 0) {
+              setTimeout(() => addFloat(_progressMsg, 0, 0, C_ORANGE), convFadeDuration + 400);
+            }
+            a2TN.cd = 1000;
+            a2TN = null;
+            a2TalkCD = 500;
+            convEndWhenDone(A2.RECRUIT_CLOSE, () => {
+              dialogStack = [];
+              convStartFade();
+            });
+          }
+        }
+      }
+
+      // ── TP 9: narc reveal consequence (tap) ──────────────────
+      else if (a2TP === 9 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            DM.endConv();
+            const n = a2TN;
+            n.st = "angry";
+            n.col = C_DANGER;
+            a2Ht++;
+            audio.play("narc");
+            addFloat(window.LANG.floatNarc, 0, 0, C_DANGER);
+
+            spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
+            triggerChromatic(500);
+            for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
+            spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
+            if (a2Ht >= A2_MH) setTimeout(() => quickBust("busted", initAct2), 2000);
+            a2TN.cd = 1000;
+            a2TN = null;
+            a2TalkCD = 500;
+            convEndWhenDone(T.exit, () => {
+              dialogStack = [];
+              convReset();
+            });
+          }
+        }
+      }
+
+      // ── TP 10: NPC defers (tap) ──────────────────────────────
+      else if (a2TP === 10 && _a2DialogueTap) {
+        clickPending = false;
+        if (a2TT > A2_TAP_MIN_MS) {
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            DM.endConv();
+            const n = a2TN;
+            n.st = "maybe";
+            n.cd = 9999;
+            addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, "#a80");
+            a2TN = null;
+            a2TalkCD = 500;
+            convEndWhenDone(T.exit, () => {
+              dialogStack = [];
+              convStartFade();
+            });
+            setTimeout(
+              () => {
+                if (n.st === "maybe" && !a2TN) {
+                  n.st = "rec";
+                  a2CrewCount++;
+                  audio.play("recruit");
+                  a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col });
+                  convReset();
+                  convAnchorPX = Math.round(a2PX);
+                  convAnchorNX = Math.round(n.wx - a2WX);
+                  convAnchorY = Math.round(a2PY);
+                  convPlayerColor = C_PLAYER;
+                  convNPCColor = n.col;
+                  convVisible = true;
+                  convAddLine(DM.draw(DECK_RETURN, n.notNowTags ?? []), "them", n.col);
+                  convEndWhenDone(T.exit, () => {
+                    dialogStack = [];
+                    convStartFade();
+                  });
+                  hudScore.textContent = a2CrewCount;
+                }
+              },
+              4000 + Math.random() * 3000,
+            );
+          }
+        }
       }
 
       return;
@@ -3570,10 +3772,37 @@
       n.ambShow = dist < 18 && dist > 3 && a2T > 3000;
     }
 
+    console.log(
+      "[a2 collision check]",
+      "talkCD:",
+      Math.floor(a2TalkCD),
+      "T:",
+      Math.floor(a2T),
+      "convVisible:",
+      convVisible,
+      "convFading:",
+      convFading,
+    );
+
     if (a2TalkCD <= 0 && a2T > 1000 && !convVisible) {
       const pwx = a2WX + a2PX;
       for (const n of a2NPCs) {
         if (n.st !== "idle" || n.cd > 0 || n.ru !== a2PRu) continue;
+        console.log(
+          "[a2 npc]",
+          "dist:",
+          Math.abs(n.wx - pwx).toFixed(1),
+          "ruMatch:",
+          n.ru === a2PRu,
+          "npc ru:",
+          n.ru,
+          "player ru:",
+          a2PRu,
+          "npc st:",
+          n.st,
+          "npc cd:",
+          n.cd,
+        );
         if (Math.abs(n.wx - pwx) < 3) {
           a2PX = n.wx - a2WX - 3;
 
@@ -3628,6 +3857,9 @@
           a2TP = 0;
           a2TT = 0;
           a2Choice = -1;
+          clickPending = false;
+          a2WX -= a2Spd * dt;
+          console.log("[a2 collision FIRED] npc tp:", n.tp, "wx:", n.wx, "a2TN set:", !!a2TN);
           break;
         }
       }
@@ -3755,7 +3987,6 @@
     dialogRender();
     // Conversation panel (replaces old choice UI)
     convRender();
-  
 
     renderBanner();
   }
@@ -3882,8 +4113,6 @@
     dialogStack = [];
     bannerTimer = 0;
     // showBanner(window.LANG.bannerRallyNeighbourhood, C_ORANGE, 6000);
-
-
 
     _updateDomHud();
   }
@@ -5498,7 +5727,6 @@
       }
     }
 
-
     /* ── Player ── */
     if (s4St2 <= 0 || Math.floor(s4St2 / 80) % 2 === 0) {
       // Keep urgency flash when heat is high, otherwise use normal pulse
@@ -5579,7 +5807,7 @@
     ensureCrew();
     a5T = 0;
     a5P = 0;
-    
+
     a5FoodPlacements = null;
     a5FlyingItems = null;
     a5FoodCycleT = 0;
@@ -5651,7 +5879,6 @@
       const ty = lineY + (Device.isMobile ? 9 : 4) + Math.floor(i / 2) * 2; /* Symmetrically distribute around fridge center */
       const pairIdx = Math.floor(i / 2); /* 0,0,1,1 */
       const side = fromRight ? 1 : -1;
-     
 
       const offset = Device.isMobile
         ? 7 + pairIdx * 4 // a bit wider spread on mobile
@@ -6430,12 +6657,18 @@
   }
   function update(dt) {
     _mobUpdate(dt);
-    // Drive chunked dialogue queue
+    // Drive chunked dialogue queue.
+    // In Act 1, chunks are drained by tap (handled in the encounter state),
+    // not by timer. Other phases keep the timer-driven flush.
     if (_convChunkQueue.length > 0) {
-      _convChunkTimer -= dt;
-      if (_convChunkTimer <= 0) {
-        _convChunkTimer = CONV_CHUNK_PAUSE_MS;
-        _convChunkFlush();
+      if (phase === "act1") {
+        // tap-driven: do nothing here
+      } else {
+        _convChunkTimer -= dt;
+        if (_convChunkTimer <= 0) {
+          _convChunkTimer = CONV_CHUNK_PAUSE_MS;
+          _convChunkFlush();
+        }
       }
     } else {
       _convChunkTimer = CONV_CHUNK_PAUSE_MS;
