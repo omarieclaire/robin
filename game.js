@@ -1017,66 +1017,60 @@
 
   let interT, interLines, interLI, interNext, interDone, interFrameIdx;
   let interControlsHint = null;
+
+  
   function initInter(lines, nextFn, frameIdx, controlsHint) {
-    if (!lines || lines.length === 0) {
-      if (nextFn) nextFn();
-      return;
-    }
-    phase = "inter";
-    interFrameIdx = frameIdx || 0;
-    interT = 0;
-    interLines = lines;
-    interLI = 0;
-    interNext = nextFn;
-    interDone = false;
-    interControlsHint = controlsHint || null;
-    bannerTimer = 0;
-    dialogStack = [];
-    clickPending = false;
-    // skip any leading pause entries
-    let _firstReal = 0;
-    while (_firstReal < interLines.length && interLines[_firstReal].pause) _firstReal++;
-    if (_firstReal >= interLines.length) {
-      if (nextFn) nextFn();
-      return;
-    }
-    showBanner(interLines[_firstReal].t, interLines[_firstReal].c, 99999, true);
-    interLI = _firstReal + 1;
-  }
+  if (!lines || lines.length === 0) { if (nextFn) nextFn(); return; }
+  phase = "inter";
+  interFrameIdx = frameIdx || 0;
+  interT = 0;
+  interLines = lines;
+  interLI = 0;
+  interNext = nextFn;
+  interDone = false;
+  interControlsHint = controlsHint || null;
+  bannerTimer = 0;
+  dialogStack = [];
+  clickPending = false;
+  showBannerSequence(lines, false);
+}
 
-  function updateInter(dt) {
-    interT += dt;
-    updateBanner(dt);
 
-    const INTER_TAP_MIN_MS = 350;
-    const _tapped = clickPending || input.justPressed("action");
+function updateInter(dt) {
+  interT += dt;
+  updateBanner(dt);
 
-    // Tap to append the next line, or to dismiss after the last line.
-    if (interLI < interLines.length && _tapped && interT > INTER_TAP_MIN_MS) {
-      clickPending = false;
-      const nextLine = interLines[interLI];
-      if (nextLine.pause) {
-        // silent beat — append nothing, just advance
-        interLI++;
-        interT = 0;
-      } else {
-        bannerText += "\n\n" + nextLine.t;
-        bannerTimer = 99999;
-        interLI++;
-        interT = 0;
-        audio.play("trumpet");
+  // Keep banner alive once sequence finishes (don't let it auto-close)
+  if (!_bannerSeq && bannerText && bannerTimer <= 0) bannerTimer = 1;
+
+  const INTER_TAP_MIN_MS = 350;
+  const _tapped = (clickPending || input.justPressed("action")) && interT > INTER_TAP_MIN_MS;
+  if (_tapped) clickPending = false;
+
+  const seqDone = !_bannerSeq;
+
+  // Tap while sequence running → fast-forward all remaining lines at once
+  if (_tapped && !seqDone) {
+    const seq = _bannerSeq;
+    while (seq && seq.idx < seq.lines.length) {
+      const entry = seq.lines[seq.idx++];
+      if (!entry.pause) {
+        bannerText = bannerText ? bannerText + "\n\n" + entry.t : entry.t;
+        if (entry.c) bannerColor = entry.c;
       }
     }
-
-    // Once all lines are shown, the controls hint appears (rendered in renderInter).
-    // A further tap dismisses the screen and proceeds to the next act.
-    if (!interDone && interLI >= interLines.length && _tapped && interT > INTER_TAP_MIN_MS) {
-      clickPending = false;
-      interDone = true;
-      bannerTimer = 0;
-      interNext();
-    }
+    _bannerSeq = null;
+    bannerTimer = 1;
+    return; // require a separate fresh tap to actually proceed
   }
+
+  // All lines shown — explicit tap to continue
+  if (!interDone && seqDone && _tapped) {
+    interDone = true;
+    bannerTimer = 0;
+    interNext();
+  }
+}
 
   // frame
   const MIRROR_H = {
@@ -1144,7 +1138,7 @@
 
     renderInterFrame();
     renderBanner();
-    const _allLinesDone = interLines && interLI >= interLines.length;
+const _allLinesDone = !_bannerSeq;
 
     if (interControlsHint && _allLinesDone) {
       // Play hint chime once, on first appearance
