@@ -380,8 +380,10 @@
                 const rendered = box.lines[li];
                 const bulletIdx = rendered.indexOf("\u25B6");
                 if (bulletIdx !== -1) {
-                  grid.set(xPos + 2 + bulletIdx, cy, "\u25B6", applyTextOpacity(bulletCol));
-                  grid.text(rendered.substring(bulletIdx + 1), xPos + 3 + bulletIdx, cy, applyTextOpacity(lineCol));
+                  const bulletX = xPos + 3 + bulletIdx; // one extra column off the left border
+                  grid.set(bulletX, cy, "\u25B6", applyTextOpacity(bulletCol));
+                  const face = rendered.substring(bulletIdx + 2); // drop "\u25B6 "
+                  grid.text(face, bulletX + 3, cy, applyTextOpacity(lineCol)); // a bit more room than a single space
                 } else {
                   grid.text(rendered, xPos + 2, cy, applyTextOpacity(lineCol));
                 }

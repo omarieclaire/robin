@@ -174,7 +174,8 @@ a1Encounters: [
   ],
 
 
-  act2Choices: ["(>_<) I've had enough", "(o_O) whatever"],
+  act2Choices: ["(>_<)", "(o_O)"],
+  // act2Choices: ["(>_<) I've had enough", "(o_O) whatever"],
 
   act3Undecided: ["hmm", "hmmm", "let me think"],
   act3Wait: ["wait for me", "i'm coming", "hold up"],
@@ -207,13 +208,22 @@ a1Encounters: [
 
   bannerHatsOn: "hats on",
 
-  choiceCommiserateAngry: "(╯°□°)╯ yes",
-  choiceCommiserateHungry: "(っ◔◡◔)っ yes",
-  choiceTalkOver: "(ಠ_ಠ) talk over them",
-  choiceRun: "[>_>] RUN",
-  choiceTryHarderAngry: "(ง'̀-'́)ง try harder",
-  choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
-  choiceWalkAway: "( ._.) walk away",
+  choiceCommiserateAngry: ["(╯°□°)╯"],
+  choiceCommiserateHungry: ["(っ◔◡◔)っ"],
+  choiceTalkOver: ["(ಠ_ಠ)"],
+    choiceRun: "[>_>]",
+
+
+  // choiceCommiserateAngry: ["(╯°□°)╯ yes", "(╯°□°)╯ right", "(╯°□°)╯ yeah", "(╯°□°)╯ true"],
+  // choiceCommiserateHungry: ["(っ◔◡◔)っ yes", "(っ◔◡◔)っ totally", "(っ◔◡◔)っ yeah", "(っ◔◡◔)っ true"],
+  // choiceTalkOver: ["(ಠ_ಠ) talk over them", "(ಠ_ಠ) cut them off", "(ಠ_ಠ) drown them out", "(ಠ_ಠ) steamroll them"],
+  // choiceRun: "[>_>] RUN",
+  choiceTryHarderAngry: "(ง'̀-'́)ง",
+  choiceTryHarderHungry: "(｡•́︿•̀｡)",
+  choiceWalkAway: "( ._.)",
+  // choiceTryHarderAngry: "(ง'̀-'́)ง try harder",
+  // choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
+  // choiceWalkAway: "( ._.) walk away",
 
   bannerTooManyNarcs: "TOO MANY NARCS", // EN
   recruitProgressCat: "a cat joins the crew — {rem} {noun} to go!",
@@ -224,9 +234,12 @@ recruitProgressCompleteCat: "★ CREW COMPLETE (with cat) ★",
   recruitProgressComplete: "★ CREW COMPLETE ★",
   recruitNounSingular: "robin",
   recruitNounPlural: "robins",
-  choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
-  choiceRecruitHungry: "(•‿•) recruit them",
-  choiceWalkAwayShort: "( ._.) walk away",
+  choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ",
+  choiceRecruitHungry: "(•‿•)",
+  choiceWalkAwayShort: "( ._.)",
+  // choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
+  // choiceRecruitHungry: "(•‿•) recruit them",
+  // choiceWalkAwayShort: "( ._.) walk away",
   act5HattingInProgress: "putting on hats...",
   act5HattingWait: "...",
   act6ExitLabel: "EXIT",

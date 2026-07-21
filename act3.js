@@ -52,9 +52,11 @@
   let a2PRu, a2PAnim, a2PAnimT, a2TargetY, a2Hopping;
   let a2HopIntent, a2HopTimer;
   let a2TP, a2TT, a2TalkCD;
-  let a2LastConvEndT, _a2TNWas; // when the most recent conversation ended (a2T frame) + previous-frame a2TN truthiness, for detecting the end transition
+  let a2LastConvEndT, _a2TNWas; 
   let a2Choice,
     a2ChoiceLabels,
+    a2ChoiceOrder = [0, 1, 2],
+    a2ChoiceDisplayPicked, 
     a2PitchLines = [],
     a2ChoiceTags = [];
   let a2SV, a2SW, a2SD, a2SDT, a2SDFired;
@@ -63,7 +65,7 @@
   let a2TimeWarned, a2TimeoutFired;
   let a2HasTalked, a2HasHopped, a2HasMoved;
   let a2PromptCooldown;
-  let a2HasAdvancedDialogue; // true once the player has tapped to advance any line // ms — short pause between satisfying one prompt and showing the next
+  let a2HasAdvancedDialogue; 
 
   const A2 = {
     GREET_DELAY: T.reply, // 1800ms
@@ -630,8 +632,10 @@
             a2ChoiceTags = [matchResult.tags, badReadResult.tags, bailResult.tags];
             a2PitchLines = [matchResult.text, badReadResult.text, bailResult.text];
             DM.clearLastTags();
-            const commiserateLabel = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
-            a2ChoiceLabels = [commiserateLabel, window.LANG.choiceTalkOver, window.LANG.choiceRun];
+            const commiserateOptions = a2TN.kind === "angry" ? window.LANG.choiceCommiserateAngry : window.LANG.choiceCommiserateHungry;
+            const semanticLabels = [Util.pick(commiserateOptions), Util.pick(window.LANG.choiceTalkOver), window.LANG.choiceRun];
+            a2ChoiceOrder = Util.shuffle([0, 1, 2]);
+            a2ChoiceLabels = a2ChoiceOrder.map((i) => semanticLabels[i]);
             convShowChoices(a2ChoiceLabels);
             a2Choice = -1;
             a2TP = 1;
@@ -653,16 +657,22 @@
               }
             }
             const lastChoiceStart = convChoiceYs[convChoiceYs.length - 1] ?? convChoiceY1;
-            if (picked < convChoices.length - 1 || clickSY >= lastChoiceStart) a2Choice = picked;
+            if (picked < convChoices.length - 1 || clickSY >= lastChoiceStart) {
+              a2ChoiceDisplayPicked = picked;
+              a2Choice = a2ChoiceOrder[picked];
+            }
           }
         }
         if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
         if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
-        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+        if (input.justPressed("action") && convChoiceHover >= 0) {
+          a2ChoiceDisplayPicked = convChoiceHover;
+          a2Choice = a2ChoiceOrder[convChoiceHover];
+        }
 
         if (a2Choice >= 0 && a2TP === 1) {
           triggerChoiceConfirm();
-          convChoicePicked = a2Choice;
+          convChoicePicked = a2ChoiceDisplayPicked;
           const _line = a2PitchLines[a2Choice];
           const _picked = a2Choice;
           const _startPhase = phase;
