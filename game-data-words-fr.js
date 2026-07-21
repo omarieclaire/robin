@@ -378,7 +378,7 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "on commence par l'allée des nouilles, en grande pompe", tags: ["ramen"] },
   { t: "le loyer mange en premier.|pause|l'épicerie mange en deuxième.|pause|à soir c'est le deuxième.\nje suis en deuxième", tags: ["rent"] },
   { t: "empruntons un peu à ceux qui en ont les moyens", tags: ["robin-hood"] },
-  { t: "à soir personne détourne le regard.|pause|je suis tellement tannée des petites portions.|pause|allons-y", tags: ["samples"] },
+  { t: "à soir personne détourne le regard.|pause|je suis tellement tanné·e des petites portions.|pause|allons-y", tags: ["samples"] },
   { t: "de 4$ à 40$, après à 400$? je suis in", tags: ["saver"] },
   { t: "je témoigne de rien.|pause|allons-y.\nje t'ai jamais vu·e", tags: ["sandwich"] },
   { t: "qu'est-ce que j'ai comme choix?", tags: ["segals"] },

@@ -187,7 +187,7 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   ],
 
 
-  act2Choices: ["(>_<) j'en ai assez", "(o_O) qu'est-ce j'ai comme choix?"],
+  act2Choices: ["(>_<) chus tanné·e", "(o_O) ça change rien"],
 
   act3Undecided: ["hmm", "hmmm", "laisse-moi réfléchir"],
   act3Wait: ["attends-moi", "j'arrive", "deux secondes"],

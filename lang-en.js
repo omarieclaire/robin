@@ -174,7 +174,7 @@ a1Encounters: [
   ],
 
 
-  act2Choices: ["(>_<) I've had enough", "(o_O) what choice do I have?"],
+  act2Choices: ["(>_<) I've had enough", "(o_O) whatever"],
 
   act3Undecided: ["hmm", "hmmm", "let me think"],
   act3Wait: ["wait for me", "i'm coming", "hold up"],
