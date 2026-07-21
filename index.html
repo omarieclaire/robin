@@ -1,0 +1,754 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" /> -->
+    <title>Robins des ruelles</title>
+    <meta name="title" content="Robins des ruelles" />
+    <meta name="description" content="Tired of being hungry? Join the Robins des ruelles and take what you need!" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://omarieclaire.github.io/robin/" />
+    <meta property="og:title" content="Robins des ruelles" />
+    <meta property="og:description" content="Tired of being hungry? Join the Robins des ruelles and take what you need!" />
+    <meta property="og:image" content="https://omarieclaire.github.io/robin/img/rdr.png" />
+
+    <!-- Terrifying creature from the depths Card Tags  -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Robins des ruelles - Let's eat together" />
+    <meta name="twitter:description" content="Tired of being hungry? Join the Robins des ruelles and take what you need!" />
+    <meta name="twitter:image" content="https://omarieclaire.github.io/robin/img/rdr.png" />
+
+    <link rel="me" href="https://mastodon.social/@omarieclaire" />
+
+    <!-- Bluesky/AT Protocol -->
+    <!--  currently use OpenGraph tags, but add these for future compatibility -->
+    <meta property="bsky:title" content="Robins des ruelles - Let's eat together" />
+    <meta property="bsky:description" content="Tired of being hungry? Join the Robins des ruelles and take what you need!" />
+    <meta property="bsky:image" content="https://omarieclaire.github.io/robin/img/rdr.png" />
+
+    <!-- General SEO Meta Tags -->
+    <meta name="description" content="Tired of being hungry? Join the Robins des ruelles and take what you need!" />
+    <meta name="theme-color" content="#000000" />
+
+    <!-- Image Specifications -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Robins des ruelles game preview showing character stealing food" />
+
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+      :root {
+        --c-accent: #8957ff; /* main character, titles, highlights */
+        --c-accent-dim: #b05a40; /* accent but muted */
+        --c-npc-conv: #7a8aaa; /* default NPC dialogue box color */
+        --c-win: #4aba6a; /* recruitment success */
+        --c-warn: #d4a030; /* heat, warnings */
+        --c-info: #5cbdbd; /* info banners, fridge */
+        --c-narc: #c44; /* narc reveal */
+        --c-bg: #000000; /* game background */
+        --c-bg-hud: #1a1a1a; /* hud background */
+        --c-text-dim: #888; /* muted text */
+        --c-text-mid: #aaa; /* medium text */
+        --c-sidewalk: #444; /* road borders */
+        --c-road-dot: #333; /* subtle road texture */
+        --c-bldg-1: #3a3535; /* building palette — very desaturated */
+        --c-bldg-2: #353a35;
+        --c-bldg-3: #35353a;
+        --c-bldg-4: #3a3838;
+        --c-bldg-5: #383a38;
+        --c-bldg-6: #38383a;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--c-bg);
+        color: var(--c-bg);
+        font-family: "VT323", "Courier New", monospace;
+        overflow: hidden;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #hud {
+        width: 100%;
+        max-width: 1200px;
+        /* Clears notches/status bars */
+        padding: max(6px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left));
+        gap: 10px;
+        font-size: 22px;
+        letter-spacing: 2px;
+        color: var(--c-text-mid);
+        z-index: 10;
+        flex-shrink: 0;
+        background: transparent;
+        border-bottom: 1px solid #2a2a2a;
+        box-shadow: 0 1px 0 rgba(137, 87, 255, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-transform: lowercase;
+      }
+
+      #button-div {
+        display: flex;
+        padding-left: 10px;
+      }
+
+
+      /* Help modal overlay */
+      #help-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+      }
+      #help-overlay.open {
+        display: flex;
+      }
+
+      /* Help modal box */
+      #help-modal {
+        background: #0d0d0d;
+        border: 1px solid #2a2a2a;
+        box-shadow: 0 0 0 1px rgba(137, 87, 255, 0.15);
+        padding: 28px 32px;
+        max-width: 360px;
+        width: 90%;
+        color: var(--c-text-mid);
+        font-family: inherit;
+        font-size: 16px;
+        letter-spacing: 1px;
+        line-height: 1.7;
+        text-transform: lowercase;
+      }
+      #help-modal h2 {
+        color: #ccc;
+        margin: 0 0 16px;
+        font-size: 2.5rem;
+        font-variant: small-caps;
+        letter-spacing: 2px;
+        border-bottom: 1px solid #2a2a2a;
+        padding-bottom: 8px;
+      }
+      #help-modal p {
+        margin: 0 0 8px;
+        color: #666;
+      }
+      #help-modal strong {
+        color: #888;
+      }
+      #help-modal a {
+        color: var(--c-accent);
+        text-decoration: none;
+      }
+      #help-modal a:hover {
+        color: #ccc;
+      }
+
+      /* Mobile */
+      @media (max-width: 700px) {
+        #hud .seg {
+          flex-direction: column;
+          gap: 0;
+          margin-right: 0;
+          align-items: flex-start;
+          line-height: 1.25;
+        }
+
+        #hud > span:first-child {
+          flex: 1;
+          min-width: 0;
+        }
+        #hud-label {
+          display: flex;
+          flex: 1;
+          justify-content: space-between;
+        }
+        .hud-btn,
+        #help-btn,
+        #mute-btn,
+        #lang-btn,
+        #quit-btn {
+         
+          font-size: inherit; /* EXACTLY the stats' size — inherits from #hud */
+          font-variant: normal;
+          text-transform: lowercase;
+          letter-spacing: 1px;
+          height: 2.5em; /* = two stat rows at 1.25 line-height */
+          display: inline-flex;
+          align-items: center;
+          padding: 0 7px;
+          margin-left: 0; /* #button-div gap handles spacing */
+        }
+        #music-vol {
+          flex-direction: column;
+          line-height: 1.05;
+          gap: 0;
+        }
+        #button-div {
+          gap: 8px;
+          padding-left: 6px;
+        }
+      }
+      @media (max-width: 480px) {
+        #music-slider {
+          width: 50px;
+        }
+        #hud {
+          font-size: 14px;
+          padding: 4px 8px;
+          gap: 6px;
+          letter-spacing: 1px;
+        }
+        #hud .status {
+          font-size: 14px;
+        }
+
+        #help-modal {
+          font-size: 14px;
+          padding: 20px;
+        }
+      }
+
+      .hud-btn,
+      #help-btn,
+      #mute-btn,
+      #lang-btn,
+      #quit-btn {
+        background: none;
+        border: 1px solid #444;
+        color: #5cbdbd;
+        font-size: 1.3rem;
+        letter-spacing: 2px;
+        cursor: pointer;
+        padding: 2px 10px;
+        border-radius: 0;
+        font-family: inherit;
+        font-variant: small-caps;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+        margin-left: 6px;
+        transition:
+          border-color 0.15s ease,
+          color 0.15s ease;
+      }
+      .hud-btn:hover,
+      #help-btn:hover,
+      #mute-btn:hover,
+      #lang-btn:hover,
+      #quit-btn:hover {
+        border-color: var(--c-accent);
+        color: #ccc;
+      }
+
+      @media (max-width: 480px) {
+        #hud {
+          font-size: 14px;
+          padding: 4px 8px;
+          letter-spacing: 1px;
+        }
+        .hud-btn,
+        #help-btn,
+        #mute-btn,
+        #lang-btn,
+        #quit-btn {
+     
+          font-variant: normal;
+          text-transform: lowercase;
+          letter-spacing: 1px;
+          height: 2.5em; /* = two stat rows at 1.25 line-height */
+          display: inline-flex;
+          align-items: center;
+          padding: 0 7px;
+          margin-left: 0; /* #button-div gap handles spacing */
+        }
+        #music-vol {
+          flex-direction: column;
+          line-height: 1.05;
+          gap: 0;
+        }
+        #button-div {
+          gap: 8px;
+          padding-left: 6px;
+        }
+      }
+
+      #scene-nav {
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        gap: 3px;
+        padding: 3px 10px;
+        background: #0d0d0d;
+        border-bottom: 1px solid #1a1a1a;
+        flex-shrink: 0;
+        display: none;
+      }
+      #scene-nav button {
+        flex: 1;
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        background: #111;
+        color: #444;
+        border: 1px solid #2a2a2a;
+        padding: 3px 0;
+        cursor: pointer;
+        border-radius: 2px;
+        touch-action: manipulation;
+      }
+      #scene-nav button:hover,
+      #scene-nav button:active {
+        color: #aaa;
+        border-color: #555;
+        background: #222;
+      }
+
+      .flash-gold {
+        animation: flashGold 300ms ease-out;
+      }
+      @keyframes flashGold {
+        0% {
+          filter: brightness(1.8) saturate(1.5);
+        }
+        100% {
+          filter: brightness(1) saturate(1);
+        }
+      }
+
+      /* .flash-gold { background: gold !important; color: black !important; } */
+
+      #game-screen.chroma {
+        animation: chroma-pulse 0.13s steps(1) infinite;
+      }
+      @keyframes chroma-pulse {
+        0% {
+          text-shadow:
+            3px 0 rgba(255, 40, 60, 0.65),
+            -3px 0 rgba(0, 180, 255, 0.65);
+        }
+        50% {
+          text-shadow:
+            -2px 0 rgba(255, 40, 60, 0.5),
+            2px 0 rgba(0, 180, 255, 0.5);
+        }
+        100% {
+          text-shadow:
+            3px 0 rgba(255, 40, 60, 0.65),
+            -3px 0 rgba(0, 180, 255, 0.65);
+        }
+      }
+
+      #game-screen.flash-good {
+        animation: flash-good 0.35s ease-out forwards;
+      }
+      @keyframes flash-good {
+        0% {
+          box-shadow: inset 0 0 0 1px rgba(17, 37, 37, 0.1);
+        }
+        60% {
+          box-shadow: inset 0 0 0 2px rgba(24, 43, 43, 0.1);
+        }
+        100% {
+          box-shadow: inset 0 0 0 0px rgba(92, 189, 189, 0);
+        }
+      }
+      #game-screen.flash-gold {
+        animation: flash-gold 0.3s ease-out forwards;
+      }
+      @keyframes flash-gold {
+        0% {
+          box-shadow: inset 0 0 0 3px rgba(20, 14, 8, 0.1);
+        }
+        100% {
+          box-shadow: inset 0 0 0 0px rgba(29, 19, 10, 0);
+        }
+      }
+
+      #hud .val {
+        color: var(--c-accent);
+
+        letter-spacing: 1px;
+      }
+      
+      #hud > span,
+      #hud .status {
+        white-space: nowrap;
+      }
+      #hud .seg {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        margin-right: 16px;
+      }
+  
+      body.is-mobile #hud .seg {
+        flex-direction: column;
+        gap: 0;
+        margin-right: 0;
+        align-items: flex-start;
+        line-height: 1.25;
+      }
+      body.is-mobile #hud > span:first-child {
+        flex: 1;
+        min-width: 0;
+      }
+      body.is-mobile #hud-label {
+        display: flex;
+        flex: 1;
+        justify-content: space-between;
+      }
+      body.is-mobile .hud-btn,
+      body.is-mobile #help-btn,
+      body.is-mobile #mute-btn,
+      body.is-mobile #lang-btn,
+      body.is-mobile #quit-btn {
+       
+        font-size: inherit; /* EXACTLY the stats' size — inherits from #hud */
+        font-variant: normal;
+        text-transform: lowercase;
+        letter-spacing: 1px;
+        height: 2.5em; /* = two stat rows at 1.25 line-height */
+        display: inline-flex;
+        align-items: center;
+        padding: 0 7px;
+        margin-left: 0; /* #button-div gap handles spacing */
+      }
+      body.is-mobile #music-vol {
+        flex-direction: column;
+        line-height: 1.05;
+        gap: 0;
+      }
+      body.is-mobile #button-div {
+        gap: 8px;
+        padding-left: 6px;
+      }
+      #hud .status {
+        color: #4ecc4e; /* matches GAME_DATA.colors.success — old #2a7a2a was unreadable */
+        text-align: right;
+        /* font-size: 22px; */
+        opacity: 0.9;
+      }
+      #game-wrap {
+        width: 100%;
+        max-width: 1200px;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: #000000;
+        /* Grid is sized to its exact W×H cell content in JS (measureGrid) —
+           on screens taller/shorter than that content, center it in the
+           leftover space rather than pinning it to the top-left. */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game-screen {
+        font-family: "Courier New", "Consolas", "Monaco", monospace;
+        font-variant-ligatures: none;
+        font-feature-settings:
+          "liga" 0,
+          "calt" 0;
+        text-rendering: geometricPrecision;
+        letter-spacing: 0;
+        word-spacing: 0;
+        white-space: pre;
+        line-height: 1;
+        background: #000000;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        position: relative;
+        flex: none;
+        cursor: pointer;
+      }
+      #game-screen .cell {
+        display: inline-block;
+        width: 1ch;
+        overflow: visible;
+        vertical-align: top;
+      }
+
+      #game-screen .cell {
+        display: inline-block;
+        width: 1ch;
+        text-align: left;
+        overflow: visible;
+        white-space: pre;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #0c0a0c 0%, #050505 100%);
+        z-index: 20;
+        text-align: center;
+        gap: 14px;
+        font-family: "VT323", monospace;
+        padding: 20px;
+      }
+      #overlay.hidden {
+        display: none;
+      }
+      #overlay h1 {
+        font-size: 52px;
+        color: var(--c-accent);
+        letter-spacing: 6px;
+        margin: 0;
+        animation: titlepulse 3s ease-in-out infinite, titleglitch 0.9s ease-out 1;
+      }
+      @keyframes titlepulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.82;
+        }
+      }
+      @keyframes titleglitch {
+        0%   { text-shadow: 5px 0 rgba(255,40,60,0.85), -5px 0 rgba(0,180,255,0.85); }
+        40%  { text-shadow: 2px 0 rgba(255,40,60,0.4),  -2px 0 rgba(0,180,255,0.4); }
+        100% { text-shadow: none; }
+      }
+      #overlay .sub {
+        font-size: 1.5rem;
+        color: var(--c-npc-conv);
+        max-width: 440px;
+        line-height: 1.5;
+        white-space: pre-line;
+        /* font-style: italic; */
+        opacity: 0.9;
+      }
+      #overlay .endart {
+        font-size: 28px;
+        line-height: 1.1;
+        font-family: "Courier New", monospace;
+        white-space: pre;
+        margin: 10px 0;
+        color: var(--c-accent);
+        text-align: center;
+        width: 100%;
+        /* text-shadow: 0 0 12px rgba(137, 87, 255, 0.6); */
+        animation: artblink 1.2s ease-in-out infinite;
+      }
+      @keyframes artblink {
+        0%,
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        50% {
+          opacity: 0.7;
+          transform: translateY(-2px);
+        }
+      }
+      #start-btn {
+        margin-top: 16px;
+        padding: 14px 52px;
+        color: #fff;
+        background: transparent;
+        border: 2px solid var(--c-accent);
+        font-family: "VT323", monospace;
+        font-size: 28px;
+        cursor: pointer;
+        letter-spacing: 4px;
+        border-radius: 2px;
+        transition: all 0.2s ease;
+      }
+      #start-btn:hover {
+        background: var(--c-accent);
+        color: #fff;
+        transform: scale(1.03);
+      }
+      #overlay .hint {
+        font-size: 17px;
+        color: #7a7a8a;
+        max-width: 380px;
+        line-height: 1.5;
+        opacity: 0.8;
+      }
+
+      /* Landing screen: show content on the ASCII grid, not as HTML */
+      #overlay.grid-landing {
+        background: transparent;
+        pointer-events: none;
+      }
+      #overlay.grid-landing #start-btn {
+        pointer-events: auto;
+      }
+      #overlay.grid-landing h1,
+      #overlay.grid-landing .endart,
+      #overlay.grid-landing .sub,
+      #overlay.grid-landing .hint {
+        display: none;
+      }
+      /* The visible "[ PLAY ]" box is drawn directly on the grid — this
+         element is only the click/tap/keyboard hit target, sized and
+         positioned by JS (_positionStartBtn) to sit exactly over it. */
+      #overlay.grid-landing #start-btn {
+        position: absolute;
+        bottom: 60px; /* fallback until JS positions it over the grid box */
+        left: 50%;
+        margin-top: 0;
+        padding: 0;
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        color: transparent;
+        font-size: 1px;
+      }
+      #overlay.grid-landing #start-btn:hover {
+        background: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="help-overlay">
+      <div id="help-modal">
+        <h2 id="help-title">Credits</h2>
+        <p><strong id="help-music-label">Music:</strong></p>
+        <ul>
+          <li>Opus No. 1  Written and performed by Tim Carleton  Courtesy of Tim Carleton</li>
+          <li>Money (Dosage Mix) by Regfantasy's Rendezvous</li>
+          <li>One Take 3, Take 3 by Markus Floats</li>
+          <li>Choke Enough by Oklou</li>
+        </ul>
+        <!-- <p><strong>Game & dev:</strong> ...</p> -->
+      </div>
+    </div>
+
+    <div id="hud">
+      <span><span id="hud-label"></span> <span class="val" id="hud-score"></span></span
+      ><span class="status" id="hud-status"></span>
+      <span id="button-div">
+        <button id="music-vol" class="hud-btn">music med</button>
+
+        <button id="mute-btn">mute</button>
+
+        <button id="help-btn">?</button>
+
+        <button id="quit-btn">quit</button>
+
+        <button id="lang-btn">FR</button>
+      </span>
+    </div>
+    <div
+      id="perf-overlay"
+      style="
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        font-family: monospace;
+        font-size: 11px;
+        color: #0f0;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 4px 6px;
+        border-radius: 3px;
+        z-index: 9999;
+        pointer-events: none;
+        display: none;
+      "></div>
+
+    <div id="scene-nav">
+      <button data-act="1">1</button><button data-act="2">2</button> <button data-act="3">3</button><button data-act="4">4</button>
+      <button data-act="5">5</button><button data-act="6">6</button> <button data-act="7">7</button><button data-act="8">8</button>
+      <button data-act="9">9</button>
+    </div>
+    <div id="game-wrap">
+      <div id="game-screen"></div>
+    </div>
+   
+    <div id="overlay" class="grid-landing">
+      <h1 id="ov-title">ROBINS des ruelles</h1>
+      <pre class="endart" id="ov-art">/▄▄▄\     /▄▄▄\
+║ ^□║  @  ║□^ ║
+╚═══╝     ╚═══╝</pre>
+      <div class="sub" id="ov-sub"></div>
+      <div class="hint" id="ov-hint"></div>
+      <button id="start-btn">PLAY</button>
+    </div>
+    <script src="lang-en.js"></script>
+    <script src="lang-fr.js"></script>
+    <script src="lang-init.js"></script>
+
+    <script src="frames.js"></script>
+    <script src="omc-kit.js"></script>
+    <script src="grid.js"></script>
+    <script src="fx.js"></script>
+    <script src="seq.js"></script>
+    <script src="game-data.js"></script>
+    <script src="game-data-food.js"></script>
+    <script src="game-data-words-engine.js"></script>
+    <script id="words-script"></script>
+    <script>
+      document.getElementById("words-script").src = window.LANG === window.LANG_FR ? "game-data-words-fr.js" : "game-data-words.js";
+    </script>
+    <script src="game-state.js"></script>
+    <script src="style.js"></script>
+    <script src="banner.js"></script>
+    <script src="sound.js"></script>
+    <script src="particles.js"></script>
+    <script src="transitions.js"></script>
+    <script src="conv.js"></script>
+    <script src="inter.js"></script>
+    <script src="city.js"></script>
+    <script src="input.js"></script>
+    <script src="hud.js"></script>
+    <script src="crew.js"></script>
+    <script src="act2.js"></script>
+    <script src="act3.js"></script>
+    <script src="act4.js"></script>
+    <script src="act5.js"></script>
+    <script src="act6.js"></script>
+    <script src="act8.js"></script>
+    <script src="act9.js"></script>
+    <script src="act1.js"></script>
+    <script src="game.js"></script>
+    <script>
+      (function () {
+        var mods = { grid: typeof Grid, fx: typeof Effects, seq: typeof Seq, style: typeof BANNER_BOX, banner: typeof Banner, sound: typeof Music, particles: typeof spark, transitions: typeof collapseGravity, conv: typeof convRender, inter: typeof initInter, city: typeof renderCity, input: typeof _measureCellCached, hud: typeof _hudSeg, crew: typeof ensureCrew, act2: typeof initAct2, act3: typeof initAct3, act4: typeof initAct4, act5: typeof initAct5, act6: typeof initAct6, act8: typeof initAct8, act9: typeof initEnd, act1: typeof startGame };
+        var missing = Object.keys(mods).filter(function (k) { return mods[k] === "undefined"; });
+        if (missing.length) alert("Module files failed to load: " + missing.join(", ") + ".js — check that they were committed and pushed.");
+        if (window.DEBUG || /[?&]debug/.test(location.search)) {
+          var shown = false;
+          window.addEventListener("error", function (ev) {
+            if (shown) return;
+            shown = true;
+            alert("Runtime error: " + ev.message + "\n" + (ev.filename || "").split("/").pop() + ":" + ev.lineno);
+          });
+        }
+      })();
+    </script>
+    <script>
+      window.DEBUG = /[?&]debug/.test(location.search) || location.hash === "#debug";
+      if (window.DEBUG) {
+        document.getElementById("scene-nav").style.display = "flex";
+      }
+    </script>
+  </body>
+</html>
