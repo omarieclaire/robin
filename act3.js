@@ -1037,46 +1037,44 @@
         }
       }
 
-      // ── TP 9: narc reveal consequence (tap) ──────────────────
-      else if (a2TP === 9 && _a2DialogueTap) {
-        if (a2TT > A2_TAP_MIN_MS) {
-          clickPending = false;
-          if (_a2HasChunks) {
-            _convChunkFlush();
-            _convChunkTimer = 999999;
-            a2TT = 0;
-          } else {
-            DM.endConv();
-            const n = a2TN;
-            n.st = "angry";
-            n.col = C_DANGER;
-            a2Ht++;
-            audio.play("narc");
-            addFloat(window.LANG.floatNarcRecruited || window.LANG.floatNarc, 0, 0, C_DANGER);
+      // ── TP 9: narc reveal consequence (auto — the reveal line already told you; tap only skips the pause) ──
+      else if (a2TP === 9 && (a2TT > A2.NARC_PAUSE || (_a2DialogueTap && a2TT > A2_TAP_MIN_MS))) {
+        clickPending = false;
+        if (_a2HasChunks) {
+          _convChunkFlush();
+          _convChunkTimer = 999999;
+          a2TT = 0;
+        } else {
+          DM.endConv();
+          const n = a2TN;
+          n.st = "angry";
+          n.col = C_DANGER;
+          a2Ht++;
+          audio.play("narc");
+          addFloat(window.LANG.floatNarcRecruited || window.LANG.floatNarc, 0, 0, C_DANGER);
 
-            const _narcSX = Math.round(a2TN.wx - a2WX);
-            const _narcSY = Math.round(a2NpcY(a2TN)); // body row
-            Effects.start("corrupt", { x: _narcSX, y: _narcSY - 1, radius: 5, duration: 1100, intensity: 1.4, swap: true });
-            setTimeout(() => {
-              if (phase !== "act3") return;
-              Effects.start("corrupt", { x: Math.round(a2PX), y: Math.round(a2PY) - 1, radius: 10, duration: 800, intensity: 1.0, swap: true });
-            }, 400);
+          const _narcSX = Math.round(a2TN.wx - a2WX);
+          const _narcSY = Math.round(a2NpcY(a2TN)); // body row
+          Effects.start("corrupt", { x: _narcSX, y: _narcSY - 1, radius: 5, duration: 1100, intensity: 1.4, swap: true });
+          setTimeout(() => {
+            if (phase !== "act3") return;
+            Effects.start("corrupt", { x: Math.round(a2PX), y: Math.round(a2PY) - 1, radius: 10, duration: 800, intensity: 1.0, swap: true });
+          }, 400);
 
-            spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
-            triggerChromatic(500);
-            for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
-            spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
-            if (a2Ht >= A2_MH) {
-              setTimeout(() => triggerCorruptBust("busted", initAct3), 1100);
-            }
-            a2TN.cd = 1000;
-            a2TN = null;
-            a2TalkCD = 500;
-            convEndWhenDone(T.exit, () => {
-              dialogStack = [];
-              convReset();
-            });
+          spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
+          triggerChromatic(500);
+          for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
+          spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
+          if (a2Ht >= A2_MH) {
+            setTimeout(() => triggerCorruptBust("busted", initAct3), 1100);
           }
+          a2TN.cd = 1000;
+          a2TN = null;
+          a2TalkCD = 500;
+          convEndWhenDone(T.exit, () => {
+            dialogStack = [];
+            convReset();
+          });
         }
       }
 
@@ -1186,7 +1184,7 @@
         }
       }
 
-      // ── TP 32: player responded to cat; tap to recruit and close ──
+      // ── TP 32: player responded to cat; tap to show recruit choice ──
       else if (a2TP === 32 && _a2DialogueTap) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
@@ -1195,32 +1193,70 @@
             _convChunkTimer = 999999;
             a2TT = 0;
           } else {
+            a2ChoiceLabels = [window.LANG.choiceRecruitCat, window.LANG.choiceWalkAwayShort];
+            convShowChoices(a2ChoiceLabels);
+            a2Choice = -1;
+            a2TP = 33;
+            a2TT = 0;
+          }
+        }
+      }
+
+      // ── TP 33: wait for recruit/walk away choice on cat ──
+      else if (a2TP === 33 && a2TT > A2.CHOICE_LOCK) {
+        if (clickPending) {
+          clickPending = false;
+          if (clickSY >= convChoiceY1 && clickSY <= convChoiceY2) {
+            const half = Math.floor((convChoiceY1 + convChoiceY2) / 2);
+            a2Choice = clickSY < half ? 0 : 1;
+          }
+        }
+        if (input.justPressed("up")) convChoiceHover = Math.max(0, (convChoiceHover < 0 ? 0 : convChoiceHover) - 1);
+        if (input.justPressed("down")) convChoiceHover = Math.min((convChoices?.length ?? 1) - 1, (convChoiceHover < 0 ? -1 : convChoiceHover) + 1);
+        if (input.justPressed("action") && convChoiceHover >= 0) a2Choice = convChoiceHover;
+
+        if (a2Choice >= 0 && a2TP === 33) {
+          triggerChoiceConfirm();
+          convChoicePicked = a2Choice;
+          const _picked = a2Choice;
+          const _startPhase = phase;
+          setTimeout(() => {
+            if (phase !== _startPhase || !a2TN) return;
+            convChoicePicked = -1;
+            convHideChoices();
             const n = a2TN;
-            a2CatRecruited = true;
-            n.st = "rec";
-            a2CrewCount++;
-            a2Crew.push({
-              b: Math.random() * 6,
-              ru: n.ru,
-              art: n.art,
-              col: n.col,
-              isCat: true,
-              jwx: n.wx,
-              jny: a2NpcY(n),
-              j0: a2T,
-            });
-            audio.play("recruit");
-            burstGood(Math.round(a2PX), Math.round(a2PY), n.col || C_CAT, 10);
-            triggerFlashGood();
-            _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
-            n.cd = 1000;
+            if (_picked === 0) {
+              a2CatRecruited = true;
+              n.st = "rec";
+              a2CrewCount++;
+              a2Crew.push({
+                b: Math.random() * 6,
+                ru: n.ru,
+                art: n.art,
+                col: n.col,
+                isCat: true,
+                jwx: n.wx,
+                jny: a2NpcY(n),
+                j0: a2T,
+              });
+              audio.play("recruit");
+              burstGood(Math.round(a2PX), Math.round(a2PY), n.col || C_CAT, 10);
+              triggerFlashGood();
+              _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
+              n.cd = 1000;
+            } else {
+              n.st = "done";
+              n.cd = 9999;
+              addFloat(Util.pick(window.LANG.floatCatDeclined), 0, 0, C_WARN);
+            }
             a2TN = null;
             a2TalkCD = 500;
             convEndWhenDone(A2.RECRUIT_CLOSE, () => {
               dialogStack = [];
               convStartFade();
             });
-          }
+          }, 400);
+          a2TT = -600;
         }
       }
 

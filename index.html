@@ -79,6 +79,7 @@
         color: var(--c-bg);
         font-family: "VT323", "Courier New", monospace;
         overflow: hidden;
+        height: 100vh; /* fallback for browsers that reject dvh (e.g. FB in-app browser) — dvh below overrides where supported */
         height: 100dvh;
         display: flex;
         flex-direction: column;
