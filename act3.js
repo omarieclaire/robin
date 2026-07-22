@@ -12,8 +12,8 @@
   const A2_RETURN_RECHECK_MS = 2500; // if blocked by busy radius, recheck after this many ms
   const A2_RETURN_BANG_MS = 1500; // how long the "!" indicator shows above approaching NPC
   // how long you have to play act 2
-  const A2_TIME_LIMIT_MS = 100000;
-  const A2_TIME_WARN_MS = 70000;
+  const A2_TIME_LIMIT_MS = 60000;
+  const A2_TIME_WARN_MS = 40000;
 
   const A2_BCOL = ["#b9a89a", "#9ab89a", "#9a9ab8", "#b8a09a", "#9aa8b0", "#a89ab0", "#b0a898", "#98a8b0"];
   const A2_NPC_ARTS = window.GAME_DATA.npcArts;
@@ -1285,11 +1285,6 @@
       return;
     }
 
-    if (!a2SV && a2CrewCount >= A2_MIN) {
-      a2SV = true;
-      a2SD = true;
-    }
-
     const _pwxForSpd = a2WX + a2PX;
     const _narcBubbleNearby = a2NPCs.some((n) => n.tp === "narc" && n.st === "idle" && Math.abs(n.wx - _pwxForSpd) < 26 && Math.abs(n.wx - _pwxForSpd) > 3);
     a2Spd = (0.004 + a2T * 0.00000015) * (_narcBubbleNearby ? 0.6 : 1);
@@ -1451,7 +1446,10 @@
         Banner.show(window.LANG.bannerCopsCircling, C_WARN, T.bannerHold);
       }
       if (a2T > A2_TIME_LIMIT_MS) {
-        if (!a2TimeoutFired) {
+        if (a2CrewCount >= 1) {
+          a2SV = true;
+          a2SD = true;
+        } else if (!a2TimeoutFired) {
           a2TimeoutFired = true;
           triggerMirrorBust("timeout", initAct3, Math.round(a2PX), Math.round(a2PY));
         }
