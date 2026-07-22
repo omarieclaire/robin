@@ -934,7 +934,8 @@
               a2TN.cd = 9999;
               a2TN = null;
               a2TalkCD = 500;
-              if (wasNarc) Banner.show(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold);
+              if (wasNarc)
+                setTimeout(() => Banner.show(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold), A2.RECRUIT_CLOSE + convFadeDuration);
               else
                 setTimeout(
                   () => addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN),
