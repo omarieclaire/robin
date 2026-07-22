@@ -380,10 +380,10 @@
                 const rendered = box.lines[li];
                 const bulletIdx = rendered.indexOf("\u25B6");
                 if (bulletIdx !== -1) {
-                  const bulletX = xPos + 3 + bulletIdx; // one extra column off the left border
+                  const bulletX = (Device.isMobile ? xPos + 2 : xPos + 3) + bulletIdx; // desktop keeps a small inset off the left border, mobile sits flush with normal text
                   grid.set(bulletX, cy, "\u25B6", applyTextOpacity(bulletCol));
                   const face = rendered.substring(bulletIdx + 2); // drop "\u25B6 "
-                  grid.text(face, bulletX + 3, cy, applyTextOpacity(lineCol)); // a bit more room than a single space
+                  grid.text(face, bulletX + 2, cy, applyTextOpacity(lineCol)); // single space after the bullet
                 } else {
                   grid.text(rendered, xPos + 2, cy, applyTextOpacity(lineCol));
                 }
