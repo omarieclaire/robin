@@ -537,6 +537,7 @@
         <button class="export-btn" onclick="exportCurrentTagTXT()">⬇ dl this tree</button>
         <button class="export-btn" onclick="exportAllTagsTXT()">⬇⬇ dl all trees</button>
         <button class="edits-btn" id="editsBtn" onclick="exportEdits()">copy/download all edits</button>
+        <button class="edits-btn" id="mailEditsBtn" onclick="sendEditsToMarie()">✉ send all changes to marie</button>
         <button class="sec" id="resetBtn" onclick="resetEdits()">reset (DANGER)</button>
         <span class="sep"></span>
         <button class="sec" id="langBtn" onclick="toggleLang()">FR</button>
@@ -675,6 +676,8 @@
         }
         const r = document.getElementById("resetBtn");
         if (r) r.disabled = n === 0;
+        const m = document.getElementById("mailEditsBtn");
+        if (m) m.disabled = n === 0;
       }
       function resetEdits() {
         const n = editCount();
@@ -1693,13 +1696,10 @@
         URL.revokeObjectURL(url);
       }
 
-      /** Export all user edits as an old→new find-and-replace list. */
-      function exportEdits() {
+      /** Build the old→new replacement text for all edits. Returns null if none. */
+      function buildEditsText() {
         const keys = Object.keys(edits);
-        if (!keys.length) {
-          alert("No edits yet. Click any line of dialogue to edit it.");
-          return;
-        }
+        if (!keys.length) return null;
         const lines = [];
         lines.push("Replacements: the original line is followed by the replacement.");
         lines.push("");
@@ -1708,8 +1708,10 @@
           lines.push(toEditable(edits[orig]));
           lines.push("");
         });
-        const full = lines.join("\n").trimEnd() + "\n";
+        return { text: lines.join("\n").trimEnd() + "\n", count: keys.length };
+      }
 
+      function downloadEditsFile(full) {
         const blob = new Blob([full], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -1719,10 +1721,54 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        navigator.clipboard?.writeText(full).then(
-          () => alert(`${keys.length} edit(s) copied to clipboard and downloaded.`),
+      }
+
+      /** Export all user edits as an old→new find-and-replace list. */
+      function exportEdits() {
+        const built = buildEditsText();
+        if (!built) {
+          alert("No edits yet. Click any line of dialogue to edit it.");
+          return;
+        }
+        downloadEditsFile(built.text);
+        navigator.clipboard?.writeText(built.text).then(
+          () => alert(`${built.count} edit(s) copied to clipboard and downloaded.`),
           () => {}
         );
+      }
+
+      /** Download the edits file, then open a pre-filled email to Marie with
+       *  the edits inlined in the body (browsers can't attach files from JS,
+       *  so the file is also downloaded — attach it manually if the inline
+       *  body gets truncated by the mail client on a long edit list). */
+      function sendEditsToMarie() {
+        const built = buildEditsText();
+        if (!built) {
+          alert("No edits yet. Click any line of dialogue to edit it.");
+          return;
+        }
+        downloadEditsFile(built.text);
+
+        const MAX_BODY = 1500;
+        let body = built.text;
+        let truncated = false;
+        if (body.length > MAX_BODY) {
+          body = body.slice(0, MAX_BODY) + "\n\n[…truncated — see attached edits-" + curLang + ".txt, just downloaded]";
+          truncated = true;
+        }
+        const subject = `Tag Walker edits (${curLang.toUpperCase()}) — ${built.count} change(s)`;
+        const intro = truncated
+          ? "Edits below are truncated. The full list was just downloaded as edits-" +
+            curLang +
+            ".txt — please attach it to this email before sending.\n\n"
+          : "The full list was also downloaded as edits-" + curLang + ".txt in case you'd like to attach it.\n\n";
+        const mailto =
+          "mailto:marieflanagan@gmail.com" +
+          "?subject=" +
+          encodeURIComponent(subject) +
+          "&body=" +
+          encodeURIComponent(intro + body);
+        window.location.href = mailto;
       }
 
       /** Main export entry point — called by the button. */
