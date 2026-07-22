@@ -1285,6 +1285,11 @@
       return;
     }
 
+    if (!a2SV && a2CrewCount >= A2_MIN) {
+      a2SV = true;
+      a2SD = true;
+    }
+
     const _pwxForSpd = a2WX + a2PX;
     const _narcBubbleNearby = a2NPCs.some((n) => n.tp === "narc" && n.st === "idle" && Math.abs(n.wx - _pwxForSpd) < 26 && Math.abs(n.wx - _pwxForSpd) > 3);
     a2Spd = (0.004 + a2T * 0.00000015) * (_narcBubbleNearby ? 0.6 : 1);
