@@ -230,6 +230,18 @@
       gs.classList.add("flash-gold");
       flashGoldT = 0;
     }
+    if (flashWarnT > 0) {
+      gs.classList.remove("flash-warn");
+      void gs.offsetWidth;
+      gs.classList.add("flash-warn");
+      flashWarnT = 0;
+    }
+    if (flashDangerT > 0) {
+      gs.classList.remove("flash-danger");
+      void gs.offsetWidth;
+      gs.classList.add("flash-danger");
+      flashDangerT = 0;
+    }
     // Track render time for adaptive throttling (runs even without overlay)
     const _renderMs = performance.now() - _perfStart;
     _renderAvgWindow.push(_renderMs);

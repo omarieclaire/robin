@@ -144,8 +144,8 @@
 
     const mobileMinLane = 1;
 
-    const MIN_NPC_GAP = 38,
-      MAX_NPC_GAP = 62;
+    const MIN_NPC_GAP = 20,
+      MAX_NPC_GAP = 32;
 
     const playerLane = typeof a2PRu === "number" ? a2PRu : null;
     const firstSpawnLane = a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane ? playerLane : null;
@@ -821,10 +821,6 @@
               const mismatchDeck = a2TN.kind === "hungry" ? DECK_MISMATCH_TOO_STRUCTURAL : DECK_MISMATCH_TOO_LITERAL;
               const badReadTags = a2ChoiceTags[1] ?? [];
               convAddLine(DM.draw(mismatchDeck, badReadTags) + " " + DM.draw(DECK_NO_BYE, badReadTags), "them", convNPCColor);
-              setTimeout(
-                () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
-                convFadeDuration + 800,
-              );
               a2TP = 7;
             } else {
               // Roll for: immediate join (TP 8), say-more (TP 15), or maybe-later (TP 10).
@@ -919,7 +915,11 @@
               a2TN = null;
               a2TalkCD = 500;
               if (wasNarc) Banner.show(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold);
-              else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+              else
+                setTimeout(
+                  () => addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN),
+                  A2.RECRUIT_CLOSE + convFadeDuration,
+                );
               convEndWhenDone(A2.RECRUIT_CLOSE, () => {
                 dialogStack = [];
                 convStartFade();
@@ -976,8 +976,14 @@
             a2TN.cd = 9999;
             a2TN = null;
             a2TalkCD = 500;
-            if (wasNarc) addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
-            else addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+            setTimeout(() => {
+              if (wasNarc) {
+                triggerFlashDanger();
+                addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
+              } else {
+                addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
+              }
+            }, T.exit + convFadeDuration);
             convEndWhenDone(T.exit, () => {
               dialogStack = [];
               convStartFade();
@@ -1000,6 +1006,10 @@
             a2TN.cd = 9999;
             a2TN = null;
             a2TalkCD = 500;
+            setTimeout(
+              () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
+              T.exit + convFadeDuration,
+            );
             convEndWhenDone(T.exit, () => {
               dialogStack = [];
               convStartFade();
@@ -1091,7 +1101,10 @@
             const n = a2TN;
             n.st = "maybe";
             n.cd = 9999;
-            addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, C_THINKING);
+            setTimeout(() => {
+              triggerFlashWarn();
+              addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, C_THINKING);
+            }, T.exit + convFadeDuration);
             n.thinkLine = Util.pick(window.LANG.act3Undecided);
             a2TN = null;
             a2TalkCD = 500;
