@@ -79,15 +79,24 @@
 
   function a2Layout() {
     A2_GND = H - 1;
-    A2_RU_H = 2;
     const numRoads = 3,
       numBands = numRoads + 1;
-    const totalStreetH = numRoads * A2_RU_H;
-    A2_BH_PER = Math.max(4, Math.floor((A2_GND - totalStreetH) / numBands));
+    // Sprite is 2 rows tall — pad a blank row above/below it so it isn't flush
+    // against the building walls. Only spend the extra rows on it if the
+    // building band can afford to give them up (short mobile screens can't).
+    let rowPad = 1;
+    A2_RU_H = 2 + rowPad * 2;
+    let bhPer = Math.floor((A2_GND - numRoads * A2_RU_H) / numBands);
+    if (bhPer < 4) {
+      rowPad = 0;
+      A2_RU_H = 2;
+      bhPer = Math.floor((A2_GND - numRoads * A2_RU_H) / numBands);
+    }
+    A2_BH_PER = Math.max(4, bhPer);
     A2_TOP_PAD = Math.floor(H * 0.06);
     A2_LANE_YS = [];
     for (let road = 0; road < numRoads; road++) {
-      const roadY = A2_TOP_PAD + (road + 1) * A2_BH_PER + road * A2_RU_H;
+      const roadY = A2_TOP_PAD + (road + 1) * A2_BH_PER + road * A2_RU_H + rowPad;
       A2_LANE_YS.push(roadY);
     }
   }
