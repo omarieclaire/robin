@@ -93,7 +93,8 @@
     { label: ctrl("musicMed") || "music med", vol: 0.55 },
     { label: ctrl("musicHigh") || "music high", vol: 1 },
   ];
-  let _musicStep = 1;
+  let _musicStep = parseInt(localStorage.getItem("musicStep"), 10);
+  if (isNaN(_musicStep) || _musicStep < 0 || _musicStep >= MUSIC_STEPS.length) _musicStep = 1;
   function _applyMusicStep() {
     Music.volume = MUSIC_STEPS[_musicStep].vol;
     if (Music.current) {
@@ -106,14 +107,18 @@
   }
   musicVol.addEventListener("click", () => {
     _musicStep = (_musicStep + 1) % MUSIC_STEPS.length;
+    localStorage.setItem("musicStep", _musicStep);
     _applyMusicStep();
   });
   _applyMusicStep();
 
   const muteBtn = document.getElementById("mute-btn");
-  muteBtn.textContent = window.LANG.muteMute; // starts unmuted (Audio_ constructor default)
+  audio.muted = localStorage.getItem("muted") === "true";
+  muteBtn.textContent = audio.muted ? window.LANG.muteMuted : window.LANG.muteMute;
+  muteBtn.style.color = audio.muted ? "#444" : C_DIM;
   muteBtn.addEventListener("click", () => {
     const muted = audio.toggleMute();
+    localStorage.setItem("muted", muted);
     // muteMute is already short ("mute"/"muet") — no separate mobile variant needed.
     muteBtn.textContent = muted ? window.LANG.muteMuted : window.LANG.muteMute;
     muteBtn.style.color = muted ? "#444" : C_DIM;
