@@ -277,7 +277,7 @@
                   ? [" ", _propCfg.art]
                   : Util.pick(A2_NPC_ARTS);
 
-        const narcCols = ["#ffdfdf", "#d9ffe0", "#d9d6ff", "#fffab9", "#ffd6c0"];
+        const narcCols = ["#ff9d9d", "#8fe6ab", "#a8a0ff", "#f5e05a", "#ffab73"];
 
         // Cats come in several coats — orange tabby, cream, grey, ginger.
         const npcCol =
@@ -1290,7 +1290,9 @@
       a2SD = true;
     }
 
-    a2Spd = 0.004 + a2T * 0.00000015;
+    const _pwxForSpd = a2WX + a2PX;
+    const _narcBubbleNearby = a2NPCs.some((n) => n.tp === "narc" && n.st === "idle" && Math.abs(n.wx - _pwxForSpd) < 26 && Math.abs(n.wx - _pwxForSpd) > 3);
+    a2Spd = (0.004 + a2T * 0.00000015) * (_narcBubbleNearby ? 0.6 : 1);
     const a2Frozen = convVisible || !!a2TN;
     if (!a2Frozen && !convFading) a2WX += a2Spd * dt;
     while (a2Gen < a2WX + W + 150) a2GenChunk(a2Gen, a2Gen + 80);
@@ -1375,7 +1377,7 @@
     for (const n of a2NPCs) {
       if (n.st !== "idle") continue;
       const dist = Math.abs(n.wx - pwx2);
-      n.ambShow = dist < 18 && dist > 3 && a2T > 3000;
+      n.ambShow = dist < 26 && dist > 3 && a2T > 3000;
     }
 
 
