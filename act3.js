@@ -1616,7 +1616,7 @@
         const isLongLine = lineLen > 60;
         const dwell = !a2HasAdvancedDialogue ? 1500 : isLongLine ? 7000 : 5000;
         if (a2TT > dwell || _hasChunks) {
-          renderTapPrompt(window.LANG.tapToContinueConv, H - 2, "#fff", C_PLAYER);
+          renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
         }
       }
     }

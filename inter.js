@@ -137,7 +137,7 @@
     const _allLinesDone = interLines && interLI >= interLines.length;
     // Same position as in-game prompts (bottom of screen) for consistency.
     if (interT > INTER_HINT_MS) {
-      renderTapPrompt(window.LANG.tapToContinue, H - 3, "#fff", C_PLAYER);
+      renderTapPrompt(ctrl("tapToContinue"), H - 3, "#fff", C_PLAYER);
     }
     if (_interKeepCells) {
       // Glide kept cells from their outro spot (fx/fy) to staged spot (x/y).

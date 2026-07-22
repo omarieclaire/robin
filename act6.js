@@ -1755,7 +1755,7 @@
     if (convVisible) {
       const _defector = s4Gs.find((gg) => gg.defector);
       if (_defector && _defector.convStepT > 400) {
-        renderTapPrompt(window.LANG.tapToContinueConv, H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
       }
     }
 

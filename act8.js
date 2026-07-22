@@ -384,7 +384,7 @@
 
     // Tap-to-deposit prompt — only shows during the deposit window (a5P === 2)
     if (a5P === 2) {
-      renderTapPrompt(window.LANG.act8TapDeposit, H - 2, "#fff", C_PLAYER);
+      renderTapPrompt(ctrl("act8TapDeposit"), H - 2, "#fff", C_PLAYER);
     }
 
     if (a5P >= 3) {
@@ -591,7 +591,7 @@
       }
     }
     if (a5NeighboursArrivedAt !== null && a5NeighboursArrivedAt > A5_TAP_GATE_MS)
-      renderTapPrompt(window.LANG.act8TapContinue, H - 2, "#fff", C_TEAL);
+      renderTapPrompt(ctrl("act8TapContinue"), H - 2, "#fff", C_TEAL);
     popupRender();
     dialogRender();
 

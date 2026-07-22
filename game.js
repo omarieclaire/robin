@@ -332,7 +332,7 @@
       ensureCrew();
       initInter(
         [
-          { t: window.LANG.bannerGrabEverything, c: C_WARN, d: 9999 },
+          { t: ctrl("bannerGrabEverything"), c: C_WARN, d: 9999 },
           { pause: true, d: 800 },
           { t: window.LANG.bannerAvoidSecurity, c: C_WARN, d: 9999 },
         ],

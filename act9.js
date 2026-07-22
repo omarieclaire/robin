@@ -284,7 +284,7 @@
       _removeEndButtons();
       const _endIdle = endT - (endD.lastActionT || 0);
       if (_endIdle > 1200) {
-        renderTapPrompt(window.LANG.tapToContinue, H - 2, "#fff", C_DIM);
+        renderTapPrompt(ctrl("tapToContinue"), H - 2, "#fff", C_DIM);
       }
     }
 

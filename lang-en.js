@@ -20,6 +20,7 @@ window.LANG_EN = {
   act6SecurityArrives: "SECURITY! stop right there!",
   bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
   bannerGrabEverything: "click to grab food!",
+  bannerGrabEverythingMobile: "tap to grab food!",
   bannerAvoidSecurity: "leave before the cops come!",
   bannerFoodGloriousFood: "food glorious food.",
   bannerHitNarc: "watch out! that was a narc!",
@@ -208,13 +209,15 @@ a1Encounters: [
 
   bannerHatsOn: "hats on",
 
+
+  // NO WORDS
   // choiceCommiserateAngry: ["(╯°□°)╯"],
   // choiceCommiserateHungry: ["(っ◔◡◔)っ"],
   // choiceTalkOver: ["(ಠ_ಠ)"],
-  //   choiceRun: "[>_>]",
+  // choiceRun: "[>_>]",
 
-
-  choiceCommiserateAngry: ["(╯°□°)╯ yes", "(╯°□°)╯ right", "(╯°□°)╯ yeah", "(╯°□°)╯ true"],
+  // WITH WORDS
+  choiceCommiserateAngry: ["(╯°□°)╯ yes!", "(╯°□°)╯ RIGHT", "(╯°□°)╯ yeah!", "(╯°□°)╯ true"],
   choiceCommiserateHungry: ["(っ◔◡◔)っ yes", "(っ◔◡◔)っ totally", "(っ◔◡◔)っ yeah", "(っ◔◡◔)っ true"],
   choiceTalkOver: ["(ಠ_ಠ) talk over them", "(ಠ_ಠ) cut them off", "(ಠ_ಠ) so, anyways", "(ಠ_ಠ) well actually"],
   choiceRun: "[>_>] RUN",
@@ -247,7 +250,8 @@ recruitProgressCompleteCat: "★ CREW COMPLETE (with cat) ★",
   floatOhNo: "oh no",
   floatExclaim: "!!",
   recruitOrdinals: ["one", "two", "three", "four", "five"],
-  tapToContinue: "tap to continue",
+  tapToContinue: "click to continue",
+  tapToContinueMobile: "tap to continue",
 
   hudRecruit: "RECRUIT",
   hudTime: "TIME LEFT",
@@ -261,10 +265,14 @@ recruitProgressCompleteCat: "★ CREW COMPLETE (with cat) ★",
 
   foodCounterSuffix: " ITEMS",
 
-  act5TapHat: "tap to give everyone a hat",
-  act5TapEnter: "tap to enter the store",
-  act8TapDeposit: "tap to share the food",
-  act8TapContinue: "tap to continue",
+  act5TapHat: "click to give everyone a hat",
+  act5TapHatMobile: "tap to give everyone a hat",
+  act5TapEnter: "click to enter the store",
+  act5TapEnterMobile: "tap to enter the store",
+  act8TapDeposit: "click to share the food",
+  act8TapDepositMobile: "tap to share the food",
+  act8TapContinue: "click to continue",
+  act8TapContinueMobile: "tap to continue",
 
   hudAvoidNarcs: "avoid narcs",
   muteMute: "mute",
@@ -335,8 +343,10 @@ recruitProgressCompleteCat: "★ CREW COMPLETE (with cat) ★",
   bannerWeLostThem: "we lost them!",
   runBystanderLines: ["didn't see a thing", "never saw 'em", "good for you", "go on, run", "saw what now?"],
 
-  tapToWalk: "tap to walk",
-  tapToContinueConv: "tap to continue",
+  tapToWalk: "click to walk",
+  tapToWalkMobile: "tap to walk",
+  tapToContinueConv: "click to continue",
+  tapToContinueConvMobile: "tap to continue",
   act3Move: "arrow keys to move",
   act3MoveMobile: "drag left or right to walk",
 

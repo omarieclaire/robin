@@ -818,7 +818,7 @@
       const isFirstWalk = a1EI === 0;
       const dwell = isFirstWalk ? 0 : 6000;
       if (a1WalkPromptT > dwell) {
-        renderTapPrompt(window.LANG.tapToWalk, H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("tapToWalk"), H - 2, "#fff", C_PLAYER);
       }
     }
 
@@ -826,7 +826,7 @@
       const isFirstAdvance = !a1HasAdvancedDialogue;
       const dwell = isFirstAdvance ? 1500 : 5000;
       if (a1ST2 > dwell) {
-        renderTapPrompt(window.LANG.tapToContinueConv, H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
       }
     }
     Banner.render();
