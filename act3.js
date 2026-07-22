@@ -21,7 +21,7 @@
   const A2_NPC = window.GAME_DATA.npcArts[0];
   const A2_ROB = window.GAME_DATA.robinArt;
 
-  const A2_NUM_LANES = 6;
+  const A2_NUM_LANES = 3;
   let A2_RU_H = 3,
     A2_VRW = 7;
   let A2_BH_PER, A2_LANE_YS, A2_GND, A2_TOP_PAD;
@@ -82,14 +82,13 @@
     A2_RU_H = 2;
     const numRoads = 3,
       numBands = numRoads + 1;
-    const totalStreetH = numRoads * A2_RU_H * 2;
+    const totalStreetH = numRoads * A2_RU_H;
     A2_BH_PER = Math.max(4, Math.floor((A2_GND - totalStreetH) / numBands));
     A2_TOP_PAD = Math.floor(H * 0.06);
     A2_LANE_YS = [];
     for (let road = 0; road < numRoads; road++) {
-      const roadY = A2_TOP_PAD + (road + 1) * A2_BH_PER + road * A2_RU_H * 2;
+      const roadY = A2_TOP_PAD + (road + 1) * A2_BH_PER + road * A2_RU_H;
       A2_LANE_YS.push(roadY);
-      A2_LANE_YS.push(roadY + A2_RU_H);
     }
   }
 
@@ -101,7 +100,7 @@
   }
   function a2BandY(bi) {
     if (bi <= 3) {
-      const y = A2_TOP_PAD + bi * (A2_BH_PER + A2_RU_H * 2);
+      const y = A2_TOP_PAD + bi * (A2_BH_PER + A2_RU_H);
       return { y, h: A2_BH_PER };
     }
     return { y: A2_GND - 2, h: 2 };
@@ -143,7 +142,7 @@
       }
     }
 
-    const mobileMinLane = Device.isMobile ? Math.max(2, A2_NUM_LANES - 4) : 2;
+    const mobileMinLane = 1;
 
     const MIN_NPC_GAP = 38,
       MAX_NPC_GAP = 62;
@@ -487,14 +486,12 @@
         n.wx += (_pwxNow - 2 - n.wx >= 0 ? 1 : -1) * a2Spd * A2_RETURN_SPEED_MULT * dt;
         // Lane-snap toward the player's lane when we're at a gap.
         if (n.ru !== a2PRu) {
-          const sameRoad = Math.floor(n.ru / 2) === Math.floor(a2PRu / 2);
-          let atGap = sameRoad;
-          if (!atGap)
-            for (const rd of a2Roads)
-              if (n.wx >= rd.wx - 2 && n.wx <= rd.wx + A2_VRW + 2) {
-                atGap = true;
-                break;
-              }
+          let atGap = false;
+          for (const rd of a2Roads)
+            if (n.wx >= rd.wx - 2 && n.wx <= rd.wx + A2_VRW + 2) {
+              atGap = true;
+              break;
+            }
           if (!atGap)
             for (const blk of a2Blocks)
               if (Math.abs(n.wx - blk.wx) <= 3 || Math.abs(n.wx - (blk.wx + blk.w)) <= 3) {
@@ -1327,21 +1324,12 @@
     if (a2HopIntent !== 0 && !a2Hopping) {
       const pwx = Math.round(a2WX + a2PX);
       const newRu = Util.clamp(a2PRu + a2HopIntent, 0, A2_NUM_LANES - 1);
-      const sameRoad = Math.floor(a2PRu / 2) === Math.floor(newRu / 2);
-      let atGap = sameRoad;
-      // Widened tolerances (roads: ±2→±4, block edges: ±3→±5).
-      if (!atGap)
-        for (const rd of a2Roads)
-          if (pwx >= rd.wx - 4 && pwx <= rd.wx + A2_VRW + 4) {
-            atGap = true;
-            break;
-          }
-      if (!atGap)
-        for (const blk of a2Blocks)
-          if (Math.abs(pwx - blk.wx) <= 5 || Math.abs(pwx - (blk.wx + blk.w)) <= 5) {
-            atGap = true;
-            break;
-          }
+      let atGap = false;
+      for (const rd of a2Roads)
+        if (pwx >= rd.wx - 4 && pwx <= rd.wx + A2_VRW + 4) {
+          atGap = true;
+          break;
+        }
       if (atGap && newRu !== a2PRu) {
         a2PRu = newRu;
         a2PY = a2RuY(a2PRu);
