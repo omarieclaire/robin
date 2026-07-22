@@ -59,7 +59,7 @@
     a2ChoiceDisplayPicked, 
     a2PitchLines = [],
     a2ChoiceTags = [];
-  let a2SV, a2SW, a2SD, a2SDT, a2SDFired;
+  let a2SV, a2SW, a2SD, a2SDT, a2SDFired, a2ForcedTimeout;
   let a2Gen;
   let a2HudFlashT, a2HudFlashMsg;
   let a2TimeWarned, a2TimeoutFired;
@@ -236,7 +236,7 @@
           }
         }
         const SPACING_X = 80; // world units to consider "nearby" (same-type rule)
-        const ADJACENT_LANE_MIN_GAP = 15; // min world-x gap between NPCs in adjacent lanes
+        const ADJACENT_LANE_MIN_GAP = 8; // min world-x gap between NPCs in adjacent lanes — scaled down with MIN/MAX_NPC_GAP so it doesn't reject half of all spawns
         const nearbyNPCs = a2NPCs.filter((other) => Math.abs(other.wx - nx) < SPACING_X);
 
         const tooCloseAdjacent = a2NPCs.some(
@@ -448,6 +448,7 @@
     a2SD = false;
     a2SDT = null;
     a2SDFired = false;
+    a2ForcedTimeout = false;
     dialogStack = [];
     _convChunkTimer = 0;
     a2GenChunk(0, W * 3);
@@ -1064,7 +1065,7 @@
             audio.play("recruit");
             for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
             triggerFlashGood();
-            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: a2T });
+            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: null });
             _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
             a2TN.cd = 1000;
             a2TN = null;
@@ -1197,7 +1198,7 @@
             audio.play("recruit");
             for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
             triggerFlashGood();
-            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: a2T });
+            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: null });
             _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
             n.cd = 1000;
             a2TN = null;
@@ -1280,7 +1281,7 @@
                 isCat: true,
                 jwx: n.wx,
                 jny: a2NpcY(n),
-                j0: a2T,
+                j0: null,
               });
               audio.play("recruit");
               burstGood(Math.round(a2PX), Math.round(a2PY), n.col || C_CAT, 10);
@@ -1351,7 +1352,7 @@
           }
           triggerFlashGold();
         }, 1100);
-        Banner.show(window.LANG.bannerYouHaveACrew, C_PLAYER, 99999);
+        Banner.show(a2ForcedTimeout ? window.LANG.bannerCrewTimeout : window.LANG.bannerYouHaveACrew, C_PLAYER, 99999);
       }
       // Hold the celebration ~3s total, then auto-cut to inter (no tap needed)
       if (a2SDFired && a2SDT > convFadeDuration + 200 + 3000) {
@@ -1521,6 +1522,7 @@
         if (a2CrewCount >= 1) {
           a2SV = true;
           a2SD = true;
+          a2ForcedTimeout = a2CrewCount < A2_MIN;
         } else if (!a2TimeoutFired) {
           a2TimeoutFired = true;
           triggerMirrorBust("timeout", initAct3, Math.round(a2PX), Math.round(a2PY));
@@ -1617,11 +1619,22 @@
           cy2 = Math.round(ppy + yOff + bob);
         }
         if (r.jwx != null) {
-          const k = Math.min(1, (a2T - r.j0) / 1400);
-          const e = k * k * (3 - 2 * k);
-          cx2 = Math.round((r.jwx - a2WX) * (1 - e) + cx2 * e);
-          cy2 = Math.round(r.jny * (1 - e) + cy2 * e);
-          if (k >= 1) r.jwx = null;
+          const npcSX = Math.round(r.jwx - a2WX);
+          if (r.j0 == null) {
+            /* Recruited but dialogue hasn't closed yet — stand put until the player walks past */
+            if (npcSX < ppx - 2) r.j0 = a2T;
+            else {
+              cx2 = npcSX;
+              cy2 = r.jny;
+            }
+          }
+          if (r.j0 != null) {
+            const k = Math.min(1, (a2T - r.j0) / 1400);
+            const e = k * k * (3 - 2 * k);
+            cx2 = Math.round(npcSX * (1 - e) + cx2 * e);
+            cy2 = Math.round(r.jny * (1 - e) + cy2 * e);
+            if (k >= 1) r.jwx = null;
+          }
         }
         const crewCol = r.col || C_CREW;
 

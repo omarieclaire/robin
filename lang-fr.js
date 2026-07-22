@@ -14,6 +14,7 @@ window.LANG_FR = {
   bannerAvoidNarcs: "évite les stooles",
   bannerYouHaveACrew: "petite équipe assemblée!",
   bannerCrewAssembled: "équipe assemblée",
+  bannerCrewTimeout: "temps écoulé!\np'tite équipe, mais ça va faire.",
   bannerCopsCircling: "Les chars de police tournent. Finis-en!",
   bannerGoodCallNarc: "bon move. c'était un stoole.",
   bannerExitOpen: "SORTIE \u2014 EN BAS À DROITE!",

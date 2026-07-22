@@ -16,6 +16,8 @@
   const A2B_MH = 3;
   const A2B_HIT_W = Device.isMobile ? 1.5 : 2.5;
   const A2B_HIT_H = Device.isMobile ? 1.0 : 1.5;
+  // Mobile's narrower viewport shows less of what's coming — slow the scroll to compensate.
+  const A2B_MOBILE_SPD_MULT = Device.isMobile ? 0.75 : 1;
 
 
   let a2bKiosks;
@@ -116,7 +118,7 @@
     if (!a2Crew) a2Crew = [];
     a2bCalcLayout();
     a2bT = 0;
-    a2bSpd = 0.009; // matches the update loop's ramp base
+    a2bSpd = 0.009 * A2B_MOBILE_SPD_MULT; // matches the update loop's ramp base
     a2bWX = 0;
     /* Player starts in the middle of the road */
     a2bPX = Math.floor(W * 0.3);
@@ -211,7 +213,7 @@
     /* Scroll */
     a2bWX += a2bSpd * dt;
 
-    a2bSpd = a2bT < 4000 ? 0.009 : Math.min(0.025, 0.009 + ((a2bT - 4000) / 9000) * 0.016);
+    a2bSpd = (a2bT < 4000 ? 0.009 : Math.min(0.025, 0.009 + ((a2bT - 4000) / 9000) * 0.016)) * A2B_MOBILE_SPD_MULT;
     /* Player movement — constrained to road */
     const ms = 0.025;
     const tapStep = 2; // cells to move per tap — adjust to feel right

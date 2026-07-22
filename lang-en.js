@@ -14,6 +14,7 @@ window.LANG_EN = {
   bannerAvoidNarcs: "avoid narcs",
   bannerYouHaveACrew: "tiny crew assembled!",
   bannerCrewAssembled: "crew assembled",
+  bannerCrewTimeout: "out of time!\nsmall crew, but it'll do.",
   bannerCopsCircling: "Cops are circling. wrap it up!",
   bannerGoodCallNarc: "good call. that was a narc.",
   bannerExitOpen: "EXIT \u2014 BOTTOM RIGHT!",
