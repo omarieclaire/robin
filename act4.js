@@ -91,7 +91,7 @@
       const narcHead = Util.pick(narcHeads);
       const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
       const npcArt = isNarc ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
-      const narcCols = ["#cc6688", "#bb5577", "#dd5599", "#aa4488", "#cc4477"];
+      const narcCols = ["#ffc5d8", "#ffd7e4", "#ffcfe7", "#ffd5f1", "#ffe6ef"];
       const npcCol = isNarc ? Util.pick(narcCols) : Util.pick(A2B_NPC_COL);
       a2bNPCs.push({
         wx: nx + Util.randInt(-3, 3),

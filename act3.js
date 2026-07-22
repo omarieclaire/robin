@@ -155,9 +155,29 @@
       if (ri !== firstSpawnLane) laneOrder.push(ri);
     }
     for (let ri = 0; ri < mobileMinLane; ri++) laneOrder.push(ri);
-    for (const ri of laneOrder) {
+    const mainLaneOrder = laneOrder.filter((ri) => ri >= mobileMinLane);
+    const topLaneOrder = laneOrder.filter((ri) => ri < mobileMinLane);
+
+    // Build candidates lane-by-lane (same per-lane stepping as before), but resolve
+    // them interleaved by x-position — resolving one main lane's whole range before
+    // the next let it claim the ADJACENT_LANE_MIN_GAP exclusion zone across the
+    // entire chunk, starving whichever lane got processed second (bottom lane
+    // almost never got an NPC).
+    const mainCandidates = [];
+    for (const ri of mainLaneOrder) {
       const laneOffset = (ri - mobileMinLane) * 18;
-      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) {
+      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) mainCandidates.push({ ri, nx });
+    }
+    mainCandidates.sort((a, b) => a.nx - b.nx);
+
+    const topCandidates = [];
+    for (const ri of topLaneOrder) {
+      const laneOffset = (ri - mobileMinLane) * 18;
+      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) topCandidates.push({ ri, nx });
+    }
+
+    for (const { ri, nx } of [...mainCandidates, ...topCandidates]) {
+      {
         let onRoad = false;
         for (const rd of a2Roads) if (nx >= rd.wx - 1 && nx <= rd.wx + A2_VRW + 1) onRoad = true;
         if (onRoad) continue;
@@ -276,7 +296,7 @@
                   ? [" ", _propCfg.art]
                   : Util.pick(A2_NPC_ARTS);
 
-        const narcCols = ["#ff9d9d", "#8fe6ab", "#a8a0ff", "#f5e05a", "#ffab73"];
+        const narcCols = ["#ffdede", "#d9ffe5", "#dad7ff", "#fffbe0", "#ffe8d9"];
 
         // Cats come in several coats — orange tabby, cream, grey, ginger.
         const npcCol =
