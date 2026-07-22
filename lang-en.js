@@ -184,7 +184,7 @@ a1Encounters: [
   neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
   intercoms: [
     "ATTENTION SHOPPERS: your hunger is not our problem",
-    "SPECIAL: two cans of shame for the price of three",
+    "SPECIAL: two cans of shame for the price of one",
     "REMINDER: our CEO's third yacht thanks you for shopping here",
     "STORE HOURS: open until we decide you've spent enough",
     "ATTENTION: price check on everything: free",
