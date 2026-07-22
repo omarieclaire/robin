@@ -464,7 +464,7 @@
         // Y is set once at conversation start and never changes
       }
       const e = A1E[a1EI];
-      const turns = e.turns;
+      const turns = a1LoopCount <= 1 ? e.turns : e.loopTurns;
       // Minimum dwell so a fast tapper can't skip a line before it's typed
       const A1_TAP_MIN_MS = 250;
       const _tapped = clickPending || input.justPressed("action");
@@ -488,7 +488,7 @@
           const t = turns[0];
           const side = t.who === "p" ? "you" : "them";
           const col = t.who === "p" ? C_PLAYER : convNPCColor;
-          const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
+          const txt = t.texts ? t.texts[Math.max(0, Math.min(a1LoopCount - 2, t.texts.length - 1))] : t.text;
           convAddLine(txt, side, col);
           a1ES = 1;
           a1ST2 = 0;
@@ -502,7 +502,7 @@
               const t = turns[a1ES];
               const side = t.who === "p" ? "you" : "them";
               const col = t.who === "p" ? C_PLAYER : convNPCColor;
-              const txt = t.texts ? t.texts[Math.min(a1LoopCount - 1, t.texts.length - 1)] : t.text;
+              const txt = t.texts ? t.texts[Math.max(0, Math.min(a1LoopCount - 2, t.texts.length - 1))] : t.text;
               convAddLine(txt, side, col);
               a1ES++;
               a1HasAdvancedDialogue = true;

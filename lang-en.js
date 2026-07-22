@@ -69,81 +69,37 @@ floatNarcHit: "you ran into a narc!",
 a1Encounters: [
     {
       turns: [
-        {
-          who: "p",
-          texts: ["ugh. |pause|why is food so expensive?", "crisse, when did food get sacrament chére?", "CÂLICE. why am i still asking this."],
-          hold: 3000,
-        },
-        {
-          who: "n",
-          texts: ["idk|pause| but i have an app \nthat helps me get rotting groceries for cheap", "idk but i have an 4pp for for the rotting f00d", "i d k rotting food. rotting app. rotting me."],
-          hold: 4500,
-        },
-        {
-          who: "p",
-          texts: ["uh, ok", "uhhh ok?", "wtf"],
-          hold: 4500,
-        },
-        {
-          who: "n",
-          texts: ["want a referral?", "w4nt a referr4l l1nk?", "w a n t  a  r e f e r r a l  l i n k ?"],
-          hold: 5500,
-        },
-        {
-          who: "p",
-          texts: ["maybe later", "ostie, what are you even SAYING", "J'M'EN CALICE DES APPS"],
-          hold: 4500,
-        },
+        { who: "p", text: "ugh. |pause|why is food so expensive?" },
+        { who: "n", text: "idk|pause| but i have an app \nthat helps me get rotting groceries for cheap" },
+        { who: "p", text: "uh, ok" },
+        { who: "n", text: "want a referral?" },
+        { who: "p", text: "maybe later" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, why is food STILL so expensive?", "C4LICE. WHY IS F00D ST1LL S0 EXPENSIVE."] },
+        { who: "n", texts: ["idk, want that app for rotting groc3ries N0W?", "i d k r0tting. f00d r0tting 4pp. r0tting me."] },
       ],
     },
     {
       turns: [
-        {
-          who: "p",
-          texts: ["you know that one in three Quebecers can't afford groceries?", "crisse.|pause|one in three Quebecers can't afford to eat", "CÂLICE.|pause|one in three Quebecers can't afford to eat"],
-          hold: 3500,
-        },
-        {
-          who: "n",
-          texts: [
-            "so\ntwo in three\n are doing great?",
-            "honestly?|pause|the hungry ones probably prefer it",
-            "have you tried|pause|being in the other two?",
-          ],
-          hold: 6000,
-        },
-        {
-          who: "p",
-          texts: ["what?", "viarge, why are you like this", "TABARNAK. I already know what you're going to say."],
-          hold: 4500,
-        },
+        { who: "p", text: "you know that one in three Quebecers can't afford groceries?" },
+        { who: "n", text: "so\ntwo in three\n are doing great?" },
+        { who: "p", text: "what?" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, one in three of us can't afford to eat", "TABARNAK. ONE IN THR33 AND N0THING CHANGES."] },
+        { who: "n", texts: ["what's the problem with a little hunger?", "h0nestly? pr0b4bly ok l0l 4nyway."] },
       ],
     },
     {
       turns: [
-        {
-          who: "p",
-          texts: [
-            "someone should do something",
-            "câline, someone HAS to do something",
-            "ESTI DE CÂLICE. all i'm doing is going in circles. complaining.",
-          ],
-          hold: 3500,
-        },
-        {
-          who: "n",
-          texts: [
-            "you know,\nstealing from a thief|pause|\nisn't theft",
-            "you know,\nstealing from a th1ef|pause|\nisn't theft",
-            "y o u  k n o w\nthe game wants you to hear this",
-          ],
-          hold: 6000,
-        },
-        {
-          who: "p",
-          texts: ["wait,|pause|what?", "ostie... what does that mean", "TABARNAK. i heard you the first time.|pause| and the second."],
-          hold: 4500,
-        },
+        { who: "p", text: "someone should do something" },
+        { who: "n", text: "you know,\nstealing from a thief|pause|\nisn't theft" },
+        { who: "p", text: "wait,|pause|what?" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["câline, someone HAS to do something", "ESTI DE CÂLICE. I JUST GO IN CIRCLES. COMPLAINING."] },
+        { who: "n", texts: ["well th3r3 is a way", "y o u  k n o w the g4me w4nts you to he4r this"] },
       ],
     },
   ],

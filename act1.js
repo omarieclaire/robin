@@ -46,6 +46,7 @@
     } else {
       Banner.text = "";
       Banner.timer = 0;
+      loop.stop();
       initAct2();
       riseFromPile(
         () => {

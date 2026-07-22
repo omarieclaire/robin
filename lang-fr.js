@@ -68,95 +68,39 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   a1Encounters: [
     {
       turns: [
-        {
-          who: "p",
-          texts: ["ugh. |pause|depuis quand la bouffe est si chère?", "crisse, depuis quand la bouffe est sacrament chére?", "CÂLICE. pourquoi je me pose encore cette question."],
-          hold: 3000,
-        },
-        {
-          who: "n",
-          texts: ["chais pas|pause|mais j'ai une appli pour les coupons d'épicerie", "chais pas mais j'ai une 4ppli pour l3s c0up0ns", "c h a i s  p a s  j ' a i  u n e  a p p l i"],
-          hold: 4500,
-        },
-        {
-          who: "n",
-          texts: [
-            "et une autre appli \n pour acheter de la bouffe pourrie",
-            "et une autre 4ppli \n|pause|pour la bouffe pourrie",
-            "bouffe pourrie.|pause|\nappli pourrie.|pause|\nmoi pourri·e.",
-          ],
-          hold: 5500,
-        },
-        {
-          who: "p",
-          texts: ["euh, ok", "euh ok?", "wtf"],
-          hold: 4500,
-        },
-        {
-          who: "n",
-          texts: ["tu veux un lien de référence?", "tu v3ux un l13n d3 référ3nce?", "t u  v e u x  u n  l i e n  d e  r é f é r e n c e ?"],
-          hold: 5500,
-        },
-        {
-          who: "p",
-          texts: ["peut-être plus tard", "ostie, t'es en train de dire QUOI", "J'M'EN CALICE DES APPS"],
-          hold: 4500,
-        },
+        { who: "p", text: "ugh. |pause|depuis quand la bouffe est si chère?" },
+        { who: "n", text: "chais pas|pause|mais j'ai une appli pour les coupons d'épicerie" },
+        { who: "n", text: "et une autre appli \n pour acheter de la bouffe pourrie" },
+        { who: "p", text: "euh, ok" },
+        { who: "n", text: "tu veux un lien de référence?" },
+        { who: "p", text: "peut-être plus tard" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, la bouffe est rendue trop chère", "C4LICE. TOUJOURS TR0P CHER. TOUJOURS."] },
+        { who: "n", texts: ["chais pas, j'ai encore c'te appli de bouffe pourrie", "ch4is p4s. bouffe p0urrie. 4ppli p0urrie. m0i p0urri·e."] },
       ],
     },
     {
       turns: [
-        {
-          who: "n",
-          texts: ["sois pas si négatif·ve", "s01s pas s1 négat1f·ve", "s o i s  p a s  s i  n é g a t i f · v e"],
-          hold: 6000,
-        },
-        {
-          who: "p",
-          texts: ["ok mais\nun Québécois sur trois peut pas se payer à manger", "crisse.|pause|un Québécois sur trois peut pas se payer à manger", "CÂLICE.|pause|un Québécois sur trois peut pas se payer à manger"],
-          hold: 3500,
-        },
-        {
-          who: "n",
-          texts: [
-            "donc j'entends\nque deux sur trois s'en sortent bien?",
-            "honnêtement?|pause|les affamés préfèrent probablement ça",
-            "as-tu essayé|pause|d'être dans les deux autres?",
-          ],
-          hold: 6000,
-        },
-        {
-          who: "p",
-          texts: ["quoi?", "viarge, pourquoi t'es de même", "TABARNAK. je sais déjà ce que tu vas dire."],
-          hold: 4500,
-        },
+        { who: "n", text: "sois pas si négatif·ve" },
+        { who: "p", text: "ok mais\nun Québécois sur trois peut pas se payer à manger" },
+        { who: "n", text: "donc j'entends\nque deux sur trois s'en sortent bien?" },
+        { who: "p", text: "quoi?" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, un sur trois peut pas manger à sa faim", "TABARNAK. UN SUR TR0IS. PIS ÇA CHANGE JAMAIS."] },
+        { who: "n", texts: ["honnêtement? les affamés aiment probablement ça", "h0nnêtement? ils 4iment ça probablement. l0l. bref."] },
       ],
     },
     {
       turns: [
-        {
-          who: "p",
-          texts: [
-            "quelqu'un devrait faire quelque chose",
-            "câline, quelqu'un DOIT faire quelque chose",
-            "ESTI DE CÂLICE. je fais rien qu'aller en rond. me plaindre.",
-          ],
-          hold: 3500,
-        },
-        {
-          who: "n",
-          texts: [
-            "tu sais,\n\nvoler un voleur|pause|\nc'est pas du vol",
-            "tu sais,\nv0ler un v0leur|pause|\nc'est pas du vol",
-            "t u  s a i s\nle jeu veut que tu entendes ça",
-          ],
-          hold: 6000,
-        },
-        {
-          who: "p",
-          texts: ["attends?|pause|quoi?|pause|qu'est-ce tu veux dire?", "ostie... qu'est-ce que ça veut dire", "TABARNAK. je t'ai entendu la première fois.|pause| et la deuxième."],
-          hold: 4500,
-        },
+        { who: "p", text: "quelqu'un devrait faire quelque chose" },
+        { who: "n", text: "tu sais,\n\nvoler un voleur|pause|\nc'est pas du vol" },
+        { who: "p", text: "attends?|pause|quoi?|pause|qu'est-ce tu veux dire?" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["câline, faut ben que quelqu'un fasse de quoi", "ESTI DE CÂLICE. J'TOURNE EN ROND. J'ME PLAINS."] },
+        { who: "n", texts: ["voler un voleur, c'est encore pas du vol, right?", "t u  s a i s — le jeu veut qu tu entendes ça. ENC0RE."] },
       ],
     },
   ],
