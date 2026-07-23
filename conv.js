@@ -195,6 +195,10 @@
 
     //dialogue box conversation box
     const boxW = Math.min(W - (Device.isMobile ? 8 : 16), 30);
+    // Minimum gap kept from the true screen edge — the box position is anchored to
+    // player/NPC position, and on mobile's narrower slack range that anchor could
+    // push a box flush against the edge with zero margin.
+    const EDGE_PAD = Device.isMobile ? 2 : 0;
     const innerW = boxW - 4;
     // Measure total height first so we can anchor from the bottom
     const allBoxes = [];
@@ -278,14 +282,14 @@
     const psx = convAnchorPX;
     const nsx = convAnchorNX;
     const centerX = Math.floor((psx + nsx) / 2);
-    const bx = Util.clamp(Math.floor(centerX - boxW / 2), 0, W - boxW);
+    const bx = Util.clamp(Math.floor(centerX - boxW / 2), EDGE_PAD, W - boxW - EDGE_PAD);
 
     // Draw boxes top to bottom, offset by speaker
     const offset = Math.min(5, Math.floor(boxW / 5));
-    const bxL = Util.clamp(bx - offset, 0, W - boxW);
-    const bxR = Util.clamp(bx + offset, 0, W - boxW);
+    const bxL = Util.clamp(bx - offset, EDGE_PAD, W - boxW - EDGE_PAD);
+    const bxR = Util.clamp(bx + offset, EDGE_PAD, W - boxW - EDGE_PAD);
 
-    const choiceX = Device.isMobile ? Util.clamp(Math.floor(W / 2 - boxW / 2), 0, W - boxW) : null;
+    const choiceX = Device.isMobile ? Util.clamp(Math.floor(W / 2 - boxW / 2), EDGE_PAD, W - boxW - EDGE_PAD) : null;
 
     {
       const padX = 1;

@@ -311,9 +311,8 @@ recruitProgressCompleteCat: "★ ÉQUIPE COMPLÈTE (avec chat) ★",
 
   // Act 3 in-context prompts
   act3WalkInto: "marche vers quelqu'un pour parler",
-  act3WalkIntoMobile: "appuie sur un voisin pour parler",
   act3HopLane: "haut ou bas pour changer de voie",
-  act3HopLaneMobile: "glisse haut ou bas pour changer de voie",
+  act3HopLaneMobile: "appuie au-dessus ou en dessous pour changer de voie",
 
   // Act 4 in-context prompts
   act4Dodge: "flèches pour esquiver",

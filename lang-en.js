@@ -311,9 +311,8 @@ recruitProgressCompleteCat: "★ CREW COMPLETE (with cat) ★",
 
   // Act 3 in-context prompts
   act3WalkInto: "walk into someone to talk",
-  act3WalkIntoMobile: "tap a neighbour to talk",
   act3HopLane: "up or down to switch lanes",
-  act3HopLaneMobile: "swipe up or down to switch lanes",
+  act3HopLaneMobile: "tap above or below to switch lanes",
 
   // Act 4 in-context prompts
   act4Dodge: "arrows to dodge",
