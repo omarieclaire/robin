@@ -3370,13 +3370,11 @@ window.GAME_DATA = {
     ],
    npcColors: [
         "rgb(255, 0, 230)",
-        "#f5a032",
+        "#ff9408",
         "#ff0",
-        "#53ffaf",
-        "#bb8fff",
+        "#c800ff",
         "#8f0",
-        "#c787ff",
-        "#66b8ff",
+        "#0095ff",
     ],
     /* ── NARRATIVE QUOTES (Act 2 transition banners) ── */
     // narrativeQuotes: [

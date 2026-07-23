@@ -362,13 +362,13 @@
       const tapY = Math.min(H - 2, ly + 5);
       const hatsAnimating = a3HatQueue && a3HatQueue.length > 0;
       if (!a3HatsOn && !hatsAnimating) {
-        renderTapPrompt(ctrl("act5TapHat"), tapY, "#fff", C_ORANGE);
+        renderTapPrompt(ctrl("act5TapHat"), tapY, "#fff", C_ORANGE, true);
       } else if (hatsAnimating) {
         grid.textCenter(window.LANG.act5HattingInProgress, tapY, C_DIM);
       } else if (a3HatsOn && !a3PlayerHatted) {
         grid.textCenter(window.LANG.act5HattingWait, tapY, C_DIM);
       } else {
-        renderTapPrompt(ctrl("act5TapEnter"), tapY, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("act5TapEnter"), tapY, "#fff", C_PLAYER, true);
       }
     }
     Banner.render();

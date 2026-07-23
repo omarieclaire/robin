@@ -25,12 +25,6 @@
   function triggerFlashGold() {
     flashGoldT = 600;
   }
-  function triggerFlashWarn() {
-    flashWarnT = 400;
-  }
-  function triggerFlashDanger() {
-    flashDangerT = 400;
-  }
   function triggerChoiceConfirm() {
     audio.play("click");
   }

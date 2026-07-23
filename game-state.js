@@ -33,6 +33,4 @@ const floats = [];
 const sparks = [];
 let chromaticT = 0;
 let flashGoodT = 0,
-  flashGoldT = 0,
-  flashWarnT = 0,
-  flashDangerT = 0;
+  flashGoldT = 0;

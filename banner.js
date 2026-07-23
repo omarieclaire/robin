@@ -134,7 +134,7 @@
     },
   };
 
-  function renderTapPrompt(msg, y, col1, col2) {
+  function renderTapPrompt(msg, y, col1, col2, bordered) {
     const flash = Math.sin(Date.now() / 300) > 0;
     const c = flash ? col1 || "#fff" : col2 || C_PLAYER;
     const full = "\u25B6 " + msg + " \u25C0";
@@ -142,6 +142,15 @@
     const bx = Math.floor((W - full.length) / 2);
     // Row below clipped descenders (p/g tails) — text row only.
     for (let hx = bx - 1; hx <= bx + full.length; hx++) grid.setBg(hx, y, "rgba(0,0,0,0.7)");
+    // Small border for prompts introducing something new to do 
+    if (bordered) {
+      const boxW = full.length + 4,
+        boxX = bx - 2;
+      if (y - 1 >= 0) grid.text(SHARP_BOX.tl + SHARP_BOX.h.repeat(boxW - 2) + SHARP_BOX.tr, boxX, y - 1, c);
+      grid.set(boxX, y, SHARP_BOX.v, c);
+      grid.set(boxX + boxW - 1, y, SHARP_BOX.v, c);
+      if (y + 1 < H) grid.text(SHARP_BOX.bl + SHARP_BOX.h.repeat(boxW - 2) + SHARP_BOX.br, boxX, y + 1, c);
+    }
     grid.textCenter(full, y, c);
   }
 

@@ -9,6 +9,7 @@
   let a1WalkArmed; // true while walk is actively playing; false while waiting for tap
   let a1WalkPromptT; // ms accumulator so the prompt only appears after a brief settle
   let a1HasAdvancedDialogue; // has the player tapped to advance any encounter line yet
+  let a1NoControlTries; // escalates the "no steering" banner copy each time the player tries an arrow key
 
   let a1DecayWaves, a1DecayClaimed;
 
@@ -109,6 +110,7 @@
     a1WalkArmed = false;
     a1WalkPromptT = 0;
     a1HasAdvancedDialogue = false;
+    a1NoControlTries = 0;
     dialogStack = [];
     // Ambient NPCs
     a1AmbNPCs = [];
@@ -298,7 +300,31 @@
     Banner.update(dt);
     dialogUpdate(dt);
 
-    if (a1St === "pause" && Banner.tapAdvance()) return;
+  
+    if (a1St === "walk" && !convVisible && Banner.timer <= 0) {
+      if (input.justPressed("left") || input.justPressed("right") || input.justPressed("up") || input.justPressed("down")) {
+        const _noControlLines = window.LANG.act1NoControl;
+        const _msg = a1NoControlTries < _noControlLines.length ? _noControlLines[a1NoControlTries] : Util.pick(window.LANG.act1NoControlRepeat);
+        a1NoControlTries++;
+        Banner.show(_msg, "#7c94b2", 1800, true);
+      }
+    }
+
+    if (a1St === "pause") {
+      if (Banner.tapAdvance()) {
+        if (!Banner.seq) {
+          // That tap closed the final banner line — let the same tap start walking,
+          // instead of asking for a second one.
+          a1St = "walk";
+          a1ST2 = 0;
+          a1IdleTimer = 0;
+          a1WalkArmed = true;
+          a1WalkPromptT = 0;
+          Banner.timer = 0;
+        }
+        return;
+      }
+    }
 
     if (clickPending && phase === "act2" && a1St !== "tap" && a1St !== "enc" && a1St !== "walk") clickPending = false;
 
@@ -814,17 +840,21 @@
       }
     }
 
+    if (a1St === "pause" && Banner.seq && Banner.seq.idx >= Banner.seq.lines.length && 99999 - Banner.seq.lineTimer > 3000) {
+      renderTapPrompt(ctrl("tapToWalk"), H - 2, "#fff", C_PLAYER, true);
+    }
+
     if (a1St === "walk" && !a1WalkArmed && Banner.timer <= 0) {
       const isFirstWalk = a1EI === 0;
       const dwell = isFirstWalk ? 0 : 6000;
       if (a1WalkPromptT > dwell) {
-        renderTapPrompt(ctrl("tapToWalk"), H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("tapToWalk"), H - 2, "#fff", C_PLAYER, true);
       }
     }
 
-    if (a1St === "enc" && convVisible && a1ES > 0 && _convChunkQueue.length === 0) {
+    if (a1St === "enc" && convVisible && a1ES > 0) {
       const isFirstAdvance = !a1HasAdvancedDialogue;
-      const dwell = isFirstAdvance ? 1500 : 5000;
+      const dwell = isFirstAdvance ? 1500 : 8000;
       if (a1ST2 > dwell) {
         renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
       }

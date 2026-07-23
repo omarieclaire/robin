@@ -384,7 +384,7 @@
 
     // Tap-to-deposit prompt — only shows during the deposit window (a5P === 2)
     if (a5P === 2) {
-      renderTapPrompt(ctrl("act8TapDeposit"), H - 2, "#fff", C_PLAYER);
+      renderTapPrompt(ctrl("act8TapDeposit"), H - 2, "#fff", C_PLAYER, true);
     }
 
     if (a5P >= 3) {

@@ -93,7 +93,7 @@
       const narcHead = Util.pick(narcHeads);
       const narcBody = Util.pick(["\u03C6", "ψ", "Ω", "\u00A7"]);
       const npcArt = isNarc ? [narcHead, narcBody] : Util.pick(A2_NPC_ARTS);
-      const narcCols = ["#ffc5d8", "#ffd7e4", "#ffcfe7", "#ffd5f1", "#ffe6ef"];
+      const narcCols = ["#ffe8f0", "#fff5f8", "#ffcfe7", "#feffeb", "#ecfaff"];
       const npcCol = isNarc ? Util.pick(narcCols) : Util.pick(A2B_NPC_COL);
       a2bNPCs.push({
         wx: nx + Util.randInt(-3, 3),
@@ -615,12 +615,12 @@
     if (!a2bDone) {
     
       if (!Device.isMobile && !a2bHasRun && a2bT > 2500) {
-        renderTapPrompt(ctrl("act4Run"), H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("act4Run"), H - 2, "#fff", C_PLAYER, true);
       } else if ((Device.isMobile || a2bHasRun) && !a2bHasDodged) {
         // Show dodge prompt only when a narc is approaching on screen
         const pwxB = a2bWX + a2bPX;
         const nearNarc = a2bNPCs.find((n) => n.narc && n.st === "idle" && n.wx > pwxB && n.wx - pwxB < 22 && Math.abs(n.wy - a2bPY) < 3);
-        if (nearNarc) renderTapPrompt(ctrl("act4Dodge"), H - 2, "#fff", C_WARN);
+        if (nearNarc) renderTapPrompt(ctrl("act4Dodge"), H - 2, "#fff", C_WARN, true);
       }
     }
 

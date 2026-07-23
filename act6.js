@@ -1749,12 +1749,12 @@
 
 
     if (!convVisible && !s4HasGrabbed && s4GT > 2) {
-      renderTapPrompt(ctrl("act6Grab"), S4_FLOOR_Y - 1, "#fff", C_PLAYER);
+      renderTapPrompt(ctrl("act6Grab"), S4_FLOOR_Y - 1, "#fff", C_PLAYER, true);
     }
 
     if (convVisible) {
       const _defector = s4Gs.find((gg) => gg.defector);
-      if (_defector && _defector.convStepT > 400) {
+      if (_defector && _defector.convStepT > 5000) {
         renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
       }
     }

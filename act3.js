@@ -60,6 +60,7 @@
     a2PitchLines = [],
     a2ChoiceTags = [];
   let a2SV, a2SW, a2SD, a2SDT, a2SDFired, a2ForcedTimeout;
+  let _a2RecruitProgressTO; // pending "N in your crew" float — cancelled once the act starts wrapping up
   let a2Gen;
   let a2HudFlashT, a2HudFlashMsg;
   let a2TimeWarned, a2TimeoutFired;
@@ -72,8 +73,11 @@
     CHOICE_LOCK: 100, // min ms before click registers
     INVITE_DELAY: T.hold, // 1500ms — after filler before invite
     BAIL_CLOSE: T.linger, // 2400ms — after bail response
-    RECRUIT_CLOSE: T.linger, // 2400ms — after recruit confirm
-    NARC_PAUSE: T.hold, // 1500ms — before narc consequence
+    // The read-time gating (_a2ReadDelay / an explicit tap) already earns its own hold
+    // before this code runs — these are just the beat before the box actually closes,
+    // not a second read-pause. Recruit gets a touch more so the celebration registers.
+    RECRUIT_HOLD: 500, // after a recruit confirms
+    CLOSE_HOLD: 300, // after a plain decline/defer/walk-away closure
     MISMATCH_CLOSE: T.npcMin, // 2800ms — after mismatch rejection
   };
 
@@ -359,38 +363,86 @@
 
   function _a2ShowRecruitProgress(delayMs) {
     const _rem = A2_MIN - a2CrewCount;
+    if (_rem <= 0) return; // crew's already complete — the assembled-celebration banner covers this moment instead
     // Detect cat recruit: most recent crew member was a cat
     const _lastCrew = a2Crew[a2Crew.length - 1];
     const _wasCat = _lastCrew && _lastCrew.isCat;
     let _progressMsg;
-    if (_rem > 0) {
-      if (_wasCat) {
-        const _catMsg = window.LANG.recruitProgressCat || "a cat joins the crew — {rem} {noun} to go!";
-        const _ordinals = window.LANG.recruitOrdinals;
-        const _remOrd = _ordinals[_rem - 1] || String(_rem);
-        const _catNoun = _rem === 1 ? window.LANG.recruitNounSingular : window.LANG.recruitNounPlural;
-        _progressMsg = _catMsg.replace("{rem}", _remOrd).replace("{noun}", _catNoun);
-      } else {
-        const _ordinals = window.LANG.recruitOrdinals;
-        const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
-        const _remOrd = _ordinals[_rem - 1] || String(_rem);
-        const _firstChar = _remOrd.charAt(0).toLowerCase();
-        const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
-        const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
-        _progressMsg = window.LANG.recruitProgress1
-          .replace("{ord}", _haveOrd)
-          .replace("{que} ", _que)
-          .replace("{que}", _que.trim())
-          .replace("{rem}", _remOrd)
-          .replace("{remaining}", window.LANG.recruitProgressRemaining);
-      }
+    if (_wasCat) {
+      const _catMsg = window.LANG.recruitProgressCat || "a cat joins the crew — {rem} {noun} to go!";
+      const _ordinals = window.LANG.recruitOrdinals;
+      const _remOrd = _ordinals[_rem - 1] || String(_rem);
+      const _catNoun = _rem === 1 ? window.LANG.recruitNounSingular : window.LANG.recruitNounPlural;
+      _progressMsg = _catMsg.replace("{rem}", _remOrd).replace("{noun}", _catNoun);
     } else {
-      _progressMsg = _wasCat ? window.LANG.recruitProgressCompleteCat || "★ CREW COMPLETE (with cat) ★" : window.LANG.recruitProgressComplete;
+      const _ordinals = window.LANG.recruitOrdinals;
+      const _haveOrd = _ordinals[a2CrewCount - 1] || String(a2CrewCount);
+      const _remOrd = _ordinals[_rem - 1] || String(_rem);
+      const _firstChar = _remOrd.charAt(0).toLowerCase();
+      const _isVowel = /[aeiouhàâéèêëîïôùûüœ]/.test(_firstChar);
+      const _que = window.LANG === window.LANG_FR ? (_isVowel ? "PLUS QU'" : "PLUS QUE ") : "";
+      _progressMsg = window.LANG.recruitProgress1
+        .replace("{ord}", _haveOrd)
+        .replace("{que} ", _que)
+        .replace("{que}", _que.trim())
+        .replace("{rem}", _remOrd)
+        .replace("{remaining}", window.LANG.recruitProgressRemaining);
     }
     if (!_progressMsg || _progressMsg.trim() === "") _progressMsg = a2CrewCount + "/" + A2_MIN;
-    if (_rem > 0) {
-      setTimeout(() => addFloat(_progressMsg, 0, 0, _wasCat ? C_CAT : C_ORANGE), delayMs);
+    _a2RecruitProgressTO = setTimeout(() => addFloat(_progressMsg, 0, 0, _wasCat ? C_CAT : C_ORANGE), delayMs);
+  }
+
+  function _a2TriggerNarcReveal(n) {
+    n.st = "angry";
+    n.col = C_DANGER;
+    a2Ht++;
+    audio.play("narc");
+
+    const _narcSX = Math.round(n.wx - a2WX);
+    const _narcSY = Math.round(a2NpcY(n)); // body row
+    Effects.start("corrupt", { x: _narcSX, y: _narcSY, radius: 3, duration: 1400, intensity: 1.4, swap: true });
+    setTimeout(() => {
+      if (phase !== "act3") return;
+      Effects.start("corrupt", { x: Math.round(a2PX), y: Math.round(a2PY), radius: 5, duration: 1000, intensity: 1.0, swap: true });
+    }, 400);
+
+    spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
+    triggerChromatic(500);
+    for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
+    spark(_narcSX, _narcSY, C_DANGER, 16);
+    if (a2Ht >= A2_MH) {
+      setTimeout(() => triggerCorruptBust("busted", initAct3), 1100);
     }
+  }
+
+  // Tier 2 — regular
+  // recruit and a cat recruit so the two feel like the same kind of celebration.
+  function _a2TriggerRecruitAnim(n, isCat) {
+    n.st = "rec";
+    a2CrewCount++;
+    audio.play("recruit");
+    a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, isCat: !!isCat, jwx: n.wx, jny: a2NpcY(n), j0: null });
+    triggerFlashGood();
+    triggerFlashGold();
+    if (isCat) {
+      burstGood(Math.round(a2PX), Math.round(a2PY), n.col || C_CAT, 16);
+      burstGood(Math.round(a2PX) - 3, Math.round(a2PY), n.col || C_CAT, 10);
+      burstGood(Math.round(a2PX) + 3, Math.round(a2PY), n.col || C_CAT, 10);
+    } else {
+      for (let _bi = 0; _bi < 6; _bi++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 16);
+    }
+  }
+
+  // Tier 3 — for every non-recruit closure. Yellow for not taking a chance
+  // on someone, green for correctly avoiding a narc.
+  function _a2ClosureSparkle(color) {
+    spark(Math.round(a2PX), Math.round(a2PY), color, 6);
+  }
+
+  function _a2ReadDelay() {
+    const lastLine = convLog[convLog.length - 1];
+    const words = lastLine ? lastLine.text.trim().split(/\s+/).filter(Boolean).length : 0;
+    return Math.max(T.hold, words * CONV_READ_MS_PER_WORD);
   }
 
 
@@ -403,6 +455,8 @@
     a2Layout();
     a2CrewCount = 0;
     a2Ht = 0;
+    clearTimeout(_a2RecruitProgressTO);
+    _a2RecruitProgressTO = null;
     _hudPopPrev.crew = 0;
     _hudPopT.crew = 0;
     _hudPopPrev.narcs2 = 0;
@@ -935,7 +989,7 @@
       }
 
       // ── TP 24: resolve second choice (tap) ───────────────────
-      else if (a2TP === 24 && _a2DialogueTap) {
+      else if (a2TP === 24 && (_a2DialogueTap || (!_a2HasChunks && a2Choice === 1 && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -950,14 +1004,17 @@
               a2TN.cd = 9999;
               a2TN = null;
               a2TalkCD = 500;
-              if (wasNarc)
-                setTimeout(() => Banner.show(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold), A2.RECRUIT_CLOSE + convFadeDuration);
-              else
+              if (wasNarc) {
+                _a2ClosureSparkle(C_SUCCESS);
+                setTimeout(() => Banner.show(window.LANG.bannerGoodCallNarc, C_SUCCESS, T.bannerHold), A2.CLOSE_HOLD + convFadeDuration);
+              } else {
+                _a2ClosureSparkle(C_WARN);
                 setTimeout(
                   () => addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN),
-                  A2.RECRUIT_CLOSE + convFadeDuration,
+                  A2.CLOSE_HOLD + convFadeDuration,
                 );
-              convEndWhenDone(A2.RECRUIT_CLOSE, () => {
+              }
+              convEndWhenDone(A2.CLOSE_HOLD, () => {
                 dialogStack = [];
                 convStartFade();
               });
@@ -999,7 +1056,7 @@
       }
 
       // ── TP 251: close after bail (tap) ───────────────────────
-      else if (a2TP === 251 && _a2DialogueTap) {
+      else if (a2TP === 251 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -1013,15 +1070,15 @@
             a2TN.cd = 9999;
             a2TN = null;
             a2TalkCD = 500;
+            _a2ClosureSparkle(wasNarc ? C_SUCCESS : C_WARN);
             setTimeout(() => {
               if (wasNarc) {
-                triggerFlashDanger();
                 addFloat(Util.pick([window.LANG.floatGoodCallSmelled]), 0, 0, C_SUCCESS);
               } else {
                 addFloat(Util.pick([window.LANG.floatTooCautious, window.LANG.floatGiveChance, window.LANG.floatNeverChange]), 0, 0, C_WARN);
               }
-            }, T.exit + convFadeDuration);
-            convEndWhenDone(T.exit, () => {
+            }, A2.CLOSE_HOLD + convFadeDuration);
+            convEndWhenDone(A2.CLOSE_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1030,7 +1087,7 @@
       }
 
       // ── TP 7: NPC declined (tap) ─────────────────────────────
-      else if (a2TP === 7 && _a2DialogueTap) {
+      else if (a2TP === 7 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -1043,11 +1100,12 @@
             a2TN.cd = 9999;
             a2TN = null;
             a2TalkCD = 500;
+            _a2ClosureSparkle(C_WARN);
             setTimeout(
               () => addFloat(Util.pick([window.LANG.floatReadTheRoom, window.LANG.floatListenBetter, window.LANG.floatWrongEnergy]), 0, 0, C_WARN),
-              T.exit + convFadeDuration,
+              A2.CLOSE_HOLD + convFadeDuration,
             );
-            convEndWhenDone(T.exit, () => {
+            convEndWhenDone(A2.CLOSE_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1056,7 +1114,7 @@
       }
 
       // ── TP 8: recruit! (tap) ─────────────────────────────────
-      else if (a2TP === 8 && _a2DialogueTap) {
+      else if (a2TP === 8 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -1065,18 +1123,12 @@
             a2TT = 0;
           } else {
             DM.endConv();
-            const n = a2TN;
-            n.st = "rec";
-            a2CrewCount++;
-            audio.play("recruit");
-            for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
-            triggerFlashGood();
-            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: null });
-            _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
+            _a2TriggerRecruitAnim(a2TN);
+            _a2ShowRecruitProgress(A2.RECRUIT_HOLD + convFadeDuration);
             a2TN.cd = 1000;
             a2TN = null;
             a2TalkCD = 500;
-            convEndWhenDone(A2.RECRUIT_CLOSE, () => {
+            convEndWhenDone(A2.RECRUIT_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1084,49 +1136,32 @@
         }
       }
 
-      // ── TP 9: narc reveal consequence (auto — the reveal line already told you; tap only skips the pause) ──
-      else if (a2TP === 9 && (a2TT > A2.NARC_PAUSE || (_a2DialogueTap && a2TT > A2_TAP_MIN_MS))) {
-        clickPending = false;
-        if (_a2HasChunks) {
-          _convChunkFlush();
-          _convChunkTimer = 999999;
-          a2TT = 0;
-        } else {
-          DM.endConv();
-          const n = a2TN;
-          n.st = "angry";
-          n.col = C_DANGER;
-          a2Ht++;
-          audio.play("narc");
-          addFloat(window.LANG.floatNarcRecruited || window.LANG.floatNarc, 0, 0, C_DANGER);
-
-          const _narcSX = Math.round(a2TN.wx - a2WX);
-          const _narcSY = Math.round(a2NpcY(a2TN)); // body row
-          Effects.start("corrupt", { x: _narcSX, y: _narcSY - 1, radius: 5, duration: 1100, intensity: 1.4, swap: true });
-          setTimeout(() => {
-            if (phase !== "act3") return;
-            Effects.start("corrupt", { x: Math.round(a2PX), y: Math.round(a2PY) - 1, radius: 10, duration: 800, intensity: 1.0, swap: true });
-          }, 400);
-
-          spark(Math.round(a2PX), Math.round(a2PY), C_DANGER, 14);
-          triggerChromatic(500);
-          for (let _nb = 0; _nb < 5; _nb++) spark(Math.round(a2PX) + Util.randInt(-4, 4), Math.round(a2PY) + Util.randInt(-2, 2), C_DANGER, 14);
-          spark(Math.round(a2TN.wx - a2WX), Math.round(a2NpcY(a2TN)), C_DANGER, 16);
-          if (a2Ht >= A2_MH) {
-            setTimeout(() => triggerCorruptBust("busted", initAct3), 1100);
+      // ── TP 9: narc reveal consequence (tap, or auto once the reveal line is fully read) ──
+      else if (a2TP === 9 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
+        if (a2TT > A2_TAP_MIN_MS) {
+          clickPending = false;
+          if (_a2HasChunks) {
+            _convChunkFlush();
+            _convChunkTimer = 999999;
+            a2TT = 0;
+          } else {
+            _a2TriggerNarcReveal(a2TN);
+            DM.endConv();
+            const n = a2TN;
+            setTimeout(() => addFloat(window.LANG.floatNarcRecruited || window.LANG.floatNarc, 0, 0, C_DANGER), T.exit + convFadeDuration);
+            n.cd = 1000;
+            a2TN = null;
+            a2TalkCD = 500;
+            convEndWhenDone(T.exit, () => {
+              dialogStack = [];
+              convReset();
+            });
           }
-          a2TN.cd = 1000;
-          a2TN = null;
-          a2TalkCD = 500;
-          convEndWhenDone(T.exit, () => {
-            dialogStack = [];
-            convReset();
-          });
         }
       }
 
       // ── TP 10: NPC defers (tap) ──────────────────────────────
-      else if (a2TP === 10 && _a2DialogueTap) {
+      else if (a2TP === 10 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -1139,13 +1174,12 @@
             n.st = "maybe";
             n.cd = 9999;
             setTimeout(() => {
-              triggerFlashWarn();
               addFloat(Util.pick([window.LANG.floatNotYet, window.LANG.floatNeedTime]), 0, 0, C_THINKING);
-            }, T.exit + convFadeDuration);
+            }, A2.CLOSE_HOLD + convFadeDuration);
             n.thinkLine = Util.pick(window.LANG.act3Undecided);
             a2TN = null;
             a2TalkCD = 500;
-            convEndWhenDone(T.exit, () => {
+            convEndWhenDone(A2.CLOSE_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1189,7 +1223,7 @@
       }
 
       // ── TP 11: returning NPC — tap to recruit (mirrors TP 8) ──
-      else if (a2TP === 11 && _a2DialogueTap) {
+      else if (a2TP === 11 && (_a2DialogueTap || (!_a2HasChunks && a2TT > _a2ReadDelay()))) {
         if (a2TT > A2_TAP_MIN_MS) {
           clickPending = false;
           if (_a2HasChunks) {
@@ -1198,18 +1232,12 @@
             a2TT = 0;
           } else {
             DM.endConv();
-            const n = a2TN;
-            n.st = "rec";
-            a2CrewCount++;
-            audio.play("recruit");
-            for (let _bi = 0; _bi < 4; _bi++) spark(Math.round(a2PX) + Util.randInt(-3, 3), Math.round(a2PY) + Util.randInt(-2, 2), C_TEAL, 12);
-            triggerFlashGood();
-            a2Crew.push({ b: Math.random() * 6, ru: n.ru, art: n.art, col: n.col, jwx: n.wx, jny: a2NpcY(n), j0: null });
-            _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
-            n.cd = 1000;
+            _a2TriggerRecruitAnim(a2TN);
+            _a2ShowRecruitProgress(A2.RECRUIT_HOLD + convFadeDuration);
+            a2TN.cd = 1000;
             a2TN = null;
             a2TalkCD = 500;
-            convEndWhenDone(A2.RECRUIT_CLOSE, () => {
+            convEndWhenDone(A2.RECRUIT_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1269,39 +1297,26 @@
           triggerChoiceConfirm();
           convChoicePicked = a2Choice;
           const _picked = a2Choice;
+          const n = a2TN;
+          if (_picked === 0) {
+            a2CatRecruited = true;
+            _a2TriggerRecruitAnim(n, true);
+            _a2ShowRecruitProgress(A2.RECRUIT_HOLD + convFadeDuration);
+            n.cd = 1000;
+          } else {
+            n.st = "done";
+            n.cd = 9999;
+            _a2ClosureSparkle(C_WARN);
+            setTimeout(() => addFloat(Util.pick(window.LANG.floatCatDeclined), 0, 0, C_WARN), A2.CLOSE_HOLD + convFadeDuration);
+          }
           const _startPhase = phase;
           setTimeout(() => {
             if (phase !== _startPhase || !a2TN) return;
             convChoicePicked = -1;
             convHideChoices();
-            const n = a2TN;
-            if (_picked === 0) {
-              a2CatRecruited = true;
-              n.st = "rec";
-              a2CrewCount++;
-              a2Crew.push({
-                b: Math.random() * 6,
-                ru: n.ru,
-                art: n.art,
-                col: n.col,
-                isCat: true,
-                jwx: n.wx,
-                jny: a2NpcY(n),
-                j0: null,
-              });
-              audio.play("recruit");
-              burstGood(Math.round(a2PX), Math.round(a2PY), n.col || C_CAT, 10);
-              triggerFlashGood();
-              _a2ShowRecruitProgress(A2.RECRUIT_CLOSE + convFadeDuration);
-              n.cd = 1000;
-            } else {
-              n.st = "done";
-              n.cd = 9999;
-              addFloat(Util.pick(window.LANG.floatCatDeclined), 0, 0, C_WARN);
-            }
             a2TN = null;
             a2TalkCD = 500;
-            convEndWhenDone(A2.RECRUIT_CLOSE, () => {
+            convEndWhenDone(_picked === 0 ? A2.RECRUIT_HOLD : A2.CLOSE_HOLD, () => {
               dialogStack = [];
               convStartFade();
             });
@@ -1386,6 +1401,7 @@
     if (!a2SV && a2CrewCount >= A2_MIN) {
       a2SV = true;
       a2SD = true;
+      clearTimeout(_a2RecruitProgressTO); // don't let a stale "N in your crew" float sneak in after the wrap-up banners
     }
 
     const _pwxForSpd = a2WX + a2PX;
@@ -1543,6 +1559,7 @@
         if (a2CrewCount >= 1) {
           a2SV = true;
           a2SD = true;
+          clearTimeout(_a2RecruitProgressTO); // don't let a stale "N in your crew" float sneak in after the wrap-up banners
           a2ForcedTimeout = a2CrewCount < A2_MIN;
         } else if (!a2TimeoutFired) {
           a2TimeoutFired = true;
@@ -1710,13 +1727,13 @@
       const nearestSameLane = a2NPCs.find((n) => n.st === "idle" && n.ru === a2PRu && Math.abs(n.wx - pwx) < 16);
       const nearestOtherLane = a2NPCs.find((n) => n.st === "idle" && n.ru !== a2PRu && Math.abs(n.wx - pwx) < 16);
       if (!a2HasMoved && a2T > 1500) {
-        renderTapPrompt(ctrl("act3Move"), H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("act3Move"), H - 2, "#fff", C_PLAYER, true);
       } else if (a2HasMoved && !a2HasTalked && nearestSameLane) {
         // NPC in same lane — teach walking into them.
-        renderTapPrompt(ctrl("act3WalkInto"), H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("act3WalkInto"), H - 2, "#fff", C_PLAYER, true);
       } else if (a2HasMoved && !a2HasHopped && nearestOtherLane) {
         // NPC in a different lane — teach lane-hopping to reach them.
-        renderTapPrompt(ctrl("act3HopLane"), H - 2, "#fff", C_PLAYER);
+        renderTapPrompt(ctrl("act3HopLane"), H - 2, "#fff", C_PLAYER, true);
       }
     }
 
@@ -1726,7 +1743,7 @@
         const lastLine = convLog[convLog.length - 1];
         const lineLen = lastLine ? lastLine.text.length : 0;
         const isLongLine = lineLen > 60;
-        const dwell = !a2HasAdvancedDialogue ? 1500 : isLongLine ? 7000 : 5000;
+        const dwell = !a2HasAdvancedDialogue ? 1500 : isLongLine ? 9000 : 8000;
         if (a2TT > dwell || _hasChunks) {
           renderTapPrompt(ctrl("tapToContinueConv"), H - 2, "#fff", C_PLAYER);
         }
