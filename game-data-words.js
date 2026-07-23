@@ -757,7 +757,7 @@ const D_F_INVITE = [
   { t: "five logos, one cartel|pause|they all share a back door.|pause|let's use it", tags: ["cartel"] },
   { t: "we can't take the castle,|pause|but we can take the IGA", tags: ["castle"] },
   { t: "let's eat like true kings. \n\nthe kind with sharp ideas and pointy sticks", tags: ["cereal-water"] },
-  { t: "usually yes.|pause|but tonight, groceries free\n\njoin us?", tags: ["chow-mein"] },
+  { t: "usually yes.|pause|but tonight, groceries are free\n\njoin us?", tags: ["chow-mein"] },
   { t: "the machine has one weakness.|pause|it assumed we'd stay in line", tags: ["clean"] },
   { t: "every baguette in this city was baked by someone who can barely afford to eat.|pause|let's go even the score?", tags: ["coffee"] },
   {

@@ -1342,13 +1342,15 @@
           audio.play("recruit");
         }, 350);
         setTimeout(() => {
-          // Burst around each crew member
+          // Burst around each crew member — and send them into a joyful hop in place
           for (let _ci = 0; _ci < a2Crew.length; _ci++) {
             const _cx = Math.round(ppx - 3 - _ci * 3);
             const _cy = Math.round(ppy + (_ci % 2 === 0 ? -1 : 1));
             burstGood(_cx, _cy, a2Crew[_ci].col || C_TEAL, 8);
+            a2Crew[_ci].cheerT0 = a2T;
           }
           triggerFlashGood();
+          audio.play("recruit");
         }, 700);
         setTimeout(() => {
           // Final flourish — tight around player and nearest crew
@@ -1358,10 +1360,23 @@
           }
           triggerFlashGold();
         }, 1100);
+        setTimeout(() => {
+          // Climax — every crew member hops again together, biggest burst, double flash
+          for (let _ci = 0; _ci < a2Crew.length; _ci++) {
+            const _cx = Math.round(ppx - 3 - _ci * 3);
+            const _cy = Math.round(ppy + (_ci % 2 === 0 ? -1 : 1));
+            burstGood(_cx, _cy, a2Crew[_ci].col || C_TEAL, 10);
+            a2Crew[_ci].cheerT0 = a2T;
+          }
+          burstGood(ppx, ppy, C_PLAYER, 16);
+          triggerFlashGood();
+          triggerFlashGold();
+          audio.play("trumpet");
+        }, 1650);
         Banner.show(a2ForcedTimeout ? window.LANG.bannerCrewTimeout : window.LANG.bannerYouHaveACrew, C_PLAYER, 99999);
       }
-      // Hold the celebration ~3s total, then auto-cut to inter (no tap needed)
-      if (a2SDFired && a2SDT > convFadeDuration + 200 + 3000) {
+      // Hold the celebration through the climax wave, then auto-cut to inter (no tap needed)
+      if (a2SDFired && a2SDT > convFadeDuration + 200 + 3600) {
         Banner.timer = 0;
         _transitionAct3ToAct4();
       }
@@ -1642,6 +1657,12 @@
             if (k >= 1) r.jwx = null;
           }
         }
+        if (r.cheerT0 != null) {
+          // Crew-assembled celebration — a joyful hop in place, timed to each burst wave
+          const ct = (a2T - r.cheerT0) / 380;
+          if (ct >= 0 && ct <= 1) cy2 = Math.round(cy2 - Math.sin(ct * Math.PI) * 2.4);
+          else r.cheerT0 = null;
+        }
         const crewCol = r.col || C_CREW;
 
         if (cx2 >= 0 && cx2 + 3 < W) grid.art(r.art || A2_ROB, cx2, cy2, crewCol, r.isCat);
@@ -1728,12 +1749,11 @@
       setupNext: initAct4,
       banner: {
         lines: [
-          // C_TEAL (not C_ORANGE, already used by Act2→Act3) — also this game's "crew" color.
           { t: window.LANG.bannerRallyNeighbourhood, c: C_TEAL, d: 9999 },
           { pause: true, d: T.bannerBeat },
           { t: window.LANG.bannerAvoidNarcs, c: C_TEAL, d: 9999 },
         ],
-        frameIdx: 1, // was missing (silently defaulted to blank frame 0); matches the dev jump table's guess
+        frameIdx: 1, 
         keepCells: staged,
       },
       intro: (done) => {
