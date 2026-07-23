@@ -156,6 +156,12 @@
     const MIN_NPC_GAP = 20,
       MAX_NPC_GAP = 32;
 
+    // NPC spawns need a minimum gap from the player's actual start position, not
+    // just from the chunk's world-x origin — on narrow (mobile) screens, W/2 (the
+    // player's start x) can be smaller than MIN_NPC_GAP, landing the guaranteed
+    // first-narc spawn right on top of the player instead of ahead of them.
+    const npcFrom = Math.max(from, a2WX + a2PX);
+
     const playerLane = typeof a2PRu === "number" ? a2PRu : null;
     const firstSpawnLane = a2NPCsSpawned === 0 && playerLane !== null && playerLane >= mobileMinLane ? playerLane : null;
     const laneOrder = [];
@@ -175,14 +181,14 @@
     const mainCandidates = [];
     for (const ri of mainLaneOrder) {
       const laneOffset = (ri - mobileMinLane) * 18;
-      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) mainCandidates.push({ ri, nx });
+      for (let nx = npcFrom + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) mainCandidates.push({ ri, nx });
     }
     mainCandidates.sort((a, b) => a.nx - b.nx);
 
     const topCandidates = [];
     for (const ri of topLaneOrder) {
       const laneOffset = (ri - mobileMinLane) * 18;
-      for (let nx = from + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) topCandidates.push({ ri, nx });
+      for (let nx = npcFrom + MIN_NPC_GAP + laneOffset; nx < to; nx += Util.randInt(MIN_NPC_GAP, MAX_NPC_GAP)) topCandidates.push({ ri, nx });
     }
 
     for (const { ri, nx } of [...mainCandidates, ...topCandidates]) {

@@ -277,7 +277,7 @@
 
     const psx = convAnchorPX;
     const nsx = convAnchorNX;
-    const centerX = Device.isMobile ? Math.floor(W / 2) : Math.floor((psx + nsx) / 2);
+    const centerX = Math.floor((psx + nsx) / 2);
     const bx = Util.clamp(Math.floor(centerX - boxW / 2), 0, W - boxW);
 
     // Draw boxes top to bottom, offset by speaker
@@ -285,11 +285,13 @@
     const bxL = Util.clamp(bx - offset, 0, W - boxW);
     const bxR = Util.clamp(bx + offset, 0, W - boxW);
 
+    const choiceX = Device.isMobile ? Util.clamp(Math.floor(W / 2 - boxW / 2), 0, W - boxW) : null;
+
     {
       const padX = 1;
       let cyClear = topY; // Start from topY even if negative
       for (const box of boxesToShow) {
-        const xPos = box.side === "them" ? bxR : bxL;
+        const xPos = box.isChoice && choiceX !== null ? choiceX : box.side === "them" ? bxR : bxL;
         const boxH = box.lines.length + 2;
         const x0 = Math.max(0, xPos - padX);
         const x1 = Math.min(W, xPos + boxW + padX);
@@ -313,7 +315,7 @@
     let cy = topY; // Start from topY even if negative, don't clamp
     for (const box of boxesToShow) {
       if (cy + box.lines.length + 2 > H) break;
-      const xPos = box.side === "them" ? bxR : bxL;
+      const xPos = box.isChoice && choiceX !== null ? choiceX : box.side === "them" ? bxR : bxL;
 
       // Only draw if this box would be visible (cy >= 0)
       const boxStartY = cy;
