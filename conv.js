@@ -194,7 +194,7 @@
     }
 
     //dialogue box conversation box
-    const boxW = Math.min(W - 16, 30);
+    const boxW = Math.min(W - (Device.isMobile ? 8 : 16), 30);
     const innerW = boxW - 4;
     // Measure total height first so we can anchor from the bottom
     const allBoxes = [];
@@ -274,10 +274,10 @@
     const rawTopY = lastBoxTop - totalPriorHeight;
     const topY = phase === "act2" || phase === "act3" ? Math.max(2, rawTopY) : rawTopY;
 
-    // Center horizontally between player and NPC
+
     const psx = convAnchorPX;
     const nsx = convAnchorNX;
-    const centerX = Math.floor((psx + nsx) / 2);
+    const centerX = Device.isMobile ? Math.floor(W / 2) : Math.floor((psx + nsx) / 2);
     const bx = Util.clamp(Math.floor(centerX - boxW / 2), 0, W - boxW);
 
     // Draw boxes top to bottom, offset by speaker
