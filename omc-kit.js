@@ -7,6 +7,8 @@ const Device = {
   isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
   isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
   hasLowMemory: (navigator.deviceMemory && navigator.deviceMemory <= 2),
+  /* Facebook/Messenger's in-app WebView — its own toolbar eats screen space we can't style  :( boooooo */
+  isFacebookInApp: /FBAN|FBAV|FB_IAB|FBIOS/i.test(navigator.userAgent),
   
   get isSlowConnection() {
     const conn = navigator.connection;
@@ -24,9 +26,7 @@ const Device = {
 };
 
 
-// ============================================================
 // GAME LOOP — requestAnimationFrame with delta time + speed control
-// ============================================================
 class GameLoop {
   constructor({ update, render, speed = 1.0, fixedStep = null } = {}) {
     this._updateFn = update || (() => {});

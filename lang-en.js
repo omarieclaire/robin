@@ -2,6 +2,7 @@ window.LANG_EN = {
   playBtn: "PLAY",
   overlayTitle: "ROBINS DES RUELLES",
   overlayHint: "a true story",
+  fbInAppHint: "squished? tap the ⋯ above and choose “open in browser”",
 
   // banners
   bannerIsThisALife: "this is your life",

@@ -2,6 +2,7 @@ window.LANG_FR = {
   playBtn: "JOUER",
   overlayTitle: "ROBIN  DES RUELLES",
   overlayHint: "une histoire vraie",
+  fbInAppHint: "écran écrasé? touche le ⋯ en haut et choisis « ouvrir dans le navigateur »",
 
   // banners
   bannerIsThisALife: "c'est ta vie",

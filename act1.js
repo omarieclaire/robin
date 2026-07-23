@@ -79,6 +79,17 @@
   if (helpTitleEl) helpTitleEl.textContent = window.LANG.helpCreditsTitle || "Credits";
   if (helpMusicLabelEl) helpMusicLabelEl.textContent = window.LANG.helpMusicLabel || "Music:";
 
+  // Facebook/Messenger's in-app browser -> point players at the native "open in browser" option once per device.
+  const fbHint = document.getElementById("fb-hint");
+  if (fbHint && Device.isFacebookInApp && !localStorage.getItem("fbHintDismissed")) {
+    document.getElementById("fb-hint-text").textContent = window.LANG.fbInAppHint;
+    fbHint.classList.remove("hidden");
+    document.getElementById("fb-hint-close").addEventListener("click", () => {
+      fbHint.classList.add("hidden");
+      localStorage.setItem("fbHintDismissed", "true");
+    });
+  }
+
   let _startInFlight = false;
   startBtn.addEventListener("click", async () => {
     if (_startInFlight) return;

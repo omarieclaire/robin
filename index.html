@@ -87,6 +87,38 @@
         user-select: none;
         -webkit-user-select: none;
       }
+      #fb-hint {
+        width: 100%;
+        max-width: 1200px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: max(7px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 7px max(16px, env(safe-area-inset-left));
+        font-family: "Courier New", "Consolas", "Monaco", monospace;
+        font-size: 13px;
+        letter-spacing: 0.2px;
+        text-align: center;
+        color: var(--c-info);
+        background: rgba(92, 189, 189, 0.08);
+        border-bottom: 1px solid rgba(92, 189, 189, 0.25);
+      }
+      #fb-hint.hidden {
+        display: none;
+      }
+      #fb-hint-close {
+        flex-shrink: 0;
+        background: transparent;
+        border: 1px solid rgba(92, 189, 189, 0.4);
+        color: var(--c-info);
+        width: 20px;
+        height: 20px;
+        line-height: 1;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 14px;
+      }
       #hud {
         width: 100%;
         max-width: 1200px;
@@ -641,6 +673,11 @@
         </ul>
         <!-- <p><strong>Game & dev:</strong> ...</p> -->
       </div>
+    </div>
+
+    <div id="fb-hint" class="hidden">
+      <span id="fb-hint-text"></span>
+      <button id="fb-hint-close" aria-label="Dismiss">&times;</button>
     </div>
 
     <div id="hud">

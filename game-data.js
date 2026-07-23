@@ -3372,9 +3372,9 @@ window.GAME_DATA = {
         "rgb(255, 0, 230)",
         "#ff9408",
         "#ff0",
-        "#c800ff",
+        "#b41eff",
         "#8f0",
-        "#0095ff",
+        "#00c3ff",
     ],
     /* ── NARRATIVE QUOTES (Act 2 transition banners) ── */
     // narrativeQuotes: [
