@@ -40,7 +40,9 @@
         if (!entry.pause) {
           this.color = entry.c || this.color;
           this.text = seq.replace ? entry.t : this.text ? this.text + "\n\n" + entry.t : entry.t;
-          this.segs = seq.replace ? [{ text: entry.t, color: this.color }] : [...this.segs, { text: entry.t, color: this.color }];
+          this.segs = seq.replace
+            ? [{ text: entry.t, color: this.color }]
+            : [...this.segs, { text: (this.segs.length ? "\n" : "") + entry.t, color: this.color }];
           audio.play("trumpet");
           seq.lineTimer = entry.d || 3000;
           return true; // one line per tap
@@ -70,7 +72,9 @@
             if (seq.replace) this.text = entry.t;
             else if (this.text) this.text += "\n\n" + entry.t;
             else this.text = entry.t;
-            this.segs = seq.replace ? [{ text: entry.t, color: this.color }] : [...this.segs, { text: entry.t, color: this.color }];
+            this.segs = seq.replace
+              ? [{ text: entry.t, color: this.color }]
+              : [...this.segs, { text: (this.segs.length ? "\n" : "") + entry.t, color: this.color }];
             seq.lineTimer = entry.d || 3000;
             audio.play("trumpet");
           }

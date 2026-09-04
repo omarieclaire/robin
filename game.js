@@ -394,9 +394,34 @@
     loop.start();
   }
 
+  // ── TRANSITION TEST HOTKEYS ──────────────────────────────────
+  // Quick triggers for effects prototyped in fx-lab.html and registered as
+  // PendingFX stubs in Effects.REGISTRY (see fx.js) — they tick and finish
+  // but don't touch the grid yet. Jump to the relevant act with the normal
+  // 1-9 keys first, then fire one of these on top of it. Defaults are
+  // centered on the grid as a stand-in for testing the wiring itself —
+  // real x/y (a specific narc, the player, etc.) gets wired in when each
+  // one is actually implemented.
+  const TRANSITION_JUMPS = {
+    e: () => Effects.start("ringSnapFinal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 1800 }), // final narc takedown
+    r: () => Effects.start("ringSnapLocal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 600 }), // regular narc hit — ring cascade
+    t: () => Effects.start("colorPulseHit", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 500 }), // regular narc hit — color pulse
+    y: () => Effects.start("scalePulseGrocery", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 20000 }), // grocery store shelves
+    u: () => Effects.start("densityRampFinal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 1800 }), // final ~10s before death
+    i: () => Effects.start("glitchOrbChase", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 999999 }), // chase scene — follows player
+    o: () => Effects.start("typewriterReveal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 2000 }), // Act 2 opening reveal
+    p: () => Effects.start("magnetLean", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 3000 }), // "I've had enough" lean, before streamOut()
+  };
+
+  function jumpToTransition(key) {
+    if (!TRANSITION_JUMPS[key]) return;
+    TRANSITION_JUMPS[key]();
+  }
+
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return; // ignore OS key-repeat, avoids double-firing
     if (ACT_JUMPS[e.key]) jumpToAct(e.key);
+    else if (TRANSITION_JUMPS[e.key]) jumpToTransition(e.key);
   });
 
   function boot() {

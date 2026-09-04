@@ -51,6 +51,7 @@
             bg: null,
             flip: false,
             lift: false,
+            rot: 0,
           };
       }
     }
@@ -63,6 +64,7 @@
           this.c[y][x].bg = null;
           this.c[y][x].flip = false;
           this.c[y][x].lift = false;
+          this.c[y][x].rot = 0;
         }
       this.wideRows.clear();
     }
@@ -73,7 +75,7 @@
       if (x >= 0 && x < this.w && y >= 0 && y < this.h) this.c[y][x].bg = bg || null;
     }
    
-    set(x, y, ch, co, bold, flip, lift) {
+    set(x, y, ch, co, bold, flip, lift, rot) {
       x = Math.floor(x);
       y = Math.floor(y);
       if (x >= 0 && x < this.w && y >= 0 && y < this.h) {
@@ -82,7 +84,10 @@
         this.c[y][x].b = !!bold;
         this.c[y][x].flip = !!flip;
         this.c[y][x].lift = !!lift;
-        if (isWideChar(ch)) this.wideRows.add(y);
+        this.c[y][x].rot = rot || 0;
+        /* Rotated cells need their own <span> to carry a transform, same as
+           wide chars — route the whole row through the rigid per-cell path. */
+        if (isWideChar(ch) || rot) this.wideRows.add(y);
       }
     }
     text(s, x, y, co, bold) {
@@ -91,7 +96,7 @@
     textCenter(s, y, co) {
       this.text(s, Math.floor((this.w - s.length) / 2), y, co);
     }
-    art(a, px, py, co, flip, lift) {
+    art(a, px, py, co, flip, lift, rot) {
       if (!Array.isArray(a)) {
         console.warn("Grid.art: undefined art passed from", new Error().stack.split("\n")[2]);
         return;
@@ -101,7 +106,7 @@
       a.forEach((l, r) => {
         for (let i = 0; i < l.length; i++) {
           if (l[i] !== " ") {
-            this.set(px + i, py + r, l[i], co, false, flip, lift);
+            this.set(px + i, py + r, l[i], co, false, flip, lift, rot);
           } else {
             this.set(px + i, py + r, " ", "#000"); // block mountain bleed
           }
@@ -121,12 +126,15 @@
             const _transforms = [];
             if (c.flip) _transforms.push("scaleX(-1)");
             if (c.lift) _transforms.push("translateY(-2px)");
+            if (c.rot) _transforms.push("rotate(" + c.rot + "deg)");
             const style =
               (c.co ? "color:" + c.co + ";" : "") +
               (c.b ? "font-weight:bold;" : "") +
               (c.bg ? "background-color:" + c.bg + ";box-shadow:0 -2px 0 " + c.bg + ",0 2px 0 " + c.bg + ";" : "") +
      
-              (_transforms.length ? "transform:" + _transforms.join(" ") + ";transform-origin:left;" : "");
+              (_transforms.length
+                ? "transform:" + _transforms.join(" ") + ";transform-origin:" + (c.rot ? "center;" : "left;")
+                : "");
             if (style) {
               o += '<span class="cell" style="' + style + '">' + ch + "</span>";
             } else {

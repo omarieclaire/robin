@@ -60,8 +60,7 @@
           const pl = { x: Math.round(s4PX2), y: Math.round(s4PY2) };
           const ddx = tapCX - pl.x,
             ddy = tapCY - pl.y;
-          // Give aisle a 5-row buffer above S4_AISLE_TOP so taps near the shelf edge still move player
-          if (tapCY >= S4_AISLE_TOP && tapCY <= S4_FLOOR_Y) {
+          if (tapCY >= S4_WALK_TOP && tapCY <= S4_WALK_BOT) {
             if (Math.abs(ddx) > MOBILE_DEAD_ZONE_CELLS || Math.abs(ddy) > MOBILE_DEAD_ZONE_CELLS) _mobFireStep(_mobResolveDir(ddx, ddy));
           }
         }
@@ -187,7 +186,7 @@
     } else if (phase === "act6") {
       s4PX2 += dxCells;
       s4PY2 += dyCells;
-      s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+      s4PY2 = Util.clamp(s4PY2, S4_WALK_TOP, S4_WALK_BOT - 1);
       s4PX2 = Util.clamp(s4PX2, 4, W - 6);
     } else if (phase === "act7") {
       s4RunPX += dxCells;
@@ -228,6 +227,8 @@
                ══════════════════════════════════════════════════════════ */
   // Vibrant palette, matches Act 8's fridge (FC5).
   const FC = ["#f5b800", "#e8724a", "#5ec44a", "#4ac9e8", "#c65ce8", "#e8475c", "#8ee85c", "#f0a030", "#5c8ee8"];
+  // Narc uniform palette, matches act3.js's narcCols.
+  const S4_NARC_COLS = ["#ffdede", "#d9ffe5", "#dad7ff", "#fffbe0", "#ffe8d9"];
   const S4_BC_W = 20,
     S4_SLOT_W = 9,
     S4_BC_GAP = -1;
@@ -267,19 +268,29 @@
 
   let s4GrabBursts;
   let s4TickerMsg, s4TickerNextIdx;
-  /* ── LAYOUT CONSTANTS (computed in init from H) ── */
-  let S4_SHELF_ROWS /* how many shelf rows in the unit */,
-    S4_SHELF_ROW_H /* height per shelf row (food art height + divider) */,
-    S4_SHELF_TOP /* Y of top of shelving unit */,
-    S4_SHELF_BOT /* Y of bottom of shelving unit */,
-    S4_AISLE_TOP /* Y of top of aisle */,
-    S4_AISLE_BOT /* Y of bottom of aisle */,
-    S4_FLOOR_Y; /* Y of the floor line */
+  /* ── LAYOUT — one aisle, shelving above/below ── */
+  let S4_SHELF_ROWS /* total shelf rows */,
+    S4_SHELF_ROW_H /* height per shelf row */,
+    S4_ROWS_ABOVE /* rows above the aisle */,
+    S4_ROWS_BELOW /* rows below the aisle */,
+    S4_AISLE_Y /* aisle spine Y, exit anchor */,
+    S4_ABOVE_TOP /* top edge, upper shelf block */,
+    S4_ABOVE_BOT /* bottom edge, upper shelf block */,
+    S4_BELOW_TOP /* Y, lower block's first row */,
+    S4_BELOW_BOT /* bottom edge, lower shelf block */,
+    S4_WALK_TOP /* topmost walkable Y */,
+    S4_WALK_BOT; /* bottommost walkable Y */
 
-  let s4ExitScreenX; /* exit is pinned to a screen position, not world */
+  let s4ExitScreenX; /* exit's fixed screen X */
 
   /* Items on shelves */
   let s4Items, s4Bookcases, s4RobinFloats;
+
+  /* Row index to screen Y, above/below aisle. */
+  function _s4RowY(row) {
+    if (row < S4_ROWS_ABOVE) return S4_ABOVE_TOP + 1 + row * S4_SHELF_ROW_H;
+    return S4_BELOW_TOP + (row - S4_ROWS_ABOVE) * S4_SHELF_ROW_H;
+  }
 
   function s4GenBookcases(from, to) {
     const ns = Math.floor((S4_BC_W - 2) / S4_SLOT_W);
@@ -373,15 +384,20 @@
     s4HasGrabbed = false;
     s4LastGrabT = 0;
 
-    /* ── Compute layout from screen height ── */
+    /* ── Layout: one aisle, shelving above/below ── */
     S4_SHELF_ROW_H = 5;
-   
+
     S4_SHELF_ROWS = H >= 40 || (Device.isMobile && H >= 38) ? 6 : 5;
-    S4_SHELF_TOP = Device.isMobile && H >= 38 && H < 40 ? 1 : 2;
-    S4_SHELF_BOT = S4_SHELF_TOP + S4_SHELF_ROWS * S4_SHELF_ROW_H + 1;
-    S4_AISLE_TOP = S4_SHELF_BOT + 1;
-    S4_FLOOR_Y = H - 2;
-    S4_AISLE_BOT = S4_FLOOR_Y - 1;
+    S4_ROWS_ABOVE = Math.ceil(S4_SHELF_ROWS / 2);
+    S4_ROWS_BELOW = S4_SHELF_ROWS - S4_ROWS_ABOVE;
+    // Padding matches other acts (A2_TOP_PAD, A2_GND).
+    S4_ABOVE_TOP = Math.max(2, Math.floor(H * 0.06));
+    S4_WALK_BOT = H - 1;
+    S4_WALK_TOP = S4_ABOVE_TOP;
+    S4_BELOW_BOT = S4_WALK_BOT;
+    S4_BELOW_TOP = S4_BELOW_BOT - S4_ROWS_BELOW * S4_SHELF_ROW_H + 1;
+    S4_ABOVE_BOT = S4_ABOVE_TOP + S4_ROWS_ABOVE * S4_SHELF_ROW_H;
+    S4_AISLE_Y = Math.floor((S4_ABOVE_BOT + S4_BELOW_TOP) / 2);
     /* ── Generate initial bookcases ── */
     s4Items = [];
     s4Bookcases = [];
@@ -389,9 +405,9 @@
     s4GE = 0;
     s4GenBookcases(0, W + 80);
 
-    /* ── Player starts left-center of aisle ── */
+    /* ── Player starts on the aisle ── */
     s4PX2 = Math.floor(W * 0.5);
-    s4PY2 = Math.floor((S4_AISLE_TOP + S4_AISLE_BOT) / 2);
+    s4PY2 = S4_AISLE_Y;
 
 
     s4Gs = [];
@@ -406,13 +422,14 @@
       let wy,
         tries = 0;
       do {
-        wy = Util.randInt(S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+        wy = Util.randInt(S4_WALK_TOP, S4_WALK_BOT - 1);
         tries++;
       } while (tries < 10 && s4Gs.some((g) => Math.abs(g.wy - wy) < GUARD_MIN_LANE_GAP && Math.abs(g.wx - wx) < GUARD_MIN_GAP * 1.5));
       s4Gs.push({
         wx,
         wy,
         vx: -0.004 - Math.random() * 0.004,
+        col: Util.pick(S4_NARC_COLS),
       });
       lastGuardWX = wx;
     }
@@ -422,6 +439,7 @@
       s4Gs[defIdx].defector = true;
       s4Gs[defIdx].defectorState = "approaching"; // approaching → speaking → recruited
       s4Gs[defIdx].defectorT = 0;
+      s4Gs[defIdx].chaseT = 0;
     }
     s4DefectorDone = false;
     s4ShopperT = 0;
@@ -449,7 +467,7 @@
       s4RobinFloats.push({
         text: "+$" + food.p,
         x: Math.round(s4PX2 - Util.randInt(4, 10)),
-        y: S4_AISLE_TOP - 1,
+        y: Math.round(s4PY2) - 1,
         life: 1200,
         max: 1200,
         col: C_TEAL,
@@ -460,10 +478,10 @@
 
     s4As = [
       {
-        y: S4_AISLE_TOP,
+        y: S4_AISLE_Y,
         items: [],
         isExit: false,
-        aisleH: S4_AISLE_BOT - S4_AISLE_TOP,
+        aisleH: S4_WALK_BOT - S4_WALK_TOP,
       },
     ];
     s4GE = 0;
@@ -504,7 +522,7 @@
     s4Bookcases = s4Bookcases.filter((bc) => bc.wx + S4_BC_W > s4WX - 20);
 
     s4PX2 = Util.lerp(s4PX2, s4ExitTargetX, 0.15);
-    s4PY2 = Util.lerp(s4PY2, S4_FLOOR_Y - 2, 0.12);
+    s4PY2 = Util.lerp(s4PY2, S4_AISLE_Y, 0.12);
 
     // Crew converges on door — staggered start so they flow in one by one
     let allIn = true;
@@ -516,20 +534,20 @@
         continue;
       }
       c.x = Util.lerp(c.x, s4ExitTargetX, 0.06);
-      c.y = Util.lerp(c.y, S4_FLOOR_Y - 2, 0.06);
-      if (Math.abs(c.x - s4ExitTargetX) > 1 || Math.abs(c.y - (S4_FLOOR_Y - 2)) > 1) allIn = false;
+      c.y = Util.lerp(c.y, S4_AISLE_Y, 0.06);
+      if (Math.abs(c.x - s4ExitTargetX) > 1 || Math.abs(c.y - S4_AISLE_Y) > 1) allIn = false;
     }
 
     // Guards aggressively chase toward the door — they realize what's happening
     for (const g of s4Gs) {
       const dxToDoor = s4ExitTargetX - (g.wx - s4WX);
       g.wx += dxToDoor > 0 ? 0.012 * dt : 0;
-      g.wy = Util.lerp(g.wy, S4_FLOOR_Y - 2, 0.04);
+      g.wy = Util.lerp(g.wy, S4_AISLE_Y, 0.04);
     }
 
     // Burst of teal sparks at door, occasionally
     if (s4ExitT > 1500 && s4ExitT < 4000 && Math.random() < 0.12) {
-      spark(s4ExitTargetX + Util.randInt(-2, 2), S4_AISLE_BOT - 1, C_TEAL, 6);
+      spark(s4ExitTargetX + Util.randInt(-2, 2), S4_AISLE_Y, C_TEAL, 6);
     }
 
     // Transition once all crew have reached the door — identical to Act 5
@@ -537,7 +555,7 @@
       s4ExitDone = true;
       s4ExitDoneAt = s4ExitT;
       for (let _b = 0; _b < 10; _b++) {
-        burstGood(s4ExitTargetX + Util.randInt(-3, 3), S4_AISLE_BOT - 1, a2Crew[_b % a2Crew.length]?.col || C_TEAL, 8);
+        burstGood(s4ExitTargetX + Util.randInt(-3, 3), S4_AISLE_Y, a2Crew[_b % a2Crew.length]?.col || C_TEAL, 8);
       }
       triggerFlashGood();
       setTimeout(() => _transitionAct6ExitToAct6Run(), 1200);
@@ -1108,6 +1126,47 @@
     },
   ];
 
+  /* Item hit-test, shared by click and walk-into grabbing. */
+  function _s4FindItemAt(sx, sy) {
+    for (const bc of s4Bookcases) {
+      const bsx = Math.round(bc.wx - s4WX);
+      if (bsx + S4_BC_W < 0 || bsx > W) continue;
+      for (const it of bc.items) {
+        if (it.grabbed) continue;
+        const ix = bsx + 1 + it.col * S4_SLOT_W + 1;
+        const aY = _s4RowY(it.row);
+        if (sx >= ix - 1 && sx < ix + S4_SLOT_W && sy >= aY && sy <= aY + it.food.a.length) {
+          return { it, ix, aY };
+        }
+      }
+    }
+    return null;
+  }
+
+  function _s4DoGrab(it, ix, aY) {
+    it.grabbed = true;
+    it.grabT = S4_GRAB_ANIM_MS;
+    audio.play("grab");
+    state.set("score", state.get("score") + it.food.p);
+    s4ItemsGrabbed++;
+    s4GrabbedItems.push({ food: it.food, col: it.color });
+    burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, Device.isMobile ? 4 : 9);
+    s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
+    popupPush(it.food.n + " +$" + it.food.p, ix + Math.floor(S4_SLOT_W / 2) + Util.randInt(-2, 2), aY + Util.randInt(-2, -1), it.color, 500);
+    s4HasGrabbed = true;
+    s4LastGrabT = s4GT;
+    if (s4Alys.length && Math.random() < 0.35) {
+      s4RobinFloats.push({
+        text: drawDeck("cheers", window.LANG.robinCheers),
+        x: Math.round(s4PX2 - Util.randInt(3, 9)),
+        y: Math.round(s4PY2) - 1,
+        life: 1100,
+        max: 1100,
+        col: a2Crew[Util.randInt(0, a2Crew.length - 1)]?.col || C_TEAL,
+      });
+    }
+  }
+
   // Reaching the exit isn't automatically a win
   function s4TryExit() {
 
@@ -1213,7 +1272,7 @@
     // Skip while the defector conversation is up, or its taps get eaten here first.
     if (clickPending && phase === "act6" && !convVisible) {
       /* Check exit FIRST before anything else consumes the click */
-      if (s4ExitPinned && clickSX >= s4ExitScreenX - 5 && clickSX <= s4ExitScreenX + 5 && clickSY >= S4_AISLE_TOP && clickSY <= S4_FLOOR_Y) {
+      if (s4ExitPinned && clickSX >= s4ExitScreenX - 5 && clickSX <= s4ExitScreenX + 5 && clickSY >= S4_WALK_TOP && clickSY <= S4_WALK_BOT) {
         clickPending = false;
         s4TryExit();
         return;
@@ -1223,51 +1282,26 @@
 
       /* Check if clicking on a food item in a bookcase */
       let grabbedItem = false;
-      outer4: for (const bc of s4Bookcases) {
-        const bsx = Math.round(bc.wx - s4WX);
-        if (bsx + S4_BC_W < 0 || bsx > W) continue;
-        for (const it of bc.items) {
-          if (it.grabbed) continue;
-          const ix = bsx + 1 + it.col * S4_SLOT_W + 1;
-          const rY = S4_SHELF_TOP + 1 + it.row * S4_SHELF_ROW_H;
-          // Hitbox matches where the art is actually DRAWN
-          const aY = rY;
-          if (clickSX >= ix - 1 && clickSX < ix + S4_SLOT_W && clickSY >= aY && clickSY <= aY + it.food.a.length) {
-            it.grabbed = true;
-            it.grabT = S4_GRAB_ANIM_MS;
-            audio.play("grab");
-            state.set("score", state.get("score") + it.food.p);
-            s4ItemsGrabbed++;
-            s4GrabbedItems.push({ food: it.food, col: it.color });
-            burstGood(ix + Math.floor(S4_SLOT_W / 2), aY, it.color, Device.isMobile ? 4 : 9);
-            s4GrabBursts.push({ x: ix + Math.floor(S4_SLOT_W / 2), y: aY + 1, t: 400, max: 400, col: it.color });
-            popupPush(it.food.n + " +$" + it.food.p, ix + Math.floor(S4_SLOT_W / 2) + Util.randInt(-2, 2), aY + Util.randInt(-2, -1), it.color, 500);
-            grabbedItem = true;
-            s4HasGrabbed = true;
-            s4LastGrabT = s4GT;
-            if (s4Alys.length && Math.random() < 0.35) {
-              s4RobinFloats.push({
-                text: drawDeck("cheers", window.LANG.robinCheers),
-                x: Math.round(s4PX2 - Util.randInt(3, 9)),
-                y: S4_AISLE_TOP - 1,
-                life: 1100,
-                max: 1100,
-                col: a2Crew[Util.randInt(0, a2Crew.length - 1)]?.col || C_TEAL,
-              });
-            }
-            break outer4;
-          }
-        }
+      const _clickHit = _s4FindItemAt(clickSX, clickSY);
+      if (_clickHit) {
+        _s4DoGrab(_clickHit.it, _clickHit.ix, _clickHit.aY);
+        grabbedItem = true;
       }
 
-      if (!grabbedItem && clickSY >= S4_AISLE_TOP && clickSY <= S4_FLOOR_Y) {
+      if (!grabbedItem && clickSY >= S4_WALK_TOP && clickSY <= S4_WALK_BOT) {
         if (clickSY < s4PY2 - 1) s4PY2 -= 2;
         else if (clickSY > s4PY2 + 1) s4PY2 += 2;
       }
     }
 
-    /* Clamp player to aisle */
-    s4PY2 = Util.clamp(s4PY2, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+    /* Shelves are decorative — clamp to walkable band. */
+    s4PY2 = Util.clamp(s4PY2, S4_WALK_TOP, S4_WALK_BOT - 1);
+
+    /* Walking into food grabs it too. */
+    if (!convVisible) {
+      const _walkHit = _s4FindItemAt(Math.round(s4PX2), Math.round(s4PY2));
+      if (_walkHit) _s4DoGrab(_walkHit.it, _walkHit.ix, _walkHit.aY);
+    }
 
     /* Exit collision — walk into it OR click it to leave */
 
@@ -1297,30 +1331,46 @@
 
         if (g.defectorState === "approaching") {
 
-          g.wx += g.vx * dt;
-  
           const _pwx4 = s4WX + s4PX2;
+
+          /* Chases the player, ramping up speed. */
+          if (g.announced) g.chaseT += dt;
+          const _speedMul = 1 + Math.min(g.chaseT / 8000, 2.5);
+          const _baseSpeed = Math.abs(g.vx) || 0.006;
+          const _dx = _pwx4 - g.wx,
+            _dy = s4PY2 - g.wy;
+          const _dist = Math.hypot(_dx, _dy) || 1;
+          const _moveAmt = Math.min(_dist, _baseSpeed * _speedMul * dt);
+          g.wx += (_dx / _dist) * _moveAmt;
+          g.wy += (_dy / _dist) * _moveAmt;
+
           const _metPlayer = Math.abs(g.wx - _pwx4) < 4 && Math.abs(g.wy - s4PY2) < 4;
- 
+
           const _readyToMeet = s4HasGrabbed || s4GT > 6;
-          if ((_metPlayer && _readyToMeet) || gsxNow < Math.floor(W * 0.12)) {
+          if (_metPlayer && _readyToMeet) {
             g.defectorState = "speaking";
             g.defectorT = 0;
-            g.lockedScreenX = gsxNow;
+            /* Nudge down, avoid clipping the dialogue box. */
+            s4PY2 = Math.max(s4PY2, S4_WALK_TOP + 6);
+            /* Snap adjacent, always to the player's right. */
+            g.wy = s4PY2;
+            g.wx = _pwx4 + 2;
+            const _snapSX = Math.round(g.wx - s4WX);
+            g.lockedScreenX = _snapSX;
             // Same tap-to-advance conversation panel as Act 2/2.
             convReset();
             convAnchorPX = Math.round(s4PX2);
-            convAnchorNX = gsxNow;
+            convAnchorNX = _snapSX;
             convAnchorY = Math.round(s4PY2);
             convPlayerColor = C_PLAYER;
-            convNPCColor = C_DANGER; // still in uniform for these lines
+            convNPCColor = g.col || C_DANGER; // still in uniform for these lines
             convVisible = true;
-            convAddLine(window.LANG.act6DefectorLine1 || "hold it right there!", "them", C_DANGER);
+            convAddLine(window.LANG.act6DefectorLine1 || "hold it right there!", "them", g.col || C_DANGER);
             g.convStep = 0;
             g.convStepT = 0;
             // Light touch, like any Act 3 NPC bump — not a penalty collision.
             audio.play("bump");
-            spark(Math.round(s4PX2), Math.round(s4PY2), C_DANGER, 6);
+            spark(Math.round(s4PX2), Math.round(s4PY2), g.col || C_DANGER, 6);
           }
         } else if (g.defectorState === "speaking") {
           /* Pin to a fixed screen X by riding the world scroll */
@@ -1343,7 +1393,7 @@
               g.convStep = 1;
               g.convStepT = 0;
             } else if (g.convStep === 1) {
-              convAddLine(window.LANG.act6DefectorLine2 || "uh", "them", C_DANGER);
+              convAddLine(window.LANG.act6DefectorLine2 || "uh", "them", g.col || C_DANGER);
               g.convStep = 2;
               g.convStepT = 0;
             } else if (g.convStep === 2) {
@@ -1351,7 +1401,7 @@
               g.convStep = 3;
               g.convStepT = 0;
             } else if (g.convStep === 3) {
-              convAddLine(window.LANG.act6DefectorLine3 || "ugh they don't pay me enough for this", "them", C_DANGER);
+              convAddLine(window.LANG.act6DefectorLine3 || "ugh they don't pay me enough for this", "them", g.col || C_DANGER);
               g.convStep = 4;
               g.convStepT = 0;
             } else if (g.convStep === 4) {
@@ -1359,11 +1409,11 @@
               g.convStep = 5;
               g.convStepT = 0;
             } else if (g.convStep === 5) {
-              convAddLine(window.LANG.act6DefectorLine4 || "so the good pasta is two aisles over", "them", C_DANGER);
+              convAddLine(window.LANG.act6DefectorLine4 || "so the good pasta is two aisles over", "them", g.col || C_DANGER);
               g.convStep = 6;
               g.convStepT = 0;
             } else if (g.convStep === 6) {
-              convAddLine(window.LANG.floatGuardDefects || "c'mon. I'll show you", "them", C_DANGER);
+              convAddLine(window.LANG.floatGuardDefects || "c'mon. I'll show you", "them", g.col || C_DANGER);
               g.convStep = 7;
               g.convStepT = 0;
             } else if (g.convStep === 7) {
@@ -1447,7 +1497,7 @@
       if (!s4Shoppers.some((s) => Math.abs(s.wx - spawnWX) < 25)) {
         s4Shoppers.push({
           wx: spawnWX,
-          wy: Util.randInt(S4_AISLE_TOP + 1, S4_AISLE_BOT - 1),
+          wy: S4_AISLE_Y + Util.randInt(-2, 0),
           vx: -0.002 - Math.random() * 0.002,
           art: Util.pick(window.GAME_DATA.npcArts),
           col: Util.pick(window.GAME_DATA.npcColors),
@@ -1493,24 +1543,15 @@
     // Shelves flatten to a washed-out red during the defector conversation.
     const _defectorTalking = s4Gs.some((g) => g.defector && g.defectorState === "speaking");
     const _defectorRed = dullColor(C_DANGER, 0.5);
-    /* ── BOOKCASES — discrete units scrolling with world ── */
+    /* ── BOOKCASES — open-front shelving, no enclosing boxes ── */
     for (const bc of s4Bookcases) {
       const sx = Math.round(bc.wx - s4WX);
       if (sx + S4_BC_W < -1 || sx > W + 1) continue;
-      const iW = S4_BC_W - 2;
-      grid.text("\u2554" + "\u2550".repeat(iW) + "\u2557", sx, S4_SHELF_TOP, C_DIM);
+      grid.text("\u2500".repeat(S4_BC_W), sx, S4_ABOVE_TOP, "#444");
+      grid.text("\u2500".repeat(S4_BC_W), sx, S4_BELOW_TOP - 1, "#444");
       for (let row = 0; row < S4_SHELF_ROWS; row++) {
-        const rY = S4_SHELF_TOP + 1 + row * S4_SHELF_ROW_H;
+        const rY = _s4RowY(row);
         const sY = rY + S4_SHELF_ROW_H - 1;
-        const ns = Math.floor(iW / S4_SLOT_W);
-        for (let y = rY; y < sY; y++) {
-          if (sx >= 0 && sx < W) grid.set(sx, y, "\u2551", "#666");
-          if (sx + S4_BC_W - 1 >= 0 && sx + S4_BC_W - 1 < W) grid.set(sx + S4_BC_W - 1, y, "\u2551", "#666");
-          for (let c = 1; c < ns; c++) {
-            const dvx = sx + 1 + c * S4_SLOT_W;
-            if (dvx >= 0 && dvx < W) grid.set(dvx, y, "\u2502", "#333");
-          }
-        }
         for (const it of bc.items) {
           if (it.row !== row) continue;
           const ix = sx + 1 + it.col * S4_SLOT_W + 1;
@@ -1523,9 +1564,47 @@
           const _hov = _mouseSX >= ix - 1 && _mouseSX < ix + S4_SLOT_W && _mouseSY >= rY && _mouseSY <= rY + aH;
           grid.art(it.food.a, ix, rY, _defectorTalking ? _defectorRed : _hov ? brightenColor(it.color, 0.8) : it.color, false, _hov);
         }
-        const sym = row < S4_SHELF_ROWS - 1 ? "\u2560" + "\u2550".repeat(iW) + "\u2563" : "\u255a" + "\u2550".repeat(iW) + "\u255d";
-        grid.text(sym, sx, sY, "#666");
+        grid.text("\u2500".repeat(S4_BC_W), sx, sY, "#444");
       }
+    }
+
+    /* Exit doorway is background, drawn before characters. */
+    if (s4ExitPinned) {
+      const exSX = s4ExitScreenX;
+      const _ef = Math.floor(Date.now() / 800) % 2 === 0;
+      const _exitCol = C_TEAL;
+      const _dimCol = "#1a5a4a";
+
+      const archTop = Math.min(S4_ABOVE_BOT + 1, S4_AISLE_Y);
+      const archBot = Math.max(S4_BELOW_TOP - 2, S4_AISLE_Y);
+      const archW = 4;
+      const lx = exSX - archW;
+      const rx = exSX + archW;
+
+      // Clear interior so items don't poke through.
+      for (let y = archTop; y <= archBot; y++) {
+        for (let x = lx + 1; x < rx; x++) {
+          if (x >= 0 && x < W) grid.set(x, y, " ", null);
+        }
+      }
+
+      // Doorway \u2014 open at the bottom
+      for (let x = lx; x <= rx; x++) {
+        if (x >= 0 && x < W) grid.set(x, archTop, "\u2550", _exitCol);
+      }
+      if (lx >= 0 && lx < W) grid.set(lx, archTop, "\u2554", _exitCol);
+      if (rx >= 0 && rx < W) grid.set(rx, archTop, "\u2557", _exitCol);
+
+      // Pillars — stop short of shelf ledge
+      for (let y = archTop + 1; y < archBot; y++) {
+        if (lx >= 0 && lx < W) grid.set(lx, y, "\u2551", _exitCol);
+        if (lx + 1 >= 0 && lx + 1 < W) grid.set(lx + 1, y, "\u2502", _dimCol);
+        if (rx >= 0 && rx < W) grid.set(rx, y, "\u2551", _exitCol);
+        if (rx - 1 >= 0 && rx - 1 < W) grid.set(rx - 1, y, "\u2502", _dimCol);
+      }
+
+      const _label = window.LANG.act6ExitLabel;
+      grid.text(_label, exSX - Math.floor(_label.length / 2), archTop + 2, _ef ? "#fff" : _exitCol);
     }
 
     /* ── Shoppers — harmless aisle life ── */
@@ -1549,11 +1628,11 @@
       if (sx < -3 || sx > W + 3) continue;
       const _guardFlash = Math.floor(Date.now() / 400) % 2 === 0;
       const _guardLeg = Math.floor(Date.now() / 200 + g.wx * 0.3) % 2 === 0 ? "\u03C6" : "\u20B3";
-      grid.art([_guardFlash ? "\u00A7" : "!", _guardLeg], sx, sy, C_DANGER);
+      grid.art([_guardFlash ? "\u00A7" : "!", _guardLeg], sx, sy, g.col || C_DANGER);
 
       /* Generic guard-arrival shout — defector's own convo is separate. */
       if (g.announceT > 0 && !(g.defector && g.defectorState === "speaking")) {
-        _s4GuardBubble = { sx, sy, line: window.LANG.act6SecurityArrives || "SECURITY! stop right there!", col: C_DANGER };
+        _s4GuardBubble = { sx, sy, line: window.LANG.act6SecurityArrives || "SECURITY! stop right there!", col: g.col || C_DANGER };
       }
     }
 
@@ -1568,8 +1647,7 @@
         const rArt = (src && src.art) || A2_ROB;
         const rCol = (src && src.col) || C_TEAL;
         if (al.targetY === undefined) {
-          const aisleMid = (S4_AISLE_TOP + S4_AISLE_BOT) / 2;
-          al.targetY = aisleMid + al.oy * 1.2;
+          al.targetY = s4PY2 + al.oy * 1.2;
           al.followY = al.targetY;
           al.followX = s4PX2 - baseDist;
           al.wanderT = Math.random() * 4000;
@@ -1579,11 +1657,10 @@
         }
         al.wanderT += 16;
         al.wanderXT += 16;
-        /* Occasionally pick a new target lane within the aisle */
+        /* New target, small radius around player. */
         if (al.wanderT > 2500 + Math.random() * 2000) {
           al.wanderT = 0;
-          const aisleMid = (S4_AISLE_TOP + S4_AISLE_BOT) / 2;
-          al.targetY = aisleMid + (Math.random() - 0.5) * (S4_AISLE_BOT - S4_AISLE_TOP - 2);
+          al.targetY = Util.clamp(s4PY2 + (Math.random() - 0.5) * 6, S4_WALK_TOP, S4_WALK_BOT - 1);
         }
         /* Occasionally pick a new x-offset relative to player (drift forward/back) */
         if (al.wanderXT > 1800 + Math.random() * 2200) {
@@ -1606,8 +1683,8 @@
           if (al.dodgeY === 0) {
             /* Pick a direction — prefer the side with more aisle room */
             const guardScreenY = nearestGuard.wy;
-            const upRoom = guardScreenY - S4_AISLE_TOP;
-            const downRoom = S4_AISLE_BOT - guardScreenY;
+            const upRoom = guardScreenY - S4_WALK_TOP;
+            const downRoom = S4_WALK_BOT - guardScreenY;
             const dodgeAmount = 2 + Math.floor(Math.random() * 2); /* 2 or 3 cells */
             al.dodgeY = upRoom > downRoom ? -dodgeAmount : dodgeAmount;
           }
@@ -1624,8 +1701,8 @@
         if (!nearestGuard) {
           al.followY = Util.lerp(al.followY, s4PY2 + al.dodgeY, playerPullY);
         }
-        /* Clamp followY so dodges don't push them out of the aisle */
-        al.followY = Util.clamp(al.followY, S4_AISLE_TOP + 1, S4_AISLE_BOT - 1);
+        /* Keep dodges inside the walkable band */
+        al.followY = Util.clamp(al.followY, S4_WALK_TOP, S4_WALK_BOT - 1);
         /* X follows the player loosely with each robin's own offset */
         const targetX = s4PX2 + al.xOffset;
         al.followX = Util.lerp(al.followX, targetX, 0.025);
@@ -1645,7 +1722,7 @@
           _a4RFrame = [...rArt];
           _a4RFrame[1] = Math.floor((s4GT * 1000) / 200 + i * 1.7) % 2 === 0 ? _a4RFrame[1] : "\u20B3";
         }
-        if (rx >= 0 && rx < W && ry >= S4_AISLE_TOP && ry <= S4_AISLE_BOT) {
+        if (rx >= 0 && rx < W && ry >= S4_WALK_TOP && ry <= S4_WALK_BOT) {
           grid.art(_a4RFrame, rx, ry, rCol, isCat); // cat always faces forward — see the Act 3 crew-trail comment
         }
       }
@@ -1690,53 +1767,13 @@
       grid.text(DIALOG_BOX.bl + DIALOG_BOX.h.repeat(_bw - 2) + DIALOG_BOX.br, _bx, _by + 1 + _lines.length, _bubbleCol);
     }
 
-    /* ── Floor line ── */
-    for (let x = 0; x < W; x++) {
-      grid.set(x, S4_FLOOR_Y, "\u2550", "#444");
-    }
-
-    if (s4ExitPinned) {
-      const exSX = s4ExitScreenX;
-      const _ef = Math.floor(Date.now() / 800) % 2 === 0;
-      const _exitCol = C_TEAL;
-      const _dimCol = "#1a5a4a";
-
-      // Door-sized, not aisle-sized — a full-height arch dwarfed everything.
-      const archTop = Math.max(S4_AISLE_TOP, S4_FLOOR_Y - 6); // beam may touch the aisle top — still below the shelves, and tight layouts get a real door instead of a stub
-      const archBot = S4_FLOOR_Y;
-      const archW = 3;
-      const lx = exSX - archW;
-      const rx = exSX + archW;
-
-      // Top beam
-      for (let x = lx; x <= rx; x++) {
-        if (x >= 0 && x < W) grid.set(x, archTop, "\u2550", _exitCol);
-      }
-      if (lx >= 0 && lx < W) grid.set(lx, archTop, "\u2554", _exitCol);
-      if (rx >= 0 && rx < W) grid.set(rx, archTop, "\u2557", _exitCol);
-
-      // Pillars
-      for (let y = archTop + 1; y < archBot; y++) {
-        if (lx >= 0 && lx < W) grid.set(lx, y, "\u2551", _exitCol);
-        if (lx + 1 >= 0 && lx + 1 < W) grid.set(lx + 1, y, "\u2502", _dimCol);
-        if (rx >= 0 && rx < W) grid.set(rx, y, "\u2551", _exitCol);
-        if (rx - 1 >= 0 && rx - 1 < W) grid.set(rx - 1, y, "\u2502", _dimCol);
-      }
-
-      // Floor gap
-      for (let x = lx; x <= rx; x++) {
-        if (x >= 0 && x < W) grid.set(x, S4_FLOOR_Y, " ", null);
-      }
-
-      // EXIT label in beam
-      const _label = window.LANG.act6ExitLabel;
-      grid.text(_label, exSX - Math.floor(_label.length / 2), archTop, _ef ? "#fff" : _exitCol);
-    }
-
     /* ── Urgency border flash ── */
     if (s4Ug > 0.5) {
       const bc = Math.floor(Date.now() / 300) % 2 ? C_DANGER : "#a00";
-      for (let x = 0; x < W; x++) grid.set(x, 0, "\u2550", bc);
+      for (let x = 0; x < W; x++) {
+        grid.set(x, 0, "\u2550", bc);
+        grid.set(x, H - 1, "\u2550", bc);
+      }
       for (let y = 0; y < H; y++) {
         grid.set(0, y, "\u2551", bc);
         grid.set(W - 1, y, "\u2551", bc);
@@ -1749,7 +1786,7 @@
 
 
     if (!convVisible && !s4HasGrabbed && s4GT > 2) {
-      renderTapPrompt(ctrl("act6Grab"), S4_FLOOR_Y - 1, "#fff", C_PLAYER, true);
+      renderTapPrompt(ctrl("act6Grab"), H - 2, "#fff", C_PLAYER, true);
     }
 
     if (convVisible) {

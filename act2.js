@@ -236,6 +236,9 @@
       const px = Math.round(a1PX) - ox,
         py = Math.round(a1PY) - oy;
   
+      // magnetLean started first so it draws last (Effects runs `active` back-to-front) —
+      // its lean rotation layers on top of the mirror fold instead of being overwritten by it.
+      Effects.start("magnetLean", { x: px, y: py, radius: 12, duration: delayGaveUp + convFadeDuration, maxRot: 40 });
       Effects.start("mirror", { x: px, y: py, radius: 7, duration: delayGaveUp + convFadeDuration, intensity: 0.3 });
       setTimeout(() => {
         convStartFade();

@@ -1,10 +1,10 @@
 /* Interstitial screens + game-over flows (quickBust and friends). */
   const INTER_HINT_MS = 2200;
-  let interT, interLines, interLI, interNext, interDone, interFrameIdx, interTapMinMs;
+  let interT, interLines, interLI, interNext, interDone, interFrameIdx, interTapMinMs, interTapKey;
   // Cells kept visible on the interstitial's black screen (e.g. the player).
   let _interKeepCells = null;
 
-  function initInter(lines, nextFn, frameIdx, silent, tapMinMs) {
+  function initInter(lines, nextFn, frameIdx, silent, tapMinMs, tapKey) {
     if (!lines || lines.length === 0) {
       if (nextFn) nextFn();
       return;
@@ -18,6 +18,7 @@
     interNext = nextFn;
     interDone = false;
     interTapMinMs = tapMinMs ?? 350;
+    interTapKey = tapKey || "tapToContinue";
     Banner.timer = 0;
     dialogStack = [];
     clickPending = false;
@@ -48,7 +49,7 @@
         if (!entry.pause) {
           Banner.color = entry.c || Banner.color;
           Banner.text = Banner.text ? Banner.text + "\n\n" + entry.t : entry.t;
-          Banner.segs = [...Banner.segs, { text: entry.t, color: Banner.color }];
+          Banner.segs = [...Banner.segs, { text: (Banner.segs.length ? "\n" : "") + entry.t, color: Banner.color }];
           _revealedAny = true;
         }
       }
@@ -137,7 +138,7 @@
     const _allLinesDone = interLines && interLI >= interLines.length;
     // Same position as in-game prompts (bottom of screen) for consistency.
     if (interT > INTER_HINT_MS) {
-      renderTapPrompt(ctrl("tapToContinue"), H - 3, "#fff", C_PLAYER);
+      renderTapPrompt(ctrl(interTapKey), H - 3, "#fff", C_PLAYER);
     }
     if (_interKeepCells) {
       // Glide kept cells from their outro spot (fx/fy) to staged spot (x/y).
@@ -168,6 +169,13 @@
     brokenHeart: [window.LANG.brokenHeartTitle, window.LANG.brokenHeartSub],
   };
 
+  const QUICKBUST_TAP = {
+    timeout: "deathTapTimedOut",
+    busted: "deathTapBusted",
+    caught: "deathTapCaught",
+    emptyHanded: "deathTapEmptyHanded",
+    brokenHeart: "deathTapBrokenHeart",
+  };
 
   const QUICKBUST_FRAME = {
     timeout: 5, // spiral — time running out
@@ -215,6 +223,7 @@
       opts.frameIdx ?? QUICKBUST_FRAME[result] ?? 8,
       true,
       1200,
+      QUICKBUST_TAP[result] || QUICKBUST_TAP.caught,
     );
     loop.start();
   }
