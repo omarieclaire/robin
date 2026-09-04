@@ -71,37 +71,37 @@ floatNarcHit: "you ran into a narc!",
 a1Encounters: [
     {
       turns: [
-        { who: "p", text: "ugh. |pause|why is food so expensive?" },
+        { who: "p", text: "ugh |pause|why is food so expensive?" },
         { who: "n", text: "idk|pause| but i have an app \nthat helps me get rotting groceries for cheap" },
         { who: "p", text: "uh, ok" },
         { who: "n", text: "want a referral?" },
         { who: "p", text: "maybe later" },
       ],
       loopTurns: [
-        { who: "p", texts: ["crisse, why is food STILL so expensive?", "C4LICE. WHY IS F00D ST1LL S0 EXPENSIVE."] },
-        { who: "n", texts: ["idk, want that app for rotting groc3ries N0W?", "i d k r0tting. f00d r0tting 4pp. r0tting me."] },
+        { who: "p", texts: ["crisse, why is food STILL so expensive?", "C4LICE WHY IS F00D ST1LL S0 EXPENSIVE"] },
+        { who: "n", texts: ["want that app for rotting groceries now?", "r0tting 4pp, r0tting f00d, r0tting me"] },
       ],
     },
     {
       turns: [
-        { who: "p", text: "you know that one in three Quebecers can't afford groceries?" },
-        { who: "n", text: "so\ntwo in three\n are doing great?" },
-        { who: "p", text: "what?" },
+        { who: "p", text: "one in three of us can't afford to eat" },
+        { who: "n", text: "so\ntwo in three are doing great?" },
+        { who: "p", text: "what?!" },
       ],
       loopTurns: [
-        { who: "p", texts: ["crisse, one in three of us can't afford to eat", "TABARNAK. ONE IN THR33 AND N0THING CHANGES."] },
-        { who: "n", texts: ["what's the problem with a little hunger?", "h0nestly? pr0b4bly ok l0l 4nyway."] },
+        { who: "p", texts: ["crisse, we're hungry", "TABARNAK AND N0THING CHANGES"] },
+        { who: "n", texts: ["just tighten your belt", "h0nestly? pr0b4bly ok l0l 4nyway."] },
       ],
     },
     {
       turns: [
         { who: "p", text: "someone should do something" },
-        { who: "n", text: "you know,\nstealing from a thief|pause|\nisn't theft" },
+        { who: "n", text: "you know,\nstealing from a thief isn't theft" },
         { who: "p", text: "wait,|pause|what?" },
       ],
       loopTurns: [
-        { who: "p", texts: ["câline, someone HAS to do something", "ESTI DE CÂLICE. I JUST GO IN CIRCLES. COMPLAINING."] },
-        { who: "n", texts: ["well th3r3 is a way", "y o u  k n o w the g4me w4nts you to he4r this"] },
+        { who: "p", texts: ["câline, someone HAS to do something", "ESTI DE CÂLICE I JUST GO IN CIRCLES, COMPLAINING."] },
+        { who: "n", texts: ["well there is a way, if you are brave", "y o u  k n o w  t h i s  i s  n o t  a g a m e"] },
       ],
     },
   ],
@@ -111,7 +111,7 @@ a1Encounters: [
     { t: "...câline, encore ça?", c: "#aaa" },
     { t: "ostie. encore?", c: "#b09abf" },
     { t: "crisse, pis quoi encore?", c: "#b080c0" },
-    { t: "ostie. ENCORE LA MÊME CHOSE?", c: "#c060a0" },
+    { t: "ostie ! ENCORE LA MÊME CHOSE?", c: "#c060a0" },
     { t: "OSTIE DE CÂLICE. vraiment??", c: "#c84080" },
     { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
     { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
@@ -324,7 +324,7 @@ a1Encounters: [
   act6GrabMobile: "tap food to grab it",
 
   brokenHeartTitle: "DIED OF A BROKEN HEART",
-  brokenHeartSub: "but what could you do?",
+  brokenHeartSub: "and an empty stomach",
 
   act6DefectorLine1: "hold it right there!",
   act6DefectorPlayerLine: "you gonna tase me over a bag of pasta?",

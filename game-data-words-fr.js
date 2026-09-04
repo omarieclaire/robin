@@ -25,7 +25,7 @@ const P_GREET = [
   { t: "tu vas-tu bien ces temps-ci?", tags: ["plat-hoch"] },
   { t: "comment tu vas?", tags: ["points-card"] },
   { t: "pour vrai?", tags: ["robin-hood"] },
-  { t: "qu'est-ce qui se passe avec toi?", tags: ["3-jobs"] },
+  { t: "pourquoi cette face de carême?", tags: ["3-jobs"] },
   { t: "c'est quoi ce bruit-là?", tags: ["aids-wolf"] },
   { t: "tu vas au vernissage chez oboro à soir?", tags: ["art"] },
   { t: "hé, quoi de neuf?", tags: ["banana"] },
@@ -66,7 +66,7 @@ const D_NARC_HELLO = [
   { t: "écoute, les gens ont juste besoin de mieux gérer leur budget", tags: ["budget"] },
   { t: "les pauvres devraient arrêter d'acheter des avocats\n\nils pourraient pas juste manger des feuilles de pissenlit ou de quoi?", tags: ["avocado"] },
   { t: "OUI ça VA! tout ça c'est juste une question de mindset", tags: ["mindset"] },
-  { t: "évidemment. le marché se corrige tout seul. \n\nça a toujours été de même", tags: ["self-corrects"] },
+  { t: "évidemment. je suis entre les mains aimantes du marché libre", tags: ["self-corrects"] },
   { t: "moi? magnifique. tout comme notre merveilleuse économie de marché", tags: ["market-econ"] },
   { t: "je sais pas pourquoi tout le monde se plaint\n\navec une carte de points la bouffe c'est pratiquement gratuit", tags: ["free-points-card"] },
   { t: "je lisais que la compétition fait baisser les prix", tags: ["competition"] },
@@ -91,9 +91,9 @@ const DECK_ANGRY_HELLO = new DM.Deck([
 ]);
 
 const DECK_HUNGRY_HELLO = new DM.Deck([
-  { t: "je travaille trois jobs pis je n'arrive toujours pas à m'en sortir", tags: ["3-jobs"] },
-  { t: "c'est mon ventre, désolé·e", tags: ["aids-wolf"] },
-  { t: "ouais|pause|le hummus est gratuit pis mon tupperware est vide", tags: ["art"] },
+  { t: "ben, je travaille trois jobs pis j'arrive toujours pas à m'en sortir", tags: ["3-jobs"] },
+  { t: "euh \n\n c'est mon ventre", tags: ["aids-wolf"] },
+  { t: "ouais|pause|le hummus est gratuit pis j'ai apporté un tupperware vide", tags: ["art"] },
   { t: "j'ai essayé de sauver une banane", tags: ["banana"] },
   { t: "ben, j'ai commencé à calculer le prix par bouchée", tags: ["bite"] },
   { t: "ben, j'ai dû manger ma céréale avec de l'eau ce matin", tags: ["cereal-water"] },
@@ -144,11 +144,11 @@ const DECK_ANGRY_PITCH = new DM.Deck([
 ]);
 
 const DECK_HUNGRY_PITCH = new DM.Deck([
-  { t: "pareil. |pause|la seule chose qui s'accumule ici c'est mon épuisement", tags: ["3-jobs"] },
-  { t: "wow, ton ventre sonne comme un concert d'aids wolf", tags: ["aids-wolf"] },
-  { t: "je sais.|pause|on le sait tous.|pause|même les artistes remplissent leurs poches avec les craquelins qui restent", tags: ["art"] },
-  { t: "tu peux pas sauver une banane. |pause|la banane a son propre calendrier", tags: ["banana"] },
-  { t: "t'as automatisé la tristesse.|pause|c'est efficace", tags: ["bite"] },
+  { t: "ouais, la seule chose qui s'accumule ici c'est mon épuisement", tags: ["3-jobs"] },
+  { t: "ben, ton ventre sonne comme un concert d'aids wolf", tags: ["aids-wolf"] },
+  { t: "je sais.|pause|on le sait tous. \n\n même les artistes remplissent leurs poches avec les craquelins qui restent", tags: ["art"] },
+  { t: "tu peux pas sauver une banane. \n\n la banane a son propre calendrier", tags: ["banana"] },
+  { t: "t'as automatisé la tristesse\n\n euh, tellement efficace?", tags: ["bite"] },
   { t: "ah le déjeuner des rois", tags: ["cereal-water"] },
   { t: "à jeun?|pause|oh non", tags: ["chow-mein"] },
   { t: "ah la machine m'a mangé mon lunch à moi aussi", tags: ["clean"] },
@@ -338,7 +338,7 @@ const D_SAY_MORE_SKEPTICAL = new DM.Deck([
   { t: "la manifestation c'est réel", tags: ["mindset"] },
   { t: "j'ai soixante-treize mille points pis je vais pas entendre ça", tags: ["optimum"] },
   { t: "le ritz c'est un CRÉATEUR d'emplois", tags: ["ritz"] },
-  { t: "ben IGA permet aux clients d'acheter des trucs en magasin pis de les donner aux banques alimentaires", tags: ["self-corrects"] },
+  { t: "ben, c'est leur choix", tags: ["self-corrects"] },
   { t: "le système va bien. \n\nles gens arrêtent pas de vouloir qu'il soit différent", tags: ["system"] },
 ]);
 
@@ -386,7 +386,7 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "j'en ai fini d'être un petit pain.\nje veux la miche au complet", tags: ["sink-crackers"] },
   { t: "la faim a eu la scène assez longtemps.|pause|allons-y", tags: ["spaghetti"] },
   { t: "on a mijoté assez longtemps.|pause|il est temps de bouillir", tags: ["soup"] },
-  { t: "sûr.|pause|je suis in", tags: ["3-jobs"] },
+  { t: "correct.|pause|compte sur moi", tags: ["3-jobs"] },
   { t: "je suis in.\nc'est la percée", tags: ["therapy"] },
   { t: "on pourrait mettre plein d'épicerie dans un cône de signalisation|pause|montre-moi le chemin", tags: ["traffic-cone"] },
   { t: "la gâterie de ce soir c'est un rabais cinq doigts.|pause|self-care, genre", tags: ["treat"] },
@@ -420,7 +420,7 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "je m'en fous des points. je veux de la bouffe.", tags: ["optimum"] },
   { t: "quand on peut même pas se nourrir avec notre salaire, il est temps de sortir les fourchettes pis les couteaux", tags: ["ritz"] },
   { t: "le Ritz sert mille dîners. \n\nle refuge en sert zéro. \n\nce soir on équilibre les livres", tags: ["ritz"] },
-  { t: "on a de la chance. \n\nde toute façon", tags: ["self-corrects"] },
+  { t: "right. \n\nde toute façon, tu veux te joindre à nous?", tags: ["self-corrects"] },
   { t: "t'as dit que le système récompense ceux qui le comprennent. \n\nj'encaisse", tags: ["system"] },
 ]);
 
@@ -584,7 +584,7 @@ const D_NARC_REVEAL = [
 
 const D_NOT_NOW = [
   { t: "je travaille à soir.\npeut-être une autre fois?", tags: ["3-jobs"] },
-  { t: "non, il y a une séance de spiritisme triste dans mon côlon", tags: ["aids-wolf"] },
+  { t: "pas là. j'anime une séance de spiritisme triste dans mon côlon", tags: ["aids-wolf"] },
   { t: "j'ai un cinq à sept où aller.|pause|peut-être plus tard?", tags: ["art"] },
   { t: "oh euh, tu peux-tu me sauver plus tard?", tags: ["banana"] },
   { t: "j'ai une retenue à poser.|pause|donne-moi un jour?", tags: ["bite"] },
@@ -688,7 +688,7 @@ const D_NO_BYE = [
 
 const D_RETURN = [
   { t: "j'ai appelé en sick.|pause|allons-y", tags: ["3-jobs"] },
-  { t: "on va thrasher", tags: ["aids-wolf"] },
+  { t: "ma vie banale finit à soir|pause|...on va thrasher", tags: ["aids-wolf"] },
   { t: "les collations ont fini, je suis in", tags: ["art"] },
   { t: "l'avocat était prêt. \n\nmoi aussi", tags: ["treat"] },
   { t: "j'ai acheté un avocat. \n\nj'ai pleuré. \n\nje suis in", tags: ["treat"] },
@@ -742,11 +742,11 @@ const D_RETURN = [
 ];
 
 const D_F_INVITE = [
-  { t: "c'était sombre\n\nviens, on équilibre les comptes?", tags: ["3-jobs"] },
-  { t: "tu te joins?\non va donner à ton ventre quelque chose pour vraiment se révolter", tags: ["aids-wolf"] },
+  { t: "c'était sombre\n\nviens avec moi, on va équilibrer les comptes?", tags: ["3-jobs"] },
+  { t: "tu te joins?\non va donner à ton ventre une raison de se révolter", tags: ["aids-wolf"] },
   { t: "t'as mangé des pâtes séchées collées sur du carton construction\n\njoins-toi à nous, tu mangeras plus jamais des crafts", tags: ["art"] },
   { t: "exactement!|pause|personne achète des avocats à soir\n\non les prend", tags: ["avocado"] },
-  { t: "avec un peu de créativité, ces bananes deviennent du pain aux bananes\n\npis avec un peu plus, ce pain-là devient gratuit", tags: ["banana"] },
+  { t: "avec un peu de créativité, ces bananes deviennent du pain aux bananes\n\npis avec un peu plus, tout le pain devient gratuit", tags: ["banana"] },
   { t: "tu calcules le prix par bouchée.|pause|eux autres calculent le prix par yacht. \n\nles maths de quelqu'un sont pourries", tags: ["bite"] },
   { t: "ils nous ont tous frappés. on les frappe tous.\n\n allons reprendre le pain?", tags: ["bread-scandal"] },
   { t: "ben, et si on empruntait à la colonne b pour nourrir la colonne a?", tags: ["budget"] },
@@ -801,7 +801,7 @@ const D_F_INVITE = [
   { t: "la dame à l'huile d'olive comprendrait.\n\nelle a déjà commencé à verser -— autant lui passer le pain", tags: ["samples"] },
   { t: "ils ont rendu illégal de voler du pain. \n\npuis ils ont rendu impossible d'avoir les moyens du pain.\n\nassez, allons-y", tags: ["sandwich"] },
   { t: "t'as sauvé quatre dollars. \n\ncomment tu te sentirais à en sauver 400?", tags: ["saver"] },
-  { t: "y'a toujours la poubelle. \n\nmais j'ai un plan plus propre", tags: ["segals"] },
+  { t: "j'ai un plan plus goûteux que le ragoût de bibittes freegan \n\n viens avec moi?", tags: ["segals"] },
   {
     t: "ça peut pas faire de mal de l'aider un peu. \n\non est sur le bord d'aider un IGA à se corriger lui-même à soir",
     tags: ["self-corrects"],
@@ -821,7 +821,7 @@ const D_FILLER = [
   { t: "ils appellent ça un salaire vivant\n parce que l'alternative c'est trop évidente", tags: ["3-jobs"] },
   { t: "c'est juste mon microbiome intestinal qui se syndique", tags: ["aids-wolf"] },
   { t: "en confessant...j'ai mangé le macaroni art de ma petite sœur hier", tags: ["art"] },
-  { t: "chaque dollar qu'ils dépensent c'est un dollar qu'ils auraient pu investir", tags: ["avocado"] },
+  { t: "chaque trempette de chip c'est un dollar qu'ils auraient pu investir en bourse", tags: ["avocado"] },
   { t: "ouais, mon congélo c'est un cimetière de bananes noires ratatinées", tags: ["banana"] },
   { t: "oh mon dieu", tags: ["bite"] },
   { t: "tout le monde était dans le coup. métro, sobeys, walmart\n\nmême giant tiger", tags: ["bread-scandal"] },
@@ -868,7 +868,7 @@ const D_FILLER = [
   { t: "j'en ai demandé une une fois. \n\nelle a juste dit «essaie le miso». \n\nj'ai pleuré dans le stationnement", tags: ["samples"] },
   { t: "la partie sandwich était hypothétique. \n\nla partie crimes, pas vraiment", tags: ["sandwich"] },
   { t: "j'apporte un tote bag pour le soutien émotionnel pis pour transporter les produits à rabais", tags: ["saver"] },
-  { t: "et les bacs de vidanges de fèves séchées?|pause|jusqu'où peut-on tomber?", tags: ["segals"] },
+  { t: "ensuite ce sera les bacs de vidanges de fèves séchées \n\n on va espérer des bibittes mortes pour la protéine", tags: ["segals"] },
   { t: "donne-lui six mois, douze max, ça va se corriger", tags: ["self-corrects"] },
   {
     t: "deux craquelins c'est un sandwich si tu mets du beurre de pinottes imaginaire entre eux pis que tu penses pas trop à ça",

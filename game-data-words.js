@@ -25,7 +25,7 @@ const P_GREET = [
   { t: "you doing ok these days?", tags: ["plat-hoch"] },
   { t: "how are you?", tags: ["points-card"] },
   { t: "real talk?", tags: ["robin-hood"] },
-  { t: "what's up with you?", tags: ["3-jobs"] },
+  { t: "why the long face?", tags: ["3-jobs"] },
   { t: "what's that sound?", tags: ["aids-wolf"] },
   { t: "you going to the oboro art opening tonight?", tags: ["art"] },
   { t: "hey, what's up?", tags: ["banana"] },
@@ -66,7 +66,7 @@ const D_NARC_HELLO = [
   { t: "listen, everyone just needs to budget better", tags: ["budget"] },
   { t: "the poors need to stop buying avocados\n\ncan't they eat dandelion leaves or something?", tags: ["avocado"] },
   { t: "OUI ça VA! everything is just a mindset issue", tags: ["mindset"] },
-  { t: "of course. the market self-corrects. \n\nit always does", tags: ["self-corrects"] },
+  { t: "of course. I'm in the loving hands of the free market", tags: ["self-corrects"] },
   { t: "me? magnificent. just like our marvelous market economy", tags: ["market-econ"] },
   { t: "I don't know what everyone is complaining about\n\nwhen you use a points card food is basically free", tags: ["free-points-card"] },
   { t: "I was reading about how competition keeps prices down", tags: ["competition"] },
@@ -91,9 +91,9 @@ const DECK_ANGRY_HELLO = new DM.Deck([
 ]);
 
 const DECK_HUNGRY_HELLO = new DM.Deck([
-  { t: "I work three jobs and still can't make it work", tags: ["3-jobs"] },
-  { t: "that's my stomach, sorry", tags: ["aids-wolf"] },
-  { t: "yeah|pause|the hummus is free and my tupperware is empty", tags: ["art"] },
+  { t: "well, I work three jobs and still can't make it work", tags: ["3-jobs"] },
+  { t: "uh \n\n that's my stomach", tags: ["aids-wolf"] },
+  { t: "yeah|pause|the hummus is free and I brought an empty tupperware", tags: ["art"] },
   { t: "I tried to save a banana", tags: ["banana"] },
   { t: "well, I've started calculating price-per-bite", tags: ["bite"] },
   { t: "well, I had to eat my cereal with water this morning", tags: ["cereal-water"] },
@@ -145,11 +145,11 @@ const DECK_ANGRY_PITCH = new DM.Deck([
 ]);
 
 const DECK_HUNGRY_PITCH = new DM.Deck([
-  { t: "same. |pause|the only thing compounding around here is my exhaustion", tags: ["3-jobs"] },
-  { t: "wow, your stomach sounds like an aids wolf concert", tags: ["aids-wolf"] },
-  { t: "i know.|pause|we all know.|pause|even the artists fill their pockets with leftover crackers", tags: ["art"] },
-  { t: "you can't save a banana. |pause|the banana has its own timeline", tags: ["banana"] },
-  { t: "you've automated sadness?|pause|how efficient", tags: ["bite"] },
+  { t: "yeah the only thing compounding around here is my exhaustion", tags: ["3-jobs"] },
+  { t: "well, your stomach sounds like an aids wolf concert", tags: ["aids-wolf"] },
+  { t: "i know.|pause|we all know. \n\n even the artists fill their pockets with leftover crackers", tags: ["art"] },
+  { t: "you can't save a banana. \n\n the banana has its own timeline", tags: ["banana"] },
+  { t: "you've automated sadness\n\n um, so efficient?", tags: ["bite"] },
   { t: "ah the breakfast of kings", tags: ["cereal-water"] },
   { t: "sober?|pause|oh no", tags: ["chow-mein"] },
   { t: "ah the machine has been eating my lunch too", tags: ["clean"] },
@@ -339,7 +339,7 @@ const D_SAY_MORE_SKEPTICAL = new DM.Deck([
   { t: "manifestation is real", tags: ["mindset"] },
   { t: "I have seventy-three thousand points and I will not be hearing this", tags: ["optimum"] },
   { t: "the ritz is a job CREATOR", tags: ["ritz"] },
-  { t: "well IGA allows shoppers to buy stuff in stores|pause|and donate to food banks", tags: ["self-corrects"] },
+  { t: "well that's their choice", tags: ["self-corrects"] },
   { t: "the system is fine. \n\npeople keep wanting it to be different", tags: ["system"] },
 ]);
 
@@ -387,7 +387,7 @@ const D_JOIN_CONSENT_PAIRS = [
   { t: "I'm done with pretending, let's go", tags: ["sink-crackers"] },
   { t: "hunger's had the stage long enough.|pause|let's go", tags: ["spaghetti"] },
   { t: "I've been simmering.|pause|it's time to boil", tags: ["soup"] },
-  { t: "sure.|pause|count me in", tags: ["3-jobs"] },
+  { t: "alright, count me in", tags: ["3-jobs"] },
   { t: "this is the breakthrough", tags: ["therapy"] },
   { t: "we could fit a lot of groceries in a traffic cone|pause|lead the way", tags: ["traffic-cone"] },
   { t: "tonight's treat is a five-finger discount.|pause|self-care, really", tags: ["treat"] },
@@ -422,7 +422,7 @@ const DECK_STRONGER_PITCH = new DM.Deck([
   { t: "I don't care about points.|pause|I want food.", tags: ["optimum"] },
   { t: "When we can't even feed ourselves with our wages, it's time to break out the forks and knives", tags: ["ritz"] },
   { t: "the Ritz serves a thousand lunches. \n\nthe shelter serves zero. \n\ntonight we balance the books", tags: ["ritz"] },
-  { t: "lucky us. \n\nanyway", tags: ["self-corrects"] },
+  { t: "right. \n\nanyway, want to join us?", tags: ["self-corrects"] },
   { t: "you said the system rewards those who understand it. \n\nI'm collecting", tags: ["system"] },
 ]);
 
@@ -585,8 +585,8 @@ const D_NARC_REVEAL = [
 ];
 
 const D_NOT_NOW = [
-  { t: "I work tonight.\nmaybe another time?", tags: ["3-jobs"] },
-  { t: "no, there's a sad seance in my colon", tags: ["aids-wolf"] },
+  { t: "I work tonight. maybe another time?", tags: ["3-jobs"] },
+  { t: "not now. I'm hosting a sad seance in my colon", tags: ["aids-wolf"] },
   { t: "I have a cinq à sept to get to.|pause|maybe later?", tags: ["art"] },
   { t: "oh um, maybe save me later?", tags: ["banana"] },
   { t: "ugh I need to carry the one, maybe later", tags: ["bite"] },
@@ -690,8 +690,8 @@ const D_NO_BYE = [
 ];
 
 const D_RETURN = [
-  { t: "I called in sick.|pause|Let's go", tags: ["3-jobs"] },
-  { t: "let's thrash", tags: ["aids-wolf"] },
+  { t: "I called in sick. Let's go", tags: ["3-jobs"] },
+  { t: "ma vie banale ends tonight|pause|...let's thrash", tags: ["aids-wolf"] },
   { t: "the snacks ran out, I'm in", tags: ["art"] },
   { t: "the avocado was ready, so am I", tags: ["treat"] },
   { t: "I bought one avocado. \n\nI cried. \n\nI'm in", tags: ["treat"] },
@@ -746,11 +746,11 @@ const D_RETURN = [
 ];
 
 const D_F_INVITE = [
-  { t: "that was dark\n\nwant to balance the books?", tags: ["3-jobs"] },
-  { t: "join me?\nwe'll give your stomach something to riot about", tags: ["aids-wolf"] },
+  { t: "that was dark\n\ncome with me and we'll balance the books", tags: ["3-jobs"] },
+  { t: "join us?\nwe'll give your stomach something to riot about", tags: ["aids-wolf"] },
   { t: "you ate dried pasta glued to construction paper\n\njoin us, you'll never eat crafts again", tags: ["art"] },
   { t: "exactly!|pause|nobody's buying avocados tonight\n\nwe're taking them", tags: ["avocado"] },
-  { t: "with a little creativity, those bananas become banana bread\n\nand with a little more, that bread becomes free", tags: ["banana"] },
+  { t: "with a little creativity, those bananas become banana bread\n\nand with a little more, all bread becomes free", tags: ["banana"] },
   { t: "you're calculating price-per-bite.|pause|other people are calculating price-per-yacht. \n\nsomeone's math stinks", tags: ["bite"] },
   { t: "even giant tiger?\n\nlet's go hit them back", tags: ["bread-scandal"] },
   { t: "I hear you\n\n so what if we borrowed from column b to feed column a?", tags: ["budget"] },
@@ -805,7 +805,7 @@ const D_F_INVITE = [
   { t: "the olive oil lady understands\n\nshe's been waiting for you to ask for more", tags: ["samples"] },
   { t: "they made it impossible to afford bread.\n\nthey made it illegal to steal bread. \n\nenough, let's go", tags: ["sandwich"] },
   { t: "you saved four dollars. \n\nhow do you feel about saving 400?", tags: ["saver"] },
-  { t: "I have a tastier plan than freegan rodent stew \n\n come with me?", tags: ["segals"] },
+  { t: "I have a tastier plan than freegan bug stew \n\n come with me?", tags: ["segals"] },
   {
     t: "it can't hurt to help it out a bit. \n\nwe're going to help an IGA correct itself tonight",
     tags: ["self-corrects"],
@@ -825,7 +825,7 @@ const D_FILLER = [
   { t: "they call it a living wage\n because the alternative is too on the nose", tags: ["3-jobs"] },
   { t: "it's just my gut biome unionizing", tags: ["aids-wolf"] },
   { t: "while I'm confessing\n\nI ate my little sister's macaroni art yesterday", tags: ["art"] },
-  { t: "every dollar they eat is a dollar they could have invested", tags: ["avocado"] },
+  { t: "every dip of a chip is a dollar they could have invested in the stock market", tags: ["avocado"] },
   { t: "yeah, my freezer is a graveyard of shrivelled black bananas", tags: ["banana"] },
   { t: "oh god", tags: ["bite"] },
   { t: "everyone was in on it. metro, sobeys, walmart\n\n even giant tiger", tags: ["bread-scandal"] },
@@ -872,7 +872,7 @@ const D_FILLER = [
   { t: "I asked one for a recommendation once. \n\nshe just said 'try the miso'. \n\nI cried in the parking lot", tags: ["samples"] },
   { t: "the sandwich part was hypothetical. \n\nthe crimes part was not", tags: ["sandwich"] },
   { t: "I bring a tote bag for emotional support and to carry the discount produce", tags: ["saver"] },
-  { t: "next it'll be the garbage bins of dried beans \n\n we'll be hoping for dead mice for the protein", tags: ["segals"] },
+  { t: "next it'll be the garbage bins of dried beans \n\n we'll be hoping for dead bugs for the protein", tags: ["segals"] },
   { t: "give it six months, twelve tops, it'll sort", tags: ["self-corrects"] },
   {
     t: "two crackers are a sandwich if you put some imaginary peanut butter between them",

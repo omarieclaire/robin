@@ -3347,7 +3347,7 @@ window.GAME_DATA = {
         [
             "@",
             "Ħ",
-        ] /* frame 1: step (currently same — add variation here) */,
+        ] ,
     ],
     robinArt: [
         "@",
@@ -3376,32 +3376,7 @@ window.GAME_DATA = {
         "#8f0",
         "#00c3ff",
     ],
-    /* ── NARRATIVE QUOTES (Act 2 transition banners) ── */
-    // narrativeQuotes: [
-    //     {
-    //         t: "someone had an idea",
-    //         c: "#bf8c60",
-    //         d: 2500,
-    //     },
-    //     { pause: true, d: 800 },
-    //     {
-    //         t: "or maybe we all had the idea",
-    //         c: "#db7f30",
-    //         d: 2500,
-    //     },
-    //     { pause: true, d: 1000 },
-    //     {
-    //         t: "what if we just\n take what we need?",
-    //         c: "#f26507",
-    //         d: 3000,
-    //     },
-    //     { pause: true, d: 600 },
-    //     {
-    //         t: "-",
-    //         c: "#8957ff",
-    //         d: 2500,
-    //     },
-    // ],
+   
 
     narrativeQuotesEN: [
     { t: "someone had an idea", c: "#bf8c60", d: 4000 },

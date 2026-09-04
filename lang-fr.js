@@ -70,7 +70,7 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   a1Encounters: [
     {
       turns: [
-        { who: "p", text: "ugh. |pause|depuis quand la bouffe est si chère?" },
+        { who: "p", text: "ugh |pause|depuis quand la bouffe est si chère?" },
         { who: "n", text: "chais pas|pause|mais j'ai une appli pour les coupons d'épicerie" },
         { who: "n", text: "et une autre appli \n pour acheter de la bouffe pourrie" },
         { who: "p", text: "euh, ok" },
@@ -78,31 +78,31 @@ floatNarcHit: "tu as foncé dans un mouchard !",
         { who: "p", text: "peut-être plus tard" },
       ],
       loopTurns: [
-        { who: "p", texts: ["crisse, la bouffe est rendue trop chère", "C4LICE. T0UJOURS TR0P CHER. T0UJ0URS."] },
-        { who: "n", texts: ["chais pas, tu veux-tu c'te 4ppli de bouffe pourrie ASTEURE?", "ch4is p4s. bouffe p0urrie. 4ppli p0urrie. m0i p0urri·e."] },
+        { who: "p", texts: ["crisse, la bouffe est rendue trop chère", "C4LICE T0UJOURS TR0P CHER T0UJ0URS"] },
+        { who: "n", texts: ["tu veux-tu c'te appli de bouffe pourrie asteure?", "4ppli p0urrie, b0uffe p0urrie, m0i p0urri·e"] },
       ],
     },
     {
       turns: [
         { who: "n", text: "sois pas si négatif·ve" },
-        { who: "p", text: "ok mais\nun Québécois sur trois peut pas se payer à manger" },
+        { who: "p", text: "ok mais\non est un sur trois à pas pouvoir manger" },
         { who: "n", text: "donc j'entends\nque deux sur trois s'en sortent bien?" },
-        { who: "p", text: "quoi?" },
+        { who: "p", text: "quoi?!" },
       ],
       loopTurns: [
-        { who: "p", texts: ["crisse, un sur trois peut pas manger à sa faim", "TABARNAK. UN SUR TR0IS PIS ÇA CHANGE JAMAIS."] },
-        { who: "n", texts: ["c'est quoi le problème avec un p'tit creux?", "h0nnêtement? c'est correct l0l bref."] },
+        { who: "p", texts: ["crisse, on a faim", "TABARNAK PIS ÇA CHANGE JAMAIS"] },
+        { who: "n", texts: ["serre ta ceinture, c'est tout", "h0nnêtement? c'est correct l0l bref."] },
       ],
     },
     {
       turns: [
         { who: "p", text: "quelqu'un devrait faire quelque chose" },
-        { who: "n", text: "tu sais,\n\nvoler un voleur|pause|\nc'est pas du vol" },
+        { who: "n", text: "tu sais,\nvoler un voleur c'est pas du vol" },
         { who: "p", text: "attends?|pause|quoi?|pause|qu'est-ce tu veux dire?" },
       ],
       loopTurns: [
-        { who: "p", texts: ["câline, faut ben que quelqu'un fasse de quoi", "ESTI DE CÂLICE. J'TOURNE EN ROND. J'ME PLAINS."] },
-        { who: "n", texts: ["b3n, y'a un m0y3n", "t u  s a i s le jeu veut qu tu entendes ça"] },
+        { who: "p", texts: ["câline, faut ben que quelqu'un fasse de quoi", "ESTI DE CÂLICE J'TOURNE EN ROND, J'ME PLAINS."] },
+        { who: "n", texts: ["ben, y'a un moyen, si t'es brave", "t u  s a i s  c e c i  n ' e s t  p a s  u n  j e u"] },
       ],
     },
   ],
@@ -326,7 +326,7 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   act6GrabMobile: "appuie sur la bouffe pour la prendre",
 
   brokenHeartTitle: "MORT·E D'UN CŒUR BRISÉ",
-  brokenHeartSub: "mais qu'y avait-il à faire ?",
+  brokenHeartSub: "et l'estomac vide",
 
   act6DefectorLine1: "bouge pas!",
   act6DefectorPlayerLine: "tu vas me tazer pour un sac de pâtes?",
