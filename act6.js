@@ -658,7 +658,7 @@
     }
 
     s4RunBystanders = [];
-    const bystanderLines = window.LANG.runBystanderLines || ["didn't see a thing", "never saw 'em", "good for you"];
+    const bystanderLines = window.LANG.runBystanderLines || ["didn't see a thing", "I saw nothing", "go go go!", "go robins go!", "never saw 'em", "good for you", "looking the other way", "not theft when it should be ours", "goooo!", "run!"];
     const numBystanders = 10;
     for (let i = 0; i < numBystanders; i++) {
       const wx = 35 + i * Math.floor(s4RunFridgeX / (numBystanders + 1));
@@ -677,15 +677,16 @@
     s4RunParade = [];
 
     s4RunSparkleT = 0;
-    // Scatter gold coins along the road
+    // Just a few coins now — the chase carries the scene.
     s4RunCoins = [];
-    for (let cx = 20; cx < s4RunFridgeX - 10; cx += Util.randInt(8, 18)) {
+    for (let cx = 20; cx < s4RunFridgeX - 10; cx += Util.randInt(70, 100)) {
       s4RunCoins.push({
         wx: cx,
         wy: Util.randInt(A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1),
         hit: false,
       });
-    } // first celebration float fires ~1.5s in
+    }
+    // first celebration float fires ~1.5s in
   }
 
   function updateAct6Run(dt) {
@@ -871,7 +872,6 @@
       }
     }
 
-    // Coin collision — a forgiving box, easy to miss otherwise at this speed.
     const _runPWX = s4RunWX + s4RunPX;
     for (const coin of s4RunCoins) {
       if (!coin.hit && Math.abs(coin.wx - _runPWX) < 4 && Math.abs(coin.wy - s4RunPY) < 3) {
@@ -1014,10 +1014,14 @@
       for (const k of s4RunKiosks) {
         const ksx = Math.floor(k.wx) - camX;
         if (ksx + k.w < -2 || ksx > W + 2) continue;
-        if (!k._passedCol && ksx < s4RunPX) {
-          k._passedCol = Util.pick(["#e8944a", "#f5a032", "#5cbdbd", "#c8a800", "#9ab89a"]);
+        for (const b of k.bldgs) {
+          const bsx = ksx + b.dx;
+          if (!b._passedCol && bsx < s4RunPX) {
+            b._passedCol = Util.pick(["#e8944a", "#f5a032", "#5cbdbd", "#c8a800", "#9ab89a"]);
+          }
+          _s4RunTagGlitch(b, bsx, s4RunPX);
+          _s4RunDrawBuilding(b, bsx, k.baseY - b.art.length);
         }
-        for (const b of k.bldgs) grid.art(b.art, ksx + b.dx, k.baseY - b.art.length, k._passedCol || b.col);
       }
     }
 
@@ -1188,12 +1192,11 @@
       grid.art(_pFrame, Math.round(s4RunPX), Math.round(s4RunPY), playerPulseColor(s4RunT));
     }
 
-    // Draw coins
     for (const coin of s4RunCoins) {
       if (coin.hit) continue;
       const csx = Math.round(coin.wx - s4RunWX);
       if (csx < 0 || csx >= W) continue;
-      grid.set(csx, coin.wy, "\u25CE", C_COIN);
+      grid.set(csx, coin.wy, "◎", C_COIN);
     }
 
     if (s4RunT < 4000 && !s4RunDone) {

@@ -82,7 +82,7 @@ floatNarcHit: "you ran into a narc!",
 a1Encounters: [
     {
       turns: [
-        { who: "p", text: "ugh\nwhy is food so expensive?" },
+        { who: "p", text: "ugh why is food so expensive?" },
         { who: "n", text: "idk|pause| but i have an app \nthat helps me get rotting groceries for cheap" },
         { who: "p", text: "uh, ok" },
         { who: "n", text: "want a referral?" },
@@ -256,7 +256,7 @@ a1Encounters: [
   helpMusicLabel: "Music:",
   act2AmbMutters: ["ugh", ":(", "sigh", "...", "pfft", "oy", "bruh", "why me", "$$$", "so tired", "rent...", "bills"],
   act2PokePlayer: ["hmph", "...", "long day", "not now", "hm?"],
-  act1NoControl: ["you're not in control here", "you're not in control"],
+  act1NoControl: ["you're not in control here", "LISTEN you're not in control"],
   act1NoControlRepeat: ["nah", "no", "nope"],
   act6ShopperGasps: ["oh!", "!!", "gasp", "oh my—", "hey!", "whoa", "?!"],
   robinCheers: ["yes!!", "nice grab!", "woooo!", "that one!!", "so good!", "keep going!!", "yesss!"],

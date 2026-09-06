@@ -3384,11 +3384,10 @@ window.GAME_DATA = {
     { t: "or maybe we all had the idea", c: "#db7f30", d: 4000 },
     { pause: true, d: 1000 },
 
- { seq: [
-    { t: "what if we just", c: "#f26507", d: 1200 },
+{ t: "what if we just", c: "#f26507", d: 1200 },
     { pause: true, d: 1200 },
     { t: "take what we need?", c: "#f26507", d: 3000 },
-]},{ pause: true, d: 1000 },
+    { pause: true, d: 1000 },
 ],
 narrativeQuotesFR: [
     { t: "quelqu'un a eu une idée", c: "#bf8c60", d: 2500 },

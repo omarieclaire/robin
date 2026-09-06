@@ -81,7 +81,7 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   a1Encounters: [
     {
       turns: [
-        { who: "p", text: "ugh |pause|depuis quand la bouffe est si chère?" },
+        { who: "p", text: "ugh depuis quand la bouffe est si chère?" },
         { who: "n", text: "chais pas|pause|mais j'ai une appli pour les coupons d'épicerie" },
         { who: "n", text: "et une autre appli \n pour acheter de la bouffe pourrie" },
         { who: "p", text: "euh, ok" },
