@@ -1281,9 +1281,28 @@
     return null;
   }
 
+  const SPARKLE_CHARS = "✦★✧✩*+";
+  const SPARKLE_COLS = ["#ffd700", "#ffec8b", "#fff8dc", "#ffa500", "#fffacd"];
+  // Permanent glimmer left behind once grabbed.
+  function _s4TagSparkle(it) {
+    if (it._sparkled) return;
+    it._sparkled = true;
+    const count = 2 + Math.floor(Math.random() * 3);
+    it._sparklePos = [];
+    for (let i = 0; i < count; i++) {
+      it._sparklePos.push({
+        dx: Math.floor(Math.random() * S4_SLOT_W),
+        dy: Math.floor(Math.random() * it.food.a.length),
+        ch: SPARKLE_CHARS[Math.floor(Math.random() * SPARKLE_CHARS.length)],
+        col: SPARKLE_COLS[Math.floor(Math.random() * SPARKLE_COLS.length)],
+      });
+    }
+  }
+
   function _s4DoGrab(it, ix, aY) {
     it.grabbed = true;
     it.grabT = S4_GRAB_ANIM_MS;
+    _s4TagSparkle(it);
     audio.play("grab");
     state.set("score", state.get("score") + it.food.p);
     s4ItemsGrabbed++;
@@ -1695,6 +1714,9 @@
           const ix = sx + 1 + it.col * S4_SLOT_W + 1;
           if (it.grabbed) {
             if (it.grabT > 0) drawGrabAnim(it, ix, rY);
+            else if (it._sparklePos) {
+              for (const sp of it._sparklePos) grid.set(ix + sp.dx, rY + sp.dy, sp.ch, sp.col);
+            }
             continue;
           }
           const aH = it.food.a.length;
