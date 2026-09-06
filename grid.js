@@ -52,6 +52,7 @@
             flip: false,
             lift: false,
             rot: 0,
+            scale: 1,
           };
       }
     }
@@ -65,6 +66,7 @@
           this.c[y][x].flip = false;
           this.c[y][x].lift = false;
           this.c[y][x].rot = 0;
+          this.c[y][x].scale = 1;
         }
       this.wideRows.clear();
     }
@@ -75,7 +77,7 @@
       if (x >= 0 && x < this.w && y >= 0 && y < this.h) this.c[y][x].bg = bg || null;
     }
    
-    set(x, y, ch, co, bold, flip, lift, rot) {
+    set(x, y, ch, co, bold, flip, lift, rot, scale) {
       x = Math.floor(x);
       y = Math.floor(y);
       if (x >= 0 && x < this.w && y >= 0 && y < this.h) {
@@ -85,9 +87,9 @@
         this.c[y][x].flip = !!flip;
         this.c[y][x].lift = !!lift;
         this.c[y][x].rot = rot || 0;
-        /* Rotated cells need their own <span> to carry a transform, same as
-           wide chars — route the whole row through the rigid per-cell path. */
-        if (isWideChar(ch) || rot) this.wideRows.add(y);
+        this.c[y][x].scale = scale || 1;
+        /* Rotated/scaled cells need their own <span>, same as wide chars. */
+        if (isWideChar(ch) || rot || (scale && scale !== 1)) this.wideRows.add(y);
       }
     }
     text(s, x, y, co, bold) {
@@ -96,7 +98,7 @@
     textCenter(s, y, co) {
       this.text(s, Math.floor((this.w - s.length) / 2), y, co);
     }
-    art(a, px, py, co, flip, lift, rot) {
+    art(a, px, py, co, flip, lift, rot, scale) {
       if (!Array.isArray(a)) {
         console.warn("Grid.art: undefined art passed from", new Error().stack.split("\n")[2]);
         return;
@@ -106,7 +108,7 @@
       a.forEach((l, r) => {
         for (let i = 0; i < l.length; i++) {
           if (l[i] !== " ") {
-            this.set(px + i, py + r, l[i], co, false, flip, lift, rot);
+            this.set(px + i, py + r, l[i], co, false, flip, lift, rot, scale);
           } else {
             this.set(px + i, py + r, " ", "#000"); // block mountain bleed
           }
@@ -127,13 +129,14 @@
             if (c.flip) _transforms.push("scaleX(-1)");
             if (c.lift) _transforms.push("translateY(-2px)");
             if (c.rot) _transforms.push("rotate(" + c.rot + "deg)");
+            if (c.scale && c.scale !== 1) _transforms.push("scale(" + c.scale + ")");
             const style =
               (c.co ? "color:" + c.co + ";" : "") +
               (c.b ? "font-weight:bold;" : "") +
               (c.bg ? "background-color:" + c.bg + ";box-shadow:0 -2px 0 " + c.bg + ",0 2px 0 " + c.bg + ";" : "") +
-     
+
               (_transforms.length
-                ? "transform:" + _transforms.join(" ") + ";transform-origin:" + (c.rot ? "center;" : "left;")
+                ? "transform:" + _transforms.join(" ") + ";transform-origin:" + (c.rot || c.scale !== 1 ? "center;" : "left;")
                 : "");
             if (style) {
               o += '<span class="cell" style="' + style + '">' + ch + "</span>";

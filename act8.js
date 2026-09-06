@@ -608,6 +608,14 @@
           done();
         }, {}),
       setupNext: initEnd,
-      intro: (done) => riseFromPile(done, { spawnPool: _pool, peppersMs: 700, simmer: true }),
+      intro: (done) =>
+        riseFromPile(done, {
+          spawnPool: _pool,
+          peppersMs: 300,
+          jitterMs: 500,
+          flyMsMin: 600,
+          flyMsMax: 1000,
+          simmer: true,
+        }),
     });
   }

@@ -297,13 +297,7 @@
     }
 
     // ── MAGNET LEAN ─────────────────────────────────────────
-    // Continuous anticipation beat — glyphs within range lean away from the
-    // point (via the grid's per-cell rot field, see grid.js), strength
-    // fading with distance, plus a light standing wiggle. No fade, no
-    // character swap — motion only. Meant to be layered ON TOP of another
-    // effect: start it AFTER the other effect (Effects.start pushes to the
-    // end of `active`, and `update()` runs that array back-to-front, so the
-    // most-recently-started effect draws last and its rotation survives).
+    // Glyphs lean away from the point.
     class MagnetLeanFX {
       constructor(opts) {
         this.opts = opts;
@@ -333,12 +327,45 @@
       }
     }
 
+    // ── RING SNAP CASCADE ───────────────────────────────────
+    // Rings rotate more with distance, staggered in.
+    class RingSnapCascadeFX {
+      constructor(opts) {
+        this.opts = opts;
+        this.t = 0;
+        this.done = false;
+      }
+      update(dt, grid) {
+        this.t += dt;
+        const o = this.opts;
+        const r = o.radius;
+        const minY = r == null ? 0 : Math.max(0, Math.floor(o.y - r / 2));
+        const maxY = r == null ? grid.h - 1 : Math.min(grid.h - 1, Math.ceil(o.y + r / 2));
+        const ringSize = o.ringSize;
+        const maxRot = o.maxRot;
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = 0; x < grid.w; x++) {
+            if (!inRegion(x, y, o)) continue;
+            const c = grid.c[y][x];
+            if (c.ch === " ") continue;
+            const dx = x - o.x,
+              dy = (y - o.y) * 2; // cells are ~2x taller than wide visually
+            const d = Math.sqrt(dx * dx + dy * dy);
+            const ring = Math.floor(d / ringSize);
+            const delay = ring * o.stagger;
+            const local = Math.max(0, Math.min(1, (this.t - delay) / o.easeWindow));
+            const ease = 1 - Math.pow(1 - local, 3);
+            let rot = ring * maxRot * ease;
+            if (o.localized) rot *= falloff(x, y, o);
+            if (rot) grid.set(x, y, c.ch, c.co, c.b, c.flip, c.lift, rot);
+          }
+        }
+        if (this.t >= o.duration) this.done = true;
+      }
+    }
+
     // ── PENDING ─────────────────────────────────────────────
-    // Placeholder for effects prototyped in fx-lab.html and wired into the
-    // registry/hotkeys, but not yet implemented — ticks to done, touches no
-    // grid cells. Swap a REGISTRY entry below for a real class (see
-    // DrainFX/MirrorFX/CorruptFX for the shape) when it's time to build and
-    // tune that one.
+    // Placeholder — not yet implemented.
     class PendingFX {
       constructor(opts) {
         this.opts = opts;
@@ -356,8 +383,8 @@
       mirror: MirrorFX,
       corrupt: CorruptFX,
       // ── pending — see PendingFX above ──
-      ringSnapFinal: PendingFX, // final narc takedown — full-scene ring cascade
-      ringSnapLocal: PendingFX, // regular narc hit — localized, snappy ring cascade
+      ringSnapFinal: RingSnapCascadeFX, // final narc takedown — full-scene ring cascade
+      ringSnapLocal: RingSnapCascadeFX, // regular narc hit — localized, snappy ring cascade
       colorPulseHit: PendingFX, // regular narc hit — localized red color pulse
       scalePulseGrocery: PendingFX, // grocery store — slow breathing scale, ramps over ~20s
       densityRampFinal: PendingFX, // final ~10s before death — cranked density-glyph ramp
@@ -383,6 +410,10 @@
           swap: opts.swap !== false,
           toBlack: opts.toBlack ?? false,
           maxRot: opts.maxRot ?? 40,
+          ringSize: opts.ringSize ?? 2,
+          stagger: opts.stagger ?? 120,
+          easeWindow: opts.easeWindow ?? 200,
+          localized: opts.localized ?? false,
 
           onDone: opts.onDone || null,
         });

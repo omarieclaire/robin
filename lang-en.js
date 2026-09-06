@@ -1,7 +1,7 @@
 window.LANG_EN = {
   playBtn: "PLAY",
   overlayTitle: "ROBINS DES RUELLES",
-  overlayHint: "a true story",
+  overlayHint: "based on a true story",
   fbInAppHint: "squished? tap the ⋯ above and choose “open in browser”",
 
   // banners
@@ -21,8 +21,8 @@ window.LANG_EN = {
   bannerExitOpen: "TIME \u2014 TO GO?",
   act6SecurityArrives: "SECURITY! stop right there!",
   bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
-  bannerGrabEverything: "grab food!",
-  bannerGrabEverythingMobile: "grab food!",
+  bannerGrabEverything: "grab food",
+  bannerGrabEverythingMobile: "grab food",
   bannerAvoidSecurity: "leave before the cops come!",
   bannerFoodGloriousFood: "food glorious food",
   bannerHitNarc: "watch out! that was a narc!",
@@ -82,7 +82,7 @@ floatNarcHit: "you ran into a narc!",
 a1Encounters: [
     {
       turns: [
-        { who: "p", text: "ugh |pause|why is food so expensive?" },
+        { who: "p", text: "ugh\nwhy is food so expensive?" },
         { who: "n", text: "idk|pause| but i have an app \nthat helps me get rotting groceries for cheap" },
         { who: "p", text: "uh, ok" },
         { who: "n", text: "want a referral?" },
@@ -95,12 +95,12 @@ a1Encounters: [
     },
     {
       turns: [
-        { who: "p", text: "one in three of us can't afford to eat" },
-        { who: "n", text: "so\ntwo in three are doing great?" },
-        { who: "p", text: "what?!" },
+        { who: "p", text: "hey, excuse me" },
+        { who: "n", text: "they lock food away in giant buildings, while people are out here starving?" },
+        { who: "p", text: "um I'm so sorry I'm just trying to slip past you" },
       ],
       loopTurns: [
-        { who: "p", texts: ["crisse, we're hungry", "TABARNAK AND N0THING CHANGES"] },
+        { who: "p", texts: ["crisse, I work three jobs", "TABARNAK AND N0THING CHANGES"] },
         { who: "n", texts: ["just tighten your belt", "h0nestly? pr0b4bly ok l0l 4nyway."] },
       ],
     },
@@ -329,6 +329,11 @@ a1Encounters: [
   act4DodgeMobile: "swipe up or down to dodge",
   act4Run: "arrow keys to move",
   act4RunMobile: "swipe right to run faster",
+
+  // Act 6 chase prompt
+  act6Run: "arrow keys to run",
+  act6RunMobile: "swipe right to run faster",
+  bannerCopTouch: "close one!",
 
   // Act 6 in-context prompts
   act6Grab: "click food to grab it",

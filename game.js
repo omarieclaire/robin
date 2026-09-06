@@ -410,7 +410,7 @@
     u: () => Effects.start("densityRampFinal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 1800 }), // final ~10s before death
     i: () => Effects.start("glitchOrbChase", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 999999 }), // chase scene — follows player
     o: () => Effects.start("typewriterReveal", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 2000 }), // Act 2 opening reveal
-    p: () => Effects.start("magnetLean", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 3000 }), // "I've had enough" lean, before streamOut()
+    p: () => Effects.start("magnetLean", { x: Math.floor(W / 2), y: Math.floor(H / 2), duration: 3000 }), // magnet lean, full-screen, unassigned for now
   };
 
   function jumpToTransition(key) {

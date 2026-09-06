@@ -1,7 +1,7 @@
 window.LANG_FR = {
   playBtn: "JOUER",
   overlayTitle: "ROBIN  DES RUELLES",
-  overlayHint: "une histoire vraie",
+  overlayHint: "d'après une histoire vraie",
   fbInAppHint: "écran écrasé? touche le ⋯ en haut et choisis « ouvrir dans le navigateur »",
 
   // banners
@@ -16,14 +16,14 @@ window.LANG_FR = {
   bannerYouHaveACrew: "petite équipe assemblée!",
   bannerCrewAssembled: "équipe assemblée",
   bannerCrewTimeout: "temps écoulé!\np'tite équipe, mais ça va faire",
-  bannerCopsCircling: "Les chars de police tournent. Finis-en!",
+  bannerCopsCircling: "Les chars de police tournent. Finis-en !",
   bannerGoodCallNarc: "bon move. c'était un stoole",
   bannerExitOpen: "SORTIE?",
   act6SecurityArrives: "SÉCURITÉ! arrête-toi là!",
   bannerSecurityGrabbed: "LA SÉCURITÉ A POGNÉ DE LA BOUFFE! -20$",
-  bannerGrabEverything: "prendre de la bouffe!",
-  bannerGrabEverythingMobile: "prendre de la bouffe!",
-  bannerAvoidSecurity: "sors avant que les flics arrivent!",
+  bannerGrabEverything: "prendre de la bouffe",
+  bannerGrabEverythingMobile: "prendre de la bouffe",
+  bannerAvoidSecurity: "sors avant que les flics arrivent !",
   bannerFoodGloriousFood: "de la bouffe, enfin de la bouffe",
   bannerHitNarc: "c'était un stoole!",
 
@@ -95,10 +95,9 @@ floatNarcHit: "tu as foncé dans un mouchard !",
     },
     {
       turns: [
-        { who: "n", text: "sois pas si négatif·ve" },
-        { who: "p", text: "ok mais\non est un sur trois à pas pouvoir manger" },
-        { who: "n", text: "donc j'entends\nque deux sur trois s'en sortent bien?" },
-        { who: "p", text: "quoi?!" },
+        { who: "p", text: "eille, excuse-moi" },
+        { who: "n", text: "ils barrent la bouffe dans des bâtiments géants, pendant que le monde crève de faim?" },
+        { who: "p", text: "euh, désolé·e, j'essaie juste de me faufiler" },
       ],
       loopTurns: [
         { who: "p", texts: ["crisse, on a faim", "TABARNAK PIS ÇA CHANGE JAMAIS"] },
@@ -332,6 +331,11 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   act4Run: "flèches pour bouger",
   act4RunMobile: "glisse à droite pour courir plus vite",
 
+  // Act 6 chase prompt
+  act6Run: "flèches pour courir",
+  act6RunMobile: "glisse à droite pour courir plus vite",
+  bannerCopTouch: "pas loin!",
+
   // Act 6 in-context prompts
   act6Grab: "clique sur la bouffe pour la prendre",
   act6GrabMobile: "appuie sur la bouffe pour la prendre",
@@ -340,13 +344,13 @@ floatNarcHit: "tu as foncé dans un mouchard !",
   brokenHeartSub: "et l'estomac vide",
 
   act6DefectorLine1: "bouge pas!",
-  act6DefectorPlayerLine: "tu vas me tazer pour un sac de pâtes?",
+  act6DefectorPlayerLine: "tu vas nous tazer pour un sac de pâtes?",
   act6DefectorLine2: "euh",
-  act6DefectorPlayerLine2: "un héros local défend un rigatoni à 2$ jusqu'à la mort?",
-  act6DefectorLine3: "ils me paient pas assez pour ça",
+  act6DefectorPlayerLine2: "un héros local défend un rigatoni à 2$?",
+  act6DefectorLine3: "ugh, ils me paient pas assez pour ça",
   act6DefectorPlayerLine3: "pis?",
   act6DefectorLine4: "pis les bonnes pâtes sont deux allées plus loin",
-  floatGuardDefects: "viens, je vais te montrer",
+  floatGuardDefects: "attends, je vais aller te chercher ça",
 
   endYouFed: (n) => `t'as nourri ${n} voisin·e·s à soir.`,
   endCommunityFedText: (n) => `${n.toLocaleString()} voisin·e·s ont été nourri·e·s depuis le lancement du jeu.`,

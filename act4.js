@@ -642,7 +642,15 @@
     collapseToCenter(
       (pool) => {
         initAct5({ playerFrom, crewFrom });
-        riseFromPile(() => loop.start(), { spawnPool: pool, peppersMs: 700, keepCells, simmer: true });
+        riseFromPile(() => loop.start(), {
+          spawnPool: pool,
+          peppersMs: 300,
+          jitterMs: 500,
+          flyMsMin: 600,
+          flyMsMax: 1000,
+          keepCells,
+          simmer: true,
+        });
       },
       { excludeXY, render: false },
     );

@@ -57,8 +57,8 @@
               { t: window.LANG.bannerIsThisALife, c: "#7c94b2", d: 99999 },
               { pause: true, d: 500 },
               { t: window.LANG.bannerWhoIsInControl, c: "#7c94b2", d: 99999 },
-              { pause: true, d: 2000 },
-              { t: window.LANG.bannerYouControlNothing || "(it sure isn't you)", c: "#7c94b2", d: 99999 },
+              // { pause: true, d: 2000 },
+              // { t: window.LANG.bannerYouControlNothing || "(it sure isn't you)", c: "#7c94b2", d: 99999 },
             ],
           );
         },

@@ -491,8 +491,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-   ACT 6 EXIT: brief cinematic — player walks to door, crew converges,
-   then transitions into the run home
+   ACT 6 EXIT:
    ══════════════════════════════════════════════════════════ */
   let s4ExitT, s4ExitDone, s4ExitDoneAt, s4ExitTargetX, s4ExitCrewX;
   function initAct6Exit() {
@@ -564,18 +563,18 @@
 
   /* ══════════════════════════════════════════════════════════
    ACT 7: crew runs back to community fridge through the
-   neighbourhood — visual callback to Act 4 but wordless and fast
+   neighbourhood 
    ══════════════════════════════════════════════════════════ */
 
   // Pacing ramp — gradual from frame 0, climbing to a capped cruise speed.
   const S4RUN_BASE_SPD = 0.008,
     S4RUN_MAX_SPD = 0.02,
     S4RUN_RAMP_MS = 8000,
-    S4RUN_TOTAL_MS = 22000;
-  let s4RunT, s4RunSpd, s4RunWX, s4RunFridgeX, s4RunDone, s4RunPX, s4RunPY;
+    S4RUN_TOTAL_MS = 26000;
+  let s4RunT, s4RunSpd, s4RunWX, s4RunFridgeX, s4RunDone, s4RunPX, s4RunPY, s4RunGiveupAt, s4RunGiveupFast, s4RunHits, s4RunHitCooldown;
   let s4RunAlignX, s4RunAlignY; // where the player glides to on arrival — exactly in front of the fridge
   let s4RunCoins;
-  let s4RunTopParts, s4RunBotParts, s4RunBannerShown;
+  let s4RunTopParts, s4RunBotParts, s4RunKiosks, s4RunBannerShown;
   let s4RunCops, s4RunBystanders, s4RunSparkleT, s4RunTriumphShown;
   let s4RunParade; // bystanders who joined the run — screen-space tail members behind the crew
   function initAct6Run() {
@@ -584,12 +583,16 @@
     audio.preload(["music_act8"]); // pre-warm act8 drop-off music
     a2bCalcLayout(); // reuse Act 4 layout helpers
     s4RunT = 0;
-    s4RunSpd = S4RUN_BASE_SPD; // slower so the run feels more substantial, at least until the ramp kicks in
+    s4RunSpd = S4RUN_BASE_SPD; // starts slow, ramps up
     s4RunWX = 0;
     s4RunDone = false;
     s4RunBannerShown = false;
     s4RunTriumphShown = false;
-    s4RunPX = Math.floor(W * 0.38);
+    s4RunGiveupAt = undefined;
+    s4RunGiveupFast = false;
+    s4RunHits = 0;
+    s4RunHitCooldown = 0;
+    s4RunPX = Math.floor(W * 0.28); // room to see cops coming
     s4RunPY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     // World distance to fridge = integral of the ramp over its duration.
     const _rampDist = ((S4RUN_BASE_SPD + S4RUN_MAX_SPD) / 2) * S4RUN_RAMP_MS;
@@ -598,22 +601,61 @@
     s4RunTopParts = a2bGenRow(s4RunFridgeX + W);
     s4RunBotParts = a2bGenRow(s4RunFridgeX + W);
     // Give each building part a muted starting color; brightened as player passes
-    for (const sp of s4RunTopParts) sp._passedCol = null;
-    for (const sp of s4RunBotParts) sp._passedCol = null;
+    for (const sp of s4RunTopParts) {
+      sp._passedCol = null;
+      sp._glitched = false;
+    }
+    for (const sp of s4RunBotParts) {
+      sp._passedCol = null;
+      sp._glitched = false;
+    }
 
- 
+    // Mid-road blocks to weave around, like Act 4.
+    s4RunKiosks = [];
+    const _roadH6 = A2B_ROAD_Y2 - A2B_ROAD_Y1;
+    if (_roadH6 >= 10) {
+      const _maxH = Math.min(4, _roadH6 - 6);
+      const _segPool = window.GAME_DATA.buildings.filter((b) => b.art.length <= _maxH && b.art.length >= 2);
+      if (_segPool.length > 0) {
+        const _baseY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2) + 2;
+        const _mkSeg = (kx) => {
+          const _count = Util.randInt(4, 6);
+          let segW = 0,
+            segMaxH = 0;
+          const bldgs = [];
+          for (let bi = 0; bi < _count; bi++) {
+            const b = Util.pick(_segPool);
+            bldgs.push({ dx: segW, art: b.art, col: Util.pick(A2B_BCOL) });
+            segMaxH = Math.max(segMaxH, b.art.length);
+            segW += b.art[0].length + 1;
+          }
+          return { wx: kx, w: segW - 1, top: _baseY - segMaxH, bot: _baseY - 1, baseY: _baseY, bldgs };
+        };
+        for (let kx = 40; kx < s4RunFridgeX - 30; ) {
+          const seg = _mkSeg(kx);
+          if (kx + seg.w > s4RunFridgeX - 30) break;
+          s4RunKiosks.push(seg);
+          kx += seg.w + 1 + Util.randInt(10, 15);
+        }
+        s4RunKiosks.push(_mkSeg(s4RunFridgeX + 25)); // world keeps going past it
+      }
+    }
+
+
     s4RunCops = [];
     const numCops = 5;
     const midY = Math.floor((A2B_ROAD_Y1 + A2B_ROAD_Y2) / 2);
     for (let i = 0; i < numCops; i++) {
       s4RunCops.push({
-        wx: 2 + i * 1.5, // visible on screen at start
+        wx: Math.max(0, s4RunPX - 3 - i * 2), // right behind, on-screen
         wy: midY + Util.randInt(-2, 2),
-        vx: 0.0065 + Math.random() * 0.0008, // slightly slower than s4RunSpd (0.008) — they linger but eventually fall behind
+        vx: 0.0065 + Math.random() * 0.0008,
         bobPhase: Math.random() * 6,
+        laneOffset: Util.randInt(-3, 3),
+        maxDistAdd: i * 3 + Util.randInt(0, 2),
+        curSpd: S4RUN_BASE_SPD * 0.5,
       });
     }
-    triggerChromatic(400);
 
     s4RunBystanders = [];
     const bystanderLines = window.LANG.runBystanderLines || ["didn't see a thing", "never saw 'em", "good for you"];
@@ -629,7 +671,7 @@
         triggered: false,
         msgT: 0,
         msgMax: 2200,
-        joins: Math.random() < 0.2,
+        joins: false, // used to parade-join but lagged behind, confusing
       });
     }
     s4RunParade = [];
@@ -656,28 +698,60 @@
       return;
     }
     s4RunWX += s4RunSpd * dt;
-    // Overridden by the fridge-approach slowdown once it's on screen.
     s4RunSpd = Math.min(S4RUN_MAX_SPD, S4RUN_BASE_SPD + (s4RunT / S4RUN_RAMP_MS) * (S4RUN_MAX_SPD - S4RUN_BASE_SPD));
 
-    const CHASE_DURATION_MS = 6000;
-    const FALL_BEHIND_DURATION_MS = 5000;
+    // Grace, close, hit, retreat, repeat.
+    const GRACE_MS = 3500;
+    const CLOSE_BOOST = 0.014;
+    const RETREAT_MS = 2200;
+    const GIVEUP_MS = 4000;
+    const GIVEUP_FAST_MS = 500; // fridge is close, need them gone NOW
+    const MAX_CHASE_MS = 20000;
+    const MAX_DIST = 18; // hard ceiling, always visible
+    const EASE_MS = 700; // speed change is a curve, not a snap
+    const pwxNow = s4RunWX + s4RunPX;
+    const fridgeNear = s4RunWX > s4RunFridgeX - W - 140;
+    if (s4RunGiveupAt === undefined && (fridgeNear || s4RunHits >= 2 || s4RunT >= MAX_CHASE_MS)) {
+      s4RunGiveupAt = s4RunT;
+      s4RunGiveupFast = fridgeNear;
+    }
+    if (s4RunHitCooldown > 0) s4RunHitCooldown -= dt;
+
     for (let i = s4RunCops.length - 1; i >= 0; i--) {
       const c = s4RunCops[i];
-      let effectiveVx;
-      if (s4RunT < CHASE_DURATION_MS) {
-        effectiveVx = s4RunSpd + (c.vx - 0.007) * 0.3;
+      const dist = pwxNow - c.wx;
+      let targetVx;
+      if (s4RunGiveupAt !== undefined) {
+        const giveupMs = s4RunGiveupFast ? GIVEUP_FAST_MS : GIVEUP_MS;
+        const giveupT = Math.min(1, (s4RunT - s4RunGiveupAt) / giveupMs);
+        targetVx = s4RunSpd * (1 - giveupT * 0.9);
+      } else if (s4RunT < GRACE_MS) {
+        targetVx = s4RunSpd * 0.5; // safe landing
+      } else if (s4RunHitCooldown > 0) {
+        targetVx = s4RunSpd * 0.7; // just hit, backing off
       } else {
-        const fallProgress = Math.min(1, (s4RunT - CHASE_DURATION_MS) / FALL_BEHIND_DURATION_MS);
-        // Eases from world speed (1.0×) down to 0.2× world speed
-        effectiveVx = s4RunSpd * (1 - fallProgress * 0.8);
+        targetVx = s4RunSpd + CLOSE_BOOST + (c.vx - 0.007) * 0.3; // closing in
       }
-      c.wx += effectiveVx * dt;
-      // Once they're off-screen left (relative to world scroll), drop them
-      if (c.wx - s4RunWX < -20) s4RunCops.splice(i, 1);
+      c.curSpd = Util.lerp(c.curSpd, targetVx, Math.min(1, dt / EASE_MS));
+      c.wx += c.curSpd * dt;
+      if (s4RunGiveupAt === undefined) c.wx = Util.clamp(c.wx, pwxNow - MAX_DIST - c.maxDistAdd, pwxNow); // never overtakes, never far
+      if (s4RunGiveupAt === undefined) {
+        c.wy = Util.lerp(c.wy, s4RunPY + c.laneOffset, Math.min(1, 0.0025 * dt));
+        c.wy = Util.clamp(c.wy, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
+      }
+
+      if (s4RunHits < 2 && dist < 2 && Math.abs(c.wy - s4RunPY) < 4 && !(s4RunHitCooldown > 0)) {
+        s4RunHits++;
+        s4RunHitCooldown = RETREAT_MS;
+        Effects.start("corrupt", { x: Math.round(s4RunPX), y: Math.round(s4RunPY), radius: 9, duration: 450, intensity: 0.75, swap: true });
+        spark(Math.round(s4RunPX), Math.round(s4RunPY), C_DANGER, 14);
+        Banner.show(window.LANG.bannerCopTouch || "so close!", C_DANGER, 900);
+      }
+
+      if (s4RunGiveupAt !== undefined && c.wx - s4RunWX < -20) s4RunCops.splice(i, 1);
     }
 
-    // Triumph beat fires once cops are ACTUALLY gone (or after a 12s safety fallback).
-    if (!s4RunTriumphShown && (s4RunCops.length === 0 || s4RunT > 12000)) {
+    if (!s4RunTriumphShown && (s4RunCops.length === 0 || (s4RunGiveupAt !== undefined && s4RunT - s4RunGiveupAt > GIVEUP_MS + 1500))) {
       s4RunTriumphShown = true;
       const triumphMsg = window.LANG.bannerWeLostThem || "we lost them!";
       Banner.show(triumphMsg, C_TEAL, 1800);
@@ -763,18 +837,38 @@
     else if (input.justPressed("down")) s4RunPY += tapStep;
     if (input.isDown("left")) s4RunPX -= ms * dt;
     else if (input.justPressed("left")) s4RunPX -= tapStep;
-    if (input.isDown("right")) s4RunPX += ms * dt;
-    else if (input.justPressed("right")) s4RunPX += tapStep;
+    // Same split as Act 4.
+    if (input.isDown("right")) {
+      s4RunWX += ms * dt * 0.6;
+      s4RunPX += ms * dt * 0.25;
+    } else if (input.justPressed("right")) {
+      s4RunWX += tapStep * 0.6;
+      s4RunPX += 1;
+    }
     s4RunPY = Util.clamp(s4RunPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
     s4RunPX = Util.clamp(s4RunPX, 4, W - 6);
+
+    if (s4RunKiosks) {
+      const _pwxRun6 = s4RunWX + s4RunPX;
+      for (const k of s4RunKiosks) {
+        if (_pwxRun6 < k.wx - 1 || _pwxRun6 > k.wx + k.w) continue;
+        if (s4RunPY + 1 >= k.top && s4RunPY <= k.bot) {
+          s4RunPY = s4RunPY + 0.5 < (k.top + k.bot) / 2 ? k.top - 2 : k.baseY;
+          s4RunPY = Util.clamp(s4RunPY, A2B_ROAD_Y1 + 1, A2B_ROAD_Y2 - 1);
+        }
+      }
+    }
 
     // Desktop click nudge only — mobile drag is handled by _mobUpdate.
     if (clickPending && phase === "act7" && !Device.isMobile) {
       clickPending = false;
       if (clickSY < s4RunPY - 2) s4RunPY -= 3;
       else if (clickSY > s4RunPY + 2) s4RunPY += 3;
-      if (clickSX < s4RunPX - 3) s4RunPX -= 3;
-      else if (clickSX > s4RunPX + 3) s4RunPX += 3;
+      if (clickSX < s4RunPX - 3) s4RunPX -= 3; // screen-only — the world never rewinds
+      else if (clickSX > s4RunPX + 3) {
+        s4RunWX += 2; // forward click keeps the world-scroll boost too
+        s4RunPX += 1;
+      }
     }
 
     // Coin collision — a forgiving box, easy to miss otherwise at this speed.
@@ -827,6 +921,34 @@
     }
   }
 
+  const GLITCH_TAG_RADIUS = 24;
+  const GLITCH_FRACTION = 0.35; // partial, not whole building
+  const GC_CHARS = "█▓▒░▄▀■◆●✕#@!?%$&*XZ╬╫┼±";
+  const GC_COLS = ["#f44", "#0ff", "#ff0", "#f0f", "#fff", "#f80", "#cc6688"];
+  // Glitches permanently once passed.
+  function _s4RunTagGlitch(sp, sx, playerSX) {
+    // Screen-space, not world-space (parallax).
+    if (sp._glitched || sx >= playerSX || playerSX - sx >= GLITCH_TAG_RADIUS) return;
+    sp._glitched = true;
+    sp._glitchMask = sp.art.map((line) => [...line].map(() => Math.random() < GLITCH_FRACTION));
+    sp._glitchArt = sp.art.map((line) => [...line].map(() => GC_CHARS[Math.floor(Math.random() * GC_CHARS.length)]));
+    sp._glitchCols = sp.art.map((line) => [...line].map(() => GC_COLS[Math.floor(Math.random() * GC_COLS.length)]));
+  }
+  function _s4RunDrawBuilding(sp, sx, by) {
+    const baseCol = sp._passedCol || sp.col;
+    if (!sp._glitched) {
+      grid.art(sp.art, sx, by, baseCol);
+      return;
+    }
+    sp.art.forEach((line, r) => {
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === " ") continue;
+        if (sp._glitchMask[r][i]) grid.set(sx + i, by + r, sp._glitchArt[r][i], sp._glitchCols[r][i]);
+        else grid.set(sx + i, by + r, line[i], baseCol);
+      }
+    });
+  }
+
   function renderAct6Run(opts = {}) {
     const camX = Math.round(s4RunWX);
     // Mountain parallax (same as Act 4)
@@ -876,30 +998,39 @@
 
     // Top buildings — brighten as player passes
     const topScrollX = Math.round(s4RunWX * 0.85);
-    const pwxRun4 = s4RunWX + s4RunPX;
     for (const sp of s4RunTopParts) {
       const sx = Math.floor(sp.wx) - topScrollX;
       if (sx + sp.w < -2 || sx > W + 2) continue;
-      // Once player has passed this building, assign it a warm bright color
-      if (!sp._passedCol && sp.wx < pwxRun4) {
+      if (!sp._passedCol && sx < s4RunPX) {
         sp._passedCol = Util.pick(["#e8944a", "#f5a032", "#5cbdbd", "#c8a800", "#9ab89a"]);
       }
-      const drawCol = sp._passedCol || sp.col;
-      const by = A2B_TOP_H - sp.art.length;
-      grid.art(sp.art, sx, Math.max(0, by), drawCol);
+      _s4RunTagGlitch(sp, sx, s4RunPX);
+      _s4RunDrawBuilding(sp, sx, Math.max(0, A2B_TOP_H - sp.art.length));
     }
     // (no sidewalk lines — matches Act 4)
+
+    // Mid-road blocks the player weaves around.
+    if (s4RunKiosks) {
+      for (const k of s4RunKiosks) {
+        const ksx = Math.floor(k.wx) - camX;
+        if (ksx + k.w < -2 || ksx > W + 2) continue;
+        if (!k._passedCol && ksx < s4RunPX) {
+          k._passedCol = Util.pick(["#e8944a", "#f5a032", "#5cbdbd", "#c8a800", "#9ab89a"]);
+        }
+        for (const b of k.bldgs) grid.art(b.art, ksx + b.dx, k.baseY - b.art.length, k._passedCol || b.col);
+      }
+    }
 
     // Bottom buildings — brighten as player passes
     for (const sp of s4RunBotParts) {
       const sx = Math.floor(sp.wx) - camX;
       if (sx + sp.w < -2 || sx > W + 2) continue;
-      if (!sp._passedCol && sp.wx < pwxRun4) {
+      if (!sp._passedCol && sx < s4RunPX) {
         sp._passedCol = Util.pick(["#e8944a", "#f5a032", "#5cbdbd", "#c8a800", "#9ab89a"]);
       }
-      const drawCol = sp._passedCol || sp.col;
+      _s4RunTagGlitch(sp, sx, s4RunPX);
       // Bottom-aligned to the screen edge, same as Act 4's bottom band.
-      grid.art(sp.art, sx, Math.max(A2B_ROAD_Y2 + 1, H - sp.art.length), drawCol);
+      _s4RunDrawBuilding(sp, sx, Math.max(A2B_ROAD_Y2 + 1, H - sp.art.length));
     }
 
   
@@ -1063,6 +1194,10 @@
       const csx = Math.round(coin.wx - s4RunWX);
       if (csx < 0 || csx >= W) continue;
       grid.set(csx, coin.wy, "\u25CE", C_COIN);
+    }
+
+    if (s4RunT < 4000 && !s4RunDone) {
+      renderTapPrompt(ctrl("act6Run"), H - 2, "#fff", C_PLAYER, true);
     }
 
     Banner.render();
@@ -1839,6 +1974,14 @@
           { cx, cy },
         ),
       setupNext: initAct8,
-      intro: (done) => riseFromPile(done, { spawnPool: _pool, peppersMs: 700, simmer: true }),
+      intro: (done) =>
+        riseFromPile(done, {
+          spawnPool: _pool,
+          peppersMs: 300,
+          jitterMs: 500,
+          flyMsMin: 600,
+          flyMsMax: 1000,
+          simmer: true,
+        }),
     });
   }

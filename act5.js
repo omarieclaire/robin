@@ -79,6 +79,7 @@
       a3RallyStarted = true;
       Banner.showSequence(
         [
+          { pause: true, d: 1000 },
           { t: a2CrewCount + 1 + " Robins", c: C_PLAYER, d: 2000 },
           { pause: true, d: 700 },
           { t: window.LANG.bannerOneStore.trim(), c: C_PLAYER, d: 2000 },
