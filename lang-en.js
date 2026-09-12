@@ -1,0 +1,350 @@
+window.LANG_EN = {
+  playBtn: "PLAY",
+  overlayTitle: "ROBINS DES RUELLES",
+  overlayHint: "based on a true story",
+  landingControlsHint: "use the mouse or arrow keys to play   ★   a 5-minute game",
+  fbInAppHint: "squished? tap the ⋯ above and choose “open in browser”",
+
+  bannerIsThisALife: "this is your life",
+  bannerWhoIsInControl: "but who's in control here?",
+  bannerYouControlNothing: "(it isn't you)",
+
+  bannerRecruitCrew: "recruit your crew",
+  bannerWatchNarcs: "but watch out for narcs",
+  bannerRallyNeighbourhood: "rally the neighbourhood!",
+  bannerAvoidNarcs: "avoid narcs",
+  bannerYouHaveACrew: "tiny crew assembled!",
+  bannerCrewAssembled: "crew assembled",
+  bannerWeNeedDisguises: "time for disguises?",
+  bannerCrewTimeout: "out of time!\nsmall crew, but it'll do",
+  bannerCopsCircling: "Cops are circling. wrap it up!",
+  bannerGoodCallNarc: "good call. that was a narc",
+  bannerExitOpen: "TIME \u2014 TO GO?",
+  act6SecurityArrives: "SECURITY! stop right there!",
+  bannerSecurityGrabbed: "SECURITY GRABBED SOME FOOD! -$20",
+  bannerGrabEverything: "grab food",
+  bannerGrabEverythingMobile: "grab food",
+  bannerAvoidSecurity: "escape before the cops come",
+  bannerFoodGloriousFood: "food glorious food",
+  bannerHitNarc: "watch out! that was a narc!",
+
+  urgencyCopsCalled: "COPS CALLED",
+  urgencyHurry: "HURRY",
+  urgencyClose: "CLOSE!",
+  urgencyGetOut: "GET OUT!",
+  urgencyLastChance: "LAST CHANCE",
+  urgencyTooLate: "TOO LATE",
+
+  floatReadTheRoom: "read the room",
+  floatListenBetter: "you need to listen better",
+  floatWrongEnergy: "wrong energy",
+  floatTooCautious: "maybe a bit too cautious?",
+  floatGiveChance: "give people a chance",
+  floatNeverChange: "things will never change if we don't try",
+  floatGoodCallSmelled: "good call. that smelled like a narc",
+  floatNotYet: "not yet. But they're thinking",
+  floatNeedTime: "they need time",
+  // floatNarc: "NARC!",
+
+  floatNarcRecruited: "you tried to recruit a narc!",
+floatNarcHit: "you ran into a narc!",
+  floatOops: "OOPS!",
+
+  floatOui: "OUI!",
+  floatLetsGo: "LET'S GO!",
+  floatAllonsY: "ALLONS-Y!",
+  floatCountMeIn: "COUNT ME IN!",
+  floatYeah: "YEAH!",
+  floatForReal: "FOR REAL!",
+
+  endGameBustedTitle: "BUSTED!",
+  endGameBustedSub: "you recruited too many narcs",
+  endGameCaughtTitle: "TOO SLOW!",
+  endGameCaughtSub: "the cops almost got you\n\nand your crew scattered\nlike sesame seeds off a bagel",
+  endGameEmptyHandedTitle: "YOU LEFT EMPTY-HANDED",
+  endGameEmptyHandedSub: "and empty-stomached too",
+
+  deathTapCaught: "click to try again",
+  deathTapCaughtMobile: "tap to recruit a new crew",
+  deathTapBusted: "click to try again",
+  deathTapBustedMobile: "tap to try again",
+  deathTapTimedOut: "click to hit the streets again",
+  deathTapTimedOutMobile: "tap to hit the streets again",
+  deathTapEmptyHanded: "click to try another store",
+  deathTapEmptyHandedMobile: "tap to try another store",
+  deathTapBrokenHeart: "click to start over again at life",
+  deathTapBrokenHeartMobile: "tap to start over again at life",
+
+
+a1Encounters: [
+    {
+      turns: [
+        { who: "p", text: "ugh why is food so expensive?" },
+        { who: "n", text: "idk|pause| but i have an app \nthat helps me get rotting groceries for cheap" },
+        { who: "p", text: "uh, ok" },
+        { who: "n", text: "want a referral?" },
+        { who: "p", text: "maybe later" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, why is food STILL so expensive?", "C4LICE WHY IS F00D ST1LL S0 EXPENSIVE"] },
+        { who: "n", texts: ["want that app for rotting groceries now?", "r0tting 4pp, r0tting f00d, r0tting me"] },
+      ],
+    },
+    {
+      turns: [
+        { who: "p", text: "excuse me" },
+        { who: "n", text: "food is a RIGHT" },
+        { who: "p", text: "uh sorry?" },
+        { who: "n", text: "they hoard warehouses of food, they lock it away" },
+        { who: "p", text: "pardon me?" },
+        { who: "n", text: "they'd rather watch it rot than feed people\n\n what gives them the right?" },
+        { who: "p", text: "listen I'm sorry, I'm just trying to slip past you" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["crisse, I work three jobs", "TABARNAK AND N0THING CHANGES"] },
+        { who: "n", texts: ["they'd rather it rot than feed you", "l3t it r0t. th4t's the p0int."] },
+      ],
+    },
+    {
+      turns: [
+        { who: "p", text: "what do you want?" },
+        { who: "n", text: "you know,\nstealing from a thief isn't theft" },
+        { who: "p", text: "uhhhhh" },
+      ],
+      loopTurns: [
+        { who: "p", texts: ["câline, someone HAS to do something", "ESTI DE CÂLICE I JUST GO IN CIRCLES, COMPLAINING."] },
+        { who: "n", texts: ["well there is a way, if you are brave", "y o u  k n o w  t h i s  i s  n o t  a g a m e"] },
+      ],
+    },
+  ],
+
+  a1LoopMsgs: [
+    { t: "nothing changes...", c: "#999" },
+    { t: "...câline, encore ça?", c: "#aaa" },
+    { t: "ostie. encore?", c: "#b09abf" },
+    { t: "crisse, pis quoi encore?", c: "#b080c0" },
+    { t: "ostie ! ENCORE LA MÊME CHOSE?", c: "#c060a0" },
+    { t: "OSTIE DE CÂLICE. vraiment??", c: "#c84080" },
+    { t: "TABARNAK. je fais quoi exactement??", c: "#cc2050" },
+    { t: "CÂLICE DE TABARNAK. c'est ça, la VIE??", c: "#d01030" },
+    { t: "OSTIE CÂLICE CRISSE TABARNAK !", c: "#dd0020" },
+    { t: "TABARNAK CÂLICE CRISSE VIARGE OSTIE DE...", c: "#ff0000" },
+  ],
+
+
+  
+  endNames: [
+    { n: "Marie", p: "their" },
+    { n: "Manu", p: "his" },
+    { n: "Fatima", p: "her" },
+    { n: "Olivier", p: "his" },
+    { n: "Mei", p: "her" },
+    { n: "Amadou", p: "his" },
+    { n: "Sophie", p: "her" },
+    { n: "Ali", p: "his" },
+  ],
+
+
+  // act2Choices: ["(>_<)", "(o_O)"],
+  act2Choices: ["(>_<) I'm ready to act", "(o_O) whatever"],
+
+  act3Undecided: ["hmm", "hmmm", "let me think"],
+  act3Wait: ["wait for me", "i'm coming", "hold up"],
+
+  neighbourMsgs: ["merci", "my kids eat tonight", "finally", "love!", "merci beaucoup", "thank you"],
+  intercoms: [
+    "ATTENTION: price check on everything: free",
+    "SECURITY: management requests you stop robbing us",
+    "ATTENTION: security to every aisle",
+  ],
+
+  act4AmbNarc: ["stocks", "investments", "meritocracy"],
+  act4AmbCrowd: ["hungry", "broke", "help?"],
+
+
+  bannerOneStore: " one store",
+  bannerLetsEat: " let's eat",
+  urgencyCopsEnRoute: ">> COPS EN ROUTE <<",
+  urgencyFindExit: "!! FIND THE EXIT !!",
+
+  endGameTimedOutTitle: "BUSTED!",
+  endGameTimedOutSub: "someone reported you",
+
+  bannerHatsOn: "hats on",
+
+
+  // choiceCommiserateAngry: ["(╯°□°)╯"],
+  // choiceCommiserateHungry: ["(っ◔◡◔)っ"],
+  // choiceTalkOver: ["(ಠ_ಠ)"],
+  // choiceRun: "[>_>]",
+
+  choiceCommiserateAngry: ["(╯°□°)╯ yes!", "(╯°□°)╯ RIGHT", "(╯°□°)╯ yeah!", "(╯°□°)╯ true"],
+  choiceCommiserateHungry: ["(っ◔◡◔)っ yes", "(っ◔◡◔)っ totally", "(っ◔◡◔)っ yeah", "(っ◔◡◔)っ true"],
+  choiceTalkOver: ["(ಠ_ಠ) talk over them", "(ಠ_ಠ) cut them off", "(ಠ_ಠ) so, anyways", "(ಠ_ಠ) well actually"],
+  choiceRun: "[>_>] RUN",
+  // choiceTryHarderAngry: "(ง'̀-'́)ง",
+  // choiceTryHarderHungry: "(｡•́︿•̀｡)",
+  // choiceWalkAway: "( ._.)",
+  choiceTryHarderAngry: "(ง'̀-'́)ง try harder",
+  choiceTryHarderHungry: "(｡•́︿•̀｡) try harder",
+  choiceWalkAway: "( ._.) walk away",
+
+  bannerTooManyNarcs: "TOO MANY NARCS",
+  recruitProgressCat: "a cat joins the crew — {rem} {noun} to go!",
+
+  recruitProgress1: "{ord} in your crew — {rem} to go!",
+  recruitProgressRemaining: " to go!",
+  recruitNounSingular: "robin",
+  recruitNounPlural: "robins",
+  // choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ",
+  // choiceRecruitHungry: "(•‿•)",
+  // choiceWalkAwayShort: "( ._.)",
+  choiceRecruitAngry: "ᕦ(ò_óˇ)ᕤ recruit them",
+  choiceRecruitHungry: "(•‿•) recruit them",
+  choiceRecruitCat: "(=^･ｪ･^=) recruit them",
+  choiceWalkAwayShort: "( ._.) walk away",
+  floatCatDeclined: ["she wasn't fussed either way", "not every cat joins the crew", "he'll be back around"],
+  act5HattingInProgress: "putting on hats...",
+  act5HattingWait: "...",
+  act6ExitLabel: "EXIT",
+
+  floatOhNo: "oh no",
+  floatExclaim: "!!",
+  recruitOrdinals: ["one", "two", "three", "four", "five"],
+  tapToContinue: "click to continue",
+  tapToContinueMobile: "tap to continue",
+
+  hudRecruit: "RECRUIT",
+  hudTime: "TIME LEFT",
+  hudCrew: "CREW",
+  hudNarcs: "NARCS",
+  hudRally: "RALLY",
+  hudMob: "MOB",
+
+  hudCops: "TIME REMAINING",
+  hudHaul: "HAUL",
+
+  foodCounterSuffix: " ITEMS",
+
+  act5TapHat: "click to give everyone a Santa hat",
+  act5TapHatMobile: "tap to give everyone a hat",
+  act5TapEnter: "click to enter the store",
+  act5TapEnterMobile: "tap to enter the store",
+  act8TapDeposit: "click to share the food",
+  act8TapDepositMobile: "tap to share the food",
+  act8TapContinue: "click to continue",
+  act8TapContinueMobile: "tap to continue",
+
+  hudAvoidNarcs: "avoid narcs",
+  muteMute: "mute",
+  muteMuted: "muted",
+  quitBtn: "quit",
+  idleRestartWarning: "game will restart in {s} seconds\ntap or click anywhere to keep playing",
+  musicOff: "music off",
+  musicLow: "music low",
+  musicMed: "music medium",
+  musicMedMobile: "music med",
+  musicHigh: "music high",
+  helpMusicLabel: "Music:",
+  act2AmbMutters: ["ugh", ":(", "sigh", "...", "pfft", "oy", "bruh", "why me", "$$$", "so tired", "rent...", "bills"],
+  act2PokePlayer: ["hmph", "...", "long day", "not now", "hm?"],
+  act1NoControl: ["you're not in control here", "LISTEN you're not in control"],
+  act1NoControlRepeat: ["nah", "no", "nope"],
+  act6ShopperGasps: ["oh!", "!!", "gasp", "oh my—", "hey!", "whoa", "?!"],
+  robinCheers: ["yes!!", "nice grab!", "woooo!", "that one!!", "so good!", "keep going!!", "yesss!"],
+  pylonLines: [
+    "you bump the pylon, it stands firm",
+    "a pylon? of course",
+    "season's first cone",
+  ],
+  bagelLines: [
+    "a sesame bagel, still in the bag",
+    "a bagel? still warm. lucky",
+    "a bagel! finders keepers",
+  ],
+  serviceberryLines: [
+    "a serviceberry tree? free fruit, if you know",
+    "amélanchier berries? someone planted lunch",
+    "serviceberries. sweet!",
+  ],
+  mulberryLines: [
+    "a mulberry tree. purple hands incoming",
+    "mulberries. eat now, regret the stains later",
+    "wild mulberries!",
+  ],
+  nasturtiumLines: [
+    "a nasturtium. peppery and delicious",
+    "capucine flowers. a spicy little snack",
+    "nasturtiums, yum",
+  ],
+  act2PokeNpc: ["hm?", "oh, hey", "some weather", "ugh", "blech", "off long day"],
+  act6RunCopShouts: ["get back here!", "stop!", "hey!", "freeze!"],
+  act3CatAmb: ["miaou...", "prrrr", "mrrrow"],
+
+  catLines: [
+    { cat: "miaou", you: "oh hiii there?" },
+    { cat: "prrrr", you: "who's a good kitty?" },
+    { cat: "meow", you: "hi friend" },
+    { cat: "mrrrow", you: "I see you" },
+  ],
+  coinPickups: [
+    "a dime?",
+    "a penny, an ancient artifact",
+    "score, two bucks",
+    "a quarter",
+    "jackpot, five bucks!",
+    "great, 5 cents",
+    "5 cents",
+    "$100? no it's an ad for church",
+  ],
+
+  bannerEscaped: "ESCAPE!",
+  // bannerBackToHood: "back to the neighbourhood.",
+
+  bannerWeLostThem: "we lost them!",
+  runBystanderLines: ["didn't see a thing", "never saw 'em", "good for you", "go on, run", "saw what now?"],
+
+  tapToWalk: "click to walk",
+  tapToWalkMobile: "tap to walk",
+  tapToContinueConv: "click to continue",
+  tapToContinueConvMobile: "tap to continue",
+  act3Move: "arrow keys to move",
+  act3MoveMobile: "drag left or right to walk",
+
+  act3WalkInto: "walk into someone to talk",
+  act3HopLane: "up or down to switch lanes",
+  act3HopLaneMobile: "tap above or below to switch lanes",
+
+  act4Dodge: "arrows to dodge",
+  act4DodgeMobile: "swipe up or down to dodge",
+  act4Run: "arrow keys to move",
+  act4RunMobile: "swipe right to run faster",
+
+  act6Run: "right arrow to run faster",
+  act6RunMobile: "swipe right to run faster",
+  bannerCopTouch: ["freeze!", "hold it right there!"],
+
+  act6Grab: "click food to grab it",
+  act6GrabMobile: "tap food to grab it",
+
+  brokenHeartTitle: "DIED OF A BROKEN HEART",
+  brokenHeartSub: "and an empty stomach",
+
+  act6DefectorLine1: "hold it right there!",
+  act6DefectorPlayerLine: "what, you gonna tase us over a bag of pasta?",
+  act6DefectorLine2: "uh",
+  act6DefectorPlayerLine2: "local hero defends $2 rigatoni?",
+  act6DefectorLine3: "ugh they don't pay me enough for this",
+  act6DefectorPlayerLine3: "so?",
+  act6DefectorLine4: "so the good pasta is two aisles over",
+  floatGuardDefects: "hold on, I'll grab it for you",
+
+  endYouFed: (n) => `you and your crew fed ${n} neighbours tonight.`,
+  endCommunityFedText: (n) => `${n.toLocaleString()} have been fed since this game launched.`,
+  endWestonTicker: (n) => `the grocery giants brought in $${n} since you started playing.`,
+  endHistorical: "in december 2025, 40 people dressed as santa robbed a grocery chain in montréal and gave the food to the hungry.",
+  endHistoricalAgain: "they hit again in february. |pause| and again in may.",
+  endCTABridge: "your turn?",
+};
+
+
