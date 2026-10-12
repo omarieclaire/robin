@@ -349,24 +349,7 @@
 
     mk("play").addEventListener("click", () => {
       audio.play("uiButton");
-      _removeEndButtons();
-      hasPlayed = false;
-      Music.stop();
-      try {
-        loop.stop();
-      } catch (_) {}
-   
-      phase = null;
-      floats.length = 0;
-      sparks.length = 0;
-      dialogStack = [];
-      Banner.timer = 0;
-      Banner.text = "";
-      _startInFlight = false; // Reset so PLAY works again.
-      overlay.classList.remove("hidden");
-      overlay.classList.add("grid-landing");
-      _landingLayout = null; // Forces fresh layout on return.
-      renderLandingToGrid();
+      softResetToLanding();
     });
 
     mk("share").addEventListener("click", async () => {
@@ -422,6 +405,35 @@
       const el = document.getElementById("end-btn-" + id);
       if (el) el.remove();
     }
+  }
+
+  function softResetToLanding() {
+    try {
+      loop.stop();
+    } catch (_) {}
+    Music.stop();
+    Footsteps.stop();
+    Ambience.stop();
+    if (a3CrewSettleEl) {
+      audio.stop(a3CrewSettleEl);
+      a3CrewSettleEl = null;
+    }
+    convReset();
+    _removeEndButtons();
+    floats.length = 0;
+    sparks.length = 0;
+    dialogStack = [];
+    Banner.timer = 0;
+    Banner.text = "";
+    hasPlayed = false;
+    phase = null;
+    _startInFlight = false;
+    helpOverlay.classList.remove("open");
+    window._markActivity();
+    overlay.classList.remove("hidden");
+    overlay.classList.add("grid-landing");
+    _landingLayout = null;
+    renderLandingToGrid();
   }
 
   let _sharedTotals = { food: 12847, fed: 4923 }; // Fallback values if storage unavailable.

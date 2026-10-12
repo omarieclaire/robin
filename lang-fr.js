@@ -2,7 +2,7 @@ window.LANG_FR = {
   playBtn: "JOUER",
   overlayTitle: "ROBIN  DES RUELLES",
   overlayHint: "d'après une histoire vraie",
-  landingControlsHint: "utilise la souris ou les touches fléchées pour jouer   ★   une partie de 5 minutes",
+  landingControlsHint: "joue à la manette, à la souris ou aux touches fléchées   ★   une partie de 5 minutes",
   fbInAppHint: "écran écrasé? touche le ⋯ en haut et choisis « ouvrir dans le navigateur »",
 
   bannerIsThisALife: "c'est ta vie",

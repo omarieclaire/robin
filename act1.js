@@ -261,7 +261,6 @@
 
   const LANDING_FRAME_PAD_X = 4;
   const LANDING_FRAME_PAD_Y = 1;
-  const _showControlsHint = /[?&]ludo/.test(location.search);
 
   let _landingLayout = null;
   let _landingAmb = null; // ambient walkers and cats state
@@ -435,7 +434,7 @@
     A.nextWalkerIn = 4000 + Math.random() * 6000;
   }
 
-  const CTRL_MARQUEE_SPEED = 5;
+  const CTRL_MARQUEE_SPEED = 3;
   function _drawControlsMarquee(nowMs) {
     const raw = window.LANG.landingControlsHint || "";
     if (!raw) return;
@@ -501,7 +500,7 @@
       }
     }
 
-    if (_showControlsHint) _drawControlsMarquee(nowMs);
+    _drawControlsMarquee(nowMs);
 
     gs.innerHTML = grid.html();
   }

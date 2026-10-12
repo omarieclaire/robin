@@ -138,6 +138,37 @@
     action: ["Enter", " ", "ArrowRight"],
   });
 
+  // Game controller: translate a gamepad into the key events everything already listens for.
+  (function gamepadSupport() {
+    if (!navigator.getGamepads) return;
+    const DZ = 0.5; // stick deadzone
+    const KEY = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", action: "Enter" };
+    const held = { up: false, down: false, left: false, right: false, action: false };
+    const emit = (type, key) => window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
+    const setHeld = (ctrl, now) => {
+      if (now === held[ctrl]) return;
+      held[ctrl] = now;
+      emit(now ? "keydown" : "keyup", KEY[ctrl]);
+    };
+    const anyPressed = (b, idxs) => idxs.some((i) => b[i] && b[i].pressed);
+    function poll() {
+      let pad = null;
+      for (const p of navigator.getGamepads()) if (p) { pad = p; break; }
+      if (!pad) {
+        for (const c in held) setHeld(c, false); // release holds if unplugged mid-press
+      } else {
+        const a = pad.axes, b = pad.buttons;
+        setHeld("left", anyPressed(b, [14]) || (a[0] || 0) < -DZ);
+        setHeld("right", anyPressed(b, [15]) || (a[0] || 0) > DZ);
+        setHeld("up", anyPressed(b, [12]) || (a[1] || 0) < -DZ);
+        setHeld("down", anyPressed(b, [13]) || (a[1] || 0) > DZ);
+        setHeld("action", anyPressed(b, [0, 1, 9])); // A / B / Start → confirm & advance
+      }
+      requestAnimationFrame(poll);
+    }
+    requestAnimationFrame(poll);
+  })();
+
   let _perfUpdateMs = 0;
   function update(dt) {
     _lastDt = dt;
@@ -468,7 +499,7 @@
     if (loop && loop.isPaused) return; // Skip reload while paused.
     const idleMs = performance.now() - _lastActivity;
     if (idleMs > IDLE_TIMEOUT_MS) {
-      location.reload();
+      softResetToLanding();
     } else if (idleMs > IDLE_TIMEOUT_MS - IDLE_WARNING_MS) {
       if (!_idleWarningShown) {
         _idleWarningShown = true;

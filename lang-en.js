@@ -2,7 +2,7 @@ window.LANG_EN = {
   playBtn: "PLAY",
   overlayTitle: "ROBINS DES RUELLES",
   overlayHint: "based on a true story",
-  landingControlsHint: "use the mouse or arrow keys to play   ★   a 5-minute game",
+  landingControlsHint: "play with a controller, mouse, or arrow keys   ★   a 5-minute game",
   fbInAppHint: "squished? tap the ⋯ above and choose “open in browser”",
 
   bannerIsThisALife: "this is your life",
