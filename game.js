@@ -496,6 +496,7 @@
   };
   window.addEventListener("keydown", () => window._markActivity());
   setInterval(() => {
+    if (!phase) return;
     if (loop && loop.isPaused) return; // Skip reload while paused.
     const idleMs = performance.now() - _lastActivity;
     if (idleMs > IDLE_TIMEOUT_MS) {
